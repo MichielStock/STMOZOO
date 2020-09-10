@@ -25,6 +25,7 @@ Solve a problem using a method from the course or a new one.
 - graph matching using simulated annealing
 - finding negative cycles using the Bellman–Ford algorithm
 - multiple sequence alignment using Genetic Algorithms
+- homebrew SVM
 - ...
 
 ## Theortic analysis
@@ -33,4 +34,5 @@ Experiment and learn. Show me something exciting about optimization.
 
 - [fitting a neural network by optimizing one weigth at a time](http://arxiv.org/abs/2005.05955)
 - search paths of Hill Climbing: an exhaustive search
+- non-covergence as a regularization mechanism in machine learning
 - ...
