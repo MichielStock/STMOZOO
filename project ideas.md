@@ -25,6 +25,7 @@ Solve a problem using a method from the course or a new one.
 - graph matching using simulated annealing
 - finding negative cycles using the Bellman–Ford algorithm
 - multiple sequence alignment using Genetic Algorithms
+- [ray tracing with Dijkstra](https://blog.evjang.com/2018/08/dijkstras.html)
 - homebrew SVM
 - ...
 
