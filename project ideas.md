@@ -27,6 +27,8 @@ Solve a problem using a method from the course or a new one.
 - multiple sequence alignment using Genetic Algorithms
 - [ray tracing with Dijkstra](https://blog.evjang.com/2018/08/dijkstras.html)
 - homebrew SVM
+- recovering images from a few pixels using [compressed sensing](https://www.youtube.com/watch?v=SbU1pahbbkc) (L1-norm minimization)
+- visalizing complex networks using quadratic optimization
 - ...
 
 ## Theortic analysis
