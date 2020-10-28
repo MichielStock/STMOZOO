@@ -1,5 +1,8 @@
 module STMOZOO
 
-greet() = print("Hello World!")
+
+# execute your source file and export the module you made
+include("example.jl")
+export Example
 
 end # module
