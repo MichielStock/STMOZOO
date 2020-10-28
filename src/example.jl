@@ -17,7 +17,7 @@ export solve_quadratic_system, quadratic_function
 
 Find the minimizer of a canonical quadratic system:
 
-``f(x) = 0.5x' * P * x + x' * q + r``
+``f(x) = 0.5xᵀ  P  x + x ⋅ q + r``
 
 with `P` a positive scalar or a positive-definite n x n matrix and `q` a scalar or
 a n x n vector. The intercept `r` can optionally be given but does not influence
@@ -36,15 +36,9 @@ julia> solve_quadratic_system(8, -4, 3)
 Vector case:
 
 ```julia-repl
-julia> P = [3 1; 1 2]
-2×2 Array{Int64,2}:
- 3  1
- 1  2
+julia> P = [3 1; 1 2];
 
-julia> q = [0.5, -2]
-2-element Array{Float64,1}:
-  0.5
- -2.0
+julia> q = [0.5, -2];
 
 julia> solve_quadratic_system(P, q)
 2-element Array{Float64,1}:
