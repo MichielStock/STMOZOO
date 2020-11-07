@@ -1,5 +1,7 @@
 # Assignments
 
+Edition 2020-2021
+
 This file gives a detailed overview what you have to do for this project. 
 
 ## Getting started
@@ -49,8 +51,34 @@ Travis will automatically run your unit tests online when you push to the origin
 
 ## Documentation
 
-Hopefully, you have already documented all your functions, so this should be a breeze! We will generate a documentation page using the Documenter package.
+Hopefully, you have already documented all your functions, so this should be a breeze! We will generate a documentation page using the [Documenter](https://juliadocs.github.io/Documenter.jl/stable/man/guide/) package. Since the project will not be put in the package manager, we won't host the documentation, though we generate HTML pages anyway.
+
+- [ ] add markdown file to `docs/src/man` with the documentation.
+- [ ] write a general introduction explaining the rational of your code.
+- [ ] use a `@docs` block to add your functions with their documentation.
+- [ ] update the `make.jl` file, linking your page.
+- [ ] run the `make.jl` file to generate the documentation. This will be an HTML file, not added to the repo.
 
 ## Notebook
 
+Finally, you have to add a [Pluto](https://github.com/fonsp/Pluto.jl) notebook to the `notebook` folder. Again use the same name you used for your source code. Depending on the nature of your project, this will be the most extensive task! Make full use of Pluto's interactivity to illustrate your code. In contrast to the documentation page, this is not the place to explain your functions but rather illustrate what you can do with your software or explain a concept.
+
 ## Code review
+
+Each of you will have to perform a code review of two other projects at **January 7**. You have the full day to do this, though it shjould not take too long. The aim is to **help** the other groups to make each others project even better.
+
+- [ ] make a fork of the repo of the person you are reviewing;
+- [ ] check the source code, is the documentation clear? Anything obvious that can be improved.
+- [ ] run the tests. Do they work? Anything that could be tested but is not done so?
+- [ ] Is the documentation page clear? Do you find any typos? Could an example be added?
+- [ ] Take a look at the notebook. Any suggestions there to improve this?
+
+Big things can be addressed by opening an issue. Small fixes and suggestion to the other person's code can be done imediately and via a pull request.
+
+At **January 8**, you have the full day to:
+- [ ] merge the full request and fix any issues you find meaningful.
+- [ ] fill in a small questionare on Ufora about your project and the projects you have reviewed.
+
+Afterwards, I will approve all pull requests, finalizing the package.
+
+> Two days are blocked for the code review because some of you are in different time zones. This does **not** mean you will need these days in full. You will need approximately reserve one hour for each day, the remainder you can do whatever you want.
