@@ -6,15 +6,15 @@ This file gives a detailed overview of what you have to do for this project.
 
 ## Getting started
 
-- [ ] pick a project (take a lood in `project ideas.md` or discuss with Michiel)
+- [ ] pick a project (take a look at `project ideas.md` or discuss with Michiel)
 - [ ] [fork](https://docs.github.com/en/enterprise-server@2.20/github/getting-started-with-github/fork-a-repo) this repo
-- [ ] create a new branch with a short indicative name, e.g. `GeneticProgramming`. **Don't use spaces in the name!**
+- [ ] create a new branch with a short indicative name, e.g., `GeneticProgramming`. **Don't use spaces in the name!**
 - [ ] make a local clone of the repository 
 - [ ] open a [pull request](https://docs.github.com/en/free-pro-team@latest/desktop/contributing-and-collaborating-using-github-desktop/creating-an-issue-or-pull-request) to the **master** branch of this repo. This makes it clear you are starting the project!
 
 ## Source code
 
-Every project needs to have some source code, at least one function! You have to decide which parts belong in the source code (and hence be readily loaded by other users) and which parts of your project will be in the notebook where people can see and interact with your code.
+Every project needs to have some source code, at least one function! You have to decide which parts belong in the source code (and can hence be readily loaded by other users) and which parts of your project will be in the notebook where people can see and interact with your code.
 
 Developing code can be done in any text editor, though we highly recommend [Visual Studio Code](https://code.visualstudio.com/), with Juno the environment for Julia. [Atom](https://atom.io/) is an alternative but is not supported anymore. When developing, you have to activate your project. Assuming that the location of the REPL is the project folder, open the Pkg manager (typing `]`) and type `activate .`. The dot indicated the current directory. If you use external packages in your project, for example, Zygote or LinearAlgebra, you have to add them using `add PACKAGE` in the package manager. This action will create a dependency and update the `Project.toml` file.
 
@@ -35,9 +35,9 @@ Importantly, all your code should be in a [module](https://docs.julialang.org/en
 
 Great, we have written some code. The question is, does it work? Likely you have experimented in the REPL. For a larger project, we would like to have guarantees that it works, though. Luckily, this is very easy in Julia, where we can readily use [Unit testing](https://docs.julialang.org/en/v1/stdlib/Test/).
 
-You will have to write a file with some unit tests, ideally testing every function you have written! The fraction of functions that are tested is called [code coverage](https://en.wikipedia.org/wiki/Code_coverage). This project is monitored automatically using Travis (check the button on the readme page!). Currently, coverage is 100%, so help to keep this high!
+You will have to write a file with some unit tests, ideally testing every function you have written! The fraction of functions that are tested is called [code coverage](https://en.wikipedia.org/wiki/Code_coverage). This project is monitored automatically using Travis (check the button on the readme page!). Currently, coverage is 100%, so help to keep this as high as possible!
 
-Tests can be done using the `@test` macro. You evaluate some functions and check their results. The result should evaluate to `true`. For example: `@test 1+1 == 2` or `@test √(9) ≈ 3.0`. 
+Tests can be executed using the `@test` macro. You evaluate some functions and check their results. The result should evaluate to `true`. For example: `@test 1+1 == 2` or `@test √(9) ≈ 3.0`. 
 
 It makes sense to group several tests, which can be done using `@testset "names of tests" begin ... end`.
 
