@@ -4,6 +4,10 @@ Edition 2020-2021
 
 This file gives a detailed overview of what you have to do for this project. 
 
+## In brief
+
+For the exam project, you pick a optimization related topic of your interest that is *not* covered in detail in class. This can be an algorithm, an application you solve with methods seen the course or some theoretical aspect you want to study. You write some code that you add to the STMOZOO codebase (including documentation, tests etc.) and illustrate you application in a notebook.
+
 ## Getting started
 
 - [ ] pick a project (take a lood in `project ideas.md` or discuss with Michiel)
