@@ -13,6 +13,7 @@ Optimization methods not covered in the theory. Provide a working implementation
 - Firefly algorithm
 - Bee Colony Optimization
 - Cuckoo search
+- maximum flow problems
 - Levenberg–Marquardt algorithm (for nonlinear regression and inverse kinematics)
 - ...
 
@@ -26,6 +27,7 @@ Solve a problem using a method from the course or a new one.
 - graph matching using simulated annealing
 - finding negative cycles using the Bellman–Ford algorithm
 - multiple sequence alignment using Genetic Algorithms
+- using MaxEnt to find the best probability distribution
 - [ray tracing with Dijkstra](https://blog.evjang.com/2018/08/dijkstras.html)
 - homebrew SVM
 - recovering images from a few pixels using [compressed sensing](https://www.youtube.com/watch?v=SbU1pahbbkc) (L1-norm minimization)
