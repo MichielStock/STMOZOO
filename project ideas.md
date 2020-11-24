@@ -41,4 +41,5 @@ Experiment and learn. Show me something exciting about optimization.
 - [fitting a neural network by optimizing one weigth at a time](http://arxiv.org/abs/2005.05955)
 - search paths of Hill Climbing: an exhaustive search
 - non-covergence as a regularization mechanism in machine learning
+- improving gradient descent or learning using [gradient startvation](https://mohammadpz.github.io/GradientStarvation.html)
 - ...
