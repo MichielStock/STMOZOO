@@ -23,7 +23,7 @@ Solve a problem using a method from the course or a new one.
 
 - time table scheduling
 - analytic solution of a ODE using genetic programming
-- solve a Sudoku using local search
+- ~~solve a Sudoku using local search~~
 - graph matching using simulated annealing
 - finding negative cycles using the Bellman–Ford algorithm
 - multiple sequence alignment using Genetic Algorithms
