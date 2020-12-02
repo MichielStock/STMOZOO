@@ -32,6 +32,7 @@ Solve a problem using a method from the course or a new one.
 - homebrew SVM
 - recovering images from a few pixels using [compressed sensing](https://www.youtube.com/watch?v=SbU1pahbbkc) (L1-norm minimization)
 - visalizing complex networks using quadratic optimization
+- ~~Nqueens problem~~
 - ...
 
 ## Theortic analysis
