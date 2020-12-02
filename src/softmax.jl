@@ -7,6 +7,7 @@ module Softmax
 
 # you have to import everything you need for your module to work
 # if you use a new package, don't forget to add it in the package manager
+using Distributions: Gumbel
 
 # export all functions that are relevant for the user
 export softmax, gumbel_max
