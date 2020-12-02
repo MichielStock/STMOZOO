@@ -13,7 +13,7 @@ Optimization methods not covered in the theory. Provide a working implementation
 - Firefly algorithm
 - ~~Bee Colony Optimization~~
 - Cuckoo search
-- maximum flow problems
+- ~~maximum flow problems~~
 - Levenberg–Marquardt algorithm (for nonlinear regression and inverse kinematics)
 - ...
 
