@@ -5,4 +5,7 @@ module STMOZOO
 include("example.jl")
 export Example
 
+include("raytracing.jl")
+export Raytracing
+
 end # module
