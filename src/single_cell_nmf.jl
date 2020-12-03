@@ -27,6 +27,7 @@ function perform_nmf(X_rna::Array{Float64}, X_atac::Array{Float64}, k::Int64,
 		W_rna = update_W_rna(W_rna, X_rna, H)  
 		w_atac = update_W_atac(W_atac, X_atac, H, Z, R)
 		H = update_H(W_rna, W_atac, X_rna, X_atac, H, Z, R, alpha, lambda, gamma)
+		Z = update_Z(W_atac, X_atac, H, Z, R, lambda)
 	end
 
 	return H, W_rna, W_atac
@@ -51,5 +52,13 @@ function update_H(W_rna::Array{Float64}, W_atac::Array{Float64}, X_rna::Array{Fl
 			+ gamma * zeros(k, k)) * H
 
 	return H .* numerator ./ denominator	
+end
+
+function update_Z(W_atac::Array{Float64}, X_atac::Array{Float64}, H::Array{Float64},
+			Z::Array{Float64}, R::Array{Bool}, lambda::Float64)
+	numerator = (X_atac' * W_atac * H) .* R + lambda * H' * H 
+	denominator = X_atac' * X_atac * (Z .* R) .* R + lambda * Z
+		
+	return Z .* numerator ./ denominator
 end
 end
