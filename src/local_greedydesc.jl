@@ -15,16 +15,14 @@ function fill_in(sudoku::Matrix)
       missing_entries = Set(findall(row .== 0))
       for n = 1:9
           if !(n in row)
-            ms = rand(missing_entries)
-            grid[i, ms] = n
-            delete!(missing_entries, ms)
-          end
-            
-        end
+                  ms = rand(missing_entries)
+                  grid[i, ms] = n
+                  delete!(missing_entries, ms)
+              end
       end
     end
-    return grid
-end
+    grid
+  end
 
 """ 
     check_value(sudoku, val_i::Int, val_j::Int, value =nothing)
@@ -34,7 +32,7 @@ it is used to check if a particular number meets the sudoku constraints
 """
 function check_value(sudoku::Matrix, val_i::Int, val_j::Int, value =nothing)
   
-    if value == nothing
+    if value === nothing
         val = sudoku[val_i, val_j]
     else
         val = value
