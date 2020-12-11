@@ -85,7 +85,7 @@ function check_value(sudoku::Matrix, val_i::Int, val_j::Int, value =nothing)
             end
         end
     end
-    return constr
+    return Int(constr)
 end
 
 """ 
@@ -101,7 +101,7 @@ function sudoku_cost(sudoku::Matrix)
             total_cost += check_value(sudoku, i, j)
         end
     end
-    return total_cost
+    return Int(total_cost)
 end
 
 """" 
@@ -140,7 +140,7 @@ function sudoku_greedydesc(sudoku::Matrix, empty::Matrix, max_iter::Int)
         i += 1
     end
     
-    return board, total_cost
+    return board, Int(total_cost)
 end 
 
 """ 
