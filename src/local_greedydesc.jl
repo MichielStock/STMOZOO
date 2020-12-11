@@ -1,4 +1,4 @@
-module Local_search
+module LocalSearch
 
 export fill_in, check_value, sudoku_cost, sudoku_greedydesc, flip, make_flip, search 
 

@@ -1,6 +1,6 @@
 @testset "Local_search" begin
     using STMOZOO.Local_search
-    @testset begin
+    @testset "test2" begin
         min_cost = Inf
         solution =[]
         for i in 1:100
