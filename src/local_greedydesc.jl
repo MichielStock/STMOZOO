@@ -41,19 +41,19 @@ function check_value(sudoku::Matrix, val_i::Int, val_j::Int, value =nothing)
     end
     
     constr = 0.0
-    #cheking for a particular position [val_i][val_j] how many repetions are in the row.
+    #for a particular position [val_i][val_j] how many repetions are in the row.
     for j in 1:length(sudoku[val_i,:])
         if sudoku[val_i, val_j] != 0 && sudoku[val_i, j] == val && j != val_j 
             constr += 1
         end
     end
-    #cheking for a particular position [val_i][val_j] how many repetions are in the column.
+    #for a particular position [val_i][val_j] how many repetions are in the column.
     for i in 1:length(sudoku[val_j,:])
         if sudoku[val_i, val_j] != 0 && sudoku[i, val_j] == val && i != val_i 
             constr += 1
         end
     end
-    #cheking for a particular position [val_i][val_j] how many repetions are in the subgrid.
+    #for a particular position [val_i][val_j] how many repetions are in the subgrid.
     sqrt_n = isqrt(length(sudoku))
     x_i = val_i/3
     x_j = val_j/3
