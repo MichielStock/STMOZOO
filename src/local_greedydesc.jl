@@ -189,6 +189,7 @@ end
 Takes an empty Sudoku, and search for the solution that minimizes the number of constraint violations
 """
 function search(sudoku::Matrix, max_repl::Int, max_flips::Int)
+    @assert length(sudoku[1,:]) == length(sudoku[:,1]) == 9 "Sudoku must be 9x9"
     grid = fill_in(sudoku)
     sol, cost = sudoku_greedydesc(grid, sudoku, max_repl)
     if cost == 0
