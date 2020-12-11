@@ -7,38 +7,40 @@ so each row has all numbers from 1 to 9"""
 function fill_in(sudoku)
     grid = deepcopy(sudoku)
     for i = 1:9
-      row = grid[i]
+      row = grid[i,:]
       missing_entries = Set(findall(row .== 0))
       for n = 1:9
           if !(n in row)
-                ms = rand(missing_entries)
-                grid[i][ms] = n
-                delete!(missing_entries, ms) 
-            end
+            ms = rand(missing_entries)
+            grid[i, ms] = n
+            delete!(missing_entries, ms)
+          end
+            
+        end
       end
     end
-    grid
+    return grid
 end
 
 """ Gives the number of repetitions in row, column and subgrid for a number in the position [val_i][val_j] in the sudoku """
-function check_value(sudoku, val_i, val_j, value = nothing)
+function check_value(sudoku, val_i, val_j, value =nothing)
   
     if value == nothing
-        val = sudoku[val_i][val_j]
+        val = sudoku[val_i, val_j]
     else
         val = value
     end
     
     constr = 0.0
     #cheking for a particular position [val_i][val_j] how many repetions are in the row.
-    for j in 1:length(sudoku)
-        if sudoku[val_i][val_j] != 0 && sudoku[val_i][j] == val && j != val_j 
+    for j in 1:length(sudoku[val_i,:])
+        if sudoku[val_i, val_j] != 0 && sudoku[val_i, j] == val && j != val_j 
             constr += 1
         end
     end
     #cheking for a particular position [val_i][val_j] how many repetions are in the column.
-    for i in 1:length(sudoku)
-        if sudoku[val_i][val_j] != 0 && sudoku[i][val_j] == val && i != val_i 
+    for i in 1:length(sudoku[val_j,:])
+        if sudoku[val_i, val_j] != 0 && sudoku[i, val_j] == val && i != val_i 
             constr += 1
         end
     end
@@ -71,7 +73,7 @@ function check_value(sudoku, val_i, val_j, value = nothing)
     #looping over each element in the subgrid
     for i in vars_i
         for j in vars_j
-            if (i, j) != (val_i, val_j) && sudoku[i][j] != 0 && sudoku[i][j] == val
+            if (i, j) != (val_i, val_j) && sudoku[i, j] != 0 && sudoku[i, j] == val
                 constr += 1
             end
         end
@@ -82,31 +84,18 @@ end
 """ return the total number of constraints violations in the sudoku"""
 function sudoku_cost(sudoku)
     total_cost = 0
-    for i in 1:length(sudoku)
-        for j in 1:length(sudoku)
+    for i in 1:9
+        for j in 1:9
             total_cost += check_value(sudoku, i, j)
         end
     end
     return total_cost
 end
 
-"""Return the indices of the fixed numbers in the sudoku board """
-function fixvars(sudoku)
-    fixed_vars = Set()
-    for i in 1:9
-        for j in 1:9
-            if sudoku[i][j] != 0
-                push!(fixed_vars, (i,j))
-            end
-        end
-    end
-    return fixed_vars
-end
-
 """" Selects a random position in the sudoku, and changes its number with a different random number, 
 if the number of constraints violations increased, tries another random, otherwise, 
 assigns the new number to that position. Then repeats the same process 'max_iter' times"""
-function sudoku_greedydesc(sudoku, fixed_vars, max_iter)
+function sudoku_greedydesc(sudoku, empty, max_iter)
     board = deepcopy(sudoku)
     i = 0
     while i < max_iter
@@ -123,13 +112,13 @@ function sudoku_greedydesc(sudoku, fixed_vars, max_iter)
         rand_j = rand(1:9)
         
         #check if that position is in fixed variables, if true then randomly select another position
-        if (rand_i, rand_j) in fixed_vars
+        if empty[rand_i, rand_j] != 0
             continue
         end
         #check which number in [0:9] decrease the number of conflicts and assign it to the current position 
         for new_val in Set(1:9)
             if check_value(board, rand_i, rand_j) >= check_value(board, rand_i, rand_j, new_val)
-                board[rand_i][rand_j] = new_val
+                board[rand_i, rand_j] = new_val
             end
         end
         i += 1
@@ -140,31 +129,41 @@ end
 
 """ Randomly selects two positions in the sudoku and makes a swap. 
 Returns the new sudoku and the changed positions"""
-function flip(grid, fixed_vars)
+function flip(sudoku, empty)
     (i1, j1, i2, j2) = (rand(1:9), rand(1:9), rand(1:9), rand(1:9))
-    res = deepcopy(grid)
-    while (i1, j1) in fixed_vars || (i2, j2) in fixed_vars
+    res = deepcopy(sudoku)
+    while empty[i1, j1] != 0 || empty[i2, j2] != 0
         (i1, j1, i2, j2) = (rand(1:9), rand(1:9), rand(1:9), rand(1:9))
     end
-    (res[i1][j1], res[i2][j2]) = (res[i2][j2], res[i1][j1])
+    (res[i1,j1], res[i2,j2]) = (res[i2,j2], res[i1,j1])
     return res, (i1,j1), (i2,j2)
 end
 
 """" Evaluates if the swap increased/decreased the cost of the sudoku, if increase,
 doesnt make the swap and selects another swap, otherwise makes the swap. 
 Repeat the process 'max_iter' times"""
-function make_flip(sudoku, fixed_vars, max_iter)
+function make_flip(sudoku, empty, max_iter)
     resp = deepcopy(sudoku)
     i = 0
     while i < max_iter
-        resp2, pos1, pos2 = flip(resp, fixed_vars)
+        resp2, pos1, pos2 = flip(resp, empty)
         if sudoku_cost(resp2) <= sudoku_cost(resp)
-            (resp[pos1[1]][pos1[2]], resp[pos2[1]][pos2[2]]) = (resp[pos2[1]][pos2[2]], resp[pos1[1]][pos1[2]]) 
+            (resp[pos1[1], pos1[2]], resp[pos2[1],pos2[2]]) = (resp[pos2[1], pos2[2]], resp[pos1[1],pos1[2]]) 
         else
-            (resp2[pos1[1]][pos1[2]], resp2[pos2[1]][pos2[2]]) = (resp2[pos2[1]][pos2[2]], resp2[pos1[1]][pos1[2]])
+            (resp2[pos1[1], pos1[2]], resp2[pos2[1], pos2[2]]) = (resp2[pos2[1], pos2[2]], resp2[pos1[1], pos1[2]])
         end
         i +=1
     end
-    
     return resp
+end
+
+"""" Take a empty Sudoku, and search for the solution that minimizes the number of constraint violations"""
+function search(sudoku, max_repl, max_flips)
+    grid = fill_in(sudoku)
+    sol, cost = sudoku_greedydesc(grid, sudoku, max_repl)
+    if cost == 0
+        return sol, cost
+    else res = make_flip(sol, sudoku, max_flips)
+    end
+    return res
 end
