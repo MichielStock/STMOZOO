@@ -1,8 +1,5 @@
-module printSK
-
-#Modified from: https://github.com/scheinerman/Sudoku.jl
-
 export print_sudoku, lines, fill
+#Modified from: https://github.com/scheinerman/Sudoku.jl
 
 """" 
     print_sudoku(grid::Matrix)

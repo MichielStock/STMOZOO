@@ -1,6 +1,6 @@
 module Local_search
 
-export fill_in, check_value, sudoku_cost, sudoku_greedydesc, fixvars, flip, make_flip 
+export fill_in, check_value, sudoku_cost, sudoku_greedydesc, flip, make_flip 
 
 """
     fill_in(sudoku::Matrix)
@@ -197,3 +197,7 @@ function search(sudoku::Matrix, max_repl::Int, max_flips::Int)
     end
     return res
 end
+
+include("print_sudoku.jl")
+include("examples.jl")
+end #module
