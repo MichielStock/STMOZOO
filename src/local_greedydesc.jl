@@ -1,6 +1,6 @@
 module Local_search
 
-export fill_in, check_value, sudoku_cost, sudoku_greedydesc, flip, make_flip 
+export fill_in, check_value, sudoku_cost, sudoku_greedydesc, flip, make_flip, search 
 
 """
     fill_in(sudoku::Matrix)
@@ -185,6 +185,7 @@ end
     search(sudoku::Matrix, max_repl::Int, max_flips::Int)
 
 Takes an empty Sudoku, and search for the solution that minimizes the number of constraint violations
+To find the solution the search must be done at least 1000 times
 """
 function search(sudoku::Matrix, max_repl::Int, max_flips::Int)
     @assert length(sudoku[1,:]) == length(sudoku[:,1]) == 9 "Sudoku must be 9x9"
