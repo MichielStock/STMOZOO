@@ -2,9 +2,13 @@ module Local_search
 
 export fill_in, check_value, sudoku_cost, sudoku_greedydesc, fixvars, flip, make_flip 
 
-"""Fill a sudoku with non-repeated random numbers per row,
-so each row has all numbers from 1 to 9"""
-function fill_in(sudoku)
+"""
+    fill_in(sudoku::Matrix)
+
+Fills a sudoku with non-repeated random numbers per row,
+so each row has all numbers from 1 to 9.
+"""
+function fill_in(sudoku::Matrix)
     grid = deepcopy(sudoku)
     for i = 1:9
       row = grid[i,:]
@@ -22,8 +26,13 @@ function fill_in(sudoku)
     return grid
 end
 
-""" Gives the number of repetitions in row, column and subgrid for a number in the position [val_i][val_j] in the sudoku """
-function check_value(sudoku, val_i, val_j, value =nothing)
+""" 
+    check_value(sudoku, val_i::Int, val_j::Int, value =nothing)
+
+Gives the number of repetitions in row, column and subgrid for a number in position [val_i, val_j] in the sudoku
+it is used to check if a particular number meets the sudoku constraints
+"""
+function check_value(sudoku::Matrix, val_i::Int, val_j::Int, value =nothing)
   
     if value == nothing
         val = sudoku[val_i, val_j]
@@ -81,8 +90,13 @@ function check_value(sudoku, val_i, val_j, value =nothing)
     return constr
 end
 
-""" return the total number of constraints violations in the sudoku"""
-function sudoku_cost(sudoku)
+""" 
+    sudoku_cost(sudoku::Matrix)
+
+Returns the total number of constraints violations in the sudoku,
+Ex. if a number is found two times in a row the cost will be 4 (2 for each number).
+"""
+function sudoku_cost(sudoku::Matrix)
     total_cost = 0
     for i in 1:9
         for j in 1:9
@@ -92,10 +106,14 @@ function sudoku_cost(sudoku)
     return total_cost
 end
 
-"""" Selects a random position in the sudoku, and changes its number with a different random number, 
-if the number of constraints violations increased, tries another random, otherwise, 
-assigns the new number to that position. Then repeats the same process 'max_iter' times"""
-function sudoku_greedydesc(sudoku, empty, max_iter)
+"""" 
+    sudoku_greedydesc(sudoku::Matrix, empty::Matrix, max_iter::Int)
+
+Selects a random position in the sudoku and changes its number with a different random number, 
+if the number of constraints violations increase, tries another random, otherwise, 
+assigns the new number to that position. Then repeats the same process 'max_iter' times
+"""
+function sudoku_greedydesc(sudoku::Matrix, empty::Matrix, max_iter::Int)
     board = deepcopy(sudoku)
     i = 0
     while i < max_iter
@@ -127,9 +145,13 @@ function sudoku_greedydesc(sudoku, empty, max_iter)
     return board, total_cost
 end 
 
-""" Randomly selects two positions in the sudoku and makes a swap. 
-Returns the new sudoku and the changed positions"""
-function flip(sudoku, empty)
+""" 
+    flip(sudoku::Matrix, empty::Matrix) 
+
+Randomly selects two positions in the sudoku and makes a swap. 
+Returns the new sudoku and the indices of changed positions
+"""
+function flip(sudoku::Matrix, empty::Matrix)
     (i1, j1, i2, j2) = (rand(1:9), rand(1:9), rand(1:9), rand(1:9))
     res = deepcopy(sudoku)
     while empty[i1, j1] != 0 || empty[i2, j2] != 0
@@ -139,10 +161,14 @@ function flip(sudoku, empty)
     return res, (i1,j1), (i2,j2)
 end
 
-"""" Evaluates if the swap increased/decreased the cost of the sudoku, if increase,
+"""" 
+    make_flip(sudoku::Matrix, empty::Matrix, max_iter::Int)
+
+    Evaluates if the swap increased/decreased the total cost of the sudoku, if increase,
 doesnt make the swap and selects another swap, otherwise makes the swap. 
-Repeat the process 'max_iter' times"""
-function make_flip(sudoku, empty, max_iter)
+Repeat the process 'max_iter' times
+"""
+function make_flip(sudoku::Matrix, empty::Matrix, max_iter::Int)
     resp = deepcopy(sudoku)
     i = 0
     while i < max_iter
@@ -157,8 +183,12 @@ function make_flip(sudoku, empty, max_iter)
     return resp
 end
 
-"""" Take a empty Sudoku, and search for the solution that minimizes the number of constraint violations"""
-function search(sudoku, max_repl, max_flips)
+"""" 
+    search(sudoku::Matrix, max_repl::Int, max_flips::Int)
+
+Takes an empty Sudoku, and search for the solution that minimizes the number of constraint violations
+"""
+function search(sudoku::Matrix, max_repl::Int, max_flips::Int)
     grid = fill_in(sudoku)
     sol, cost = sudoku_greedydesc(grid, sudoku, max_repl)
     if cost == 0
