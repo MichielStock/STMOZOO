@@ -1,5 +1,5 @@
 @testset "SingleCellNMF" begin
-	using STMOZOO.SingleCellNMF, DataFrames
+	using STMOZOO.SingleCellNMF, DataFrames, Distributions
 
 	n_cells = 100
 	n_rows_rna = 500
@@ -49,6 +49,7 @@
 			@test W_rna[!, "gene_name"] == rna_df[!, "gene_name"]
 			@test W_atac[!, "locus_name"] == atac_df[!, "locus_name"]
 			
+			# Non-negativity constraints
 			@test all_non_negative(W_rna[!,
 				filter(x -> x != "gene_name", names(W_rna))]) 
 			@test all_non_negative(W_atac[!,
@@ -59,12 +60,13 @@
 	
 	@testset "reduce_dims_atac" begin
 		Z = rand(n_cells, n_cells)
-		R = rand(n_cells, n_cells)
+		R = rand(Bernoulli(), n_cells, n_cells)
 
-		atac_reduced = reduce_dims_atac(atac_df, Z, R)
-		
 		# Expect data reduced to two dimensions
-		@test size(atac_reduced) == (2, n_cells)
+		@test size(reduce_dims_atac(atac_df, Z, R)) == (2, n_cells)
+		
+		# Should also work without aggregation of cells
+		@test size(reduce_dims_atac(atac_df)) == (2, n_cells)		
 	end
 end
 

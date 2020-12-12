@@ -4,16 +4,21 @@ using Distributions, DataFrames, LinearAlgebra, UMAP, Distances
 
 export perform_nmf, reduce_dims_atac
 
-function reduce_dims_atac(atac_df::DataFrame, Z::Array{Float64} = nothing,
-				R::Array{Float64} = nothing)
+function reduce_dims_atac(atac_df::DataFrame, Z::Array{Float64}, R::Array{Bool})
 	X_atac, _ = df_to_array(atac_df, "locus_name")
 
-	if Z != nothing && R != nothing
-		ZR = (Z .* R) ./ sum(Z .* R, dims = 1)
-		X_atac = X_atac * ZR
-	end
+	ZR = (Z .* R) ./ sum(Z .* R, dims = 1)
+	X_atac = X_atac * ZR
 
 	return umap(X_atac; n_neighbors=30, metric = CorrDist())
+end
+
+function reduce_dims_atac(atac_df::DataFrame)
+	n_cells = size(atac_df)[2] - 1
+	Z = Matrix{Float64}(I, n_cells, n_cells) 
+	R = Matrix{Bool}(I, n_cells, n_cells) 
+
+	return reduce_dims_atac(atac_df, Z, R)
 end
 
 function perform_nmf(rna_df::DataFrame, atac_df::DataFrame, k::Int64,
