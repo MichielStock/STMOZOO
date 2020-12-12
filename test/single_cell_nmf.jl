@@ -23,6 +23,7 @@
 			rna_df_no_names = rna_df[!, filter(x -> x != "gene_name", names(rna_df))]
 			atac_df_no_names = atac_df[!, filter(x -> x != "locus_name", names(atac_df))]
 
+			# Expect gene and loci names present in RNA and ATAC DataFrames
 			@test_throws ArgumentError perform_nmf(rna_df_no_names, atac_df_no_names, k)
 		end
 		
@@ -31,12 +32,20 @@
 
 			H, W_rna, W_atac, Z, R, obj_history = perform_nmf(rna_df, atac_df, k)
 
+			# Dimensions match?
 			@test size(H) == (k, n_cells) 
-			@test size(W_rna) == (n_rows_rna, k)
-			@test size(W_atac) == (n_rows_atac, k)
+			# Columns = number of factors + feature name column
+			@test size(W_rna) == (n_rows_rna, k + 1)
+			@test size(W_atac) == (n_rows_atac, k + 1)
 			@test size(Z) == (n_cells, n_cells)
 			@test size(R) == (n_cells, n_cells)
+
+			# Objective history recorded for all iterations?
 			@test size(obj_history)[1] == 500
+			
+			# Feature names preserved?
+			@test W_rna[!, "gene_name"] == rna_df[!, "gene_name"]
+			@test W_atac[!, "locus_name"] == atac_df[!, "locus_name"]
 		end
 	end
 	
@@ -46,6 +55,7 @@
 
 		atac_reduced = reduce_dims_atac(atac_df, Z, R)
 		
+		# Expect data reduced to two dimensions
 		@test size(atac_reduced) == (2, n_cells)
 	end
 end

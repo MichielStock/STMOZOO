@@ -6,7 +6,7 @@ export perform_nmf, reduce_dims_atac
 
 function reduce_dims_atac(atac_df::DataFrame, Z::Array{Float64} = nothing,
 				R::Array{Float64} = nothing)
-	X_atac = df_to_array(atac_df, "locus_name")
+	X_atac, _ = df_to_array(atac_df, "locus_name")
 
 	if Z != nothing && R != nothing
 		ZR = (Z .* R) ./ sum(Z .* R, dims = 1)
@@ -27,8 +27,8 @@ function perform_nmf(rna_df::DataFrame, atac_df::DataFrame, k::Int64,
 		throw(ArgumentError("Input DataFrames must have feature names"))
 	end
 	
-	X_rna = df_to_array(rna_df, "gene_name")
-	X_atac = df_to_array(atac_df, "locus_name") 
+	X_rna, gene_names = df_to_array(rna_df, "gene_name")
+	X_atac, loci_names = df_to_array(atac_df, "locus_name") 
 	
 	n_rows_rna, n_cells = size(X_rna)
 	n_rows_atac, n_cells = size(X_atac)
@@ -55,15 +55,22 @@ function perform_nmf(rna_df::DataFrame, atac_df::DataFrame, k::Int64,
 				lambda * norm(Z - H' * H) + gamma * sum(sum(H, dims = 1).^2)
 		push!(obj_history, current_obj)
 	end
+	
+	W_rna_df = DataFrame(W_rna)
+	W_atac_df = DataFrame(W_atac)
+	
+	W_rna_df[!, "gene_name"] = gene_names
+	W_atac_df[!, "locus_name"] = loci_names
 
-	return H, W_rna, W_atac, Z, R, obj_history
+	return H, W_rna_df, W_atac_df, Z, R, obj_history
 end
 
 function df_to_array(df::DataFrame, feature_name)
+	features = df[!, feature_name]
 	df_no_names = df[!, filter(x -> x != feature_name, names(df))]
 	X = convert(Array{Float64}, df_no_names)	
 		
-	return X
+	return X, features
 end
 
 function update_W_rna(W_rna::Array{Float64}, X_rna::Array{Float64}, H::Array{Float64})
