@@ -11,6 +11,8 @@
 	rna_df[!, "gene_name"] = map(i -> "gene_$(i)", 1:n_rows_rna)
 	atac_df[!, "locus_name"] = map(i -> "locus_$(i)", 1:n_rows_atac)
 
+	all_non_negative(df) = all(all.(>(0), eachcol(df)))
+
 	@testset "perform_nmf" begin
 		@testset "k validation" begin
 			# number of factors should be positive
@@ -46,6 +48,12 @@
 			# Feature names preserved?
 			@test W_rna[!, "gene_name"] == rna_df[!, "gene_name"]
 			@test W_atac[!, "locus_name"] == atac_df[!, "locus_name"]
+			
+			@test all_non_negative(W_rna[!,
+				filter(x -> x != "gene_name", names(W_rna))]) 
+			@test all_non_negative(W_atac[!,
+				filter(x -> x != "locus_name", names(W_atac))]) 
+			@test all_non_negative(H)
 		end
 	end
 	
