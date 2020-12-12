@@ -1,15 +1,34 @@
 module SingleCellNMF
 
-using Distributions
+using Distributions, DataFrames, LinearAlgebra, UMAP, Distances
 
-export perform_nmf 
+export perform_nmf, reduce_dims_atac
 
-function perform_nmf(X_rna::Array{Float64}, X_atac::Array{Float64}, k::Int64,
+function reduce_dims_atac(atac_df::DataFrame, Z::Array{Float64} = nothing,
+				R::Array{Float64} = nothing)
+	X_atac = df_to_array(atac_df, "locus_name")
+
+	if Z != nothing && R != nothing
+		ZR = (Z .* R) ./ sum(Z .* R, dims = 1)
+		X_atac = X_atac * ZR
+	end
+
+	return umap(X_atac; n_neighbors=30, metric = CorrDist())
+end
+
+function perform_nmf(rna_df::DataFrame, atac_df::DataFrame, k::Int64,
 			dropout_prob = 0.25, n_iter = 500.0, alpha = 1.0, lambda = 100000.0,
 			gamma = 1.0)
 	if k <= 0
 		throw(ArgumentError("k should be positive"))
 	end
+	
+	if !("gene_name" in names(rna_df)) || !("locus_name" in names(atac_df))
+		throw(ArgumentError("Input DataFrames must have feature names"))
+	end
+	
+	X_rna = df_to_array(rna_df, "gene_name")
+	X_atac = df_to_array(atac_df, "locus_name") 
 	
 	n_rows_rna, n_cells = size(X_rna)
 	n_rows_atac, n_cells = size(X_atac)
@@ -21,6 +40,8 @@ function perform_nmf(X_rna::Array{Float64}, X_atac::Array{Float64}, k::Int64,
 	W_rna = rand(Uniform(), n_rows_rna, k)
 	W_atac = rand(Uniform(), n_rows_atac, k)
 	
+	obj_history = []
+	
 	for i = 1:n_iter
 		# Normalize H
 		H = H ./ sum(H, dims = 2)
@@ -28,18 +49,30 @@ function perform_nmf(X_rna::Array{Float64}, X_atac::Array{Float64}, k::Int64,
 		w_atac = update_W_atac(W_atac, X_atac, H, Z, R)
 		H = update_H(W_rna, W_atac, X_rna, X_atac, H, Z, R, alpha, lambda, gamma)
 		Z = update_Z(W_atac, X_atac, H, Z, R, lambda)
+
+		current_obj = alpha * norm(X_rna - W_rna * H)^2 + 
+				norm(X_atac * (Z .* R) - W_atac * H)^2 +
+				lambda * norm(Z - H' * H) + gamma * sum(sum(H, dims = 1).^2)
+		push!(obj_history, current_obj)
 	end
 
-	return H, W_rna, W_atac
+	return H, W_rna, W_atac, Z, R, obj_history
+end
+
+function df_to_array(df::DataFrame, feature_name)
+	df_no_names = df[!, filter(x -> x != feature_name, names(df))]
+	X = convert(Array{Float64}, df_no_names)	
+		
+	return X
 end
 
 function update_W_rna(W_rna::Array{Float64}, X_rna::Array{Float64}, H::Array{Float64})
-	return W_rna .* (X_rna * H') ./ (W_rna * H * H')
+	return W_rna .* (X_rna * H') ./ (W_rna * H * H' .+ eps(Float64))
 end
 
 function update_W_atac(W_atac::Array{Float64}, X_atac::Array{Float64}, H::Array{Float64},
 			Z::Array{Float64}, R::Array{Bool})
-	return W_atac .* (X_atac * (Z .* R) * H') ./ (W_atac * H * H') 
+	return W_atac .* (X_atac * (Z .* R) * H') ./ (W_atac * H * H' .+ eps(Float64)) 
 end
 
 function update_H(W_rna::Array{Float64}, W_atac::Array{Float64}, X_rna::Array{Float64},
@@ -51,7 +84,7 @@ function update_H(W_rna::Array{Float64}, W_atac::Array{Float64}, X_rna::Array{Fl
 	denominator = (alpha * W_rna' * W_rna + W_atac' * W_atac + 2 * lambda * H * H'
 			+ gamma * zeros(k, k)) * H
 
-	return H .* numerator ./ denominator	
+	return H .* numerator ./ (denominator .+ eps(Float64))	
 end
 
 function update_Z(W_atac::Array{Float64}, X_atac::Array{Float64}, H::Array{Float64},
@@ -59,6 +92,6 @@ function update_Z(W_atac::Array{Float64}, X_atac::Array{Float64}, H::Array{Float
 	numerator = (X_atac' * W_atac * H) .* R + lambda * H' * H 
 	denominator = X_atac' * X_atac * (Z .* R) .* R + lambda * Z
 		
-	return Z .* numerator ./ denominator
+	return Z .* numerator ./ (denominator .+ eps(Float64))
 end
 end
