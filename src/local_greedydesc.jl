@@ -1,6 +1,6 @@
 module LocalSearch
 
-export fill_in, check_value, sudoku_cost, sudoku_greedydesc, flip, flip_row, make_flip, make_flip_row, search 
+export fill_in, check_value, sudoku_cost, sudoku_greedydesc, flip, fliprow, makeflip, makefliprow, search 
 
 """
     fill_in(sudoku::Matrix)
