@@ -182,7 +182,7 @@ Evaluates if the swap make by 'flip' function increased/decreased the total cost
 doesnt make the swap and selects another swap, otherwise makes the swap. 
 Repeat the process 'max_iter' times
 """
-function make_flip(sudoku::Matrix, empty::Matrix, max_iter::Int)
+function makeflip(sudoku::Matrix, empty::Matrix, max_iter::Int)
     resp = deepcopy(sudoku)
     i = 0
     while i < max_iter
@@ -198,7 +198,7 @@ function make_flip(sudoku::Matrix, empty::Matrix, max_iter::Int)
 end
 
 """" 
-    make_flip_row(sudoku::Matrix, empty::Matrix, max_iter::Int)
+    makeflip_row(sudoku::Matrix, empty::Matrix, max_iter::Int)
 
 Evaluates if the swap made by 'flip_row' function increased/decreased the total cost of the sudoku, if increase,
 doesnt make the swap and selects another swap, otherwise makes the swap. 
@@ -231,7 +231,7 @@ function search(sudoku::Matrix, max_repl::Int, max_flips::Int)
     sol, cost = sudoku_greedydesc(grid, sudoku, max_repl)
     if cost == 0
         return sol, cost
-    else res = make_flip(sol, sudoku, max_flips)
+    else res = makeflip(sol, sudoku, max_flips)
     end
     return res
 end
