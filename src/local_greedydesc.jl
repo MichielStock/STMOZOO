@@ -159,13 +159,13 @@ function flip(sudoku::Matrix, empty::Matrix)
     return res, (i1,j1), (i2,j2)
 end
 
-""" 
+"""
     flip_row(sudoku::Matrix, empty::Matrix) 
 
 Randomly selects two positions in the same row in the sudoku and makes a swap. 
 Returns the new sudoku and the indices of changed positions
 """
-function flip_row(sudoku, empty)
+function flip_row(sudoku::Matrix, empty::Matrix)
     (i1, j1, j2) = (rand(1:9), rand(1:9), rand(1:9))
     res = deepcopy(sudoku)
     while empty[i1, j1] != 0 || empty[i1, j2] != 0
@@ -204,7 +204,7 @@ end
 doesnt make the swap and selects another swap, otherwise makes the swap. 
 Repeat the process 'max_iter' times
 """
-function make_flip_row(sudoku, empty, max_iter)
+function make_flip_row(sudoku::Matrix, empty::Matrix, max_iter::Int)
     resp = deepcopy(sudoku)
     i = 0
     while i < max_iter
