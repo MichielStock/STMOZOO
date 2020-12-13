@@ -160,12 +160,12 @@ function flip(sudoku::Matrix, empty::Matrix)
 end
 
 """
-    flip_row(sudoku::Matrix, empty::Matrix) 
+    fliprow(sudoku::Matrix, empty::Matrix) 
 
 Randomly selects two positions in the same row in the sudoku and makes a swap. 
 Returns the new sudoku and the indices of changed positions
 """
-function flip_row(sudoku::Matrix, empty::Matrix)
+function fliprow(sudoku::Matrix, empty::Matrix)
     (i1, j1, j2) = (rand(1:9), rand(1:9), rand(1:9))
     res = deepcopy(sudoku)
     while empty[i1, j1] != 0 || empty[i1, j2] != 0
@@ -176,7 +176,7 @@ function flip_row(sudoku::Matrix, empty::Matrix)
 end
 
 """" 
-    make_flip(sudoku::Matrix, empty::Matrix, max_iter::Int)
+    makeflip(sudoku::Matrix, empty::Matrix, max_iter::Int)
 
 Evaluates if the swap make by 'flip' function increased/decreased the total cost of the sudoku, if increase,
 doesnt make the swap and selects another swap, otherwise makes the swap. 
@@ -198,17 +198,17 @@ function makeflip(sudoku::Matrix, empty::Matrix, max_iter::Int)
 end
 
 """" 
-    makeflip_row(sudoku::Matrix, empty::Matrix, max_iter::Int)
+    makefliprow(sudoku::Matrix, empty::Matrix, max_iter::Int)
 
 Evaluates if the swap made by 'flip_row' function increased/decreased the total cost of the sudoku, if increase,
 doesnt make the swap and selects another swap, otherwise makes the swap. 
 Repeat the process 'max_iter' times
 """
-function make_flip_row(sudoku::Matrix, empty::Matrix, max_iter::Int)
+function makefliprow(sudoku::Matrix, empty::Matrix, max_iter::Int)
     resp = deepcopy(sudoku)
     i = 0
     while i < max_iter
-        resp2, pos1, pos2 = flip_row(resp, empty)
+        resp2, pos1, pos2 = fliprow(resp, empty)
         if sudoku_cost(resp2) <= sudoku_cost(resp)
             (resp[pos1[1], pos1[2]], resp[pos2[1],pos2[2]]) = (resp[pos2[1], pos2[2]], resp[pos1[1],pos1[2]]) 
         else

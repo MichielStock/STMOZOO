@@ -9,9 +9,9 @@ Additionally, the values of the resulted sudoku can be swapped randomly with fun
 ```@docs
 sudoku_greedydesc
 flip
-flip_row
-make_flip
-make_flip_row
+fliprow
+makeflip
+makefliprow
 search
 print_sudoku
 ```
