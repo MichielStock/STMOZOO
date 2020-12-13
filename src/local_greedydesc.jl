@@ -178,7 +178,7 @@ end
 """" 
     make_flip(sudoku::Matrix, empty::Matrix, max_iter::Int)
 
-    Evaluates if the swap make by 'flip' function increased/decreased the total cost of the sudoku, if increase,
+Evaluates if the swap make by 'flip' function increased/decreased the total cost of the sudoku, if increase,
 doesnt make the swap and selects another swap, otherwise makes the swap. 
 Repeat the process 'max_iter' times
 """
@@ -200,7 +200,7 @@ end
 """" 
     make_flip_row(sudoku::Matrix, empty::Matrix, max_iter::Int)
 
-    Evaluates if the swap made by 'flip_row' function increased/decreased the total cost of the sudoku, if increase,
+Evaluates if the swap made by 'flip_row' function increased/decreased the total cost of the sudoku, if increase,
 doesnt make the swap and selects another swap, otherwise makes the swap. 
 Repeat the process 'max_iter' times
 """
