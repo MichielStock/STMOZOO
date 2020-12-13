@@ -159,10 +159,26 @@ function flip(sudoku::Matrix, empty::Matrix)
     return res, (i1,j1), (i2,j2)
 end
 
+""" 
+    flip_row(sudoku::Matrix, empty::Matrix) 
+
+Randomly selects two positions in the same row in the sudoku and makes a swap. 
+Returns the new sudoku and the indices of changed positions
+"""
+function flip_row(sudoku, empty)
+    (i1, j1, j2) = (rand(1:9), rand(1:9), rand(1:9))
+    res = deepcopy(sudoku)
+    while empty[i1, j1] != 0 || empty[i1, j2] != 0
+        (i1, j1, j2) = (rand(1:9), rand(1:9), rand(1:9))
+    end
+    (res[i1,j1], res[i1,j2]) = (res[i1,j2], res[i1,j1])
+    return res, (i1,j1), (i1,j2)
+end
+
 """" 
     make_flip(sudoku::Matrix, empty::Matrix, max_iter::Int)
 
-    Evaluates if the swap increased/decreased the total cost of the sudoku, if increase,
+    Evaluates if the swap make by 'flip' function increased/decreased the total cost of the sudoku, if increase,
 doesnt make the swap and selects another swap, otherwise makes the swap. 
 Repeat the process 'max_iter' times
 """
@@ -171,6 +187,28 @@ function make_flip(sudoku::Matrix, empty::Matrix, max_iter::Int)
     i = 0
     while i < max_iter
         resp2, pos1, pos2 = flip(resp, empty)
+        if sudoku_cost(resp2) <= sudoku_cost(resp)
+            (resp[pos1[1], pos1[2]], resp[pos2[1],pos2[2]]) = (resp[pos2[1], pos2[2]], resp[pos1[1],pos1[2]]) 
+        else
+            (resp2[pos1[1], pos1[2]], resp2[pos2[1], pos2[2]]) = (resp2[pos2[1], pos2[2]], resp2[pos1[1], pos1[2]])
+        end
+        i +=1
+    end
+    return resp
+end
+
+"""" 
+    make_flip_row(sudoku::Matrix, empty::Matrix, max_iter::Int)
+
+    Evaluates if the swap made by 'flip_row' function increased/decreased the total cost of the sudoku, if increase,
+doesnt make the swap and selects another swap, otherwise makes the swap. 
+Repeat the process 'max_iter' times
+"""
+function make_flip_row(sudoku, empty, max_iter)
+    resp = deepcopy(sudoku)
+    i = 0
+    while i < max_iter
+        resp2, pos1, pos2 = flip_row(resp, empty)
         if sudoku_cost(resp2) <= sudoku_cost(resp)
             (resp[pos1[1], pos1[2]], resp[pos2[1],pos2[2]]) = (resp[pos2[1], pos2[2]], resp[pos1[1],pos1[2]]) 
         else
