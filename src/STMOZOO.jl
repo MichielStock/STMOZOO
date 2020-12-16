@@ -5,7 +5,7 @@ module STMOZOO
 #include("example.jl")
 #export Example
 
-include("Eulerian_path.jl")
+include("EulerianPath.jl")
 export Eulerian_path
 
 end # module
