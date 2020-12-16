@@ -1,7 +1,8 @@
 # Chananchida Sang-aram
 module Raytracing
 
-using Plots, DataStructures:PriorityQueue
+using Plots
+using DataStructures:PriorityQueue
 
 export create_scene, dijkstra, reconstruct_path, get_neighbors, 
 get_circle_perimeter, get_circle_inside, get_circle,
@@ -24,7 +25,7 @@ create_scene(w::Int, h::Int) = create_scene(w, h, Set{Tuple{Int,Int}}(), 1.0)
 Return the perimeter points of a circle centered at `w_center` on the x-axis (columns) and `h_center`
 on the y-axis (rows) with radius `r` based on the midpoint circle algorithm.
 """
-function get_circle_perimeter(r::Int, h_center::Int=0, w_center::Int=0)
+function get_circle_perimeter(r::Int, h_center::Int, w_center::Int)
     points = []
     x, y = r, 0
     
@@ -69,7 +70,7 @@ end
 Return a list of points inside a circle centered at `w_center` on the x-axis (columns)
 and `h_center` on the y-axis (rows) with radius `r`.
 """
-get_circle_inside(r::Int, h_center::Int=0, w_center::Int=0) =
+get_circle_inside(r::Int, h_center::Int, w_center::Int) =
     [(x,y) for x=-r+w_center:r+w_center, y=-r+h_center:r+h_center
         if (x-w_center)^2 + (y-h_center)^2 < r^2]
 
@@ -80,7 +81,7 @@ Call `get_circle_perimeter` and `get_circle_inside` to get all points inside
 and on a circle centered at `w_center` on the x-axis (columns) and `h_center`
 on the y-axis (rows) with radius `r`.
 """
-get_circle(r::Int, h_center::Int=0, w_center::Int=0) =
+get_circle(r::Int, h_center::Int, w_center::Int) =
     union(Set{Tuple{Int,Int}}(get_circle_perimeter(r, w_center, h_center)),
     Set{Tuple{Int,Int}}(get_circle_inside(r, w_center, h_center)))
 
@@ -90,7 +91,7 @@ get_circle(r::Int, h_center::Int=0, w_center::Int=0) =
 Get adjacent neighbors (including diagonals) of an element `u` in the scene.
 Returns a list of tuples.
 """
-function get_neighbors(scene::Array{R,2}, u::Tuple{Int,Int}) where {R<:Real,T}
+function get_neighbors(scene::Array{R,2}, u::Tuple{Int,Int}) where {R<:Real}
     m, n = size(scene)
     i, j = u
     ρ = scene[i,j] # Index of refraction
@@ -112,11 +113,11 @@ function get_neighbors(scene::Array{R,2}, u::Tuple{Int,Int}) where {R<:Real,T}
 end
 
 """
-    dijkstra(scene::Array{R,2}, source::Tuple{Int,Int}, sink::Tuple{Int,Int}) where {R<:Real,T}
+    dijkstra(scene::Array{R,2}, source::Tuple{Int,Int}, sink::Tuple{Int,Int}) where {R<:Real}
 
 Dijkstra's shortest path algorithm on a 2D array. Returns the `distances` and `previous` dictionaries.
 """
-function dijkstra(scene::Array{R,2}, source::Tuple{Int,Int}, sink::Tuple{Int,Int}) where {R<:Real,T}
+function dijkstra(scene::Array{R,2}, source::Tuple{Int,Int}, sink::Tuple{Int,Int}) where {R<:Real}
     m, n = size(scene)
     
     # Initialize the tentative distances as Inf except for source
@@ -167,11 +168,11 @@ function reconstruct_path(previous::Dict{Tuple{Int,Int},Tuple{Int,Int}},
 end
 
 """
-    plot_pixels(p::Plots.Plot, scene::Array{R,2}) where {R<:Real,T}
+    plot_pixels(p::Plots.Plot, scene::Array{R,2}) where {R<:Real}
 
 Add individual pixels of the `scene` to a `Plots` object.
 """
-function plot_pixels(p::Plots.Plot, scene::Array{R,2}) where {R<:Real,T}
+function plot_pixels(p::Plots.Plot, scene::Array{R,2}) where {R<:Real}
     m,n = size(scene)
     pixels = [(i,j) for i=1:m,j=1:n]
     plot!(p, last.(pixels), first.(pixels), seriestype = :scatter,
@@ -179,11 +180,11 @@ function plot_pixels(p::Plots.Plot, scene::Array{R,2}) where {R<:Real,T}
 end
 
 """
-    plot_pixel_edges(p::Plots.Plot, scene::Array{R,2}) where {R<:Real,T}
+    plot_pixel_edges(p::Plots.Plot, scene::Array{R,2}) where {R<:Real}
 
 Add edges between adjacent pixels of the `scene` to a `Plots` object.
 """
-function plot_pixel_edges(p::Plots.Plot, scene::Array{R,2}) where {R<:Real,T}
+function plot_pixel_edges(p::Plots.Plot, scene::Array{R,2}) where {R<:Real}
     m,n = size(scene)
     # Get neighbors of each point, store original node as first element of list
     neighbors_matrix = [vcat((i,j), last.(get_neighbors(scene, (i,j)))) for i=1:m,j=1:n]
@@ -212,14 +213,14 @@ function plot_paths(p::Plots.Plot, paths::Array{Array{Tuple{Int,Int},1},1})
 end
 
 """
-    plot_circle(p::Plots.Plot, r::Int, h_center::Int=0, w_center::Int=0,
+    plot_circle(p::Plots.Plot, r::Int, h_center::Int, w_center::Int,
                 plot_pixels::Bool=true) 
 
 Plot a circle centered at `w_center` on the x-axis (columns) and `h_center`
 on the y-axis (rows) with radius `r` on a `Plots` object. If `plot_pixels=true`,
 individual pixels are plotted instead of a vector shape.
 """
-function plot_circle(p::Plots.Plot, r::Int, h_center::Int=0, w_center::Int=0,
+function plot_circle(p::Plots.Plot, r::Int, h_center::Int, w_center::Int,
                     plot_pixels::Bool=true)
     if plot_pixels
         points = get_circle_perimeter(r, w_center, h_center)
