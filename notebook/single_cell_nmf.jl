@@ -4,6 +4,15 @@
 using Markdown
 using InteractiveUtils
 
+# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
+macro bind(def, element)
+    quote
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : missing
+        el
+    end
+end
+
 # ╔═╡ a3c2226c-3f89-11eb-389e-9925792fc108
 using CSV, DataFrames, Plots, STMOZOO.SingleCellNMF
 
@@ -137,7 +146,7 @@ We can see that the sparse ATAC signal has been aggregated across similar cells,
 
 # ╔═╡ 99c2caec-3fbd-11eb-24a6-17595dac79da
 md"""
-We can also visualize the factors in the cells:
+We can also visualize the factors in the cells. Matrix H captures cell loadings in each factor. The ith row of matrix H can be used to visualize the "importance" of the ith factor in each cell. Hopefully, the factors would capture major variability, such as cell type.
 """
 
 # ╔═╡ c86c10be-3fbd-11eb-2121-435d901c1f06
@@ -148,11 +157,20 @@ function plot_factor(umap_data::Array{Float64}, H::Array{Float64},
 		stroke(0)))
 end
 
-# ╔═╡ 2c1a3a58-3fbe-11eb-325c-73d5e92f851d
-plot_factor(umap_aggregated, H, 1)
+# ╔═╡ 7422de64-3fd1-11eb-3a12-f3908e7c3eec
+md"""
+Select which factor you want to show:
 
-# ╔═╡ 5a952564-3fbe-11eb-3df6-d9d599fc5de3
-plot_factor(umap_aggregated, H, 2)
+`Factor = ` $(@bind k_to_show html"<select><option value=1>1</option><option value=2>2</option><option value=3>3</option><option value=4>4</option><option value=5>5</option></select>")
+"""
+
+# ╔═╡ 2c1a3a58-3fbe-11eb-325c-73d5e92f851d
+plot_factor(umap_aggregated, H, parse(Int64, k_to_show))
+
+# ╔═╡ ca589470-3fbf-11eb-2099-a1834113d287
+md"""
+As we can see, the inferred factors are meaningful and capture the major sources of variability in the data.
+"""
 
 # ╔═╡ cf71609a-3f88-11eb-3173-0d3274ed03af
 md"""
@@ -189,6 +207,7 @@ Martínez C, Tarazona S (2020). MOSim: Multi-Omics Simulation (MOSim). R package
 # ╠═8248cb3c-3fa6-11eb-2c78-8d3f04584cb9
 # ╠═99c2caec-3fbd-11eb-24a6-17595dac79da
 # ╠═c86c10be-3fbd-11eb-2121-435d901c1f06
+# ╠═7422de64-3fd1-11eb-3a12-f3908e7c3eec
 # ╠═2c1a3a58-3fbe-11eb-325c-73d5e92f851d
-# ╠═5a952564-3fbe-11eb-3df6-d9d599fc5de3
+# ╠═ca589470-3fbf-11eb-2099-a1834113d287
 # ╟─cf71609a-3f88-11eb-3173-0d3274ed03af
