@@ -21,9 +21,9 @@ function reduce_dims_atac(atac_df::DataFrame)
 	return reduce_dims_atac(atac_df, Z, R)
 end
 
-function perform_nmf(rna_df::DataFrame, atac_df::DataFrame, k::Int64,
+function perform_nmf(rna_df::DataFrame, atac_df::DataFrame, k::Int64;
 			dropout_prob = 0.25, n_iter = 500.0, alpha = 1.0, lambda = 100000.0,
-			gamma = 1.0)
+			gamma = 1.0, verbose = false)
 	if k <= 0
 		throw(ArgumentError("k should be positive"))
 	end
@@ -48,7 +48,8 @@ function perform_nmf(rna_df::DataFrame, atac_df::DataFrame, k::Int64,
 	obj_history = []
 	
 	for i = 1:n_iter
-		# Normalize H
+		verbose && println("Iteration $(i)")
+
 		H = H ./ sum(H, dims = 2)
 		W_rna = update_W_rna(W_rna, X_rna, H)  
 		w_atac = update_W_atac(W_atac, X_atac, H, Z, R)
