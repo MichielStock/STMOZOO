@@ -81,8 +81,8 @@
         population = init_nests(25, x1lims, x2lims)  
 
         @test cuckoo(ackley, population, x1lims, x2lims) isa Tuple 
-        @test cuckoo(ackley, population, x1lims, x2lims)[1][1] ≈ 0  atol=0.01
-        @test cuckoo(ackley, population, x1lims, x2lims)[1][2] ≈ 0  atol=0.01
+        @test cuckoo(ackley, population, x1lims, x2lims)[1][1] ≈ 0  atol=0.1
+        @test cuckoo(ackley, population, x1lims, x2lims)[1][2] ≈ 0  atol=0.1
 
         #parameters?
         #types?
