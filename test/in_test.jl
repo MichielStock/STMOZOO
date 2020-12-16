@@ -1,7 +1,7 @@
-using Main.polygon
+using STMOZOO.polygon
 using Colors
 
-T1 = Triangle(3 + 2im, 4 + 4im, 5 + 0im, RGB(0, 0, 1))
+T1 = Triangle(3 + 2im, 3 + 4im, 5 + 1im, RGB(0, 0, 1))
 
 p = plot(0:5, 0:5, label = false)
 plot!([real(T1.p1), real(T1.p2), real(T1.p3), real(T1.p1)], [imag(T1.p1), imag(T1.p2), imag(T1.p3), imag(T1.p1)], label = false)
@@ -15,7 +15,7 @@ plot!([real(T1.p1), real(T1.p2), real(T1.p3), real(T1.p1)], [imag(T1.p1), imag(T
 # testpoint[7] = 3.5 + 2.5im # yes
 # testpoint[8] = 0.9 + 2im # no
 
-n = 100
+n = 300
 
 for i in 1:n
     point = complex(rand()*5, rand()*5)

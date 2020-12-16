@@ -29,6 +29,11 @@ end
 #     return (x1, y1), (x2, y2), (x3, y3)
 # end
 
+function sameSideOfLine(point, trianglepoint, line1, line2)
+
+end
+
+
 function in(point::Complex, triangle::Triangle)
     # Checks whether the point on a canvas is part of the triangle
     tpoints = (triangle.p1, triangle.p2, triangle.p3)
