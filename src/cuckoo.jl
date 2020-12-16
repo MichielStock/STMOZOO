@@ -1,130 +1,181 @@
 module Cuckoo 
 
     # export functions relevant for the user
-    export ackley, init_nests, cuckoo, check_boundaries, get_random_nest# Nest, step 
-    # nb do not export nest, step
+    export init_nests, cuckoo , ackley
  
+    # import external packages
     using Distributions, SpecialFunctions
+ 
+    """
+        Nest{T<:Array}
     
-    
-
-    # d dimensional function 
-    function ackley(x; a=20, b=0.2, c=2π)
-        d = length(x)
-        return -a * exp(-b*sqrt(sum(x.^2)/d)) -
-            exp(sum(cos.(c .* x))/d)
-    end
-    
-
-    # For testing purposes, to be removed and put in notebook
-    #x1lims = (-10, 10)
-    #x2lims = (-10, 10)
-    #population = init_nests(6, x1lims, x2lims) 
-
-
-    mutable struct Nest{T<:Array}
-        position::T
+    Each nest holds one solution, which is characterized by an array of floats containing for each dimension of the
+    problem the value of the solution (stored in `position`) and the `fitness` of the solution evaluated in the 
+    objective function.        
+    """
+    mutable struct Nest
+        position::Array{Float64}
         fitness::Float64
     end 
 
-    function init_nests(n, lims...)    
-        return [([(u - l) * rand() + l for (l, u) in lims]) for i in 1:n] 
-    end 
-    #init_nests(4,(1,2),(4,5),(6,7)) <- 4 points in 3 dimensions , each dimension has an upper/lower bound
 
-    function levy(d)  
-        #choice of random direction from uniform distribution
+    """
+        init_nests(n::Int, lims...)
+        
+    Initializes `n` random solutions, each dimension of the solution is constrained by an upper and a lower bound 
+    contained in the `lims` parameter which automatically collects in a tuple all the couples of bounds passed for
+    each dimension.
+    """
+    function init_nests(n::Int, lims...)    
+        @assert all([length(lim)==2 for lim in lims]) "Every bound should be composed of a lower and an upper limit." 
+        @assert all([l <= u for (l, u) in lims]) "Every bound should be defined with the lower one as first element and the upper one as second"
+        @assert n>1 "The population should be composed of at least two individuals"
+
+        return [([(u - l) * rand() + l for (l, u) in lims]) for i in 1:n] 
+    end  
+
+    
+    """
+        levy_step(d::Int, lambda::AbstractFloat)
+        
+    Returns the step to add to a current solution. The parameter `d` indicates the number of dimensions of the solution.
+    The direction is randomly picked from a uniform distribution and the stepsize is drawn from a Lévy distribution with 
+    exponent`lambda`, obtained through implementing a simplified version of Mantegna algorithm. This allows to simulate 
+    a Lévy flight performed by a cuckoo to reach a new nest.
+    """
+    function levy_step(d::Int, lambda::AbstractFloat)
+        #choice of random direction
         dir = [rand() for x in 1:d]
         
-        #generation of steps obeying Lévy distribution with Mantegna algorithm
-        beta=3/2
-        sigma=(gamma(1+beta)*sin(pi*beta/2)/(gamma((1+beta)/2)*beta*2^((beta-1)/2)))^(1/beta);
+        #generation of stepsize  
+        sigma=(gamma(1+ lambda)*sin(pi* lambda/2)/(gamma((1+ lambda)/2)* lambda*2^(( lambda-1)/2)))^(1/ lambda)
 
-        u=rand(Normal(0,sigma))
-        v=rand(Normal(0,1))
-        step=u./abs(v).^(1/beta)
+        steps = Vector{Float64}()
+        for x in 1:d
+            u=rand(Normal(0,sigma))
+            v=rand(Normal(0,1))
+            push!(steps, u./abs(v).^(1/lambda))
+        end
  
-        return step.*dir
-        #return [rand(truncated(Levy(mu),l,u)) for (l, u) in lims]
+        return steps.*dir  
     end
 
-    function heaviside(x) 
-        return ifelse(x < 0, zero(x), ifelse(x > 0, one(x), oftype(x,0.5)))
-    end
 
-    function get_random_nest(n ;not::Int=0)        
+    """
+        get_random_nest_index(n::Int; not::Set{Int}=Set([0])) 
+
+    Randomly returns an index between 1 and `n` representing one of the nests. If `not` is specified, the returned index must be
+    different from any element in it.
+    """
+    function get_random_nest_index(n::Int; not::Set{Int}=Set([0])) 
+        @assert length(not)<n "Not possible to find an index not in the set"       
         new_nest = floor(Int, rand(1:n))
-        while new_nest == not 
+        while new_nest in not 
             new_nest = floor(Int, rand(1:n))
         end
         return new_nest
     end
 
-    function check_boundaries(new_pos, lims...)
-        @assert length(new_pos) == length(lims) "The number of dimensions doesn't correspond to the number of dimension boundaries"
+
+    """
+        check_limits(new_pos::Array{Float64}, lims...)
+
+    Checks if a newly generated solution is within the limits, if not the solution is returned having as values the limits 
+    that were violated.
+    """
+    function check_limits(new_pos::Array{Float64}, lims...)
+        @assert length(new_pos) == length(lims) "The number of dimensions doesn't correspond to the number of dimension limits"
         
         n = length(new_pos)
-        new_pos = [ifelse(new_pos[d] < lims[d][1], lims[d][1], ifelse(new_pos[d] > lims[d][2], lims[d][2], new_pos[d])) for d in 1:n]        
+        new_pos = [ifelse(new_pos[d] < lims[d][1], Float64(lims[d][1]), ifelse(new_pos[d] > lims[d][2], Float64(lims[d][2]), new_pos[d])) for d in 1:n]        
         return new_pos
     end
 
-    #alpha=scaling parameter (positive), s=stepsize, pa=discoverity rate of alien eggs
-    function cuckoo(f::Function, population, lims...; mu=1, max_it=1000, Pa=0.5, alpha=1, s=1)  
+
+    """ 
+        cuckoo(f::Function, population::Array, lims...; max_gen::Int=1000, Pa::Real=0.25, alpha_loc::Real=1.0, alpha_glob::Real=1.0)  
+
+    Implementation of the cuckoo search method. It takes as input the objective function to minimize, the population obtained from
+    running the function `init_nests` and a couple of lower and upper limits for each dimension of the problem. 
+    Optional parameters are: `max_gen` number of generations, `Pa` rate of cuckoo eggs which is discovered and abandoned at each 
+    generation and a positive scaling parameter `alpha` for step size. Note that in this implementation each nest can hold one
+    one egg (one solution) and each egg is laid by a cuckoo at every generation; the terms solution, position, nest, cuckoo egg 
+    and egg are therefore used interchangeably.
+    """
+    function cuckoo(f::Function, population::Array, lims...; max_gen::Int=40, Pa::AbstractFloat=0.25, alpha::AbstractFloat=1.0, lambda::AbstractFloat=1.5)      
+        
+        n = length(population) #number of nests 
+        d = length(lims) #problem dimensionality
+         
+        #create array of Nest structs
         nests = Nest.(population, f.(population))
 
-        n = length(population)  
-        d = length(lims)
-        
+        #save current best solution
         best_index = argmin([nests[i].fitness for i in 1:n]) 
         best_pos = nests[best_index].position
         best_fit = nests[best_index].fitness 
 
-        while max_it > 0
-            #get index for an existing cuckoo solution randomly
-            i = floor(Int, rand()*n + 1) 
+        #main loop for number of generations
+        while max_gen > 0
+            #from each nest a cuckoo performs a flight to a new position
+            for i in 1:n
+                #generate a new solution with Lévy flights 
+                new_pos = nests[i].position .+ alpha*levy_step(d, lambda) 
+                new_pos = check_limits(new_pos, lims...)
+                new_fit = f(new_pos) 
 
-            #generate a new solution with Lévy flights
-            new_pos = nests[i].position .+ alpha*levy(d)
-            new_pos = check_boundaries(new_pos, lims...)
-            new_fit = f(new_pos) 
+                #choose a nest randomly, different from i 
+                j = get_random_nest_index(n, not=Set(i))
+                old_fit = nests[j].fitness 
 
-            #choose a nest randomly, different from i -> SHOULD I AVOID IT IF J IS BEST?
-            j = get_random_nest(n, not=i)
-            old_fit = nests[j].fitness 
-
-            #replace j by new solution i
-            if new_fit < old_fit
-                nests[j].position = new_pos
-                nests[j].fitness = new_fit
+                #replace j by new solution i if the fitness improves
+                if new_fit < old_fit
+                    nests[j].position = new_pos
+                    nests[j].fitness = new_fit
+                end
+  
             end
-
-            #a fraction Pa of nests are abandoned
-            abandon = floor(Int, n*Pa)
+ 
+            #sort from worst to best solution
             sorted_indexes = sort([(nests[i].fitness, i) for i in 1:n], rev=true) 
 
-            #new solutions are generated with Heaviside function 
+            #a fraction Pa of worst nests (high fitness) are eligible for being discovered by the host bird (at least two nests are not eligible)
+            n_worst = floor(Int, n*Pa)
+            n_worst = ifelse(n_worst > n-2, n-2, n_worst)
+
+            bad_nests = [s[2] for s in sorted_indexes[1:n_worst]]
+ 
             i = 1
-            while i < abandon
-                j = get_random_nest(n)
-                k = get_random_nest(n, not=j)
-                nj = nests[j].position 
-                nk = nests[k].position 
-                new_pos = nests[i].position .+ alpha*s.*heaviside(Pa-rand()).*(nj-nk) #needs to be bounded
-                new_pos = check_boundaries(new_pos, lims...)
-                new_fit = f(new_pos)
-                
-                nests[i].position = new_pos
-                nests[i].fitness = new_fit
-                i += 1
+            while i < n_worst 
+                #cuckoo egg is discovered and abandoned with probability Pa
+                if rand() < Pa
+                    worst_index = bad_nests[i]
+
+                    #randomly pick two (different) good solutions
+                    j = get_random_nest_index(n, not=Set(bad_nests))
+                    k = get_random_nest_index(n, not=push!(Set(bad_nests),j))
+                    nj = nests[j].position 
+                    nk = nests[k].position 
+
+                    #new solution generated by combining the two random good solutions
+                    new_pos = nests[worst_index].position .+ alpha.*rand().*(nj .- nk)  
+                    new_pos = check_limits(new_pos, lims...)
+                    new_fit = f(new_pos)
+                    
+                    nests[worst_index].position = new_pos
+                    nests[worst_index].fitness = new_fit
+                end 
+                i +=1
             end
-                
+               
+            #save best solution
             best_index = argmin([nests[i].fitness for i in 1:n]) 
             best_pos = nests[best_index].position
             best_fit = nests[best_index].fitness 
 
-            #print(best_pos, "\t",best_fit, "\n")
+            print(best_pos, "\t",best_fit, "\n")
         
-            max_it -= 1
+            max_gen -= 1
         end 
     return best_pos, best_fit
     end
