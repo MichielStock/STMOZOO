@@ -10,7 +10,7 @@ module polygon
 using Images, Colors, Plots
 import Base: in
 
-export Triangle, drawtriangle, colordiffsum
+export Triangle, drawtriangle, colordiffsum, sameSideOfLine
 
 abstract type Shape end
 
@@ -29,9 +29,51 @@ end
 #     return (x1, y1), (x2, y2), (x3, y3)
 # end
 
-function sameSideOfLine(point, trianglepoint, line1, line2)
+function sameSideOfLine(point, trianglepoint, line)
+    p1 = line[1]
+    p2 = line[2]
+    x1, y1 = real(p1), imag(p1)
+    x2, y2 = real(p2), imag(p2)
+    
+    # making the lines equation from the given 2 points: y = ax + b
+    if x1 != x2 #not a vertical line
+        a = (y2 - y1)/(x2 - x1)
+        # intercept from y = ax + b => b = y_1 - ax_1 
+        b = y1 - a*x1
 
+        # substract y-value from line at point's x-value from points y-value 
+        linediff_point = imag(point) - (a*real(point) + b)
+        linediff_trianglepoint = imag(trianglepoint) - (a*real(trianglepoint) + b)
+        # if a point is above the line, this value will be positive, if it's beneath the line, the value will be negative
+        # if both points are on the same side of the line, both values will have the same sign
+        # if we multiply the values, a positive sign will indicate they're on the same side and a negative sign means they're on separate sides
+
+        return linediff_point*linediff_trianglepoint > 0
+
+    else #x1 == x2: A vertical line: a cannot be calculated (division by 0)
+        #equation is now x = b
+        b = x1
+        linediff_point = real(point) - b
+        linediff_trianglepoint = real(trianglepoint) - b
+        # Difference between point's x-value and line's x-value
+        # Same principle as above
+
+        return linediff_point*linediff_trianglepoint > 0
+
+    end
+    
+
+    
 end
+
+# using LinearAlgebra
+
+# function sameside((p1, p2), p3, p)
+#     x1, y1 = p1
+#     x2, y2 = p2
+#     n = [x1-x2, y2-y1] 
+#     return (n ⋅ p3) * (n ⋅ p) > 0.0
+# end
 
 
 function in(point::Complex, triangle::Triangle)
@@ -40,22 +82,10 @@ function in(point::Complex, triangle::Triangle)
     checks = Vector{Bool}(undef, 3)
 
     for i in 1:3
-        curr_points = tpoints[1:3 .!= i] # e.g. points 1 and 2 if i = 3
-        m = sum(curr_points)/2 # middle of side 1-2
+        line = tpoints[1:3 .!= i] # e.g. points 2 and 3 if i = 1
+        trianglepoint = tpoints[i] #e.g. point 1 if i = 1
         
-        trianglevec = tpoints[i] - m # vector from middle of side 1-2 (m) to remaining point of triangle, point 3
-        curr_point_vec = curr_points[2] - curr_points[1] # vector representing side 1-2 of triangle
-        # We need the line perpendicular to this side of the triangle
-        # Lets call the perpendicular vector vector 2 and the side of the triangle vector 1
-        # => [x1 y1] * [x2 y2] = 0
-        # <=> x1*x2 + y1*y2 = 0
-        # <=> y2 = -x1*x2 / y1
-
-        perp_vec = complex(real(trianglevec), -real(curr_point_vec) * real(trianglevec)/imag(curr_point_vec))
-        # This vector will always point in to the triangle since it's based on trianglevec
-        
-        pointvec = point - m # vector from middle of side 1-2 to the point you're investigating
-        checks[i] = real(perp_vec)*real(pointvec) + imag(perp_vec)*imag(pointvec) >= 0
+        checks[i] = sameSideOfLine(point, trianglepoint, line)
     end
 
     return all(checks)

@@ -7,6 +7,34 @@
 @testset "Polygon" begin
     using STMOZOO.polygon, Colors  # load YOUR module
 
+    @testset "sameSideOfLine" begin
+        line = [1 + 1im, 2 + 3im]
+        point1 = 0 + 3im #left of line
+        point2 = 1 + 4im #left
+        point3 = 2 + 3.3im #left
+        point4 = 1.5 + 1im #right
+        point5 = 4 + 3im #right
+        point6 = 4 + 4im #right
+
+        # points = [point1, point2, point3, point4, point5, point6]
+        # p = plot(-1:5, -1:5, label = false)
+        # plot!([real(line[1]), real(line[2])], [imag(line[1]), imag(line[2])], label = false)
+        # for i in 1:6
+        #     scatter!([real(points[i])], [imag(points[i])], label = "$i")
+        # end
+        # display(p)
+
+        @test sameSideOfLine(point1, point2, line) == true
+        @test sameSideOfLine(point1, point3, line) == true
+        @test sameSideOfLine(point1, point4, line) == false
+        @test sameSideOfLine(point1, point5, line) == false
+        @test sameSideOfLine(point1, point6, line) == false
+        @test sameSideOfLine(point3, point4, line) == false
+        @test sameSideOfLine(point5, point6, line) == true
+
+
+    end
+
     @testset "in triangle" begin
         T1 = Triangle(3 + 2im, 4 + 4im, 5 + 0im, RGB(0, 0, 1))
         testpoint1 = Vector{Complex}(undef, 8)
