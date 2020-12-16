@@ -1,7 +1,7 @@
 # Chananchida Sang-aram
 module Raytracing
 
-using Plots, DataStructures
+using Plots, DataStructures:PriorityQueue
 
 export create_scene, dijkstra, reconstruct_path, get_neighbors, 
 get_circle_perimeter, get_circle_inside, get_circle,
@@ -10,15 +10,8 @@ plot_pixels, plot_pixel_edges, plot_paths, plot_circle
 """
     create_scene(w::Int, h::Int, circle::Set{Tuple{Int,Int}}, circle_ior::Real)
 
-Creates an m x n matrix with a circle of differing index of refraction inside.
-
-Inputs:
-    - `w` : width of the scene (n)
-    - `h` : height of the scene (m)
-    - `circle` : set of points of a circle (from function `get_circle`)
-    - `circle_ior`: index of refraction of points in/on the circle
-Ouput:
-    - a matrix with each element corresponding to the index of refraction at that point
+Create a `h` x `w` matrix of ones. If a circle (from the function `get_circle`) is provided, those
+indices are replaced by the value `circle_ior`.
 """
 create_scene(w::Int, h::Int, circle::Set{Tuple{Int,Int}}, circle_ior::Real) =
     [(i,j) ∈ circle ? circle_ior : 1.0 for i=1:h,j=1:w]
@@ -28,15 +21,8 @@ create_scene(w::Int, h::Int) = create_scene(w, h, Set{Tuple{Int,Int}}(), 1.0)
 """
     get_circle_perimeter(r::Int, h_center::Int, w_center::Int)
 
-Returns a list of points making up the perimeter of a circle based on the
-midpoint circle algorithm.
-
-Inputs:
-    - `r` : radius of the circle
-    - `h_center` : center of the circle on the y-axis
-    - `w_center` : center of the circle on the x-axis
-Ouput:
-    - a list of points to draw the circle
+Return the perimeter points of a circle centered at `w_center` on the x-axis (columns) and `h_center`
+on the y-axis (rows) with radius `r` based on the midpoint circle algorithm.
 """
 function get_circle_perimeter(r::Int, h_center::Int=0, w_center::Int=0)
     points = []
@@ -80,14 +66,8 @@ end
 """
     get_circle_inside(r::Int, h_center::Int, w_center::Int)
 
-Returns a list of points inside a circle.
-
-Inputs:
-    - `r` : radius of the circle
-    - `h_center` : center of the circle on the y-axis
-    - `w_center` : center of the circle on the x-axis
-Ouput:
-    - a list of points inside the circle
+Return a list of points inside a circle centered at `w_center` on the x-axis (columns)
+and `h_center` on the y-axis (rows) with radius `r`.
 """
 get_circle_inside(r::Int, h_center::Int=0, w_center::Int=0) =
     [(x,y) for x=-r+w_center:r+w_center, y=-r+h_center:r+h_center
@@ -96,14 +76,9 @@ get_circle_inside(r::Int, h_center::Int=0, w_center::Int=0) =
 """
     get_circle(r::Int, h_center::Int, w_center::Int)
 
-Returns a list of all points of a circle.
-
-Inputs:
-    - `r` : radius of the circle
-    - `h_center` : center of the circle on the y-axis
-    - `w_center` : center of the circle on the x-axis
-Ouput:
-    - a set of points on the perimeter and inside of the circle
+Call `get_circle_perimeter` and `get_circle_inside` to get all points inside
+and on a circle centered at `w_center` on the x-axis (columns) and `h_center`
+on the y-axis (rows) with radius `r`.
 """
 get_circle(r::Int, h_center::Int=0, w_center::Int=0) =
     union(Set{Tuple{Int,Int}}(get_circle_perimeter(r, w_center, h_center)),
@@ -112,14 +87,8 @@ get_circle(r::Int, h_center::Int=0, w_center::Int=0) =
 """
     get_neighbors(scene::Array{Real,2}, u::Tuple{Int,Int})
 
-Get adjacent neighbors of a grid element. Returns up to 8 neighbors.
-
-Inputs:
-    - `scene` : 2-dimensional matrix representing the grid, contains the index of refraction as values
-    - `u`: the element (i,j) in which to get the neighbors
-
-Outputs:
-    - a list of neighbors (Array{Tuple{Int, Int}})
+Get adjacent neighbors (including diagonals) of an element `u` in the scene.
+Returns a list of tuples.
 """
 function get_neighbors(scene::Array{R,2}, u::Tuple{Int,Int}) where {R<:Real,T}
     m, n = size(scene)
@@ -145,16 +114,7 @@ end
 """
     dijkstra(scene::Array{R,2}, source::Tuple{Int,Int}, sink::Tuple{Int,Int}) where {R<:Real,T}
 
-Dijkstra's shortest path algorithm.
-
-Inputs:
-    - `graph` : adjacency list representing a weighted directed graph
-    - `source`
-    - `sink`
-
-Outputs:
-    - the shortest path
-    - the cost of this shortest path
+Dijkstra's shortest path algorithm on a 2D array. Returns the `distances` and `previous` dictionaries.
 """
 function dijkstra(scene::Array{R,2}, source::Tuple{Int,Int}, sink::Tuple{Int,Int}) where {R<:Real,T}
     m, n = size(scene)
@@ -188,14 +148,7 @@ end
     reconstruct_path(previous::Dict{Tuple{Int,Int},Tuple{Int,Int}},
         source::Tuple{Int,Int}, sink::Tuple{Int,Int}
 
-Reconstruct the path from the output of the Dijkstra algorithm.
-
-Inputs:
-    - `previous` : a Dict with the previous node in the path
-    - `source` : the source node
-    - `sink` : the sink node
-Ouput:
-    - the shortest path from source to sink
+Reconstruct the path from the `previous` dictionary obtained from `dijkstra`.
 """
 function reconstruct_path(previous::Dict{Tuple{Int,Int},Tuple{Int,Int}},
         source::Tuple{Int,Int}, sink::Tuple{Int,Int})
@@ -216,15 +169,8 @@ end
 """
     plot_pixels(p::Plots.Plot, scene::Array{R,2}) where {R<:Real,T}
 
-Adds individual pixels of the scene matrix to a Plots object.
-
-Inputs:
-    - `p` : a Plots object
-    - `scene`: a matrix with each element corresponding to the index of refraction at that point
-Ouput:
-    - modified plots object with pixels plotted
+Add individual pixels of the `scene` to a `Plots` object.
 """
-
 function plot_pixels(p::Plots.Plot, scene::Array{R,2}) where {R<:Real,T}
     m,n = size(scene)
     pixels = [(i,j) for i=1:m,j=1:n]
@@ -235,13 +181,7 @@ end
 """
     plot_pixel_edges(p::Plots.Plot, scene::Array{R,2}) where {R<:Real,T}
 
-Add edges between adjacent pixels to a Plots object.
-
-Inputs:
-    - `p` : a Plots object
-    - `scene`: a matrix with each element corresponding to the index of refraction at that point
-Ouput:
-    - modified plots object with edges between adjacent pixels plotted
+Add edges between adjacent pixels of the `scene` to a `Plots` object.
 """
 function plot_pixel_edges(p::Plots.Plot, scene::Array{R,2}) where {R<:Real,T}
     m,n = size(scene)
@@ -258,13 +198,8 @@ end
 """
     plot_paths(p::Plots.Plot, paths::Array{Array{Tuple{Int64,Int64},1},1}) 
 
-Plot reconstructed paths on a Plots object.
-
-Inputs:
-    - `p` : a Plots object
-    - `paths`: an array of paths, where each path is a list of tuples from source to sink
-Ouput:
-    - modified plots object with paths plotted
+Plot reconstructed paths on a `Plots` object. Each element in the `paths` array
+is an output of `reconstruct_path.`
 """
 function plot_paths(p::Plots.Plot, paths::Array{Array{Tuple{Int,Int},1},1})
     for path in paths
@@ -280,16 +215,9 @@ end
     plot_circle(p::Plots.Plot, r::Int, h_center::Int=0, w_center::Int=0,
                 plot_pixels::Bool=true) 
 
-Plot given circle on a Plots object.
-
-Inputs:
-    - `p` : a Plots object
-    - `r` : radius of the circle
-    - `h_center` : center of the circle on the y-axis
-    - `w_center` : center of the circle on the x-axis
-    - `plot_pixels` : if true, plot individual pixels instead of a clean shape
-Ouput:
-    - modified plots object with a circle plotted
+Plot a circle centered at `w_center` on the x-axis (columns) and `h_center`
+on the y-axis (rows) with radius `r` on a `Plots` object. If `plot_pixels=true`,
+individual pixels are plotted instead of a vector shape.
 """
 function plot_circle(p::Plots.Plot, r::Int, h_center::Int=0, w_center::Int=0,
                     plot_pixels::Bool=true)
