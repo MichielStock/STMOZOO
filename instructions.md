@@ -10,11 +10,11 @@ For the exam project, you pick a optimization related topic of your interest tha
 
 ## Getting started
 
-- [ ] pick a project (take a look at `project ideas.md` or discuss with Michiel)
-- [ ] [fork](https://docs.github.com/en/enterprise-server@2.20/github/getting-started-with-github/fork-a-repo) this repo
-- [ ] create a new branch with a short indicative name, e.g., `GeneticProgramming`. **Don't use spaces in the name!**
-- [ ] make a local clone of the repository 
-- [ ] open a [pull request](https://docs.github.com/en/free-pro-team@latest/desktop/contributing-and-collaborating-using-github-desktop/creating-an-issue-or-pull-request) to the **master** branch of this repo. This makes it clear you are starting the project!
+- [x] pick a project (take a look at `project ideas.md` or discuss with Michiel)
+- [x] [fork](https://docs.github.com/en/enterprise-server@2.20/github/getting-started-with-github/fork-a-repo) this repo
+- [x] create a new branch with a short indicative name, e.g., `GeneticProgramming`. **Don't use spaces in the name!**
+- [x] make a local clone of the repository 
+- [x] open a [pull request](https://docs.github.com/en/free-pro-team@latest/desktop/contributing-and-collaborating-using-github-desktop/creating-an-issue-or-pull-request) to the **master** branch of this repo. This makes it clear you are starting the project!
 
 ## Source code
 
