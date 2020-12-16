@@ -125,6 +125,8 @@ H
 function plot_umap(umap_data::Array{Float64}, plot_title::String)
 	scatter(umap_data[1,:], umap_data[2,:], color = labels_data[!, "group"], 
 		title=plot_title, legend = false, marker=(2, 2, :auto, stroke(0)))
+	xlabel!("UMAP 1")
+	ylabel!("UMAP 2")
 end
 
 # ╔═╡ 61f440d0-3fa6-11eb-0cbb-e75f3aa2570f
@@ -155,6 +157,8 @@ function plot_factor(umap_data::Array{Float64}, H::Array{Float64},
 	scatter(umap_data[1,:], umap_data[2,:], zcolor = H[factor_index, :], 
 		title="Factor $(factor_index)", legend = false, marker=(2, 2, :auto, 
 		stroke(0)))
+	xlabel!("UMAP 1")
+	ylabel!("UMAP 2")
 end
 
 # ╔═╡ 7422de64-3fd1-11eb-3a12-f3908e7c3eec
