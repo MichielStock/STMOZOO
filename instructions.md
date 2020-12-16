@@ -24,9 +24,9 @@ Developing code can be done in any text editor, though we highly recommend [Visu
 
 Importantly, all your code should be in a [module](https://docs.julialang.org/en/v1/manual/modules/), where you export only the functions useful for the user.
 
-- [ ] In the `src` folder, add a new Julia file with your source code, for example `geneticprogramming.jl`. Don't use spaces or capitals in the file name.
-- [ ] Link your file in `STMOZOO.jl` using `include(filename)`,  running the code.
-- [ ] Create a module environment in your file for all your code. Use [camel case](https://en.wikipedia.org/wiki/Camel_case) for the name.
+- [x] In the `src` folder, add a new Julia file with your source code, for example `geneticprogramming.jl`. Don't use spaces or capitals in the file name.
+- [x] Link your file in `STMOZOO.jl` using `include(filename)`,  running the code.
+- [x] Create a module environment in your file for all your code. Use [camel case](https://en.wikipedia.org/wiki/Camel_case) for the name.
   - use `module GeneticProgramming begin ... end` to wrap your code;
   - import everything you need from external packages: `using LinearAlgebra: norm`;
   - export your functions using `export`
