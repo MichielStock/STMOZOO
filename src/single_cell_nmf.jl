@@ -4,6 +4,18 @@ using Distributions, DataFrames, LinearAlgebra, UMAP, Distances
 
 export perform_nmf, reduce_dims_atac
 
+"""
+Reduce dimensions of ATAC-seq dataset using UMAP. 
+	
+	reduce_dims_atac(atac_df::DataFrame, Z::Array{Float64}, R::Array{Bool})
+	reduce_dims_atac(atac_df::DataFrame)	
+
+`Z` and `R` are used to aggregate sparse epigenetic signal and are obtained
+from `perform_nmf`. In case `Z` and `R` are not provided no aggregation is
+performed.
+
+Returns a (2 x number of cells) array.
+"""
 function reduce_dims_atac(atac_df::DataFrame, Z::Array{Float64}, R::Array{Bool})
 	X_atac, _ = df_to_array(atac_df, "locus_name")
 
@@ -21,6 +33,22 @@ function reduce_dims_atac(atac_df::DataFrame)
 	return reduce_dims_atac(atac_df, Z, R)
 end
 
+"""
+Perform non-negative matrix factorization(NMF) using both scRNA-seq and scATAC-seq data.
+The function returns cell loadings, as well as modality-specific loadings. The choice of
+`k` can reflect the prior knowledge about the major sources of variability in both scRNA-seq
+and scATAC-seq data. Alternatively, the best value of `k` can be determined empirically.
+`n_iter` determines the number of iterations. `dropout_prob` helps prevent over-aggregation of
+the data. `alpha`, `lambda`, and `gamma` are regularization parameters.
+
+	perform_nmf(rna_df::DataFrame, atac_df::DataFrame, k::Int64;
+			dropout_prob = 0.25, n_iter = 500.0, alpha = 1.0, lambda = 100000.0,
+			gamma = 1.0, verbose = false)
+
+
+Note that input DataFrames must have `gene_name` and `locus_name` columns for scRNA-seq and
+scATAC-seq data, respectively.
+"""
 function perform_nmf(rna_df::DataFrame, atac_df::DataFrame, k::Int64;
 			dropout_prob = 0.25, n_iter = 500.0, alpha = 1.0, lambda = 100000.0,
 			gamma = 1.0, verbose = false)

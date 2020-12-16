@@ -24,7 +24,7 @@ This tutorial provides an introduction to using non-negative matrix factorizatio
 
 #### What is SingleCellNMF?
 
-SingleCellNMF is a module that implements NMF as proposed by Jin and colleagues in scAI (Jin et al. 2020). Therein, single-cell RNA-seq and ATAC-seq data is jointly factorized to find an optimal representation of both transcriptomic and epigenomic features in a shared latent space. This procedure is known as *coupled NMF*. Additionally, sparse epigenomic signal is aggregated to achieve better separation between clusters when analyzing scATAC-seq data. Please see the documentation page and scAI publication for more details.
+SingleCellNMF is a module that implements NMF as proposed by Jin and colleagues in scAI (Jin et al. 2020). Therein, single-cell RNA-seq and ATAC-seq data is jointly factorized to find an optimal representation of both transcriptomic and epigenomic features in a shared latent space. The low-dimensional representation of the data can be used for downstream analysis. Additionally, sparse epigenomic signal is aggregated to achieve better separation between clusters when analyzing scATAC-seq data. Please see the documentation page and scAI publication for more details.
 """
 
 # ╔═╡ 62dbdaf2-3f89-11eb-2738-530350bccb92
@@ -80,13 +80,18 @@ Let's examine the structure of the data:
 """
 
 # ╔═╡ 1e3593e0-3f9d-11eb-1c03-8b9ead1e7172
-first(rna_data)
+first(rna_data, 5)
 
 # ╔═╡ 5039cc3c-3f9d-11eb-1b6a-0b09cfa7a4e8
-first(atac_data)
+first(atac_data, 5)
+
+# ╔═╡ b07789ac-3fd4-11eb-3157-7d56d5007b18
+md"""
+Note that the input data is very sparse.
+"""
 
 # ╔═╡ 541c7ba2-3f9d-11eb-29a4-97295a582477
-first(labels_data)
+first(labels_data, 5)
 
 # ╔═╡ 799bb0ae-3f9d-11eb-00dc-aff4153a09c1
 md"""
@@ -148,7 +153,9 @@ We can see that the sparse ATAC signal has been aggregated across similar cells,
 
 # ╔═╡ 99c2caec-3fbd-11eb-24a6-17595dac79da
 md"""
-We can also visualize the factors in the cells. Matrix H captures cell loadings in each factor. The ith row of matrix H can be used to visualize the "importance" of the ith factor in each cell. Hopefully, the factors would capture major variability, such as cell type.
+We can also visualize the factors in the cells. Matrix H captures cell loadings and the ith row of matrix H can be used to visualize the "importance" of the ith factor in each cell. Hopefully, the factors would capture major variability, such as cell type.
+
+We start by defining a helper function:
 """
 
 # ╔═╡ c86c10be-3fbd-11eb-2121-435d901c1f06
@@ -163,7 +170,7 @@ end
 
 # ╔═╡ 7422de64-3fd1-11eb-3a12-f3908e7c3eec
 md"""
-Select which factor you want to show:
+Now select which factor you want to show:
 
 `Factor = ` $(@bind k_to_show html"<select><option value=1>1</option><option value=2>2</option><option value=3>3</option><option value=4>4</option><option value=5>5</option></select>")
 """
@@ -198,6 +205,7 @@ Martínez C, Tarazona S (2020). MOSim: Multi-Omics Simulation (MOSim). R package
 # ╠═1204a49e-3f9d-11eb-06c5-f91c92257ffd
 # ╠═1e3593e0-3f9d-11eb-1c03-8b9ead1e7172
 # ╠═5039cc3c-3f9d-11eb-1b6a-0b09cfa7a4e8
+# ╠═b07789ac-3fd4-11eb-3157-7d56d5007b18
 # ╠═541c7ba2-3f9d-11eb-29a4-97295a582477
 # ╠═799bb0ae-3f9d-11eb-00dc-aff4153a09c1
 # ╠═95c93ea2-3f9d-11eb-27cd-6bb7b62ec299
