@@ -1,10 +1,11 @@
 # Chananchida Sang-aram
-
 module Raytracing
 
 using Plots, DataStructures
 
-export create_scene
+export create_scene, dijkstra, reconstruct_path, get_neighbors, 
+get_circle_perimeter, get_circle_inside, get_circle,
+plot_pixels, plot_pixel_edges, plot_paths, plot_circle
 
 """
     create_scene(w::Int, h::Int, circle::Set{Tuple{Int,Int}}, circle_ior::Real)
