@@ -1,7 +1,7 @@
 module Cuckoo 
 
     # export functions relevant for the user
-    export init_nests, cuckoo , ackley
+    export init_nests, cuckoo  
  
     # import external packages
     using Distributions, SpecialFunctions
@@ -93,21 +93,33 @@ module Cuckoo
 
 
     """ 
-        cuckoo(f::Function, population::Array, lims...; max_gen::Int=1000, Pa::Real=0.25, alpha_loc::Real=1.0, alpha_glob::Real=1.0)  
+        cuckoo(f::Function, population::Array, lims...; gen::Int=40, Pa::AbstractFloat=0.25, alpha::AbstractFloat=1.0, lambda::AbstractFloat=1.5)    
 
     Implementation of the cuckoo search method. It takes as input the objective function to minimize, the population obtained from
-    running the function `init_nests` and a couple of lower and upper limits for each dimension of the problem. 
-    Optional parameters are: `max_gen` number of generations, `Pa` rate of cuckoo eggs which is discovered and abandoned at each 
-    generation and a positive scaling parameter `alpha` for step size. Note that in this implementation each nest can hold one
-    one egg (one solution) and each egg is laid by a cuckoo at every generation; the terms solution, position, nest, cuckoo egg 
-    and egg are therefore used interchangeably.
+    running the function `init_nests` and couples (both arrays or tuples) of lower and upper limits for each dimension of the problem. 
+
+    Optional parameters are: `gen` number of generations, `Pa` rate of cuckoo eggs which gets discovered and abandoned at each 
+    generation, a positive scaling parameter `alpha` for step size and the exponentiation parameter for the Lévy distribution `lambda` 
+    
+    The algorithm runs for `gen` generations and at each iteration these two steps of optimization are carried out:
+    
+    -----------
+
+        * Starting from the egg (solution) contained in each nest a Lévy flight is simulated to create a new solution. To preserve the
+        total number of nests, this egg takes the place of a randomly chosen nest, but only if it has a better fitness. 
+        This step allows to diversify the exploration of the search space by performing a farfield optimization improved by the fact 
+        that the Lévy distribution is an heavy-tailed distribution;
+
+        * A fraction `Pa` of worst eggs (bad solution) gets discovered by the host bird and the nest is abandoned. A new nest with 
+        a new solution is generated, biased toward two good quality eggs randomly picked from the population. This step allows to 
+        perform more of a locally intensified search by exploiting the neighborhood of current solutions.
     """
-    function cuckoo(f::Function, population::Array, lims...; max_gen::Int=40, Pa::AbstractFloat=0.25, alpha::AbstractFloat=1.0, lambda::AbstractFloat=1.5)      
+    function cuckoo(f::Function, population::Array, lims...; gen::Int=40, Pa::AbstractFloat=0.25, alpha::AbstractFloat=1.0, lambda::AbstractFloat=1.5)      
         
         n = length(population) #number of nests 
         d = length(lims) #problem dimensionality
          
-        #create array of Nest structs
+        #create array of Nest structs to hold both the position and the fitness
         nests = Nest.(population, f.(population))
 
         #save current best solution
@@ -116,7 +128,7 @@ module Cuckoo
         best_fit = nests[best_index].fitness 
 
         #main loop for number of generations
-        while max_gen > 0
+        while gen > 0
             #from each nest a cuckoo performs a flight to a new position
             for i in 1:n
                 #generate a new solution with Lévy flights 
@@ -173,9 +185,9 @@ module Cuckoo
             best_pos = nests[best_index].position
             best_fit = nests[best_index].fitness 
 
-            print(best_pos, "\t",best_fit, "\n")
+            #print(best_pos, "\t",best_fit, "\n")
         
-            max_gen -= 1
+            gen -= 1
         end 
     return best_pos, best_fit
     end
