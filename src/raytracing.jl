@@ -1,41 +1,69 @@
 # Chananchida Sang-aram
 module Raytracing
 
-using Plots
-using DataStructures:PriorityQueue
+using Plots, DataStructures
 
-export create_scene, dijkstra, reconstruct_path, get_neighbors, 
-get_circle_perimeter, get_circle_inside, get_circle,
-plot_pixels, plot_pixel_edges, plot_paths, plot_circle
+export add_objects!, create_scene, dijkstra, reconstruct_path, get_neighbors, 
+draw_circle, plot_pixels, plot_pixel_edges, plot_paths, plot_circle
 
 """
-    create_scene(w::Int, h::Int, circle::Set{Tuple{Int,Int}}, circle_ior::Real)
+    add_objects!(scene::Array{R,2}, objects::Array{Set{Tuple{Int,Int}},1},
+        objects_ior::Array{R,1}) where {R<:Real}
 
-Create a `h` x `w` matrix of ones. If a circle (from the function `get_circle`) is provided, those
-indices are replaced by the value `circle_ior`.
+Add one or more objects to a pre-existing `scene`. The objects are placed
+in the scene following the order of the array.
 """
-create_scene(w::Int, h::Int, circle::Set{Tuple{Int,Int}}, circle_ior::Real) =
-    [(i,j) ∈ circle ? circle_ior : 1.0 for i=1:h,j=1:w]
+function add_objects!(scene::Array{R,2}, objects::Array{Set{Tuple{Int,Int}},1},
+        objects_ior::Array{R,1}) where {R<:Real}
+    for o=1:length(objects)
+        for (i,j) in objects[o]
+            scene[i,j] = objects_ior[o]
+        end
+    end 
+end
+
+add_objects!(scene::Array{R,2}, object::Set{Tuple{Int,Int}},
+    object_ior::Real) where {R<:Real} = add_objects!(scene, [object], [object_ior])
+
+"""
+    create_scene(w::Int, h::Int, objects::Array{Set{Tuple{Int,Int}},1},
+        objects_ior::Array{R,1}) where {R<:Real}
+
+Create a `h` x `w` matrix of ones. If one or more objects (a set of points) are provided, those
+indices are replaced by the value `objects_ior`. The objects are placed in the scene following the
+order of the array.
+"""
+function create_scene(w::Int, h::Int, objects::Array{Set{Tuple{Int,Int}},1},
+        objects_ior::Array{R,1}) where {R<:Real}
+    scene = [1.0 for i=1:h,j=1:w]
+    scene = add_objects!(scene, objects, objects_ior)
+    return scene
+end
+
+create_scene(w::Int, h::Int, object::Set{Tuple{Int,Int}}, object_ior::Real) =
+    [(i,j) ∈ object ? object_ior : 1.0 for i=1:h,j=1:w]
 
 create_scene(w::Int, h::Int) = create_scene(w, h, Set{Tuple{Int,Int}}(), 1.0)
 
 """
-    get_circle_perimeter(r::Int, h_center::Int, w_center::Int)
+    draw_circle(r::Int, w_center::Int, h_center::Int)
 
-Return the perimeter points of a circle centered at `w_center` on the x-axis (columns) and `h_center`
-on the y-axis (rows) with radius `r` based on the midpoint circle algorithm.
+Return a list of points of a circle with radius `r` centered at `w_center` on the x-axis (columns)
+and `h_center` on the y-axis (rows) with radius. The first part draws the circle
+perimeter based on the midpoint circle algorithm. Then, the points inside the inside
+are calculated using the equation of a circle.
 """
-function get_circle_perimeter(r::Int, h_center::Int, w_center::Int)
-    points = []
+function draw_circle(r::Int, w_center::Int, h_center::Int)
+    points = Set{Tuple{Int,Int}}()
     x, y = r, 0
     
     # Adding initial point
-    push!(points, (x+w_center, y+h_center)) 
+    push!(points, (x+h_center, y+w_center)) 
       
     # When radius is zero only a single point will be returned
     if r > 0
-        push!(points, (-x+w_center, h_center), (w_center, r+h_center),
-            (w_center, -r+h_center))
+        push!(points, (-x+h_center, w_center), (h_center, r+w_center),
+            (h_center, -r+w_center))
     end
     
     # Initializing the value of P  
@@ -51,39 +79,22 @@ function get_circle_perimeter(r::Int, h_center::Int, w_center::Int)
         x < y && break
           
         # Adding the reflection of the generated point in other octants
-        push!(points, (x+w_center, y+h_center), (-x+w_center, y+h_center),
-            (x+w_center, -y+h_center), (-x+w_center, -y+h_center))
+        push!(points, (x+h_center, y+w_center), (-x+h_center, y+w_center),
+            (x+h_center, -y+w_center), (-x+h_center, -y+w_center))
 
         # If the generated point is on the line x = y then  
         # the perimeter points have already been added
         if x != y
-            push!(points, (y+w_center, x+h_center), (-y+w_center, x+h_center),
-                (y+w_center, -x+h_center), (-y+w_center, -x+h_center))
+            push!(points, (y+h_center, x+w_center), (-y+h_center, x+w_center),
+                (y+h_center, -x+w_center), (-y+h_center, -x+w_center))
         end
     end
-    return points
+    
+    inside_pts = Set{Tuple{Int,Int}}((x,y) for x=-r+h_center:r+h_center, y=-r+w_center:r+w_center
+                    if (x-h_center)^2 + (y-w_center)^2 < r^2)
+                    
+    return union(points, inside_pts)
 end
-
-"""
-    get_circle_inside(r::Int, h_center::Int, w_center::Int)
-
-Return a list of points inside a circle centered at `w_center` on the x-axis (columns)
-and `h_center` on the y-axis (rows) with radius `r`.
-"""
-get_circle_inside(r::Int, h_center::Int, w_center::Int) =
-    [(x,y) for x=-r+w_center:r+w_center, y=-r+h_center:r+h_center
-        if (x-w_center)^2 + (y-h_center)^2 < r^2]
-
-"""
-    get_circle(r::Int, h_center::Int, w_center::Int)
-
-Call `get_circle_perimeter` and `get_circle_inside` to get all points inside
-and on a circle centered at `w_center` on the x-axis (columns) and `h_center`
-on the y-axis (rows) with radius `r`.
-"""
-get_circle(r::Int, h_center::Int, w_center::Int) =
-    union(Set{Tuple{Int,Int}}(get_circle_perimeter(r, w_center, h_center)),
-    Set{Tuple{Int,Int}}(get_circle_inside(r, w_center, h_center)))
 
 """
     get_neighbors(scene::Array{Real,2}, u::Tuple{Int,Int})
@@ -97,18 +108,21 @@ function get_neighbors(scene::Array{R,2}, u::Tuple{Int,Int}) where {R<:Real}
     ρ = scene[i,j] # Index of refraction
     neighbors = []
     
-    # Cardinals
-    j < n && push!(neighbors, (ρ, (i, j+1)))  # Right
-    j > 1 && push!(neighbors, (ρ, (i, j-1)))  # Left
     i < m && push!(neighbors, (ρ, (i+1, j)))  # Down
     i > 1 && push!(neighbors, (ρ, (i-1, j)))  # Up
     
-    # Diagonals
-    j < n && i < m && push!(neighbors, (ρ*sqrt(2), (i+1, j+1)))  # Bottom right
-    j < n && i > 1 && push!(neighbors, (ρ*sqrt(2), (i-1, j+1)))  # Top right
-    j > 1 && i < m && push!(neighbors, (ρ*sqrt(2), (i+1, j-1)))  # Bottom left
-    j > 1 && i > 1 && push!(neighbors, (ρ*sqrt(2), (i-1, j-1)))  # Top left
+    if j < n
+        push!(neighbors, (ρ, (i, j+1)))  # Right
+        i < m && push!(neighbors, (ρ*sqrt(2), (i+1, j+1)))  # Bottom right
+        i > 1 && push!(neighbors, (ρ*sqrt(2), (i-1, j+1)))  # Top right
+    end
     
+    if j > 1
+        push!(neighbors, (ρ, (i, j-1)))  # Left
+        i < m && push!(neighbors, (ρ*sqrt(2), (i+1, j-1)))  # Bottom left
+        i > 1 && push!(neighbors, (ρ*sqrt(2), (i-1, j-1)))  # Top left
+    end
+
     return neighbors
 end
 
@@ -176,7 +190,7 @@ function plot_pixels(p::Plots.Plot, scene::Array{R,2}) where {R<:Real}
     m,n = size(scene)
     pixels = [(i,j) for i=1:m,j=1:n]
     plot!(p, last.(pixels), first.(pixels), seriestype = :scatter,
-        markersize = 50/maximum(first.(pixels)))
+        markersize = 50/maximum(first.(pixels)), color=:red)
 end
 
 """
@@ -191,7 +205,7 @@ function plot_pixel_edges(p::Plots.Plot, scene::Array{R,2}) where {R<:Real}
     for neighbors in neighbors_matrix
         for neighbor in neighbors[2:end]
             plot!(p, [neighbors[1][2], neighbor[2]], [neighbors[1][1], neighbor[1]],
-                        label=false, color=:black)
+                        label=false, color=:black, lw=0.5, linealpha=0.3)
         end
     end
 end
@@ -207,27 +221,24 @@ function plot_paths(p::Plots.Plot, paths::Array{Array{Tuple{Int,Int},1},1})
         for (i, pixel) in enumerate(path[1:end-1])
             # Connect point i to point i+1 with a line
             plot!(p, [pixel[2], path[i+1][2]], [pixel[1], path[i+1][1]],
-                label=false, color=:red, lw=3)
+                label=false, color=:red, lw=2)
         end
     end
 end
 
 """
-    plot_circle(p::Plots.Plot, r::Int, h_center::Int, w_center::Int,
+    plot_circle(p::Plots.Plot, r::Int, w_center::Int, h_center::Int,
                 plot_pixels::Bool=true) 
 
 Plot a circle centered at `w_center` on the x-axis (columns) and `h_center`
 on the y-axis (rows) with radius `r` on a `Plots` object. If `plot_pixels=true`,
 individual pixels are plotted instead of a vector shape.
 """
-function plot_circle(p::Plots.Plot, r::Int, h_center::Int, w_center::Int,
-                    plot_pixels::Bool=true)
+function plot_circle(p::Plots.Plot, r::Int, w_center::Int, h_center::Int,
+                    plot_pixels::Bool=false)
     if plot_pixels
-        points = get_circle_perimeter(r, w_center, h_center)
-        points_inside = get_circle_inside(r, w_center, h_center)
+        points = draw_circle(r, w_center, h_center)
         plot!(p, last.(points), first.(points), seriestype = :scatter,
-            markerstrokewidth=0, color=:gray)
-        plot!(p, last.(points_inside), first.(points_inside), seriestype = :scatter,
             markerstrokewidth=0, markeralpha=0.5, color=:blue)
     else
         θ = LinRange(0, 2π, 500)
