@@ -2,6 +2,7 @@ using Documenter
 
 using STMOZOO
 using STMOZOO.Example
+using STMOZOO.Raytracing
 
 makedocs(sitename="STMO ZOO",
     format = Documenter.HTML(),
