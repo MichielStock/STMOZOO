@@ -14,9 +14,11 @@ Add one or more objects to a pre-existing `scene`. The objects are placed
 in the scene following the order of the array.
 """
 function add_objects!(scene::Array{R,2}, objects::Array{Set{Tuple{Int,Int}},1},
-        objects_ior::Array{R,1}) where {R<:Real}
+    objects_ior::Array{R,1}) where {R<:Real}
+    h, w = size(scene)
     for o=1:length(objects)
         for (i,j) in objects[o]
+            (i <= 0 || j <= 0 || i > h || j > w) && continue # Check bounds
             scene[i,j] = objects_ior[o]
         end
     end 
@@ -36,7 +38,7 @@ order of the array.
 function create_scene(w::Int, h::Int, objects::Array{Set{Tuple{Int,Int}},1},
         objects_ior::Array{R,1}) where {R<:Real}
     scene = [1.0 for i=1:h,j=1:w]
-    scene = add_objects!(scene, objects, objects_ior)
+    add_objects!(scene, objects, objects_ior)
     return scene
 end
 
