@@ -1,5 +1,5 @@
 using Test
 
 include("example.jl")
-include("Eulerian_path.jl")
+include("EulerianPath.jl")
 # add here the file with your unit tests
