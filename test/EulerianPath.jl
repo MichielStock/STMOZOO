@@ -1,0 +1,3 @@
+@testset "EulerianPath" begin
+
+end

@@ -1,0 +1,94 @@
+{
+  "main": {
+    "id": "157c4b095a6c8a5c",
+    "type": "split",
+    "children": [
+      {
+        "id": "ae431cd5b35656b8",
+        "type": "leaf",
+        "active": true,
+        "state": {
+          "type": "markdown",
+          "state": {
+            "file": "instructions.md",
+            "mode": "preview"
+          }
+        }
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "91023207bdb330d0",
+    "type": "split",
+    "children": [
+      {
+        "id": "6898e7a7d3d3b457",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "3e5d1c3a312295bc",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {}
+            }
+          },
+          {
+            "id": "9d2da4bd171b2986",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "right": {
+    "id": "677d61b05b495d9f",
+    "type": "split",
+    "children": [
+      {
+        "id": "cb2d12f09c2f5654",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "ecaae831259a9d88",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "instructions.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "lastOpenFiles": [
+    "instructions.md",
+    "project ideas.md",
+    "README.md"
+  ]
+}

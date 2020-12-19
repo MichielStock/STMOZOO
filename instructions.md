@@ -46,9 +46,9 @@ Tests can be executed using the `@test` macro. You evaluate some functions and c
 It makes sense to group several tests, which can be done using `@testset "names of tests" begin ... end`.
 
 Your assignments:
-- [ ] add a source file to the `test/` folder, the same name as your source code file.
-- [ ] add an `include(...)` with the filename in `runtests.jl`
-- [ ] in your file, add a block `@testset "MyModule" begin ... end` with a series of sensible unit tests. Use subblocks of `@testset` if needed.
+- [x] add a source file to the `test/` folder, the same name as your source code file.
+- [x] add an `include(...)` with the filename in `runtests.jl`
+- [x] in your file, add a block `@testset "MyModule" begin ... end` with a series of sensible unit tests. Use subblocks of `@testset` if needed.
 - [ ] run your tests, in the package manager, type `test`. It will run all tests and generate a report.
 
 Travis will automatically run your unit tests online when you push to the origin repo.
