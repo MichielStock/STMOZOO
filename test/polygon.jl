@@ -42,9 +42,9 @@
         testpoint1[2] = 5 + 2im # not in T1
         testpoint1[3] = 4 + 5im # not
         testpoint1[4] = 0.9 + 2im # no
-        testpoint1[5] = 3 + 2im # in T1
-        testpoint1[6] = 4 + 1im # in T1
-        testpoint1[7] = 2 + 1.5im # on edge off T1 (= in)
+        testpoint1[5] = 3 + 2im # in T1 (on edge)
+        testpoint1[6] = 4 + 3im # in T1
+        testpoint1[7] = 4.5 + 1im # in
         testpoint1[8] = 3.5 + 2.5im # yes
         
         T2 = Triangle(3 + 2im, 3 + 4im, 5 + 1im, RGB(0, 0, 1))
@@ -66,6 +66,31 @@
             @test (testpoint1[i] in T1) == true
             @test (testpoint2[i] in T2) == true
         end 
+    end
+
+    @testset "checkTriangle" begin
+        m = 232
+        n = 412
+        testtriangle = Vector{Triangle}(undef, 10)
+        testtriangle[1] = Triangle(20 + 30im, 400 + 250im, 450 + 120im, RGB(1, 0, 0)) # Good triangle
+        testtriangle[2] = Triangle(20 + 30im, 100 + 100im, 50 + 120im, RGB(1, 1, 0)) # Good triangle
+        testtriangle[3] = Triangle(300 + 450im, 100 + 100im, 60 + 400im, RGB(1, 0, 1)) # Good triangle
+        testtriangle[4] = Triangle(300 + 100im, 300 + 400im, 60 + 100im, RGB(0, 1, 0)) # Good triangle
+        testtriangle[5] = Triangle(-100 + 50im, 200 + 150im, 100 + 250im, RGB(0.5, 0, 0)) # Good triangle
+
+        testtriangle[6] = Triangle(446 + 193im, 401 + 246im, 495 + 298im, RGB(1, 0, 0)) # STUPID triangle (all points outside of canvas)
+        testtriangle[7] = Triangle(59 + 189im, 58 + 270im, 57 + 5im, RGB(1, 0, 1)) # STUPID triangle (too thin)
+        testtriangle[8] = Triangle(-59 + 189im, -20 + 63im, -200 + 69im, RGB(1, 0, 1)) # STUPID triangle (points outside of canvas, all x are wrong)
+        testtriangle[9] = Triangle(40 + 150im, 239 + 151im, 20 + 150im, RGB(1, 0, 1)) # STUPID triangle (too thin)
+        testtriangle[10] = Triangle(211 + 209im, 338 + 334im, 544 + 534im, RGB(1, 0, 0)) # STUPID triangle (very elongated)
+
+        for i in 1:5
+            @test checkTriangle(testtriangle[i], m, n) == false # These are not stupid triangles
+        end
+
+        for i in 6:10
+            @test checkTriangle(testtriangle[i], m, n) == true # These are stupid triangles
+        end
     end
 
 
