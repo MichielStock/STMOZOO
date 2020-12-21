@@ -233,7 +233,7 @@ julia> create_newsolution(solution, population, bounds_lower, bounds_upper)
 
 """
 
-function create_newsolution(solution::Vector, population, bounds_lower::Vector, bounds_upper::Vector)
+function create_newsolution(solution, population, bounds_lower::Vector, bounds_upper::Vector)
     # select random variable to change       
     randomvar1_index = rand(1:size(solution)[1], 1)
 
@@ -311,7 +311,7 @@ julia> population_new_evolved
  ```
 """
 
-function employed_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Vector, Np::Number, f::Function)
+function employed_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial, Np::Number, f::Function)
     population_new = []
     
     # create new food sources
@@ -399,7 +399,7 @@ julia> population_new_evolved
 
 """
 
-function onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Vector, Np::Number, f::Function)
+function onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial, Np::Number, f::Function)
     m = 0 # onlooker bee
     n = 1 # food source
     
@@ -504,7 +504,7 @@ julia> population_new_evolved
 
 """
 
-function Scouting(population, bounds_lower::Vector, bounds_upper::Vector, trials::Vector, fitness, objective, limit::Number, f::Function)
+function Scouting(population, bounds_lower::Vector, bounds_upper::Vector, trials, fitness, objective, limit::Number, f::Function)
         
     # check whether the trial vector exceed the limit value and importantly where
     index_exceed = trials .> limit
