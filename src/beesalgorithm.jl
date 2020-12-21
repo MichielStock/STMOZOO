@@ -598,6 +598,7 @@ function ArtificialBeeColonization(D::Number, bounds_lower::Vector, bounds_upper
     # initialize trial vector for population
     trial = zeros(Np, 1)
     best_fitness = 0
+    best_fitness_tracker = []
     optimal_solution = []
     populations = []
     for iterations in 1:T
@@ -626,9 +627,10 @@ function ArtificialBeeColonization(D::Number, bounds_lower::Vector, bounds_upper
             
         end
         populations = append!(populations, [population])
+        best_fitness_tracker = append!(best_fitness_tracker, best_fitness)
     end
 
-    return optimal_solution,populations
+    return optimal_solution,populations, best_fitness_tracker
 end
 
 function sphere(x)
@@ -642,7 +644,7 @@ function ackley(x; a=20, b=0.2, c=2π)
         exp(sum(cos.(c .* x))/d) + a + exp(1)
 end
 
-function rosenbrock(x; a=1, b=5)
+function rosenbrock(x; a=1, b=100)
     # 2 dimensions!
     return (a-x[1])^2 + b*(x[2]-x[1]^2)^2
 end
