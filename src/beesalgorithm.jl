@@ -631,28 +631,4 @@ function ArtificialBeeColonization(D::Number, bounds_lower::Vector, bounds_upper
     return optimal_solution,populations
 end
 
-function sphere(x)
-    d = length(x)
-    return sum(x.^2)
-end  
-
-function ackley(x; a=20, b=0.2, c=2π)
-    d = length(x)
-    return -a * exp(-b*sqrt(sum(x.^2)/d)) -
-        exp(sum(cos.(c .* x))/d) + a + exp(1)
-end
-
-function rosenbrock(x; a=1, b=5)
-    # 2 dimensions!
-    return (a-x[1])^2 + b*(x[2]-x[1]^2)^2
-end
-
-function branin((x1, x2); a=1, b=5.1/(4pi^2), c=5/pi, r=6, s=10, t=1/8pi)
-    # 2 dimensions!
-    return a * (x2 - b * x1^2 + c * x1 - r)^2 + s * (1 - t) * cos(x1) + s
-end
-
-function rastrigine(x; A=10)
-    return length(x) * A + sum(x.^2 .- A .* cos.(2pi .* x))
-end
 end
