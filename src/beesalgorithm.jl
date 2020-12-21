@@ -7,7 +7,7 @@ module BeesAlgorithm
 # using Zygote
 
 # export all functions that are relevant for the user
-export initialize_population, compute_objective, compute_fitness, foodsource_info_prob, create_newsolution, employed_bee_phase, onlooker_bee_phase, Scouting, 
+export initialize_population, compute_objective, compute_fitness, foodsource_info_prob, create_newsolution, employed_bee_phase, onlooker_bee_phase, Scouting, ArtificialBeeColonization
 
 """
     initialize_population(D, bounds_lower, bounds_upper, Np)
@@ -26,7 +26,6 @@ Output
 
 
 ## Examples
-
 
 ```julia-repl
 julia> bounds_lower = [-5,-5,-5,-5]
