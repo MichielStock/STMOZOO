@@ -140,7 +140,7 @@ julia> compute_fitness(objective_values)
  0.2
  0.16666666666666666
  2
- ```
+```
 
 """
 
