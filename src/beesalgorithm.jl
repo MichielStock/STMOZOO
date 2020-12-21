@@ -10,7 +10,7 @@ module BeesAlgorithm
 export initialize_population, compute_objective, compute_fitness, foodsource_info_prob, create_newsolution, employed_bee_phase, onlooker_bee_phase, Scouting, ArtificialBeeColonization
 
 """
-    initialize_population(D, bounds_lower, bounds_upper, Np)
+    initialize_population(D::Number, bounds_lower::Vector, bounds_upper::Vector, Np::Number)
 
 This function generates Np random solutions (food sources) within the domain 
 of the variables to form an initial population for the ABC algorithm.
@@ -203,7 +203,7 @@ end
 
 
 """ 
-    create_newsolution(solution, population, bounds_lower, bounds_upper)
+    create_newsolution(solution::Vector, population, bounds_lower::Vector, bounds_upper::Vector)
 
 Creates new solution by changing one variable using a partner solution.
 
@@ -266,7 +266,7 @@ end
 
 
 """ 
-    employed_bee_phase(population, bounds_lower, bounds_upper, trial, Np, f::Function)
+    employed_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Vector, Np::Number, f::Function)
 
 This functions employs the employed bee phase. 
 
@@ -353,7 +353,7 @@ function employed_bee_phase(population, bounds_lower::Vector, bounds_upper::Vect
 end
 
 """ 
-    onlooker_bee_phase(population, bounds_lower, bounds_upper, trial, Np, f::Function)
+    onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Vector, Np::Number, f::Function)  
 
 This function employs the onlooker bee phase. 
 
@@ -444,7 +444,7 @@ function onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vect
 end	
 
 """ 
-    Scouting(population, bounds_lower, bounds_upper, trials, fitness, objective, limit, f::Function)   
+    Scouting(population, bounds_lower::Vector, bounds_upper::Vector, trials::Vector, fitness, objective, limit::Number, f::Function)  
 
 This function employs the scouting phase. 
 
@@ -539,9 +539,9 @@ function Scouting(population, bounds_lower::Vector, bounds_upper::Vector, trials
 end
 
 """ 
-    ArtificialBeeColonization(D, bounds_lower, bounds_upper, S, T, limit, f::Function)
+    ArtificialBeeColonization(D::Number, bounds_lower::Vector, bounds_upper::Vector, S::Number, T::Number, limit::Number, f::Function)
 
-This functions runs the Artificial Bee Colony Algorithm with as output the optimal solution of the size D.
+This functions runs the Artificial Bee Colony Algorithm with as output the optimal solution of the size D (number of decision variables).
 
 Input
 - D: number of decision variables
