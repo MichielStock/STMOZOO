@@ -7,7 +7,7 @@ module BeesAlgorithm
 # using Zygote
 
 # export all functions that are relevant for the user
-export initialize_population, compute_objective, compute_fitness, foodsource_info_prob, create_newsolution, employed_bee_phase, onlooker_bee_phase, Scouting, ArtificialBeeColonization
+export initialize_population, compute_objective, compute_fitness, foodsource_info_prob, create_newsolution, employed_bee_phase, onlooker_bee_phase, Scouting, ArtificialBeeColonization, sphere, ackley, rosenbrock, branin, rastrigine
 
 """
     initialize_population(D::Number, bounds_lower::Vector, bounds_upper::Vector, Np::Number)
@@ -556,7 +556,8 @@ Input
 
 Output
 - optimal_solution: gives a vector of the size of D with the optimal solution  
-
+- populations: all populations that were computed during the algorithm
+-fitness_tracker: vector with all fitness values for already done iterations 
 
 ##Examples
 
@@ -567,14 +568,14 @@ julia> bounds_upper = [100,100,100,100]
 julia> D=4
 julia> limit = D * (S/2)
 julia> T = 500
-julia> optimal_solution,populations = ArtificialBeeColonization(D, bounds_lower, bounds_upper, S, T, limit, sphere)
+julia> optimal_solution,populations,best_fitness_tracker = ArtificialBeeColonization(D, bounds_lower, bounds_upper, S, T, limit, sphere)
 julia> optimal_solution
 4-element Array{Float64,1}:
   1.4537737816170574e-9
  -9.379333377223156e-9
  -2.478809612571768e-9
   3.9716934385662925e-11
-
+```
 """
 
 function ArtificialBeeColonization(D::Number, bounds_lower::Vector, bounds_upper::Vector, S::Number, T::Number, limit::Number, f::Function)
@@ -633,5 +634,139 @@ function ArtificialBeeColonization(D::Number, bounds_lower::Vector, bounds_upper
     return optimal_solution,populations, best_fitness_tracker
 end
 
+""" 
+    sphere(x)
+
+This is computing the function values according to the following formula with x as input (number or vector). 
+sum(x.^2)
+
+Input
+- x: input values for the sphere function
+
+Output
+- output: output values for the sphere function  
+
+
+##Examples
+
+```julia-repl
+julia> sphere(4)
+16
+julia> sphere([4,5])
+41
+```
+
+"""
+
+function sphere(x)
+    output = sum(x.^2)
+    return output
+end
+
+""" 
+    ackley(x; a=20, b=0.2, c=2π)
+
+This is computing the ackley function values for the input values of x. 
+        
+Input
+- x: input values for the ackley function
+        
+Output
+- output: output values for the ackley function  
+        
+
+##Examples
+
+```julia-repl
+julia> ackley(4)
+11.013420717655569
+julia> ackley([4,5])
+11.913518152857637
+```
+
+"""
+function ackley(x; a=20, b=0.2, c=2π)
+    d = length(x)
+    return -a * exp(-b*sqrt(sum(x.^2)/d)) -
+        exp(sum(cos.(c .* x))/d) + a + exp(1)
+end
+
+""" 
+    rosenbrock(x; a=1, b=5)
+
+This is computing the rosenbrock function values for the input values of x. 
+Watch out! This function always needs a 2-element Array as input
+        
+Input
+- x: input values for the rosenbrock function
+        
+Output
+- output: output values for the rosenbrock function  
+        
+
+##Examples
+
+```julia-repl
+julia> rosenbrock([4,5])
+614
+```
+
+"""
+function rosenbrock(x; a=1, b=5)
+    # 2 dimensions!
+    return (a-x[1])^2 + b*(x[2]-x[1]^2)^2
+end
+
+""" 
+    branin((x1, x2); a=1, b=5.1/(4pi^2), c=5/pi, r=6, s=10, t=1/8pi)
+
+This is computing the branin function values for the input values of x. 
+Watch out! This function always needs a 2-element Array as input
+        
+Input
+- x: input values for the branin function
+        
+Output
+- output: output values for the branin function  
+        
+
+##Examples
+
+```julia-repl
+julia> branin([4,5])
+14.608661704375713
+```
+
+"""
+function branin((x1, x2); a=1, b=5.1/(4pi^2), c=5/pi, r=6, s=10, t=1/8pi)
+    # 2 dimensions!
+    return a * (x2 - b * x1^2 + c * x1 - r)^2 + s * (1 - t) * cos(x1) + s
+end
+""" 
+    rastrigine(x; A=10)
+
+This is computing the rastrigine function values for the input values of x. 
+
+        
+Input
+- x: input values for the rastrigine function
+        
+Output
+- output: output values for the rastrigine function  
+        
+
+##Examples
+
+```julia-repl
+julia> rastrigine(4)
+16.0
+julia> rastrigine([4,5])
+41.0
+```
+
+"""
+function rastrigine(x; A=10)
+    return length(x) * A + sum(x.^2 .- A .* cos.(2pi .* x))
+end
 
 end
