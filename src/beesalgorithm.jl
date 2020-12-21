@@ -630,7 +630,6 @@ end
     sphere(x)
 
 This is computing the function values according to the following formula with x as input (number or vector). 
-sum(x.^2)
 
 Input
 - x: input values for the sphere function
