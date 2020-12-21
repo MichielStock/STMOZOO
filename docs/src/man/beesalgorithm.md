@@ -1,14 +1,11 @@
-## Example
+## BeesAlgorithm
 
-This is the example code, written by Michiel Stock. It contains some basic functionality
-to solve quadratic systems of the form:
+This documentation contains information about the functions implemented in the BeesAlgorithm module by Tristan and Kirsten.
+The Artificial Bee Colonization (ABC) algorithm is a swarm-based metaheuristic for solving numerical optimization problems.
+Apart from this algorithm and its required functions, also some test functions are provided to experiment with.
 
-``\min_{\mathbf{x}} \frac{1}{2} \mathbf{x}^\intercal P\mathbf{x} + \mathbf{q} \cdot \mathbf{x} + r\,,``
-
-It contains a function to solve this optimization problem and a helper function that generates a quadratic function from
-the parameters in their canonical form.
 
 ```@docs
-solve_quadratic_system
-quadratic_function
+initialize_population
+
 ```
