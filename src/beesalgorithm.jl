@@ -629,13 +629,13 @@ end
 """ 
     sphere(x)
 
-This is computing the function values according to the following formula with x as input (number or vector). 
+This is computing the sphere function values for the input values of x. 
 
 Input
 - x: input values for the sphere function
 
 Output
-- output: output values for the sphere function  
+- output: output values for the sphere function
 
 
 ##Examples
@@ -649,8 +649,7 @@ julia> sphere([4,5])
 
 """
 function sphere(x)
-    output = sum(x.^2)
-    return output
+    return sum(x.^2)
 end
 
 """ 
