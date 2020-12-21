@@ -125,11 +125,10 @@ The fitness is computed as 1/(1+objective_values).
 The bigger the objective values the smaller the fitness values.
 
 Input
-- objective values
+- objective values: objective values 
 
 Output
-- fitness values
-
+- fitness values: fitness values
 
 ##Examples
 
@@ -143,7 +142,6 @@ julia> compute_fitness(objective_values)
 ```
 
 """
-
 function compute_fitness(objective_values)
     fitness_values = []
     
@@ -188,7 +186,6 @@ julia> foodsource_info_prob(fitness_values)
  ```
 
 """
-
 function foodsource_info_prob(fitness_values)
     probabilities = []
     
@@ -232,7 +229,6 @@ julia> create_newsolution(solution, population, bounds_lower, bounds_upper)
  ```
 
 """
-
 function create_newsolution(solution, population, bounds_lower::Vector, bounds_upper::Vector)
     # select random variable to change       
     randomvar1_index = rand(1:size(solution)[1], 1)
@@ -310,7 +306,6 @@ julia> population_new_evolved
  [3, 2, -3, -3]
  ```
 """
-
 function employed_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial, Np::Number, f::Function)
     population_new = []
     
@@ -353,7 +348,7 @@ function employed_bee_phase(population, bounds_lower::Vector, bounds_upper::Vect
 end
 
 """ 
-    onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Vector, Np::Number, f::Function)  
+onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Vector, Np::Number, f::Function)  
 
 This function employs the onlooker bee phase. 
 
@@ -398,7 +393,6 @@ julia> population_new_evolved
  ```
 
 """
-
 function onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial, Np::Number, f::Function)
     m = 0 # onlooker bee
     n = 1 # food source
@@ -503,7 +497,6 @@ julia> population_new_evolved
  ```
 
 """
-
 function Scouting(population, bounds_lower::Vector, bounds_upper::Vector, trials, fitness, objective, limit::Number, f::Function)
         
     # check whether the trial vector exceed the limit value and importantly where
@@ -577,7 +570,6 @@ julia> optimal_solution
   3.9716934385662925e-11
 ```
 """
-
 function ArtificialBeeColonization(D::Number, bounds_lower::Vector, bounds_upper::Vector, S::Number, T::Number, limit::Number, f::Function)
     @assert D > 0 "D must be positive" 
     @assert bounds_lower <= bounds_upper "Lower bounds must be smaller than upper bounds"
@@ -657,7 +649,6 @@ julia> sphere([4,5])
 ```
 
 """
-
 function sphere(x)
     output = sum(x.^2)
     return output
