@@ -1,13 +1,15 @@
 using Documenter
 
 using STMOZOO
+using STMOZOO.Example
 using STMOZOO.BeesAlgorithm
 
 makedocs(sitename="STMO ZOO",
     format = Documenter.HTML(),
-    modules=[BeesAlgorithm], # add your module
+    modules=[Example,BeesAlgorithm], # add your module
     pages=Any[
-        "Example"=> "man/beesalgorithm.md",  # add the page to your documentation
+        "Example" => "man/example.md",
+        "BeesAlgorithm" => "man/beesalgorithm.md",  # add the page to your documentation
     ])
 
 #=

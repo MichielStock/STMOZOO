@@ -7,5 +7,17 @@ Apart from this algorithm and its required functions, also some test functions a
 
 ```@docs
 initialize_population
-
+compute_objective
+compute_fitness
+foodsource_info_prob
+create_newsolution
+employed_bee_phase
+onlooker_bee_phase
+Scouting
+ArtificialBeeColonization
+sphere
+ackley
+rosenbrock
+branin
+rastrigine
 ```
