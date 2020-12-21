@@ -45,7 +45,7 @@ julia> initialize_population(D, bounds_lower, bounds_upper, n)
  [-3, 2, 3, -3]
 ```
 """
-function initialize_population(D, bounds_lower, bounds_upper, Np)
+function initialize_population(D::Number, bounds_lower::Vector, bounds_upper::Vector, Np::Number)
     population = []   
     for i in 1:Np
         food_source = collect(rand(bounds_lower[i]:bounds_upper[i]) for i in 1:D)
@@ -57,7 +57,7 @@ end
 """
     compute_objective(input, f::Function)
 
-Calculates the objective values for a certain function 
+Calculates the objective values for a certain function. 
 
 Input
 - input: input values
@@ -120,8 +120,8 @@ end
 """ 
     compute_fitness(objective_values)
 
-This functions calculates the fitness of a population.
-The fitness is calculated as 1/(1+objective_values).
+This functions computes the fitness of a population.
+The fitness is computed as 1/(1+objective_values).
 The bigger the objective values the smaller the fitness values.
 
 Input
@@ -167,7 +167,7 @@ end
     foodsource_info_prob(fitness_values)
 
 This function measures the food source information in probabilities. 
-The food source information is calculated as following: 0.9*(fitness_value/maximum(fitness_values)) + 0.1
+The food source information is calculated as following: 0.9*(fitness_value/maximum(fitness_values)) + 0.1. 
 
 Input
 - fitness_values: fitness values
@@ -233,7 +233,7 @@ julia> create_newsolution(solution, population, bounds_lower, bounds_upper)
 
 """
 
-function create_newsolution(solution, population, bounds_lower, bounds_upper)
+function create_newsolution(solution::Vector, population, bounds_lower::Vector, bounds_upper::Vector)
     # select random variable to change       
     randomvar1_index = rand(1:size(solution)[1], 1)
 
@@ -311,7 +311,7 @@ julia> population_new_evolved
  ```
 """
 
-function employed_bee_phase(population, bounds_lower, bounds_upper, trial, Np, f::Function)
+function employed_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Vector, Np::Number, f::Function)
     population_new = []
     
     # create new food sources
@@ -399,7 +399,7 @@ julia> population_new_evolved
 
 """
 
-function onlooker_bee_phase(population, bounds_lower, bounds_upper, trial, Np, f::Function)
+function onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Vector, Np::Number, f::Function)
     m = 0 # onlooker bee
     n = 1 # food source
     
@@ -504,7 +504,7 @@ julia> population_new_evolved
 
 """
 
-function Scouting(population, bounds_lower, bounds_upper, trials, fitness, objective, limit, f::Function)
+function Scouting(population, bounds_lower::Vector, bounds_upper::Vector, trials::Vector, fitness, objective, limit::Number, f::Function)
         
     # check whether the trial vector exceed the limit value and importantly where
     index_exceed = trials .> limit
@@ -577,7 +577,7 @@ julia> optimal_solution
 
 """
 
-function ArtificialBeeColonization(D, bounds_lower, bounds_upper, S, T, limit, f::Function)
+function ArtificialBeeColonization(D::Number, bounds_lower::Vector, bounds_upper::Vector, S::Number, T::Number, limit::Number, f::Function)
     @assert D > 0 # only a positive number of decision variables
     @assert bounds_lower <= bounds_upper # lower bounds must be lower than the upperbounds or equal
     @assert length(bounds_lower) == length(bounds_upper) == D  # length of the boundries must be equal to the number of decision variables
