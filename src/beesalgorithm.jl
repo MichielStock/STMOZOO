@@ -7,7 +7,7 @@ module BeesAlgorithm
 # using Zygote
 
 # export all functions that are relevant for the user
-export initialize_population, compute_objective,
+export initialize_population, compute_objective, compute_fitness, foodsource_info_prob, create_newsolution, employed_bee_phase, onlooker_bee_phase, Scouting, 
 
 """
     initialize_population(D, bounds_lower, bounds_upper, Np)
@@ -538,5 +538,99 @@ function Scouting(population, bounds_lower, bounds_upper, trials, fitness, objec
     end
     return population, fitness, objective, trials  
 end
+
+""" 
+    ArtificialBeeColonization(D, bounds_lower, bounds_upper, S, T, limit, f::Function)
+
+This functions runs the Artificial Bee Colony Algorithm with as output the optimal solution of the size D.
+
+Input
+- D: number of decision variables
+- bounds_lower: lower bounds of variables 
+- bounds_upper: upper bounds of variables 
+- S: swarm size
+- T: number of cycles
+- limit: decides when scouts phase needs to be executed (often taken Np*D)
+- f: the function that you want to use for computing objective values
+
+
+
+Output
+- optimal_solution: gives a vector of the size of D with the optimal solution  
+
+
+##Examples
+
+```julia-repl
+julia> S = 24
+julia> bounds_lower = [-100,-100,-100,-100]
+julia> bounds_upper = [100,100,100,100]
+julia> D=4
+julia> limit = D * (S/2)
+julia> T = 500
+julia> optimal_solution,populations = ArtificialBeeColonization(D, bounds_lower, bounds_upper, S, T, limit, sphere)
+julia> optimal_solution
+4-element Array{Float64,1}:
+  1.4537737816170574e-9
+ -9.379333377223156e-9
+ -2.478809612571768e-9
+  3.9716934385662925e-11
+
+"""
+
+function ArtificialBeeColonization(D, bounds_lower, bounds_upper, S, T, limit, f::Function)
+    @assert D > 0 # only a positive number of decision variables
+    @assert bounds_lower <= bounds_upper # lower bounds must be lower than the upperbounds or equal
+    @assert length(bounds_lower) == length(bounds_upper) == D  # length of the boundries must be equal to the number of decision variables
+    @assert iseven(S) # swarm size must be an even number
+    @assert S > 0 # swarm size can not be negative
+    @assert T > 0 # number of cylces must be postive
+ 
+    
+    Np = Int8(S/2) # number of food sources/employed bees/onlooker bees
+    
+    # initialize population
+    population = initialize_population(D, bounds_lower, bounds_upper, Np)
+    
+    # calculate objective values and fitness values for population
+    objective_values = compute_objective(population, f)
+    fitness_values = compute_fitness(objective_values)
+    
+    # initialize trial vector for population
+    trial = zeros(Np, 1)
+    best_fitness = 0
+    optimal_solution = []
+    populations = []
+    for iterations in 1:T
+    
+        ## EMPLOYED BEE PHASE
+        population, fitness_values, objective_values, trial = employed_bee_phase(population, bounds_lower, bounds_upper, trial, Np, f::Function)
+    
+    
+        ## ONLOOKER BEE PHASE
+        population, fitness_values, objective_values, trial = onlooker_bee_phase(population, bounds_lower, bounds_upper, trial, Np, f::Function)  
+       
+        ## SCOUTING PHASE
+        if maximum(fitness_values) > best_fitness
+            best_fitness = maximum(fitness_values)
+            ind = argmax(fitness_values)
+            optimal_solution = population[ind]
+            
+        end
+            
+        population, fitness_values, objective_values, trial = Scouting(population, bounds_lower, bounds_upper, trial, fitness_values, objective_values, limit, f::Function)
+        
+        if maximum(fitness_values) > best_fitness
+            best_fitness = maximum(fitness_values)
+            ind = argmax(fitness_values)
+            optimal_solution = population[ind]
+            
+        end
+        populations = append!(populations, [population])
+    end
+
+    return optimal_solution,populations
+end
+
 
 end
