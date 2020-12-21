@@ -578,12 +578,12 @@ julia> optimal_solution
 """
 
 function ArtificialBeeColonization(D::Number, bounds_lower::Vector, bounds_upper::Vector, S::Number, T::Number, limit::Number, f::Function)
-    @assert D > 0 # only a positive number of decision variables
-    @assert bounds_lower <= bounds_upper # lower bounds must be lower than the upperbounds or equal
-    @assert length(bounds_lower) == length(bounds_upper) == D  # length of the boundries must be equal to the number of decision variables
-    @assert iseven(S) # swarm size must be an even number
-    @assert S > 0 # swarm size can not be negative
-    @assert T > 0 # number of cylces must be postive
+    @assert D > 0 "D must be positive" 
+    @assert bounds_lower <= bounds_upper "Lower bounds must be smaller than upper bounds"
+    @assert length(bounds_lower) == length(bounds_upper) == D  "The length of the lower bounds must be equal to the length of the upper bounds and the number of decision variables"
+    @assert iseven(S) "The particle swarm size must be an even number"
+    @assert S > 0 "Particle swarm size must be a positive number"
+    @assert T > 0 "Number of cycles must be positive"
  
     
     Np = Int8(S/2) # number of food sources/employed bees/onlooker bees
