@@ -578,8 +578,7 @@ function ArtificialBeeColonization(D::Number, bounds_lower::Vector, bounds_upper
     @assert iseven(S) "The particle swarm size must be an even number"
     @assert S > 0 "Particle swarm size must be a positive number"
     @assert T > 0 "Number of cycles must be positive"
- 
-    
+
     Np = Int8(S/2) # number of food sources/employed bees/onlooker bees
     
     # initialize population
@@ -704,6 +703,7 @@ julia> rosenbrock([4,5])
 """
 function rosenbrock(x; a=1, b=5)
     # 2 dimensions!
+    @assert length(x) == 2 "The rosenbrock function is restricted to two decision variables"
     return (a-x[1])^2 + b*(x[2]-x[1]^2)^2
 end
 
@@ -728,9 +728,10 @@ julia> branin([4,5])
 ```
 
 """
-function branin((x1, x2); a=1, b=5.1/(4pi^2), c=5/pi, r=6, s=10, t=1/8pi)
+function branin(x; a=1, b=5.1/(4pi^2), c=5/pi, r=6, s=10, t=1/8pi)
     # 2 dimensions!
-    return a * (x2 - b * x1^2 + c * x1 - r)^2 + s * (1 - t) * cos(x1) + s
+    @assert length(x) == 2 "The branin function is restricted to two decision variables"
+    return a * (x[2] - b * x[1]^2 + c * x[1] - r)^2 + s * (1 - t) * cos(x[1]) + s
 end
 """ 
     rastrigine(x; A=10)
