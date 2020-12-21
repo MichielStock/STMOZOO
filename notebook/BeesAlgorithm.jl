@@ -19,6 +19,12 @@ using STMOZOO.BeesAlgorithm
 # ╔═╡ 0ca837e0-42ef-11eb-17fa-9335cb9a3997
 using InteractiveUtils, Plots, PlutoUI
 
+# ╔═╡ 86ed8530-43a5-11eb-2296-1b9ab2c87ea7
+using Pkg; Pkg.add("Optim")
+
+# ╔═╡ 91d40c30-43a5-11eb-1805-ef48b11c3a40
+using Optim
+
 # ╔═╡ eee523f0-436e-11eb-2e92-d59ed5c533e6
 md" 	
 # The Artificial Bee Algorithm - Tutorial
@@ -68,6 +74,8 @@ If the value of the trial counter for a certain solution is greater than fixed l
 md" 	
 ## Visualization of the ABC algorithm
 #### Evolution of bee swarms during optimization 
+
+Type *add https://github.com/kirstvh/STMOZOO.git* in the package manager of the Julia terminal to download the Bees Algorithm module.
 "
 
 # ╔═╡ 7a2fdff0-4373-11eb-337a-8fb102ef7b78
@@ -251,13 +259,6 @@ end
 
 # ╔═╡ 71321ef0-42eb-11eb-0635-b1ce95226c75
 begin
-	# if functie == sphere
-	# 	zlims=(-2,10000)
-	# end
-	# if functie == ackley
-	# 	zlims=(-50,100)
-	# end
-	
 	plot(x2,y2,f,st=:surface,
 		label="Objective function",
 		# camera=(-30,30),
@@ -295,6 +296,19 @@ Below, for each iteration the **fitness** value for the best food source so far 
 plot(best_fitness_tracker,label="Fitness",	xlabel="iteration", 
 		ylabel="fitness", title="Evolution of fitness", legend=:outerbottom)
 
+# ╔═╡ 749ca5a0-43a5-11eb-3ad6-453463f18aed
+
+
+# ╔═╡ 4ef00630-43a5-11eb-2095-b3cde3592af9
+md"#### Comparison with optim package
+Below, the performance of the ABC algorithm is compared with the optim package."
+
+# ╔═╡ df912bb0-43a5-11eb-3bd2-ebc17c073757
+starting_solution = float(initialize_population(D, bounds_lower, bounds_upper, S/2)[1])
+
+# ╔═╡ 8f7a52d0-43a7-11eb-3351-eb765609e56e
+@time begin optimize(f_optimize, starting_solution) end
+
 # ╔═╡ 0c78a8b0-4379-11eb-20dc-3dd46dc183d3
 md" ## References
 Karaboga, D., & Basturk, B. (2007). A powerful and efficient algorithm for numerical function optimization: artificial bee colony (ABC) algorithm. Journal of global optimization, 39(3), 459-471.
@@ -315,7 +329,7 @@ Karaboga, D., & Basturk, B. (2007). A powerful and efficient algorithm for numer
 # ╟─085c34e0-4374-11eb-1ba7-7fb1af1d38a4
 # ╠═0388b3ce-4374-11eb-03f4-9b4c74bd5ff0
 # ╟─6bd962e0-439c-11eb-0ce9-c348bd45b225
-# ╟─350644d0-4375-11eb-2b68-8fb8f4bd7c2a
+# ╠═350644d0-4375-11eb-2b68-8fb8f4bd7c2a
 # ╟─c7c64720-437f-11eb-15a2-477ab2fe0792
 # ╟─caa5b6d0-4373-11eb-0cdd-1961e6698727
 # ╠═f347e610-42a3-11eb-2116-ef50f1246cf3
@@ -328,4 +342,10 @@ Karaboga, D., & Basturk, B. (2007). A powerful and efficient algorithm for numer
 # ╟─65bf09be-4377-11eb-2415-3b8be310a065
 # ╟─4219c780-4381-11eb-2289-316eb02b282f
 # ╠═076d2e10-4381-11eb-3e12-6f9d9abe7f9a
-# ╠═0c78a8b0-4379-11eb-20dc-3dd46dc183d3
+# ╟─749ca5a0-43a5-11eb-3ad6-453463f18aed
+# ╟─4ef00630-43a5-11eb-2095-b3cde3592af9
+# ╠═86ed8530-43a5-11eb-2296-1b9ab2c87ea7
+# ╠═91d40c30-43a5-11eb-1805-ef48b11c3a40
+# ╠═df912bb0-43a5-11eb-3bd2-ebc17c073757
+# ╠═8f7a52d0-43a7-11eb-3351-eb765609e56e
+# ╟─0c78a8b0-4379-11eb-20dc-3dd46dc183d3
