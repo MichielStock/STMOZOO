@@ -483,7 +483,7 @@ julia> population
  [5, -1, -1, -1]
 julia> objective= compute_objective(population,sphere)
 julia> fitness = compute_fitness(objective)
-julia> population_new_evolved, fitness_new_evolved, objective_new_evolved, trial  = Scouting(population, bounds_lower, bounds_upper, trial, fitness, objective, 0, sphere)
+julia> population_new_evolved, fitness_new_evolved, objective_new_evolved, trial  = Scouting(population, bounds_lower, bounds_upper, D, trial, fitness, objective, 0, sphere)
 julia> population_new_evolved
 9-element Array{Any,1}:
  [3, 1, 2, -2]
