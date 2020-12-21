@@ -445,7 +445,8 @@ This function employs the scouting phase.
 Input
 - population : population of solutions 
 - bounds_lower: lower bounds of variables 
-- bounds_upper: upper bounds of variables 
+- bounds_upper: upper bounds of variables
+- D: number of decision variables 
 - trials: current trial of solutions
 - fitness: fitness values
 - objective: objective values
@@ -497,7 +498,7 @@ julia> population_new_evolved
  ```
 
 """
-function Scouting(population, bounds_lower::Vector, bounds_upper::Vector, trials, fitness, objective, limit::Number, f::Function)
+function Scouting(population, bounds_lower::Vector, bounds_upper::Vector,D ,trials, fitness, objective, limit::Number, f::Function)
         
     # check whether the trial vector exceed the limit value and importantly where
     index_exceed = trials .> limit
@@ -611,7 +612,7 @@ function ArtificialBeeColonization(D::Number, bounds_lower::Vector, bounds_upper
             
         end
             
-        population, fitness_values, objective_values, trial = Scouting(population, bounds_lower, bounds_upper, trial, fitness_values, objective_values, limit, f::Function)
+        population, fitness_values, objective_values, trial = Scouting(population, bounds_lower, bounds_upper, D,trial, fitness_values, objective_values, limit, f::Function)
         
         if maximum(fitness_values) > best_fitness
             best_fitness = maximum(fitness_values)
@@ -629,14 +630,13 @@ end
 """ 
     sphere(x)
 
-This is computing the function values according to the following formula with x as input (number or vector). 
-sum(x.^2)
+This is computing the sphere function values for the input values of x. 
 
 Input
 - x: input values for the sphere function
 
 Output
-- output: output values for the sphere function  
+- output: output values for the sphere function
 
 
 ##Examples
@@ -650,8 +650,7 @@ julia> sphere([4,5])
 
 """
 function sphere(x)
-    output = sum(x.^2)
-    return output
+    return sum(x.^2)
 end
 
 """ 
