@@ -6,18 +6,18 @@ Apart from this algorithm and its required functions, also some test functions a
 
 
 ```@docs
-initialize_population
-compute_objective
-compute_fitness
-foodsource_info_prob
-create_newsolution
-employed_bee_phase
-onlooker_bee_phase
-Scouting
-ArtificialBeeColonization
-sphere
-ackley
-rosenbrock
-branin
-rastrigine
+Main.BeesAlgorithm.initialize_population
+Main.BeesAlgorithm.compute_objective
+Main.BeesAlgorithm.compute_fitness
+Main.BeesAlgorithm.foodsource_info_prob
+Main.BeesAlgorithm.create_newsolution
+Main.BeesAlgorithm.employed_bee_phase
+Main.BeesAlgorithm.onlooker_bee_phase
+Main.BeesAlgorithm.Scouting
+Main.BeesAlgorithm.ArtificialBeeColonization
+Main.BeesAlgorithm.sphere
+Main.BeesAlgorithm.ackley
+Main.BeesAlgorithm.rosenbrock
+Main.BeesAlgorithm.branin
+Main.BeesAlgorithm.rastrigine
 ```

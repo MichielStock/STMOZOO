@@ -99,7 +99,6 @@ julia> compute_objective(population, sphere)
   9.538956614465143
  10.722262633846869
 ```
-
 """
 function compute_objective(input, f::Function)
     if length(input)==1
@@ -140,7 +139,6 @@ julia> compute_fitness(objective_values)
  0.16666666666666666
  2
 ```
-
 """
 function compute_fitness(objective_values)
     fitness_values = []
@@ -184,7 +182,6 @@ julia> foodsource_info_prob(fitness_values)
  0.24400000000000002
  1.0
  ```
-
 """
 function foodsource_info_prob(fitness_values)
     probabilities = []
@@ -227,7 +224,6 @@ julia> create_newsolution(solution, population, bounds_lower, bounds_upper)
 1×4 Array{Float64,2}:
  -1.49748  0.0  1.0  4.0
  ```
-
 """
 function create_newsolution(solution, population, bounds_lower::Vector, bounds_upper::Vector)
     # select random variable to change       
@@ -391,7 +387,6 @@ julia> population_new_evolved
  [-2, 2, 5, -1]
  [-5, -3, -4, 5]
  ```
-
 """
 function onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial, Np::Number, f::Function)
     m = 0 # onlooker bee
@@ -496,7 +491,6 @@ julia> population_new_evolved
  [-2, -5, -4, -5]
  [5, -1, -1, -1]
  ```
-
 """
 function Scouting(population, bounds_lower::Vector, bounds_upper::Vector,D ,trials, fitness, objective, limit::Number, f::Function)
         
@@ -646,7 +640,6 @@ julia> sphere(4)
 julia> sphere([4,5])
 41
 ```
-
 """
 function sphere(x)
     return sum(x.^2)
@@ -672,7 +665,6 @@ julia> ackley(4)
 julia> ackley([4,5])
 11.913518152857637
 ```
-
 """
 function ackley(x; a=20, b=0.2, c=2π)
     d = length(x)
@@ -699,7 +691,6 @@ Output
 julia> rosenbrock([4,5])
 614
 ```
-
 """
 function rosenbrock(x; a=1, b=5)
     # 2 dimensions!
@@ -726,7 +717,6 @@ Output
 julia> branin([4,5])
 14.608661704375713
 ```
-
 """
 function branin(x; a=1, b=5.1/(4pi^2), c=5/pi, r=6, s=10, t=1/8pi)
     # 2 dimensions!
@@ -738,13 +728,13 @@ end
 
 This is computing the rastrigine function values for the input values of x. 
 
-        
 Input
-- x: input values for the rastrigine function
-        
+
+- x: input values for the rastrigine function   
+
 Output
+
 - output: output values for the rastrigine function  
-        
 
 ##Examples
 
@@ -754,7 +744,6 @@ julia> rastrigine(4)
 julia> rastrigine([4,5])
 41.0
 ```
-
 """
 function rastrigine(x; A=10)
     return length(x) * A + sum(x.^2 .- A .* cos.(2pi .* x))
