@@ -41,11 +41,15 @@
    
     @testset "Get random nest index" begin
         n=3
-        @test get_random_nest_index(n) isa Int
 
+        #type test
+        @test get_random_nest_index(n) isa Int
         @test get_random_nest_index(n, not=Set([1])) isa Int
+
+        #correctness
         @test get_random_nest_index(n, not=Set([1,2])) == 3
 
+        #assertion errors
         @test_throws AssertionError get_random_nest_index(n, not=Set([1,2,3]))
 
     end
@@ -58,35 +62,43 @@
         pos_out_all=[-11.0,11.0]
         xlims=((-10,10),(-10,10))
 
-
+        #type test
         @test check_limits(pos_in, xlims[1], xlims[2]) isa Array{Float64}
 
+        #correctness
         @test check_limits(pos_in, xlims[1], xlims[2]) == pos_in
         @test check_limits(pos_out_down_one, xlims[1], xlims[2]) == [-10.0,5.0]
         @test check_limits(pos_out_up_two, xlims[1], xlims[2]) == [5.0,10.0]
         @test check_limits(pos_out_all, xlims[1], xlims[2]) == [-10.0,10.0]
 
+        #assertion errors
         @test_throws AssertionError check_limits(wrong_pos, xlims[1], xlims[2])
     end
 
     @testset "Cuckoo method" begin
+        #create function for testing the method
         function ackley(x; a=20, b=0.2, c=2π) 
             d = length(x)     
         return -a * exp(-b*sqrt(sum(x.^2)/d)) - exp(sum(cos.(c .* x))/d) 
         end 
 
+        #initialize population
         x1lims = (-10, 10) 
-        x2lims = (-10, 10) 
-      
+        x2lims = (-10, 10)       
         population = init_nests(25, x1lims, x2lims)  
 
+        #type test
         @test cuckoo!(ackley, population, x1lims, x2lims) isa Tuple 
+
+        #correctness
         @test cuckoo!(ackley, population, x1lims, x2lims)[1][1] ≈ 0  atol=0.1
         @test cuckoo!(ackley, population, x1lims, x2lims)[1][2] ≈ 0  atol=0.1
 
-        #parameters?
-        #types?
-
+        #assertion errors
+        @test_throws AssertionError cuckoo!(ackley, population, x1lims, x2lims, lambda=4.0) 
+        @test_throws AssertionError cuckoo!(ackley, population, x1lims, x2lims, alpha=-1.0) 
+        @test_throws AssertionError cuckoo!(ackley, population, x1lims, x2lims, Pa=4.0) 
+ 
     end
 
 end

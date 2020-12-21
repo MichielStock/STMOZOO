@@ -14,7 +14,7 @@ md"""# Cuckoo search method"""
 md"""This notebook is meant to show the functioning of the cuckoo search method to solve a minimization problem.
 The method is based on the parasitism of some cuckoo species that exploit the resources of other bird species by laying eggs into their nests.
 
-To abstract this concept to a computational method the phenomenon is simplified by three main rules:
+To abstract this concept to a computational method the phenomenon is simplified into three main rules:
 * Each cuckoo lays one egg at a time into a randomly chosen nest
 * The nests containing the best eggs are carried over (elitist selection) to the next generation
 * The number of available host nests is fixed and at each generation the alien cuckoo egg can be discovered with a certain probability. At this point the nest is abandoned and a new nest is generated.
@@ -45,16 +45,16 @@ md"""This is the landscape of the function: """
 pobj = heatmap(-10:0.01:10, -10:0.01:10, ackley)
 
 # ╔═╡ 2607802e-4088-11eb-1a50-bbabd9cbeaee
-md"""We start by initializing a random population of 15 nests. We specify a lower and an upper limit for each dimension of the problem we want to solve."""
-
-# ╔═╡ 0ae52afc-4089-11eb-0d6f-bd95eef05f1d
-md"""This is the initial position of the nests in the landscape:"""
+md"""We specify a lower and an upper limit for each dimension of the problem we want to solve."""
 
 # ╔═╡ 6cfa745e-408c-11eb-345c-29b71c84aa90
 begin
 	x1lims = (-10, 10)
 	x2lims = (-10, 10)
 end
+
+# ╔═╡ dcd0b396-43af-11eb-1aa9-d3baa5317357
+md"""In the nest block, it is shown how to run the method and how starting from the initial population (green points) the method reaches the final solution (white point):"""
 
 # ╔═╡ 279492ea-405b-11eb-2af7-13ec8531169a
 begin	 
@@ -73,6 +73,9 @@ end
 
 # ╔═╡ fd697cfc-405b-11eb-38c8-91a9ad3ba93a
 
+
+# ╔═╡ 34675522-43b0-11eb-3d00-c12b0cf63781
+md"""In this animation we see how the solutions are updated at every round of optimization to reach the optimal solution, denoted with the white dot at each iteration."""
 
 # ╔═╡ 6ee961fc-407b-11eb-104c-4fd3d89b4790
 begin
@@ -94,17 +97,12 @@ begin
 gif(anim, fps = 1)
 end
 
-# ╔═╡ 7bd1e760-4083-11eb-0aeb-3be9872e2779
-begin
-rastrigine(x; A=10) = length(x) * A + sum(x.^2 .+ A .* cos.(2pi .* x))
-rastrigine(x...; A=10) = rastrigine(x; A=A)
-end
-
-# ╔═╡ 8d93188e-4083-11eb-0058-2d9434ab0234
-rast = heatmap(-20:0.01:20, -20:0.01:20, rastrigine)
-
-# ╔═╡ cf84a048-4083-11eb-1b0d-919c731ce6d3
-#cuckoo!(rastrigine, updt_population, (-20,20), (-20,20)) 
+# ╔═╡ 857d667e-43b0-11eb-02c4-f97345274afd
+md"""The method allows to specify some parameters, namely:
+* `gen`: number of generation. If the number is too small you may get a suboptimal solution due to the fact that the problem may have not yet converged to its optimal solution. 
+* `alpha`: stepsize when transitioning to a new solution. By default it is 1 but can be varied depending on the dimension of the landscape.
+* `Pa`: rate of cuckoo's egg discovery. This parameter allows to balance how much the method relies on exploring known solutions (default `Pa`=0.25) as compared to inspecting new solution through Lévy flights
+* `lambda`: exponent of the Lévy distribution used to sample stepsizes."""
 
 # ╔═╡ Cell order:
 # ╟─d03cf1ca-4059-11eb-3339-99c511eba3c8
@@ -116,11 +114,10 @@ rast = heatmap(-20:0.01:20, -20:0.01:20, rastrigine)
 # ╟─e9040d5a-4087-11eb-03a6-51e941460bc5
 # ╠═e0165c02-405a-11eb-296f-05e437e873e3
 # ╟─2607802e-4088-11eb-1a50-bbabd9cbeaee
-# ╟─0ae52afc-4089-11eb-0d6f-bd95eef05f1d
 # ╠═6cfa745e-408c-11eb-345c-29b71c84aa90
+# ╟─dcd0b396-43af-11eb-1aa9-d3baa5317357
 # ╠═279492ea-405b-11eb-2af7-13ec8531169a
 # ╟─fd697cfc-405b-11eb-38c8-91a9ad3ba93a
+# ╟─34675522-43b0-11eb-3d00-c12b0cf63781
 # ╠═6ee961fc-407b-11eb-104c-4fd3d89b4790
-# ╠═7bd1e760-4083-11eb-0aeb-3be9872e2779
-# ╠═8d93188e-4083-11eb-0058-2d9434ab0234
-# ╠═cf84a048-4083-11eb-1b0d-919c731ce6d3
+# ╟─857d667e-43b0-11eb-02c4-f97345274afd
