@@ -57,11 +57,11 @@ Travis will automatically run your unit tests online when you push to the origin
 
 Hopefully, you have already documented all your functions, so this should be a breeze! We will generate a documentation page using the [Documenter](https://juliadocs.github.io/Documenter.jl/stable/man/guide/) package. Since we will not put the project in the package manager, we won't host the documentation, though we generate HTML pages anyway.
 
-- [ ] add markdown file to `docs/src/man` with the documentation.
-- [ ] write a general introduction explaining the rationale of your code.
-- [ ] use a `@docs` block to add your functions with their documentation.
-- [ ] update the `make.jl` file, linking your page.
-- [ ] run the `make.jl` file to generate the documentation, an HTML file, not added to the repo.
+- [x] add markdown file to `docs/src/man` with the documentation.
+- [x] write a general introduction explaining the rationale of your code.
+- [x] use a `@docs` block to add your functions with their documentation.
+- [x] update the `make.jl` file, linking your page.
+- [x] run the `make.jl` file to generate the documentation, an HTML file, not added to the repo.
 
 ## Notebook
 

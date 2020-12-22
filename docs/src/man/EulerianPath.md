@@ -18,7 +18,10 @@ Euler proves that the necessary condition for the existance of Eulerian circuits
 - Equivalently, a directed graph has an Eulerian cycle if and only if it can be decomposed into edge-disjoint directed cycles and all of its vertices with nonzero degree belong to a single strongly connected component.
 
 ## Explanation of the code
-
+```@docs
+create_adj_list
+has_eulerian_cycle
+```
 
 
 ## References:
