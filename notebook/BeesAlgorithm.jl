@@ -19,9 +19,6 @@ using STMOZOO.BeesAlgorithm
 # ╔═╡ 0ca837e0-42ef-11eb-17fa-9335cb9a3997
 using InteractiveUtils, Plots, PlutoUI
 
-# ╔═╡ 86ed8530-43a5-11eb-2296-1b9ab2c87ea7
-using Pkg; Pkg.add("Optim")
-
 # ╔═╡ 91d40c30-43a5-11eb-1805-ef48b11c3a40
 using Optim
 
@@ -303,11 +300,26 @@ plot(best_fitness_tracker,label="Fitness",	xlabel="iteration",
 md"#### Comparison with optim package
 Below, the performance of the ABC algorithm is compared with the optim package."
 
+# ╔═╡ 36031b80-445e-11eb-0c7c-bd597ac43967
+f_optimize
+
 # ╔═╡ df912bb0-43a5-11eb-3bd2-ebc17c073757
 starting_solution = float(initialize_population(D, bounds_lower, bounds_upper, S/2)[1])
 
+# ╔═╡ 895b6c20-444e-11eb-0db8-3f6ce2a9db0b
+md" ###### Compare with Broyden–Fletcher–Goldfarb–Shanno (BFGS) algorithm"
+
 # ╔═╡ 8f7a52d0-43a7-11eb-3351-eb765609e56e
-@time begin optimize(f_optimize, starting_solution) end
+result = optimize(f_optimize, starting_solution, BFGS())
+
+# ╔═╡ 4417cb40-444e-11eb-1f2d-933616b91239
+Optim.minimizer(result)
+
+# ╔═╡ 6dea1f90-444e-11eb-1501-f99dfba633ea
+Optim.minimum(result)
+
+# ╔═╡ 198e69b0-4453-11eb-304f-43a227316038
+md" We see that the BFGS algorithm of the Optim package gets stuck in a local mininimum when trying to minimize the Ackley function, while the ABC algorithm succeeds in finding the global minimizer. For the other test functions, both the BFGS algorithm and the ABC algorithm succeed in finding the global minimum (or one of the global minima for the Branin test function). In general, the amount of iterations needed to reach the global minimum is larger for the ABC algorithm compared to the BFGS algorithm. "
 
 # ╔═╡ 0c78a8b0-4379-11eb-20dc-3dd46dc183d3
 md" ## References
@@ -324,7 +336,7 @@ Karaboga, D., & Basturk, B. (2007). A powerful and efficient algorithm for numer
 # ╟─02f4f820-439c-11eb-0c6e-7509dfc20674
 # ╠═0ca837e0-42ef-11eb-17fa-9335cb9a3997
 # ╟─a9462a5e-4373-11eb-3b48-39a2596229a9
-# ╟─27f302ee-42ea-11eb-2d9e-49dffc0d983d
+# ╠═27f302ee-42ea-11eb-2d9e-49dffc0d983d
 # ╠═3235a8d2-42ea-11eb-1fe1-6d91eca83dad
 # ╟─085c34e0-4374-11eb-1ba7-7fb1af1d38a4
 # ╠═0388b3ce-4374-11eb-03f4-9b4c74bd5ff0
@@ -338,14 +350,18 @@ Karaboga, D., & Basturk, B. (2007). A powerful and efficient algorithm for numer
 # ╟─b81d7f30-42a5-11eb-27ce-f1cc849ffdc5
 # ╟─9e2b4e60-42ee-11eb-0d7f-c1faa8426796
 # ╟─581a22f0-42af-11eb-1d59-df5f1efa5732
-# ╠═71321ef0-42eb-11eb-0635-b1ce95226c75
+# ╟─71321ef0-42eb-11eb-0635-b1ce95226c75
 # ╟─65bf09be-4377-11eb-2415-3b8be310a065
 # ╟─4219c780-4381-11eb-2289-316eb02b282f
 # ╠═076d2e10-4381-11eb-3e12-6f9d9abe7f9a
 # ╟─749ca5a0-43a5-11eb-3ad6-453463f18aed
 # ╟─4ef00630-43a5-11eb-2095-b3cde3592af9
-# ╠═86ed8530-43a5-11eb-2296-1b9ab2c87ea7
 # ╠═91d40c30-43a5-11eb-1805-ef48b11c3a40
+# ╠═36031b80-445e-11eb-0c7c-bd597ac43967
 # ╠═df912bb0-43a5-11eb-3bd2-ebc17c073757
+# ╟─895b6c20-444e-11eb-0db8-3f6ce2a9db0b
 # ╠═8f7a52d0-43a7-11eb-3351-eb765609e56e
+# ╠═4417cb40-444e-11eb-1f2d-933616b91239
+# ╠═6dea1f90-444e-11eb-1501-f99dfba633ea
+# ╟─198e69b0-4453-11eb-304f-43a227316038
 # ╟─0c78a8b0-4379-11eb-20dc-3dd46dc183d3
