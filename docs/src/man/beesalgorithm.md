@@ -37,6 +37,7 @@ The solution with highest fitness so far is kept apart in memory during the enti
 **3) Scout bee phase**\
 If the value of the trial counter for a certain solution is greater than fixed limit, then a solution can enter the scout phase. The latter food source is then considered as exhausted and will therefore be abandoned by the bees. After discarding the exhausted solution, a new random solution is generated and the trial counter of this solution is reset to zero.
 
+### Functions 
 
 ```@docs
 Main.BeesAlgorithm.initialize_population
