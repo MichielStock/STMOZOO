@@ -19,21 +19,38 @@ export cap,res_network,augmenting_path,bfs
 
 """
     cap(nw::Array{Int,2})
-Returns the capacities of a graph `nw`implemented a an adjacency matrix.
+
+Get the capacities or values of the edges of a graph `nw` implemented as an 
+adjacency matrix.
 """
 function cap(nw::Array{Int,2})
     caps = []
-    for i in nw
-        i != 0 && push!(caps, i)
+    for c in nw
+        c != 0 && push!(caps, c)
     end
     return caps
 end
-# cap(nw::Array{Tuple{Int,Int,Int},1}) = [nw[i][1] for i in 1:length(nw)]
+
+"""
+    cap(nw::Array{Int,2}, nw_sol::Array{Int,2})
+
+Get the flows in a network `nw_sol` resulting from the solution of a maximum flow problem
+`nw`. Both networks are implemented as adjacency matrices.
+"""
+function cap(nw::Array{Int,2}, nw_sol::Array{Int,2})
+    caps = []
+    for (i,c) in enumerate(nw)
+        c != 0 && push!(caps, nw_sol[i])
+    end
+    return caps
+end
 
 """
     res_network(mf_oc::Array{Int,2},mf_cur::Array{Int,2})
-Calculates the residual network of a network from a maximum flow problem `mf_oc` 
-and a network containing the current flow `mf_cur` implemented as an adjacency matrix.
+
+Calculate the residual network of a network from a maximum flow problem `mf_oc` 
+and a network containing the current flow `mf_cur`, both implemented as 
+adjacency matrices.
 """
 function res_network(mf_oc::Array{Int,2}, mf_cur::Array{Int,2})
     r = size(mf_oc, 1) # rows
@@ -52,9 +69,12 @@ end
 
 """ 
     bfs(nw::Array{Int,2}, s::Int, t::Int)
-Searches an existing path in the network `nw` with a breadth-first-search from source `s` to sink `t`.
-Returns `true` if path exists and an array with the predecessor vertices to make backtracking possible. 
-Returns `false` if path does not exist.
+
+Search an existing path in the network `nw` with a breadth-first-search from 
+source `s` to sink `t`.
+Return `true` if path exists and an array with the predecessor vertices 
+to make backtracking possible. 
+Return `false` if path does not exist.
 """
     function bfs(nw::Array{Int,2}, s::Int, t::Int)
     n = size(nw, 1) # number of vertices
@@ -82,7 +102,10 @@ end
 
 """
     augmenting_path(mf::Array{Int,2}, s::Int, t::Int)
-Execute Ford-Fulkerson algorithm with breadth-first-search to find the maximum flow of a network from a maximum flow problem `mf` from source `s` to sink `t`.
+
+Execute Ford-Fulkerson method with breadth-first-search (Edmonds-Karp algorithm)
+to find the maximum flow of a network from a maximum flow problem `mf` 
+from source `s` to sink `t`.
 """
 function augmenting_path(mf::Array{Int,2}, s::Int, t::Int)
     n = size(mf, 1) # number of vertices
@@ -95,7 +118,7 @@ function augmenting_path(mf::Array{Int,2}, s::Int, t::Int)
     res_flow = res_network(mf, cur_flow)
 
     # search for a path
-    @show path, pred = bfs(res_flow, s, t)
+    path, pred = bfs(res_flow, s, t)
 
     # if there is a path, add lowest capacity (=limiting) from the path to the flow.
     while path
@@ -104,19 +127,94 @@ function augmenting_path(mf::Array{Int,2}, s::Int, t::Int)
         while P[end] != s
             push!(P, pred[P[end]])
         end
-        @show P
+        P
     # calculate lowest capacity
-     @show   Δ = minimum([res_flow[x,y] for (y, x) in zip(P[1:end - 1], P[2:end]) ])
+    Δ = minimum([res_flow[x,y] for (y, x) in zip(P[1:end - 1], P[2:end]) ])
     # add this flow to current flow
         [cur_flow[x,y] += Δ for (y, x) in zip(P[1:end - 1], P[2:end])]
         res_flow = res_network(mf, cur_flow) # update residual network
     # search for a path
-    @show path, pred = bfs(res_flow, s, t)
+    path, pred = bfs(res_flow, s, t)
     end
     max_flow = sum(cur_flow[:,t])
     return cur_flow, max_flow
 end
 
+"""
+    augmenting_path(mf::Array{Int,2}, s::Array{Int,1}, t::Int)
+
+Execute Ford-Fulkerson method with breadth-first-search (Edmonds-Karp algorithm)
+to find the maximum flow of a network from a maximum flow problem `mf` 
+from multiple sources `s` to sink `t`.
+"""
+function augmenting_path(mf::Array{Int,2}, s::Array{Int,1}, t::Int)
+    n = size(mf, 1) # number of vertices
+    @assert n == size(mf, 2) "Adjacency matrix has to be square."
+    @assert all(mf .>= 0) "There are negative flow capacities, which is not possible." 
+
+    # multiple sources
+    # add node in front of the graph with huge capacities to each source node
+    mf_sourcerow = zeros(Int, n + 1)
+    mf_sourcerow[s .+ 1] .= 10^20 
+    mf_sourcecol = zeros(Int, n)
+    mf_new = [mf_sourcerow';mf_sourcecol mf] # new network
+
+    cur_flow, max_flow = augmenting_path(mf_new, 1, t + 1)
+    cur_flow_new = cur_flow[2:end,2:end] # delete extra row and column from source
+    return cur_flow_new, max_flow
+end
+
+"""
+    augmenting_path(mf::Array{Int,2}, s::Int, t::Array{Int,1})
+
+Execute Ford-Fulkerson method with breadth-first-search (Edmonds-Karp algorithm)
+to find the maximum flow of a network from a maximum flow problem `mf` 
+from source `s` to multiple sinks `t`.
+"""
+function augmenting_path(mf::Array{Int,2}, s::Int, t::Array{Int,1})
+    n = size(mf, 1) # number of vertices
+    @assert n == size(mf, 2) "Adjacency matrix has to be square."
+    @assert all(mf .>= 0) "There are negative flow capacities, which is not possible." 
+
+    # multiple sinks
+    # add node at the back of the graph receiving huge capacities from each sink node
+    mf_sinkcol = zeros(Int, n + 1)
+    mf_sinkcol[t] .= 10^20 
+    mf_sinkrow = zeros(Int, n)
+    mf_new = [[mf; mf_sinkrow'] mf_sinkcol] # extended network
+
+    cur_flow, max_flow = augmenting_path(mf_new, s, n + 1)
+    cur_flow_new = cur_flow[1:end - 1,1:end - 1] # delete extra row and column from sink
+    return cur_flow, max_flow
+end
+
+"""
+    augmenting_path(mf::Array{Int,2}, s::Array{Int,1}, t::Array{Int,1})
+
+Execute Ford-Fulkerson method with breadth-first-search (Edmonds-Karp algorithm)
+to find the maximum flow of a network from a maximum flow problem `mf` 
+with multiple sources `s` and multiple sinks `t`.
+"""
+function augmenting_path(mf::Array{Int,2}, s::Array{Int,1}, t::Array{Int,1})
+    n = size(mf, 1) # number of vertices
+    @assert n == size(mf, 2) "Adjacency matrix has to be square."
+    @assert all(mf .>= 0) "There are negative flow capacities, which is not possible." 
+
+    # multiple sources and sinks
+    # add node in front of the graph with huge capacities to each source node
+    mf_sourcerow = zeros(Int, n + 2)
+    mf_sourcerow[s .+ 1] .= 10^20 
+    mf_sourcecol = zeros(Int, n + 1)
+    # add node at the back of the graph receiving huge capacities from each sink node
+    mf_sinkcol = zeros(Int, n + 1)
+    mf_sinkcol[t] .= 10^20 
+    mf_sinkrow = zeros(Int, n)
+    mf_new = [mf_sourcerow'; [mf_sourcecol [mf; mf_sinkrow'] mf_sinkcol]] # extended network
+
+    cur_flow, max_flow = augmenting_path(mf_new, 1, n + 2)
+    cur_flow_new = cur_flow[2:end - 1,2:end - 1] # delete extra rows and columns from source and sink
+    return cur_flow_new, max_flow
+end
 # """
 #     e_list_to_adj_mat(elist::Array{Tuple{Int,Int,Int},1})
 # Converts an edge list to an adjacency matrix
@@ -124,7 +222,4 @@ end
 # function e_list_to_adj_mat(elist::Array{Tuple{Int,Int,Int},1})
 
 # end
-
-# # test graph as edge list
-# test_edge = [(8, 0, 1),(2, 0, 2),(4, 1, 3),(1, 2, 3)];
 end
