@@ -348,7 +348,7 @@ function employed_bee_phase(population, bounds_lower::Vector, bounds_upper::Vect
 end
 
 """ 
-onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Vector, Np::Number, f::Function)  
+    onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Vector, Np::Number, f::Function)  
 
 This function employs the onlooker bee phase. 
 In the onlooker bee phase, a food source is selected for further exploitation with a probability related to the nectar amount, i.e. a solution with higher fitness will have a higher probability to be chosen. 
