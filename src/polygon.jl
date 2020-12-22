@@ -19,7 +19,7 @@ A type Shape so the code can be made to work with e.g. rectangles as well. For n
 abstract type Shape end
 
 """
-
+I define triangles with the coordinates of their 3 points and a color.
 """
 struct Triangle <: Shape
     p1::ComplexF64 
@@ -242,6 +242,11 @@ function drawtriangle(triangle::Triangle, img0::Array)
     return img
 end
 
+"""
+    drawImage(triangles::Array, canvas::Array)
+
+Goes over all triangles in an array and draws them all on the same canvas, then returns the resulting image. 
+"""
 function drawImage(triangles::Array, canvas::Array)
     polyimg = canvas
     for triangle in triangles
@@ -251,6 +256,11 @@ function drawImage(triangles::Array, canvas::Array)
     return polyimg
 end
 
+"""
+    colordiffsum(img1::Array, img2::Array, m::Int, n::Int)
+
+The objective function of the algorithm. Computes the difference between 2 images by computing the difference in color for every pixel.
+"""
 function colordiffsum(img1::Array, img2::Array, m::Int, n::Int)
     colsum = 0
     for i in 1:m
@@ -261,8 +271,17 @@ function colordiffsum(img1::Array, img2::Array, m::Int, n::Int)
     return colsum
 end
 
+"""
+    checkTriangle(triangle::Triangle, m::Int, n::Int)
+
+Checks a triangle to make sure we don't have any STUPID triangles.
+A stupid triangle is a triangle which:
+- Is much too thin (a couple of pixels thin)
+- Has all 3 points outside of the canvas
+- Is very stretched out
+These stupid triangles can all mess with the drawtriangle function, which is why checking for them and weeding them out is essential.
+"""
 function checkTriangle(triangle::Triangle, m::Int, n::Int)
-    # Make sure we don't have any STUPID triangles (triangles that are (mostly) outside of the canvas, rather than just a part which is ok, or too thin triangles)
     # Rather than using the actual boundaries of the canvas, we use a slightly smaller rectangle for safety reasons
     s = 10 # safety factor
     x1, x2, x3 = real(triangle.p1), real(triangle.p2), real(triangle.p3)
@@ -297,6 +316,11 @@ function checkTriangle(triangle::Triangle, m::Int, n::Int)
     return isStupid
 end
 
+"""
+    generateTriangle(m::Int, n::Int)
+
+Generates a random triangle.
+"""
 function generateTriangle(m::Int, n::Int)
     # Generate a triangle which is not stupid
     badTriangle = true
@@ -315,6 +339,12 @@ function generateTriangle(m::Int, n::Int)
     return t
 end
 
+"""
+    generatePopulation(pop_size::Int, number_triangles::Int, img::Array)
+
+Generates an entire population. The individuals of this population consist of a bunch of triangles, the image made from drawing all these triangles,
+and the score of the individual, which is too say how much it differs from the target image, img.
+"""
 function generatePopulation(pop_size::Int, number_triangles::Int, img::Array)
 
     m = length(img[:, 1])
@@ -358,6 +388,11 @@ end
 #     return population
 # end
 
+"""
+    triangleTournament(population0::Array, pop_size::Int)
+
+Picks 2 random triangles from a population and returns the one with the best (lowest) score.
+"""
 function triangleTournament(population0::Array, pop_size::Int)
     contestant1 = population0[Int(ceil(rand()*pop_size))] #Choose a random image from the population, using ceil because 0 is not a valid index
     contestant2 = population0[Int(ceil(rand()*pop_size))]
@@ -369,8 +404,13 @@ function triangleTournament(population0::Array, pop_size::Int)
     return winner
 end
 
+"""
+    mutateTriangle(triangle::Triangle, m::Int, n::Int)
+
+Mutates a single triangle, changing the position of its points and its color, while making sure this doesn't result in a stupid triangle.
+"""
 function mutateTriangle(triangle::Triangle, m::Int, n::Int)
-    # Mutates a single triangle, but make sure you don't mutate it into a STUPID triangle >:(
+
     badTriangle = true
     p1 = nothing
     p2 = nothing
@@ -390,6 +430,12 @@ function mutateTriangle(triangle::Triangle, m::Int, n::Int)
 
 end
 
+"""
+    mutatePopulation(population::Array, pop_size::Int, mutation_freq::Number, number_triangles::Int, m::Int, n::Int, img::Array, canvas::Array)
+
+Mutates an entire population, going over every individual and randomly mutating some of their triangles.
+Then, the new image based on the updated list of triangles is created and the score for this image is computed for every individual.
+"""
 function mutatePopulation(population::Array, pop_size::Int, mutation_freq::Number, number_triangles::Int, m::Int, n::Int, img::Array, canvas::Array)
     # Mutates an entire population of polygon images, by chance
     for i in 1:pop_size
@@ -406,6 +452,8 @@ function mutatePopulation(population::Array, pop_size::Int, mutation_freq::Numbe
 end
 
 """
+    makeChildPopulation(population1::Array, population2::Array, number_triangles::Int)
+
 Takes 2 images and returns a new image with triangles randomly taken from both images.
 The order of the triangles is retained since it plays a big role in how the image looks.
 Only the triangle list is updated, not yet the matrix or score.
@@ -427,18 +475,51 @@ function makeChildPopulation(population1::Array, population2::Array, number_tria
 
 end
 
+
+"""
+    horizontalGeneTransfer(triangles1::Array, triangles2::Array, number_triangles::Int, HGT_rate::Number)
+
+Alternative function for the makeChildPopulation, in which HGT is simulated rather than good old having kids.
+Current version of the algorithm is using makeChildPopulation instead, this was implemented to test out how much the results would differ.
+Not enough tests were done for a definitive conclusion.
+"""
+function horizontalGeneTransfer(triangles1::Array, triangles2::Array, number_triangles::Int, HGT_rate::Number)
+    triangles1_new = deepcopy(triangles1)
+    triangles2_new = deepcopy(triangles2)
+
+    for i in 1:number_triangles
+        if HGT_rate > rand()
+            triangles1_new[i] = triangles2[i]
+            triangles2_new[i] = triangles1[i]
+        end
+    end
+
+    return triangles1_new, triangles2_new
+
+end
+
+"""
+    triangleEvolution(image::String, number_triangles::Int, generations::Int)
+
+The actual algorithm. An evolutionary algorithm with the goal to approximate a given image as well as possible with a bunch of triangles.
+Parameters still require optimizing.
+There is a variant making use of the HGT and a varian making use of children.
+Currently the variant with children is performing better, but the HGT's parameters may be unoptimal.
+"""
 function triangleEvolution(image::String, number_triangles::Int, generations::Int)
     
-    generations = 30
-    number_triangles = 20
+    generations = 100
+    number_triangles = 25
     pop_size = 100
-    elitism_freq = 0.10 # best x percent of population always gets through to the next generation
+    elitism_freq = 0.1 # best x percent of population always gets through to the next generation
     elite_size = Int(round(pop_size*elitism_freq))
-    newblood_freq = 0.15 # A certain percent of the population gets replaced by newcomes every generation, to keep our gene pool fresh and sparkly
+    newblood_freq = 0.05 # A certain percent of the population gets replaced by newcomes every generation, to keep our gene pool fresh and sparkly
     newblood_size = Int(round(pop_size*newblood_freq))
+    HGT_freq = 0.5
+    HGT_rate = 0.2
 
-    mutation_freq = 0.1
-    image = "src/figures/Bubberduck.jpg"
+    mutation_freq = 0.10
+    image = "src/figures/TotoroTester4.jpeg"
 
     img = load(image)
     m = length(img[:, 1])
@@ -461,13 +542,26 @@ function triangleEvolution(image::String, number_triangles::Int, generations::In
 
         population = vcat(population, generatePopulation(newblood_size, number_triangles, img)) # The last part of the population is made up of new people! Yay!
 
-        # The winners gain the ultimate price! Children!
+        # The winners gain the ultimate price! Children! (For the child-version)
         couples = [shuffle(1:pop_size) shuffle(1:pop_size)] # Two list of all the people of the population in a random order make up our array of couples
+
         for i in 1:pop_size
             parent1 = population[couples[i, 1]]
             parent2 = population[couples[i, 2]] 
             childPopulation[i] = makeChildPopulation(parent1, parent2, number_triangles)
         end
+
+        # Or, for the HGT version, switched genes! Marvelous!
+        
+        # childPopulation = population
+        # for i in 1:pop_size
+        #     if HGT_freq > rand()
+        #         partner1 = childPopulation[couples[i, 1]]
+        #         partner2 = childPopulation[couples[i, 2]]
+
+        #         childPopulation[couples[i, 1]][1], childPopulation[couples[i, 2]][1] = horizontalGeneTransfer!(partner1[1], partner2[1], number_triangles, HGT_rate)
+        #     end
+        # end
 
         # The children gain random mutations because of UV-radiation. Damn you Ozon hole!
         childPopulation = mutatePopulation(childPopulation, pop_size, mutation_freq, number_triangles, m, n, img, canvas)
