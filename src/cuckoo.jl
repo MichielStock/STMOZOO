@@ -9,9 +9,9 @@ module Cuckoo
     """
         Nest{T<:Array}
     
-    Each nest holds one solution, which is characterized by an array of floats containing for each dimension of the
-    problem the value of the solution (stored in `position`) and the `fitness` of the solution evaluated in the 
-    objective function.        
+    Each nest holds one solution, which is characterized by:
+    * `position`: an array of floats containing for each dimension of the problem the value of the solution
+    * `fitness` of the solution evaluated in the objective function.        
     """
     mutable struct Nest
         position::Array{Float64}
@@ -25,6 +25,23 @@ module Cuckoo
     Initializes `n` random solutions, each dimension of the solution is constrained by an upper and a lower bound 
     contained in the `lims` parameter which automatically collects in a tuple all the couples of bounds passed for
     each dimension.
+ 
+    ## Example:
+
+    Create a population of 5 where each point has 2 dimensions, respectively having as lower and upper bound  
+    x1lims = (-10, 10) and x2lims=(-15, 15)
+
+    ```  
+    julia> x1lims=(-10,10)
+    julia> x2lims=(-15,15)
+    julia> p=init_nests(5,x1lims,x2lims)
+    5-element Array{Array{Float64,1},1}:
+    [3.2506269365826235, -13.904103441708813]
+    [7.6966755817918155, 0.019170453403416943]
+    [9.177999793081582, -7.738154316325958]
+    [1.0837999423638358, 14.655548441822855]
+    [6.640425508361417, -4.823307495174905]
+    ```
     """
     function init_nests(n::Int, lims...)    
         @assert all([length(lim)==2 for lim in lims]) "Every bound should be composed of a lower and an upper limit." 
@@ -40,7 +57,7 @@ module Cuckoo
         
     Returns the step to add to a current solution. The parameter `d` indicates the number of dimensions of the solution.
     The direction is randomly picked from a uniform distribution and the stepsize is drawn from a Lévy distribution with 
-    exponent`lambda`, obtained through implementing a simplified version of Mantegna algorithm. This allows to simulate 
+    exponent `lambda`, obtained through implementing a simplified version of Mantegna algorithm. This allows to simulate 
     a Lévy flight performed by a cuckoo to reach a new nest.
     """
     function levy_step(d::Int, lambda::AbstractFloat)
@@ -64,11 +81,11 @@ module Cuckoo
     """
         get_random_nest_index(n::Int; not::Set{Int}=Set([0])) 
 
-    Randomly returns an index between 1 and `n` representing one of the nests. If `not` is specified, the returned index must be
-    different from any element in it.
+    Randomly returns an index between 1 and `n` representing one of the nests. If elements in the set `not` are specified, the returned index must be
+    different from any element in the set.
     """
     function get_random_nest_index(n::Int; not::Set{Int}=Set([0])) 
-        @assert length(not)<n "Not possible to find an index not in the set"       
+        @assert length(not)<n "Not possible to find an index not in the set"  #avoids infinite loops      
         new_nest = floor(Int, rand(1:n))
         while new_nest in not 
             new_nest = floor(Int, rand(1:n))
@@ -106,6 +123,19 @@ module Cuckoo
     * Starting from the egg (solution) contained in each nest a Lévy flight is simulated to create a new solution. To preserve the total number of nests, this egg takes the place of a randomly chosen nest, but only if it has a better fitness. This step allows to diversify the exploration of the search space by performing a farfield optimization improved by the fact that the Lévy distribution is an heavy-tailed distribution;
 
     * A fraction `Pa` of worst eggs (bad solution) gets discovered by the host bird and the nest is abandoned. A new nest with a new solution is generated, biased toward two good quality eggs randomly picked from the population. This step allows to perform more of a locally intensified search by exploiting the neighborhood of current solutions.
+   
+    The return result is a tuple composed of:
+    * solution
+    * fitness 
+
+    ### Example
+    ```
+    julia> x1lims = (-10,10)
+    julia> x2lims = (-15,15)
+    julia> population = init_nests(5,x1lims,x2lims)
+    julia> cuckoo!(function_name, population, x1lims, x2lims, gen=50, Pa=0.5, alpha=0.5, lambda=2.0)
+    ([-0.00401120574383079, 0.00046356024376423543], -22.706426805416967)  
+    ``` 
     """
     function cuckoo!(f::Function, population::Array, lims...; gen::Int=40, Pa::AbstractFloat=0.25, alpha::AbstractFloat=1.0, lambda::AbstractFloat=1.5)      
         @assert (lambda<=3.0 && lambda>=1.0) "Lambda should be between 1 and 3 (included)"
@@ -178,9 +208,8 @@ module Cuckoo
             best_index = argmin([nests[i].fitness for i in 1:n]) 
             best_pos = nests[best_index].position
             best_fit = nests[best_index].fitness 
-
-            #print(best_pos, "\t",best_fit, "\n")
-
+            
+            #for visualization purposes
             population .= [nests[i].position for i in 1:n] 
         
             gen -= 1
