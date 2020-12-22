@@ -67,7 +67,7 @@ Output
 - output: objective values
 
 
-##Examples
+## Examples
 
 ```julia-repl
 julia> D=4
@@ -129,7 +129,7 @@ Input
 Output
 - fitness values: fitness values
 
-##Examples
+## Examples
 
 ```julia-repl
 julia> objective_values = [4 5 -1]
@@ -171,8 +171,7 @@ Input
 Output
 - probabilities: probabilities of the food source information 
 
-
-##Examples
+## Examples
 
 ```julia-repl
 julia> fitness_values = [0.2 0.16 1]
@@ -181,7 +180,7 @@ julia> foodsource_info_prob(fitness_values)
  0.28
  0.24400000000000002
  1.0
- ```
+```
 """
 function foodsource_info_prob(fitness_values)
     probabilities = []
@@ -211,7 +210,7 @@ Output
 - solution_new: new solution with one variable changed using the partner solutions
 
 
-##Examples
+## Examples
 
 ```julia-repl
 julia> solution = [4 0 1 4]
@@ -223,7 +222,7 @@ julia> population = initialize_population(D, bounds_lower, bounds_upper, n)
 julia> create_newsolution(solution, population, bounds_lower, bounds_upper)
 1×4 Array{Float64,2}:
  -1.49748  0.0  1.0  4.0
- ```
+```
 """
 function create_newsolution(solution, population, bounds_lower::Vector, bounds_upper::Vector)
     # select random variable to change       
@@ -300,7 +299,7 @@ julia> population_new_evolved
  [0.0, 3.1592990065770192, -2.0, -3.0]
  [-4, 3, 3, 2]
  [3, 2, -3, -3]
- ```
+```
 """
 function employed_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial, Np::Number, f::Function)
     population_new = []
@@ -365,7 +364,7 @@ Output
     When better solution has been found, the trial counter for this new solution is set to zero
 
 
-##Examples
+## Examples
  
 ```julia-repl
 julia> trial = zeros(size(population)[1])
@@ -386,7 +385,7 @@ julia> population_new_evolved
  [0.0, 1.0208794819836884, 0.0, -3.0]
  [-2, 2, 5, -1]
  [-5, -3, -4, 5]
- ```
+```
 """
 function onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial, Np::Number, f::Function)
     m = 0 # onlooker bee
@@ -456,7 +455,7 @@ Output
     When original solution has failed to generate better solution, trial counter is increased by 1 unit
     When better solution has been found, the trial counter for this new solution is set to zero
 
-##Examples
+## Examples
  
 ```julia-repl
 julia> trial = trial = ones(size(population)[1])
@@ -490,7 +489,7 @@ julia> population_new_evolved
  [1, -1, 5, -5]
  [-2, -5, -4, -5]
  [5, -1, -1, -1]
- ```
+```
 """
 function Scouting(population, bounds_lower::Vector, bounds_upper::Vector,D ,trials, fitness, objective, limit::Number, f::Function)
         
@@ -547,7 +546,7 @@ Output
 - populations: all populations that were computed during the algorithm
 -fitness_tracker: vector with all fitness values for already done iterations 
 
-##Examples
+## Examples
 
 ```julia-repl
 julia> S = 24
@@ -632,7 +631,7 @@ Output
 - output: output values for the sphere function
 
 
-##Examples
+## Examples
 
 ```julia-repl
 julia> sphere(4)
@@ -657,7 +656,7 @@ Output
 - output: output values for the ackley function  
         
 
-##Examples
+## Examples
 
 ```julia-repl
 julia> ackley(4)
@@ -685,7 +684,7 @@ Output
 - output: output values for the rosenbrock function  
         
 
-##Examples
+## Examples
 
 ```julia-repl
 julia> rosenbrock([4,5])
@@ -711,7 +710,7 @@ Output
 - output: output values for the branin function  
         
 
-##Examples
+## Examples
 
 ```julia-repl
 julia> branin([4,5])
@@ -736,7 +735,7 @@ Output
 
 - output: output values for the rastrigine function  
 
-##Examples
+## Examples
 
 ```julia-repl
 julia> rastrigine(4)
