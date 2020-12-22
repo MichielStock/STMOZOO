@@ -224,7 +224,7 @@ julia> create_newsolution(solution, population, bounds_lower, bounds_upper)
  -1.49748  0.0  1.0  4.0
 ```
 """
-function create_newsolution(solution, population, bounds_lower::Vector, bounds_upper::Vector)
+function create_newsolution(solution::Vector, population, bounds_lower::Vector, bounds_upper::Vector)
     # select random variable to change       
     randomvar1_index = rand(1:size(solution)[1], 1)
 
@@ -301,7 +301,7 @@ julia> population_new_evolved
  [3, 2, -3, -3]
 ```
 """
-function employed_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial, Np::Number, f::Function)
+function employed_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Vector, Np::Number, f::Function)
     population_new = []
     
     # create new food sources
@@ -387,7 +387,7 @@ julia> population_new_evolved
  [-5, -3, -4, 5]
 ```
 """
-function onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial, Np::Number, f::Function)
+function onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Vector, Np::Number, f::Function)
     m = 0 # onlooker bee
     n = 1 # food source
     
@@ -432,7 +432,7 @@ function onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vect
 end	
 
 """ 
-    Scouting(population, bounds_lower::Vector, bounds_upper::Vector, trials::Vector, fitness, objective, limit::Number, f::Function)  
+    Scouting(population, bounds_lower::Vector, bounds_upper::Vector,D::Number ,trials::Vector, fitness, objective, limit::Number, f::Function)  
 
 This function employs the scouting phase. 
 
@@ -491,7 +491,7 @@ julia> population_new_evolved
  [5, -1, -1, -1]
 ```
 """
-function Scouting(population, bounds_lower::Vector, bounds_upper::Vector,D ,trials, fitness, objective, limit::Number, f::Function)
+function Scouting(population, bounds_lower::Vector, bounds_upper::Vector,D::Number ,trials::Vector, fitness, objective, limit::Number, f::Function)
         
     # check whether the trial vector exceed the limit value and importantly where
     index_exceed = trials .> limit
