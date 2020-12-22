@@ -199,8 +199,9 @@ end
     create_newsolution(solution::Vector, population, bounds_lower::Vector, bounds_upper::Vector)
 
 Creates new solution by changing one variable using a random partner solution.
-First a random variable in the solution will be selected. Then a random partner in the current population is chosen.
-A random variable of the random partner solution is picked and based on these two variables a new value is interpolated for the first random variable. 
+Firstly, a random variable in the solution to be modified will be selected. 
+Secondly, a random partner in the current population is chosen, and a random variable of this partner solution is picked.
+Based on the value of these two variables, a new value is interpolated and assigned to the first random variable of the original solution. 
 
 Input
 - solutions: solution 
