@@ -30,10 +30,10 @@ Importantly, all your code should be in a [module](https://docs.julialang.org/en
   - use `module GeneticProgramming begin ... end` to wrap your code;
   - import everything you need from external packages: `using LinearAlgebra: norm`;
   - export your functions using `export`
-- [ ] write awesome code!
-- [ ] take a look at your code regarding the [Julia style guide](https://docs.julialang.org/en/v1/manual/style-guide/)
-- [ ] check the [Julia performance tips](https://docs.julialang.org/en/v1/manual/performance-tips/)
-- [ ] document *every* function! Make sure that an external user can understand everything! Be liberal with comments in your code. Take a look at the [guidelines](https://docs.julialang.org/en/v1/manual/documentation/)
+- [x] write awesome code!
+- [x] take a look at your code regarding the [Julia style guide](https://docs.julialang.org/en/v1/manual/style-guide/)
+- [x] check the [Julia performance tips](https://docs.julialang.org/en/v1/manual/performance-tips/)
+- [x] document *every* function! Make sure that an external user can understand everything! Be liberal with comments in your code. Take a look at the [guidelines](https://docs.julialang.org/en/v1/manual/documentation/)
 
 ## Unit tests
 
@@ -49,7 +49,7 @@ Your assignments:
 - [x] add a source file to the `test/` folder, the same name as your source code file.
 - [x] add an `include(...)` with the filename in `runtests.jl`
 - [x] in your file, add a block `@testset "MyModule" begin ... end` with a series of sensible unit tests. Use subblocks of `@testset` if needed.
-- [ ] run your tests, in the package manager, type `test`. It will run all tests and generate a report.
+- [x] run your tests, in the package manager, type `test`. It will run all tests and generate a report.
 
 Travis will automatically run your unit tests online when you push to the origin repo.
 
