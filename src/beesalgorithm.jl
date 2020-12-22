@@ -636,13 +636,13 @@ end
 """ 
     sphere(x)
 
-This is computing the sphere function values for the input values of x. 
+This is computing the sphere function value for the vector x. 
 
 Input
-- x: input values for the sphere function
+- x: input vector for the sphere function
 
 Output
-- output: output values for the sphere function
+- output: output value for the sphere function
 
 
 ## Examples
@@ -661,13 +661,13 @@ end
 """ 
     ackley(x; a=20, b=0.2, c=2π)
 
-This is computing the ackley function values for the input values of x. 
+This is computing the ackley function value for the vector x.  
         
 Input
-- x: input values for the ackley function
+- x: input vector for the ackley function
         
 Output
-- output: output values for the ackley function  
+- output: output value for the ackley function  
         
 
 ## Examples
@@ -688,24 +688,24 @@ end
 """ 
     rosenbrock(x; a=1, b=5)
 
-This is computing the rosenbrock function values for the input values of x. 
+This is computing the rosenbrock function value for the vector x. 
 Watch out! This function always needs a 2-element Array as input
         
 Input
-- x: input values for the rosenbrock function
+- x: input vector for the rosenbrock function
         
 Output
-- output: output values for the rosenbrock function  
+- output: output value for the rosenbrock function  
         
 
 ## Examples
 
 ```julia-repl
 julia> rosenbrock([4,5])
-614
+12109
 ```
 """
-function rosenbrock(x; a=1, b=5)
+function rosenbrock(x; a=1, b=100)
     # 2 dimensions!
     @assert length(x) == 2 "The rosenbrock function is restricted to two decision variables"
     return (a-x[1])^2 + b*(x[2]-x[1]^2)^2
@@ -714,14 +714,14 @@ end
 """ 
     branin((x1, x2); a=1, b=5.1/(4pi^2), c=5/pi, r=6, s=10, t=1/8pi)
 
-This is computing the branin function values for the input values of x. 
+This is computing the branin function value for the vector x.  
 Watch out! This function always needs a 2-element Array as input
         
 Input
-- x: input values for the branin function
+- x: input vector for the branin function
         
 Output
-- output: output values for the branin function  
+- output: output value for the branin function  
         
 
 ## Examples
@@ -739,15 +739,15 @@ end
 """ 
     rastrigine(x; A=10)
 
-This is computing the rastrigine function values for the input values of x. 
+This is computing the rastrigine function value for the input values of x. 
 
 Input
 
-- x: input values for the rastrigine function   
+- x: input vector for the rastrigine function   
 
 Output
 
-- output: output values for the rastrigine function  
+- output: output value for the rastrigine function  
 
 ## Examples
 
