@@ -259,7 +259,7 @@ end
 
 
 """ 
-    employed_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Vector, Np::Number, f::Function)
+    employed_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Array, Np::Number, f::Function)
 
 This functions employs the employed bee phase. 
 Employed bees try to identify better food source than the one they were associated previously. A new solution is generated using a partner solution. 
@@ -306,7 +306,8 @@ julia> population_new_evolved
  [3, 2, -3, -3]
 ```
 """
-function employed_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Vector, Np::Number, f::Function)
+
+function employed_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Array, Np::Number, f::Function)
     population_new = []
     
     # create new food sources
@@ -348,7 +349,7 @@ function employed_bee_phase(population, bounds_lower::Vector, bounds_upper::Vect
 end
 
 """ 
-    onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Vector, Np::Number, f::Function)  
+    onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Array, Np::Number, f::Function)  
 
 This function employs the onlooker bee phase. 
 In the onlooker bee phase, a food source is selected for further exploitation with a probability related to the nectar amount, i.e. a solution with higher fitness will have a higher probability to be chosen. 
@@ -396,7 +397,7 @@ julia> population_new_evolved
  [-5, -3, -4, 5]
 ```
 """
-function onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Vector, Np::Number, f::Function)
+function onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Array, Np::Number, f::Function)
     m = 0 # onlooker bee
     n = 1 # food source
     
@@ -441,7 +442,7 @@ function onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vect
 end	
 
 """ 
-    Scouting(population, bounds_lower::Vector, bounds_upper::Vector,D::Number ,trials::Vector, fitness, objective, limit::Number, f::Function)  
+    Scouting(population, bounds_lower::Vector, bounds_upper::Vector,D::Number ,trials::Array, fitness, objective, limit::Number, f::Function)  
 
 This function employs the scouting phase. 
 If the value of the trial counter for a certain solution is greater than fixed limit, then a solution can enter the scout phase. 
@@ -503,7 +504,7 @@ julia> population_new_evolved
  [5, -1, -1, -1]
 ```
 """
-function Scouting(population, bounds_lower::Vector, bounds_upper::Vector,D::Number ,trials::Vector, fitness, objective, limit::Number, f::Function)
+function Scouting(population, bounds_lower::Vector, bounds_upper::Vector,D::Number ,trials::Array, fitness, objective, limit::Number, f::Function)
         
     # check whether the trial vector exceed the limit value and importantly where
     index_exceed = trials .> limit
