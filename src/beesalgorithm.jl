@@ -16,13 +16,13 @@ This function generates Np random solutions (food sources) within the domain
 of the variables to form an initial population for the ABC algorithm.
     
 Input
-- D: number of decision variables
+- D: number of decision variables in the function to be minimized
 - bounds_lower: lower bounds of variables 
 - bounds_upper: upper bounds of variables 
 - Np: number of food sources/employed bees/onlooker bees
     
 Output 
-- population: a random solution of the size D
+- population: a random population of the size Np with D variables
 
 
 ## Examples
@@ -57,7 +57,7 @@ end
 """
     compute_objective(input, f::Function)
 
-Calculates the objective values for a certain function. 
+Compute the objective values for a certain function. This objective value is minimized in the ABC algorithm. 
 
 Input
 - input: input values
@@ -119,15 +119,15 @@ end
 """ 
     compute_fitness(objective_values)
 
-This functions computes the fitness of a population.
-The fitness is computed as 1/(1+objective_values).
+This functions computes the fitness of each solution in the population.
+The fitness is computed as 1/(1+objective_values) if f >= 0 and as 1 + absolute(objective_values) if f < 0.
 The bigger the objective values the smaller the fitness values.
 
 Input
 - objective values: objective values 
 
 Output
-- fitness values: fitness values
+- fitness values: fitness values corresponding to the input values (objective values)
 
 ## Examples
 
@@ -162,8 +162,8 @@ end
 """ 
     foodsource_info_prob(fitness_values)
 
-This function measures the food source information in probabilities. 
-The food source information is calculated as following: 0.9*(fitness_value/maximum(fitness_values)) + 0.1. 
+This function measures the food source information as probabilities. 
+The food source information is computed as following: ``0.9 * (fitness_value/maximum(fitness_values)) + 0.1``. 
 
 Input
 - fitness_values: fitness values
@@ -198,16 +198,18 @@ end
 """ 
     create_newsolution(solution::Vector, population, bounds_lower::Vector, bounds_upper::Vector)
 
-Creates new solution by changing one variable using a partner solution.
+Creates new solution by changing one variable using a random partner solution.
+First a random variable in the solution will be selected. Then a random partner in the current population is chosen.
+A random variable of the random partner solution is picked and based on these two variables a new value is interpolated for the first random variable. 
 
 Input
-- solutions: current solution 
+- solutions: solution 
 - population : population of solutions 
 - bounds_lower: lower bounds of variables 
 - bounds_upper: upper bounds of variables 
 
 Output
-- solution_new: new solution with one variable changed using the partner solutions
+- solution_new: new solution with one variable changed using a random variable in a random partner solution
 
 
 ## Examples
@@ -231,7 +233,7 @@ function create_newsolution(solution::Vector, population, bounds_lower::Vector, 
     # select partner solution to generate new solution        
     randompartner_index = rand(1:size(population)[1], 1)
 
-    # select random variable in partner solution to exchange with
+    # select random variable in partner solution to interpolate with
 
     randompartner = population[randompartner_index, :][1]
     randomvar2_index = rand(1:length(randompartner), 1)
@@ -260,20 +262,23 @@ end
     employed_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Vector, Np::Number, f::Function)
 
 This functions employs the employed bee phase. 
+Employed bees try to identify better food source than the one they were associated previously. A new solution is generated using a partner solution. 
+Thereafter, greedy selection is performed, meaning that a new solution only  will be accepted if it is better than the current solution. 
+Every bee in the swarm will explores one food source. All solutions get an opportunity to generate a new solution in the employed bee phase.
 
 Input
 - population: population of solutions 
 - bounds_lower: lower bounds of variables 
 - bounds_upper: upper bounds of variables 
-- trial: current trial of solutions
+- trial: Vector of current trials of solutions in the population
 - Np: number of food sources/employed bees/onlooker bees
 - f: the function that you want to use for computing objective values
 
 Output
-- population_new_evolved: new population values
-- fitness_new_evolved: new fitness values
-- objective_new_evolved: new objective values
-- trial: updated trials of solutions in population
+- population_new_evolved: newly generated population of solutions
+- fitness_new_evolved: fitness values of the new population
+- objective_new_evolved: objective values of the new population
+- trial: updated trials of new solutions in the new population
     When original solution has failed to generate better solution, trial counter is increased by 1 unit
     When better solution has been found, the trial counter for this new solution is set to zero
 
@@ -346,22 +351,26 @@ end
 onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Vector, Np::Number, f::Function)  
 
 This function employs the onlooker bee phase. 
+In the onlooker bee phase, a food source is selected for further exploitation with a probability related to the nectar amount, i.e. a solution with higher fitness will have a higher probability to be chosen. 
+Fitter solutions may undergo multiple onlooker bee explorations. As in the employed bee phase, new solutions are generated using a partner solution and greedy selection is performed. 
+In contrast to the employed bee phase, not every food source will be explored, since every onlooker bee will explore a certain food source with a certain probability (depending on nectar amount).
 
 Input
 - population: population of solutions 
 - bounds_lower: lower bounds of variables 
 - bounds_upper: upper bounds of variables 
-- trial: current trial of solutions
+- trial: Vector of current trials of solutions in the population
 - Np: number of food sources/employed bees/onlooker bees
 - f: the function that you want to use for computing objective values
 
 Output
-- population: new population values
-- fitness_new_evolved: new fitness values
-- objective_new_evolved: new objective values
-- trial: updated trials of solutions in population
+- population_new_evolved: newly generated population of solutions
+- fitness_new_evolved: fitness values of the new population
+- objective_new_evolved: objective values of the new population
+- trial: updated trials of new solutions in the new population
     When original solution has failed to generate better solution, trial counter is increased by 1 unit
     When better solution has been found, the trial counter for this new solution is set to zero
+
 
 
 ## Examples
@@ -435,23 +444,26 @@ end
     Scouting(population, bounds_lower::Vector, bounds_upper::Vector,D::Number ,trials::Vector, fitness, objective, limit::Number, f::Function)  
 
 This function employs the scouting phase. 
+If the value of the trial counter for a certain solution is greater than fixed limit, then a solution can enter the scout phase. 
+The latter food source is then considered as exhausted and will therefore be abandoned by the bees. The current optimal solution will be stored separately to avoid losing it in the scouting phase.
+After discarding the exhausted solution, a new random solution is generated and the trial counter of this solution is reset to zero.
 
 Input
 - population : population of solutions 
 - bounds_lower: lower bounds of variables 
 - bounds_upper: upper bounds of variables
-- D: number of decision variables 
+- D: number of decision variables in the function to be minimized 
 - trials: current trial of solutions
 - fitness: fitness values
 - objective: objective values
 - limit: limit value
 - f: the function that you want to use for computing objective values
 
-Output 
-- population: new population values
-- fitness: new fitness values
-- objective: new objective values
-- trials: updated trials of solutions in population
+Output
+- population_new_evolved: newly generated population of solutions
+- fitness_new_evolved: fitness values of the new population
+- objective_new_evolved: objective values of the new population
+- trial: updated trials of new solutions in the new population
     When original solution has failed to generate better solution, trial counter is increased by 1 unit
     When better solution has been found, the trial counter for this new solution is set to zero
 
@@ -528,23 +540,25 @@ end
 """ 
     ArtificialBeeColonization(D::Number, bounds_lower::Vector, bounds_upper::Vector, S::Number, T::Number, limit::Number, f::Function)
 
-This functions runs the Artificial Bee Colony Algorithm with as output the optimal solution of the size D (number of decision variables).
+This functions runs the Artificial Bee Colony Algorithm.
+First a initialize population is made. For each iteration (T) the ABC algorithm undergoes the employed bee phase, onlooker bee phase and possibly the scouting phase. 
+During the process, the solution with the highest fitness value is stored separately and updated after every iteration and scouting phase. 
 
 Input
-- D: number of decision variables
+- D: number of decision variables in the function to be minimized
 - bounds_lower: lower bounds of variables 
 - bounds_upper: upper bounds of variables 
-- S: swarm size
+- S: swarm size (S/2 = Np, the number of employed bees, onlooker bees and scouting bees)
 - T: number of cycles
 - limit: decides when scouts phase needs to be executed (often taken Np*D)
-- f: the function that you want to use for computing objective values
-
+- f: the function that you want to use for computing objective values (this function will be minimized)
+    
 
 
 Output
-- optimal_solution: gives a vector of the size of D with the optimal solution  
-- populations: all populations that were computed during the algorithm
--fitness_tracker: vector with all fitness values for already done iterations 
+- optimal_solution: gives a vector of the size D with the optimal solution  
+- populations: all populations that were computed during the ABC algorithm
+- best_fitness_tracker: a vector with for each iteration the best fitness value so far encountered. 
 
 ## Examples
 
@@ -616,7 +630,7 @@ function ArtificialBeeColonization(D::Number, bounds_lower::Vector, bounds_upper
         best_fitness_tracker = append!(best_fitness_tracker, best_fitness)
     end
 
-    return optimal_solution,populations, best_fitness_tracker
+    return optimal_solution, populations, best_fitness_tracker
 end
 
 """ 
