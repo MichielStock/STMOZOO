@@ -120,7 +120,7 @@ end
     compute_fitness(objective_values)
 
 This functions computes the fitness of each solution in the population.
-The fitness is computed as ``1/(1+objective_values)`` if f >= 0 and as ``1 + absolute(objective_values)`` if f < 0.
+The fitness is computed as ``1/(1+objective values)`` if f >= 0 and as ``1 + absolute(objective values)`` if f < 0.
 The bigger the objective values the smaller the fitness values.
 
 Input
@@ -163,7 +163,7 @@ end
     foodsource_info_prob(fitness_values)
 
 This function measures the food source information as probabilities. 
-The food source information is computed as following: ``0.9 * (fitness value/maximum(fitness values)) + 0.1``. 
+The food source information is computed as following: ``0.9 * (fitness / maximum(fitness )) + 0.1``. 
 
 Input
 - fitness_values: fitness values
