@@ -262,7 +262,7 @@ end
 """ 
     employed_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Array, Np::Number, f::Function)
 
-This functions employs the employed bee phase. 
+In this function, the employed bee phase is implemented. 
 Employed bees try to identify better food source than the one they were associated previously. A new solution is generated using a partner solution. 
 Thereafter, greedy selection is performed, meaning that a new solution only  will be accepted if it is better than the current solution. 
 Every bee in the swarm will explores one food source. All solutions get an opportunity to generate a new solution in the employed bee phase.
