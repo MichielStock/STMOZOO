@@ -6,9 +6,8 @@ using STMOZOO.BeesAlgorithm
 
 makedocs(sitename="STMO ZOO",
     format = Documenter.HTML(),
-    modules=[Example, BeesAlgorithm], # add your module
+    modules=[BeesAlgorithm], # add your module
     pages=Any[
-        "Example" => "man/example.md",
         "BeesAlgorithm" => "man/beesalgorithm.md",  # add the page to your documentation
     ])
 
