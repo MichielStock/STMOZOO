@@ -120,7 +120,7 @@ end
     compute_fitness(objective_values)
 
 This functions computes the fitness of each solution in the population.
-The fitness is computed as 1/(1+objective_values) if f >= 0 and as 1 + absolute(objective_values) if f < 0.
+The fitness is computed as ``1/(1+objective_values)`` if f >= 0 and as ``1 + absolute(objective_values)`` if f < 0.
 The bigger the objective values the smaller the fitness values.
 
 Input
@@ -163,7 +163,7 @@ end
     foodsource_info_prob(fitness_values)
 
 This function measures the food source information as probabilities. 
-The food source information is computed as following: ``0.9 * (fitness_value/maximum(fitness_values)) + 0.1``. 
+The food source information is computed as following: ``0.9 * (fitness value/maximum(fitness values)) + 0.1``. 
 
 Input
 - fitness_values: fitness values
@@ -275,9 +275,9 @@ Input
 - f: the function that you want to use for computing objective values
 
 Output
-- population_new_evolved: newly generated population of solutions
-- fitness_new_evolved: fitness values of the new population
-- objective_new_evolved: objective values of the new population
+- population new evolved: newly generated population of solutions
+- fitness new evolved: fitness values of the new population
+- objective new evolved: objective values of the new population
 - trial: updated trials of new solutions in the new population
     When original solution has failed to generate better solution, trial counter is increased by 1 unit
     When better solution has been found, the trial counter for this new solution is set to zero
@@ -364,9 +364,9 @@ Input
 - f: the function that you want to use for computing objective values
 
 Output
-- population_new_evolved: newly generated population of solutions
-- fitness_new_evolved: fitness values of the new population
-- objective_new_evolved: objective values of the new population
+- population new evolved: newly generated population of solutions
+- fitness new evolved: fitness values of the new population
+- objective new evolved: objective values of the new population
 - trial: updated trials of new solutions in the new population
     When original solution has failed to generate better solution, trial counter is increased by 1 unit
     When better solution has been found, the trial counter for this new solution is set to zero
@@ -460,9 +460,9 @@ Input
 - f: the function that you want to use for computing objective values
 
 Output
-- population_new_evolved: newly generated population of solutions
-- fitness_new_evolved: fitness values of the new population
-- objective_new_evolved: objective values of the new population
+- population new evolved: newly generated population of solutions
+- fitness new evolved: fitness values of the new population
+- objective new evolved: objective values of the new population
 - trial: updated trials of new solutions in the new population
     When original solution has failed to generate better solution, trial counter is increased by 1 unit
     When better solution has been found, the trial counter for this new solution is set to zero
@@ -556,9 +556,9 @@ Input
 
 
 Output
-- optimal_solution: gives a vector of the size D with the optimal solution  
+- optimal solution: gives a vector of the size D with the optimal solution  
 - populations: all populations that were computed during the ABC algorithm
-- best_fitness_tracker: a vector with for each iteration the best fitness value so far encountered. 
+- best fitness tracker: a vector with for each iteration the best fitness value so far encountered. 
 
 ## Examples
 
