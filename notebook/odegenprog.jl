@@ -72,10 +72,20 @@ end
 #(1) I sped up the fitness function by adjusting the discretization; (2) reduced the max_depth of the derivation trees searched; (3) reduced the number of evaluations of the fitness function by using smaller population sizes and iterations.
 
 # ╔═╡ 1aa00a80-4484-11eb-3d2f-8f4fdb6a4c61
+"""
+    fizzywop_test(tree::RuleNode, grammar::Grammar)
+This is a hardcoded fitness function to solve the differential equation f'(x) - f(x) = 0, 
+with boundary condition f(0) = 1. The expected solution is f(x) = exp(x). Inspired by Tsoulos and Lagaris (2006). 
+I implemented this function to make it more clear how the fitness for each expression derived from the expression tree is evaluated. 
+This is based on evaluating the differential equation over an interval of sensible points. Also penalizes deviation from boundary conditions.
+Weighted by factor λ (here set to 100). I tested this for 5 different ODE's in the notebook. Some solutions are exact, the others very good
+approximations.  
+
+"""
 function fizzywop_test(tree::RuleNode, grammar::Grammar)
-    ex = get_executable(tree, grammar)
+	ex = get_executable(tree, grammar) #Get the expression from a given tree based on the grammar
     los = 0.0
-	#domain
+	#Evaluate expression over an interval [0:1]. The calculus package is used to do symbolic differentiation of the expression according to the given differential equation. 
     for x = 0.0:0.1:1.0
 		S[:x] = x
 		los += try (Core.eval(S,differentiate(ex)) - Core.eval(S,ex))^2
@@ -83,7 +93,7 @@ function fizzywop_test(tree::RuleNode, grammar::Grammar)
 			return Inf
 		end
     end
-	#boundary conditions
+	#Also boundary conditions are evaluated in this seperate step that allows for weighting the score with a factor λ. Here set default to 100 (as in Tsoulos and Lagaris (2006)). 
 	S[:x] = 0
 	λ = 100.
 	los += try λ*(((Core.eval(S,ex)-1))^2)
@@ -92,6 +102,9 @@ function fizzywop_test(tree::RuleNode, grammar::Grammar)
 	end
 	return los
 end
+
+# ╔═╡ 3e717920-44b7-11eb-18a3-bbb77312ad93
+fizzywop_test()
 
 # ╔═╡ 3ad61410-3cce-11eb-0e65-ebf59517000e
 g = GeneticProgram(250,50,5,0.3,0.3,0.4)
@@ -442,6 +455,7 @@ results_gp.expr == :(log(1))
 # ╠═5046e1a0-414a-11eb-2cfd-c73667f808f7
 # ╠═6c5d5bf0-4157-11eb-3cf1-87d33b65b6e0
 # ╠═1aa00a80-4484-11eb-3d2f-8f4fdb6a4c61
+# ╠═3e717920-44b7-11eb-18a3-bbb77312ad93
 # ╠═3ad61410-3cce-11eb-0e65-ebf59517000e
 # ╠═408525a0-44b1-11eb-115f-fd737e2887a4
 # ╠═41e10c20-44b1-11eb-0684-e1b9539e2de0
