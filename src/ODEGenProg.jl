@@ -9,8 +9,9 @@ module ODEGenProg
 # if you use a new package, don't forget to add it in the package manager
 using ExprRules, ExprOptimization, Random, Plots, Calculus
 
+
 # export all functions that are relevant for the user
-export foo_bar, fitness_test, define_grammar, ODEinit, fitness_general
+export foo_bar, fitness_test, define_grammar, ODEinit, fitness_general, ExprOptimization, GeneticProgram, optimize
 
 """
 	this is a test function
@@ -39,12 +40,13 @@ function define_grammar()
         #R = y
         #R = z
 	end
-	return grammar
+	S = SymbolTable(grammar) #ExprRule's interpreter, should increase performance according to documentation
+	return grammar, S
 end
 
 
 """
-    fizzywop_test(tree::RuleNode, grammar::Grammar)
+    fitness_test(tree::RuleNode, grammar::Grammar)
 This is a hardcoded fitness function for the differential equation f'(x) - f(x) = 0, 
 with boundary condition f(0) = 1. The expected solution is f(x) = exp(x). Inspired by Tsoulos and Lagaris (2006). Returns the fitness 
 for a given tree based on a given grammar.
