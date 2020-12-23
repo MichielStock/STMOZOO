@@ -22,6 +22,7 @@ end
 
 """
 	define_grammar()
+
 	This function returns the standard grammar that is used to create and evaluate expression trees.
 """
 function define_grammar()
@@ -35,7 +36,7 @@ function define_grammar()
         R = sin(R)
         R = cos(R)
         R = exp(R)
-        R = log(R)
+        R = log(R)  # ISSUE: is it sensible to include this one? log of neg numbers and such...
         R = x
         #R = y
         #R = z
@@ -45,7 +46,8 @@ end
 
 
 """
-    fitness_test(tree::RuleNode, grammar::Grammar)
+	fitness_test(tree::RuleNode, grammar::Grammar)
+	
 This is a hardcoded fitness function for the differential equation f'(x) - f(x) = 0, 
 with boundary condition f(0) = 1. The expected solution is f(x) = exp(x). It returns the fitness 
 for a given tree based on a given grammar. Inspired by Tsoulos and Lagaris (2006).
@@ -59,7 +61,7 @@ approximations. The problem now it that I have a different fitness function for 
 function fitness_test(tree::RuleNode, grammar::Grammar)
 	S = SymbolTable(grammar) #ExprRule's interpreter, should increase performance according to documentation
 	ex = get_executable(tree, grammar) #Get the expression from a given tree based on the grammar
-    los = 0.0
+    los = 0.0  # FIXME: loss?
 	#Evaluate expression over an interval [0:1]. The calculus package is used to do symbolic differentiation of the expression according to the given differential equation. 
     for x = 0.0:0.1:1.0
 		S[:x] = x
@@ -71,7 +73,7 @@ function fitness_test(tree::RuleNode, grammar::Grammar)
 	#Also boundary conditions are evaluated in this seperate step that allows for weighting the score with a factor λ. Here set default to 100 (as in Tsoulos and Lagaris (2006)). 
 	S[:x] = 0
 	λ = 100.
-	los += try λ*(((Core.eval(S,ex)-1))^2)
+	los += try λ * (((Core.eval(S,ex)-1))^2)
 	catch
 		return Inf
 	end
