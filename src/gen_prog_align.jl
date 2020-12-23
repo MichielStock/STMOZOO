@@ -49,11 +49,11 @@ function seq_selection(sequence_dict::Dict; n::Int = 10, sorting::Bool = false)
 end
 
 """
-Create an Alignment type. The type has three attributes
-- seq_array: The alignment array, has a row for each distinct sequence, and columns for the residues
+Create an Alignment type. The type has three attributes:
+- `seq_array`: The alignment array, has a row for each distinct sequence, and columns for the residues
 gaps are denoted as '-'.
-- seq_ids: The sequence id's of the distinct sequences in the same order as they appear in the seq_array.
-- objective_value: The score of the alignment as calculated by objective_function().
+- `seq_ids`: The sequence id's of the distinct sequences in the same order as they appear in the seq_array.
+- `objective_value`: The score of the alignment as calculated by objective_function().
 The Alignment type contains two inner constructors, to generate Alignment objects:
     Alignment(sequencedict::Dict; n::Int = 20)
 
@@ -68,7 +68,10 @@ The objective_value is calculated with objective_function().
 Creates an alignment object with the provided content for the attributes.
 """
 
-
+# FIXME: Array is an abstract type, so this will not be
+# type stable, you can either be specify (e.g. `Maxtrix{Char}`)
+# or work with parametric types
+# this is a performance thing, your code will work regardless
 struct Alignment
     seq_array::Array
     seq_ids::Array
@@ -109,7 +112,6 @@ end
 Extract the seq_array and the seq_ids from an Alignment object and generate a dictionary with 
 the seq_ids as keys and the corresponding sequences as their value.
 """
-
 function array_to_dict(alignment)
     seq_dict = Dict(alignment.seq_ids[i] => join(alignment.seq_array[i,:]) for i = 1:length(alignment.seq_ids))
     return seq_dict
@@ -120,7 +122,6 @@ end
 
 Generate a dictionary with the seq_ids as keys and the corresponding sequences as their value.
 """
-
 function array_to_dict(seq_array::Array, seq_ids)
     seq_dict = Dict(seq_ids[i] => join(seq_array[i,:]) for i = 1:size(seq_array)[1])
     return seq_dict
@@ -135,13 +136,13 @@ AA = ['A','R', 'N', 'D', 'C', 'Q', 'E',  'G', 'H',  'I' , 'L' , 'K',  'M', 'F','
     pairwise_score(seq_1::String, seq_2::String; score_matrix = BLOSUM62, gap_opening = -10, gap_extension = -1, symbols = AA)
 
 
-Calculates pairwise alignment score between 2 sequences. The total score is the sum of individual scores for every
-position in the alignment. The score for 2 matched aminoacids is determined by the used score_matrx. 
-Opening new gaps in the alignment result in a gap_opening penalty, extending a gap in a gep_extension penalty.
+Calculates pairwise alignment score between two sequences. The total score is the sum of individual scores for every
+position in the alignment. The score for two matched aminoacids is determined by the used `score_matrx`. 
+Opening new gaps in the alignment result in a `gap_opening` penalty, extending a gap in a `gep_extension` penalty.
 """
-
-
-function pairwise_score(seq_1::String, seq_2::String; score_matrix = BLOSUM62, gap_opening = -10, gap_extension = -1, symbols = AA)
+function pairwise_score(seq_1::String, seq_2::String; 
+                            score_matrix = BLOSUM62, gap_opening = -10,
+                            gap_extension = -1, symbols = AA)
     score = 0
     previous_gap_1 = false
     previous_gap_2 = false
@@ -172,15 +173,15 @@ function pairwise_score(seq_1::String, seq_2::String; score_matrix = BLOSUM62, g
     end
     return score
 end
+
 """
     objective_function(alignment, score_matrix = BLOSUM62, gap_opening = -10, gap_extension = -1, symbols = AA)
 
-Calculates full alignment score of alignment provided in an Alignment object. The score
-is the sum of all the pairwise alignment scores calculated with pairwise_score().
+Calculates full alignment score of alignment provided in an `Alignment` object. The score
+is the sum of all the pairwise alignment scores calculated with `pairwise_score()`.
 """
-
-
-function objective_function(alignment, score_matrix = BLOSUM62, gap_opening = -10, gap_extension = -1, symbols = AA)
+function objective_function(alignment, score_matrix = BLOSUM62,  #FIXME: keyword arguments cfr pairwise_score?
+                            gap_opening = -10, gap_extension = -1, symbols = AA)
     seq_dict = array_to_dict(alignment)
     objective_value = 0
     seq_ids = alignment.seq_ids
@@ -193,38 +194,67 @@ function objective_function(alignment, score_matrix = BLOSUM62, gap_opening = -1
 end
 
 """
-    objective_function(seq_array::Array, seq_ids::Array, score_matrix = BLOSUM62, gap_opening = -10, gap_extension = -1, symbols = AA)
+    objective_function(seq_array::Array, seq_ids::Array, score_matrix = BLOSUM62,
+                            gap_opening = -10, gap_extension = -1, symbols = AA)
 
 Calculates full alignment score if a seq_array and seq_ids are provided. The score
 is the sum of all the pairwise alignment scores calculated with pairwise_score().
 """
-
-function objective_function(seq_array::Array, seq_ids::Array, score_matrix = BLOSUM62, gap_opening = -10, gap_extension = -1, symbols = AA)
+function objective_function(seq_array::Array, seq_ids::Array, score_matrix = BLOSUM62,  #FIXME: keyword arguments?
+                            gap_opening = -10, gap_extension = -1, symbols = AA)
     seq_dict = array_to_dict(seq_array, seq_ids)
     objective_value = 0
     for i in 2:length(seq_dict)
         for j in 1:i-1
-            objective_value += pairwise_score(seq_dict[seq_ids[i]], seq_dict[seq_ids[j]], score_matrix, gap_opening, gap_extension, symbols)
+            objective_value += pairwise_score(seq_dict[seq_ids[i]],
+                                                seq_dict[seq_ids[j]],
+                                                score_matrix, gap_opening,
+                                                gap_extension, symbols)
         end
     end
     return objective_value
 end
 
+
+# SUGGESTION: why not use two types of crossover:
+# 1. sequence swap: randomly exchange sequences from the alignment matrices
+# 2. breaking: choose a position to break your two alignments and swich out the first 
+
+#=
+e.g. 
+
+AAAAA       DDDDD
+BBBBB  and  EEEEE
+CCCCC       FFFFF
+
+First type might yield
+
+DDDDD       AAAAA
+BBBBB  and  EEEEE
+FFFFF       CCCCC
+
+Second type might yield
+
+AAADD       DDDDD
+BBBEE  and  EEEBB
+CCCFF       FFFCC
+=#
+
 """
     one_point_crossover(parent_1, parent_2)
 
-    
-Operation for the genetic algorithm. Create crossover between 2 parent alignments. In parent_1
-a random position is selected, here the alignment is splitted in a left and a right part.
-Parent_2 is splitted at the end residues of the first split. Two new alignments are created. 
-One with the left part of parent_1 and the right part of parent_2. And one with the 
-left part of parent_2 and the right part of parent_1. Gaps are inserted to ensure equal sequence lengths.
+Operation for the genetic algorithm. Create crossover between two parent alignments. In `parent_1`
+a random position is selected, here the alignment is split in a left and a right part.
+`parent_2` is split at the end residues of the first split. Two new alignments are created. 
+One with the left part of `parent_1` and the right part of `parent_2`. And one with the 
+left part of `parent_2` and the right part of `parent_1`. Gaps are inserted to ensure equal sequence lengths.
 The new alginment with the best objective value is returned.
 """
 function one_point_crossover(parent_1, parent_2)
     pos = rand(1:size(parent_1.seq_array)[2]-1)
     n_AA_upto_pos_vec = zeros(Int16, size(parent_1.seq_array)[1])
     pos_n_AA_alignment_2 = ones(Int16, size(parent_1.seq_array)[1])
+    # FIXME: some comments would make this function be more maintainable...
     for seq in 1:size(parent_1.seq_array)[1]
         n_AA_upto_pos = sum(parent_1.seq_array[seq, 1:pos] .!= '-')
         n_AA_upto_pos_vec[seq] = n_AA_upto_pos
