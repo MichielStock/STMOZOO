@@ -305,7 +305,7 @@ For each group a random position is selected where a gap is inserted. A new Alig
 function gap_insertion(parent)
     n_seq = length(parent.seq_ids)
     length_alignment = size(parent.seq_array)[2]
-    n_per_group = convert(Int8, round(n_seq/2))
+    n_per_group = convert(Int8, round(n_seq/2))  # or: n_seq ÷ 2
     group_selection = fill(true, n_seq)
     group_selection[sample(1:n_seq, n_per_group, replace = false)] .= false
     insertion_position_1 = rand(1:length_alignment)
@@ -339,7 +339,7 @@ function shifting_one_seq(parent)
             break
         end
     end
-    shift_to_left = rand([true, false])
+    shift_to_left = rand(Bool)
     new_alignment = deepcopy(parent.seq_array)
     if shift_to_left
         new_alignment[seq, pos:end] = vcat(parent.seq_array[seq, pos+1:end], '-')
@@ -353,15 +353,14 @@ end
 """
     shifting_block(parent, partial = false)
     
-Operation for the genetic algorithm. A random block in the parent alignment is searched.
+Operation for the genetic algorithm. A random block in the `parent` alignment is searched.
 To choose a block a position is searched where only amino-acids and no gaps are present. 
 For every sequence all non-gap values adjacent to this position are taken up in the block. 
 This block is shifted to the left with one position.
 """
-
 function shifting_block(parent)
     n_seq = length(parent.seq_ids)
-    length_alignment = size(parent.seq_array)[2]
+    length_alignment = size(parent.seq_array, 2)
     sample_order = shuffle(1:length_alignment)
     residue_found = false
     start_pos = 0
