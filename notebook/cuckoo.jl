@@ -113,7 +113,7 @@ gif(anim, fps = 1)
 end
 
 # ╔═╡ 3559598a-447a-11eb-38cf-ad3f603b7063
-md"""We can also take a look at how the fitness improves at each round of iteration:"""
+md"""We can also take a look at how the fitness improves at each round of optimization:"""
 
 # ╔═╡ 26deebee-446f-11eb-3390-4748fcdf5a36
 begin 
@@ -134,12 +134,12 @@ end
 # ╔═╡ 857d667e-43b0-11eb-02c4-f97345274afd
 md"""The method allows to specify some parameters, namely:
 * `gen`: number of generation. If the number is too small you may get a suboptimal solution due to the fact that the problem may have not yet converged to its optimal solution. 
-* `alpha`: stepsize when transitioning to a new solution. By default it is 1 but can be varied depending on the dimension of the landscape.
+* `alpha`: stepsize when transitioning to a new solution. By default it is 1.0 but can be varied depending on the dimension of the landscape.
 * `Pa`: rate of cuckoo's egg discovery. This parameter allows to balance how much the method relies on exploring known solutions (default `Pa`=0.25) as compared to inspecting new solution through Lévy flights
 * `lambda`: exponent of the Lévy distribution used to sample stepsizes."""
 
 # ╔═╡ 703cb04e-446e-11eb-2954-ebf4cd33851e
-md"""Another element that strongly conditions the  outcome of the method is the population size:"""
+md"""Yet another element that strongly conditions the outcome of the method is the population size:"""
 
 # ╔═╡ 238232a4-4470-11eb-36b9-dfd43cc99640
 begin

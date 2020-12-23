@@ -14,5 +14,5 @@ The module contains a function to solve a minimization problem and a helper func
 
 ```@docs 
 init_nests
-cuckoo 
+cuckoo! 
 ```
