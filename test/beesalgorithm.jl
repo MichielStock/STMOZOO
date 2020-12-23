@@ -53,7 +53,7 @@
     @testset "create_newsolution" begin
 
         population = initialize_population(D, bounds_lower, bounds_upper, n)
-        solution = [4 0 1 4]
+        solution = [4, 0, 1, 4]
         new_solution = create_newsolution(solution, population, bounds_lower, bounds_upper)
         @test length(new_solution) == length(solution)
         @test sum(new_solution .==  solution) == D-1
