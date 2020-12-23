@@ -307,7 +307,6 @@ julia> population_new_evolved
  [3, 2, -3, -3]
 ```
 """
-
 function employed_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Array, Np::Number, f::Function)
     population_new = []
     
