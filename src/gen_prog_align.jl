@@ -31,11 +31,12 @@ end
 """
     seq_selection(sequence_dict::Dict; n::Int = 10, sorting::Bool = false)
 
-Takes a subset of a sequence dictionary as created by fasta_to_dict. The first n id's in the 
+Takes a subset of a sequence dictionary as created by `fasta_to_dict`. The first n id's in the 
 dictionaries key list are selected. If sorting == true, the key list is first sorted alphabetically.
 Returns a dictonary of the n selected, seq_id, sequence pairs.
 """
 function seq_selection(sequence_dict::Dict; n::Int = 10, sorting::Bool = false)
+    # QUESTION: since dictories don't have order, this might not make sense?
     seq_id_first_n = collect(keys(seq_dict))[1:n] 
     if sorting
         seq_id_first_n = sort(seq_id_first_n)
