@@ -98,7 +98,7 @@ fitness_test
         p_crossover::Float64,                   #probability of crossover operator
         p_mutation::Float64;                    #probability of mutation operator) 
 """
-g = GeneticProgram(500,50,5,0.3,0.3,0.4)
+g = GeneticProgram(1000,30,5,0.3,0.3,0.4)
 
 # ╔═╡ 07c74990-44c1-11eb-27f0-7b786b4380ae
 md""" #### General remark: the solutions change a lot for the more complex ODE's and don't seem to be super reliable yet. I could up the population size to 1000-2000 or increase the number of iterations (50 seems pretty low) butt this makes it more computationally expensive for this notebook."""
@@ -124,10 +124,10 @@ end
 begin 
 x_t = 0.1:0.01:10.
 y_t = exp.(x_t)
-plot(x_t,y_t, label = "Analytic solution")
+plot(x_t,y_t, label = "Analytic solution", color = "black", linewidth = 3)
 
 y_t2 = plot_solution(results_test.expr, grammar)
-plot!(x_t,y_t2, label = "GP approximation")
+plot!(x_t,y_t2, linestyle =:dash, label = "GP approximation", linewidth = 3)
 end
 
 # ╔═╡ 2828cd90-3cd7-11eb-0815-658096d0dff0
@@ -171,10 +171,10 @@ results_1 = optimize(g, grammar, :R, fitness_1)
 begin 
 x_11 = 0.1:0.01:10.
 y_11 = sin.(10 .*x_11)
-plot(x_11,y_11, label = "Analytic solution")
+plot(x_11,y_11, label = "Analytic solution", color = "black", linewidth = 3)
 
 y_12 = plot_solution(results_1.expr, grammar)
-plot!(x_11,y_12, label = "GP approximation")
+plot!(x_11,y_12, label = "GP approximation", linestyle =:dash, linewidth = 3)
 end
 
 # ╔═╡ 15acf7f0-416d-11eb-0b0c-e9bf40b3994a
@@ -212,10 +212,10 @@ end
 begin 
 x_21 = 0.1:0.01:10.
 y_21 = (x_21.+2)./sin.(x_21)
-plot(x_21,y_21, label = "Analytic solution")
+plot(x_21,y_21, label = "Analytic solution", color = "black", linewidth = 3)
 
 y_22 = plot_solution(results_2.expr, grammar)
-plot!(x_21,y_22, label = "GP approximation")
+plot!(x_21,y_22, label = "GP approximation", linestyle =:dash, linewidth = 3)
 end
 
 # ╔═╡ 34823660-4175-11eb-2555-23ae963b2331
@@ -253,10 +253,10 @@ end
 begin 
 x_31 = 0.1:0.01:10.
 y_31 = (x_31.+2)./(x_31)
-plot(x_31,y_31, label = "Analytic solution")
+plot(x_31,y_31, label = "Analytic solution", color = "black", linewidth = 3)
 
 y_32 = plot_solution(results_3.expr, grammar)
-plot!(x_31,y_32, label = "GP approximation")
+plot!(x_31,y_32, label = "GP approximation", linestyle =:dash, linewidth = 3)
 end
 
 # ╔═╡ a33d4f70-4177-11eb-24e4-2b5bce116674
@@ -298,10 +298,10 @@ end
 begin 
 x_41 = 0.1:0.01:10.
 y_41 = 2 .*(x_41).*exp.(3 .*x_41)
-plot(x_41,y_41, label = "Analytic solution")
+plot(x_41,y_41, label = "Analytic solution", color =:black, linewidth = 3)
 
 y_42 = plot_solution(results_4.expr, grammar)
-plot!(x_41,y_42, label = "GP approximation")
+plot!(x_41,y_42, label = "GP approximation", linestyle =:dash, linewidth = 3)
 end
 
 # ╔═╡ 451fe6a0-44b5-11eb-3f88-77696c6d234e
@@ -319,10 +319,10 @@ end
 begin 
 x_41s = 0.1:0.01:1.
 y_41s = 2 .*(x_41s).*exp.(3 .*x_41s)
-plot(x_41s,y_41s, label = "Analytic solution")
+plot(x_41s,y_41s, label = "Analytic solution", color = "black", linewidth = 3)
 
 y_42s = plot_solution_small(results_4.expr, grammar)
-plot!(x_41s,y_42s, label = "GP approximation")
+plot!(x_41s,y_42s, label = "GP approximation", linestyle =:dash, linewidth = 3)
 end
 
 # ╔═╡ ad064680-44ae-11eb-39c1-43eb3e048ee4
