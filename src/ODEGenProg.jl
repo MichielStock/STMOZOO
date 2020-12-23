@@ -50,18 +50,19 @@ end
     fizzywop_test(tree::RuleNode, grammar::Grammar)
 This is a hardcoded fitness function to solve the differential equation f'(x) - f(x) = 0, 
 with boundary condition f(0) = 1. The expected solution is f(x) = exp(x). Inspired by Tsoulos and Lagaris (2006). 
-I implemented this function to make it more clear how fitness for each expression derived from the expression tree is evaluated. 
+I implemented this function to make it more clear how the fitness for each expression derived from the expression tree is evaluated. 
 This is based on evaluating the differential equation over an interval of sensible points. Also penalizes deviation from boundary conditions.
-Weighted by factor λ.  
+Weighted by factor λ (here set to 100). I tested this for 5 different ODE's in the notebook. Some solutions are exact, the others very good
+approximations.  
 
 """
 function fizzywop_test(tree::RuleNode, grammar::Grammar)
     ex = get_executable(tree, grammar)
-    score = 0.0
-	#Choose N equidistant points (x_0, x_1, ..., x_N) in a relevant range.
+    los = 0.0
+	#domain
     for x = 0.0:0.1:1.0
 		S[:x] = x
-		score += try (abs(Core.eval(S,differentiate(ex)) - Core.eval(S,ex)))^2
+		los += try (Core.eval(S,differentiate(ex)) - Core.eval(S,ex))^2
 		catch
 			return Inf
 		end
@@ -69,15 +70,17 @@ function fizzywop_test(tree::RuleNode, grammar::Grammar)
 	#boundary conditions
 	S[:x] = 0
 	λ = 100.
-	score += try λ*(((Core.eval(S,ex)-1))^2)
+	los += try λ*(((Core.eval(S,ex)-1))^2)
 	catch
 		return Inf
 	end
-	return score
+	return los
 end
 
 """
-	Standardize ODE form 
+	Standardize ODE form: the problem is that now I test 4-5 ODE in my notebook but each time have a seperate fitness function
+	where I 'hardcoded' the system and boundary conditions. I guess it would be tidier if I have one function that could generate 
+	a proper fitness function based on a standardized input of ODE f(x,y,y',y'',...) = 0 + boundary conditions. 
 """
 function ODEinit(ODE,boundary,interval)
 end
