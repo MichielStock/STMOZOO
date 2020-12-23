@@ -1,7 +1,7 @@
 ## ODEGenProg
 
-Provides a basic implementation of genetic programming to solve a simple ODE.
+Provides a basic implementation of genetic programming to solve simple ODE's.
 
 ```@docs
-STMOZOO.ODEGenProg.fizzywop_test
+STMOZOO.ODEGenProg.fitness_test
 ```

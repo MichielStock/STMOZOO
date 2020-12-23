@@ -10,7 +10,7 @@ module ODEGenProg
 using ExprRules, ExprOptimization, Random, Plots, Calculus
 
 # export all functions that are relevant for the user
-export foo_bar, fizzywop_test, define_grammar, ODEinit, fizzywop_g
+export foo_bar, fitness_test, define_grammar, ODEinit, fitness_general
 
 """
 	this is a test function
@@ -20,6 +20,8 @@ function foo_bar(x::Int64,y::Int64)
 end
 
 """
+	define_grammar()
+	This function returns the standard grammar that is used to create and evaluate expression trees.
 """
 function define_grammar()
 	grammar = @grammar begin
@@ -49,11 +51,12 @@ for a given tree based on a given grammar.
 
 I implemented this function to make it more clear how the fitness for each expression derived from the expression tree is evaluated. 
 This is based on evaluating the differential equation over an interval of sensible points. Also penalizes deviation from boundary conditions.
-Weighted by factor λ (here set to 100). I tested this for 5 different ODE's in the notebook. Some solutions are exact, the others very good
+Weighted by factor λ (here set to 100). I tested this for 5 different ODE's in the notebook. Some solutions are exact, others are more
 approximations. The problem now it that I have a different fitness function for each differential equation, see also comment below". 
 
 """
-function fizzywop_test(tree::RuleNode, grammar::Grammar)
+function fitness_test(tree::RuleNode, grammar::Grammar)
+	S = SymbolTable(grammar)
 	ex = get_executable(tree, grammar) #Get the expression from a given tree based on the grammar
     los = 0.0
 	#Evaluate expression over an interval [0:1]. The calculus package is used to do symbolic differentiation of the expression according to the given differential equation. 
@@ -85,7 +88,7 @@ end
 """
 	General fitness function
 """
-function fizzywop_g(tree::RuleNode, grammar::Grammar)
+function fitness_general(tree::RuleNode, grammar::Grammar)
 end
 
 end

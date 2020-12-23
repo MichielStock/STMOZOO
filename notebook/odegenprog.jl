@@ -57,7 +57,7 @@ end
 	
 
 # ╔═╡ 8e3cf55e-4179-11eb-26a1-138d1c0e9ffc
-function fizzywop_g(tree::RuleNode, grammar::Grammar)
+function fitness_g(tree::RuleNode, grammar::Grammar)
 end
 
 # ╔═╡ 5046e1a0-414a-11eb-2cfd-c73667f808f7
@@ -73,7 +73,7 @@ end
 
 # ╔═╡ 1aa00a80-4484-11eb-3d2f-8f4fdb6a4c61
 """
-    fizzywop_test(tree::RuleNode, grammar::Grammar)
+    fitness_test(tree::RuleNode, grammar::Grammar)
 This is a hardcoded fitness function to solve the differential equation f'(x) - f(x) = 0, 
 with boundary condition f(0) = 1. The expected solution is f(x) = exp(x). Inspired by Tsoulos and Lagaris (2006). 
 I implemented this function to make it more clear how the fitness for each expression derived from the expression tree is evaluated. 
@@ -82,7 +82,7 @@ Weighted by factor λ (here set to 100). I tested this for 5 different ODE's in 
 approximations.  
 
 """
-function fizzywop_test(tree::RuleNode, grammar::Grammar)
+function fitness_test(tree::RuleNode, grammar::Grammar)
 	ex = get_executable(tree, grammar) #Get the expression from a given tree based on the grammar
     los = 0.0
 	#Evaluate expression over an interval [0:1]. The calculus package is used to do symbolic differentiation of the expression according to the given differential equation. 
@@ -104,13 +104,21 @@ function fizzywop_test(tree::RuleNode, grammar::Grammar)
 end
 
 # ╔═╡ 3e717920-44b7-11eb-18a3-bbb77312ad93
-fizzywop_test()
+fitness_test
 
 # ╔═╡ 3ad61410-3cce-11eb-0e65-ebf59517000e
-g = GeneticProgram(250,50,5,0.3,0.3,0.4)
+""" function GeneticProgram(
+        pop_size::Int,                          #population size 
+        iterations::Int,                        #number of generations 
+        max_depth::Int,                         #maximum depth of derivation tree
+        p_reproduction::Float64,                #probability of reproduction operator 
+        p_crossover::Float64,                   #probability of crossover operator
+        p_mutation::Float64;                    #probability of mutation operator) 
+"""
+g = GeneticProgram(500,50,5,0.3,0.3,0.4)
 
 # ╔═╡ 408525a0-44b1-11eb-115f-fd737e2887a4
-results_test = optimize(g, grammar, :R, fizzywop_test)
+results_test = optimize(g, grammar, :R, fitness_test)
 
 # ╔═╡ 41e10c20-44b1-11eb-0684-e1b9539e2de0
 (results_test.expr, results_test.loss)
@@ -138,7 +146,7 @@ end
 
 # ╔═╡ 2828cd90-3cd7-11eb-0815-658096d0dff0
 "hardcoded fitness function for y''=100y, y(0)=0, y(0)=10 -> y(x)=sin(10x)"
-function fizzywop_1(tree::RuleNode, grammar::Grammar)
+function fitness_1(tree::RuleNode, grammar::Grammar)
     ex = get_executable(tree, grammar)
     los = 0.0
 	
@@ -167,9 +175,25 @@ function fizzywop_1(tree::RuleNode, grammar::Grammar)
 	return los
 end
 
+# ╔═╡ 3cf8f410-3cce-11eb-277e-f5cf01627feb
+results_1 = optimize(g, grammar, :R, fitness_1)
+
+# ╔═╡ 3cf96940-3cce-11eb-3d47-f762c438e963
+(results_1.expr, results_1.loss)
+
+# ╔═╡ 37bdd520-44b1-11eb-2927-4f1bd6f21b99
+begin 
+x_11 = 0.1:0.01:10.
+y_11 = sin.(10 .*x_11)
+plot(x_11,y_11, label = "Analytic solution")
+
+y_12 = plot_solution(results_1.expr, grammar)
+plot!(x_11,y_12, label = "GP approximation")
+end
+
 # ╔═╡ 15acf7f0-416d-11eb-0b0c-e9bf40b3994a
 "hardcoded fitness function for y'=(1-y*cos(x))/sin(x), y(0.1)=2.1/sin(0.1)-> y(x)=(x+2)/sin(x)"
-function fizzywop_2(tree::RuleNode, grammar::Grammar)
+function fitness_2(tree::RuleNode, grammar::Grammar)
     ex = get_executable(tree, grammar)
     los = 0.0
 	
@@ -194,7 +218,7 @@ end
 
 # ╔═╡ 5f1bf520-44b1-11eb-3eff-733bb1e93077
 begin
-	results_2 = optimize(g, grammar, :R, fizzywop_2)
+	results_2 = optimize(g, grammar, :R, fitness_2)
 	(results_2.expr, results_2.loss)
 end
 
@@ -210,7 +234,7 @@ end
 
 # ╔═╡ 34823660-4175-11eb-2555-23ae963b2331
 "hardcoded fitness function for y'=(2x-y)/x, y(0)=20.1-> y(x)=x+2/x"
-function fizzywop_3(tree::RuleNode, grammar::Grammar)
+function fitness_3(tree::RuleNode, grammar::Grammar)
     ex = get_executable(tree, grammar)
     los = 0.0
 	
@@ -235,7 +259,7 @@ end
 
 # ╔═╡ 6f70dda0-44b1-11eb-18f2-d76f37ec9519
 begin
-	results_3 = optimize(g, grammar, :R, fizzywop_3)
+	results_3 = optimize(g, grammar, :R, fitness_3)
 	(results_3.expr, results_3.loss)
 end
 
@@ -251,7 +275,7 @@ end
 
 # ╔═╡ a33d4f70-4177-11eb-24e4-2b5bce116674
 "hardcoded fitness function for y''-6y'+9y=0"
-function fizzywop_4(tree::RuleNode, grammar::Grammar)
+function fitness_4(tree::RuleNode, grammar::Grammar)
     ex = get_executable(tree, grammar)
     los = 0.0
 	
@@ -280,7 +304,7 @@ end
 
 # ╔═╡ 756cd920-44b1-11eb-0ad6-c95c100c57f6
 begin
-	results_4 = optimize(g, grammar, :R, fizzywop_4)
+	results_4 = optimize(g, grammar, :R, fitness_4)
 	(results_4.expr, results_4.loss)
 end
 
@@ -356,69 +380,8 @@ function fizzywop_1(tree::RuleNode)
 	return los
 end
 
-# ╔═╡ 3cf8f410-3cce-11eb-277e-f5cf01627feb
-results_1 = optimize(g, grammar, :R, fizzywop_1)
-
-# ╔═╡ 3cf96940-3cce-11eb-3d47-f762c438e963
-(results_1.expr, results_1.loss)
-
-# ╔═╡ 37bdd520-44b1-11eb-2927-4f1bd6f21b99
-begin 
-x_11 = 0.1:0.01:10.
-y_11 = sin.(10 .*x_11)
-plot(x_11,y_11, label = "Analytic solution")
-
-y_12 = plot_solution(results_1.expr, grammar)
-plot!(x_11,y_12, label = "GP approximation")
-end
-
 # ╔═╡ 64b70a20-400a-11eb-1561-b32b24c92788
 sort(fizzywop_1.(population))
-
-# ╔═╡ 010bb480-3b32-11eb-2dbc-67c877f904e9
-
-
-# ╔═╡ 2e759c80-3e69-11eb-2833-7595a8f766c3
-
-
-# ╔═╡ 0de5b4c0-3e6c-11eb-30a8-413735ce9a36
-
-
-# ╔═╡ b26d6b90-3cd8-11eb-2286-c1bcdb62ae58
-sol = results_gp.expr
-
-# ╔═╡ ea5bb580-4150-11eb-0606-7710bf0c4c06
-ex_best = get_executable(sol, grammar)
-
-# ╔═╡ 8ab5f380-4163-11eb-3ac6-f55b0a5ae1f3
-(deparse(sol))
-
-# ╔═╡ e3e02b50-3f43-11eb-1cee-3534cbc03bef
-sol.args
-
-# ╔═╡ 2402a050-3f44-11eb-107e-091d71973035
-sol.head
-
-# ╔═╡ ea73c640-3e6f-11eb-0424-9d2f7cd0f049
-sol.args[1:end]
-
-# ╔═╡ fb59bb5e-3f44-11eb-1b44-ed41a1411728
-(sol.args[1])
-
-# ╔═╡ fdf81cc0-3e6f-11eb-1c74-490ff3d5852c
-typeof(sol)
-
-# ╔═╡ 75036940-3e6c-11eb-2cd3-d50b0670c3da
-Core.eval(S,sol)
-
-# ╔═╡ df76cbd0-3f45-11eb-1d01-3ba63724d1fa
-t(x) = sol
-
-# ╔═╡ b752ce50-3f46-11eb-2027-d73e4b605122
-
-
-# ╔═╡ 8d1bda80-4164-11eb-0351-4513d94fb8ab
-
 
 # ╔═╡ d503e4a0-3cc8-11eb-33f2-2bfdef902159
 ground_truth(x) = sin(10*x)
@@ -436,9 +399,6 @@ function loss(tree::RuleNode, grammar::Grammar)
     end
     los
 end
-
-# ╔═╡ 05dcaede-4485-11eb-3a3c-4f6a45a54b24
-results_gp.expr == :(log(1))
 
 # ╔═╡ Cell order:
 # ╠═0487a66e-4175-11eb-3839-79ff040436c4
@@ -481,21 +441,5 @@ results_gp.expr == :(log(1))
 # ╠═64b70a20-400a-11eb-1561-b32b24c92788
 # ╠═3ea34f00-400b-11eb-0df7-5bc2916a138d
 # ╠═29fa7690-43f9-11eb-0627-fb7ca7d07ad2
-# ╠═ea5bb580-4150-11eb-0606-7710bf0c4c06
-# ╠═8ab5f380-4163-11eb-3ac6-f55b0a5ae1f3
-# ╟─010bb480-3b32-11eb-2dbc-67c877f904e9
-# ╟─2e759c80-3e69-11eb-2833-7595a8f766c3
-# ╟─0de5b4c0-3e6c-11eb-30a8-413735ce9a36
-# ╠═b26d6b90-3cd8-11eb-2286-c1bcdb62ae58
-# ╠═e3e02b50-3f43-11eb-1cee-3534cbc03bef
-# ╠═2402a050-3f44-11eb-107e-091d71973035
-# ╠═ea73c640-3e6f-11eb-0424-9d2f7cd0f049
-# ╠═fb59bb5e-3f44-11eb-1b44-ed41a1411728
-# ╠═fdf81cc0-3e6f-11eb-1c74-490ff3d5852c
-# ╠═75036940-3e6c-11eb-2cd3-d50b0670c3da
-# ╠═df76cbd0-3f45-11eb-1d01-3ba63724d1fa
-# ╟─b752ce50-3f46-11eb-2027-d73e4b605122
-# ╟─8d1bda80-4164-11eb-0351-4513d94fb8ab
 # ╠═d8c35da0-3cc8-11eb-0a0d-1b0cef840d03
 # ╠═d503e4a0-3cc8-11eb-33f2-2bfdef902159
-# ╠═05dcaede-4485-11eb-3a3c-4f6a45a54b24
