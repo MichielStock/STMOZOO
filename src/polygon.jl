@@ -25,7 +25,7 @@ struct Triangle <: Shape
     p1::ComplexF64 
     p2::ComplexF64
     p3::ComplexF64
-    color::RGB
+    color::RGB  # I think RGB is an abstract type, so RGB{Float64}
 end
 
 """
@@ -42,18 +42,18 @@ function sameSideOfLine(point::Complex, trianglepoint::Complex, line::Tuple)
     
     # making the lines equation from the given 2 points: y = ax + b
     if x1 != x2 #not a vertical line
-        a = (y2 - y1)/(x2 - x1)
+        a = (y2 - y1) / (x2 - x1)
         # intercept from y = ax + b => b = y_1 - ax_1 
         b = y1 - a*x1
 
         # substract y-value from line at point's x-value from points y-value 
-        linediff_point = imag(point) - (a*real(point) + b)
-        linediff_trianglepoint = imag(trianglepoint) - (a*real(trianglepoint) + b)
+        linediff_point = imag(point) - (a * real(point) + b)
+        linediff_trianglepoint = imag(trianglepoint) - (a * real(trianglepoint) + b)
         # if a point is above the line, this value will be positive, if it's beneath the line, the value will be negative
         # if both points are on the same side of the line, both values will have the same sign
         # if we multiply the values, a positive sign will indicate they're on the same side and a negative sign means they're on separate sides
 
-        return linediff_point*linediff_trianglepoint >= 0
+        return linediff_point*linediff_trianglepoint ≥ 0
 
     else #x1 == x2: A vertical line: a cannot be calculated (division by 0)
         #equation is now x = b
@@ -62,9 +62,7 @@ function sameSideOfLine(point::Complex, trianglepoint::Complex, line::Tuple)
         linediff_trianglepoint = real(trianglepoint) - b
         # Difference between point's x-value and line's x-value
         # Same principle as above
-
-        return linediff_point*linediff_trianglepoint >= 0
-
+        return sign(linediff_point) == sign(linediff_trianglepoint)  # I like this better
     end  
 
 end
@@ -87,7 +85,7 @@ function in(point::Complex, triangle::Triangle)
     tpoints = (triangle.p1, triangle.p2, triangle.p3)
     checks = Vector{Bool}(undef, 3)
 
-    for i in 1:3
+    for i in 1:3  # FIXME: if you hardcode it using `&&` it will be much faster
         line = tpoints[1:3 .!= i] # e.g. points 2 and 3 if i = 1
         trianglepoint = tpoints[i] #e.g. point 1 if i = 1
         
@@ -102,7 +100,7 @@ in((x, y), shape::Shape) = in(complex(x, y), shape)
 """
 Unused function. Easy to understand, but very inefficient. 
 The real drawtriangle functions is quite difficult to understand, so reading this first will probably help.
-It simply goes over all pixels in the rectangle defined by the verteces of the triangle and checks if the pixel belongs the the triangle.
+It simply goes over all pixels in the rectangle defined by the vertices of the triangle and checks if the pixel belongs the the triangle.
 """
 # function olddrawtriangle(triangle::Triangle, img0)
 #     m = length(img0[:, 1]) # y-values
@@ -142,11 +140,10 @@ b) keep calculating the slope
 By using these tricks, the function is about 30 times faster than olddrawtriangle.
 """
 function drawtriangle(triangle::Triangle, img0::Array)
-    
-    m = length(img0[:, 1]) # y-values
-    n = length(img0[1, :]) # x-values
-    img = deepcopy(img0)
+    m, n = size(img0)  # the original one needed to allocate memory
+    img = deepcopy(img0)  # QUESTION: why take a copy: just fill in image (preallocated memory), will be faster if you run this many times
 
+    # FIXME: this can be defined in a different function...
     xmin = Int(min(real(triangle.p1), real(triangle.p2), real(triangle.p3)))
     xmin = max(xmin, 1) # In case a point of the triangle is outside of the canvas
     xmax = Int(max(real(triangle.p1), real(triangle.p2), real(triangle.p3)))
@@ -163,6 +160,7 @@ function drawtriangle(triangle::Triangle, img0::Array)
     counter = 1
     ymin0 = ymin
 
+    # QUESTION: is it not nearly as effecient to check the box around the triangle?
     while counter <= 2 # We need the first 2 points of both sides of the triangle for their slopes
 
         j = xmin # Start at left side of line and go right
@@ -242,6 +240,8 @@ function drawtriangle(triangle::Triangle, img0::Array)
     return img
 end
 
+#FIXME: draw*i*mage!
+# I think you should loop over all triangles within the function drawimage
 """
     drawImage(triangles::Array, canvas::Array)
 
@@ -271,6 +271,9 @@ function colordiffsum(img1::Array, img2::Array, m::Int, n::Int)
     return colsum
 end
 
+# or: colordiffsum(img1::Array, img2::Array, m::Int, n::Int) = sum(colordiff.(img1. img2))
+
+# FIXME: no capitals in function  names :s
 """
     checkTriangle(triangle::Triangle, m::Int, n::Int)
 
@@ -313,9 +316,14 @@ function checkTriangle(triangle::Triangle, m::Int, n::Int)
 
     isStupid = any([YisStupid, XisStupid, pointsAreStupid, isStretchyBoi])
 
+    # FIXME: faster if you stop when you found that the triangle is stupid
+    # YisStupid && return true (put this as early as possible)
+
     return isStupid
 end
 
+# FIXME: no capitals in function  names :s
+# FIXME: not sure if this matters, your GA will select visible triangles anyway
 """
     generateTriangle(m::Int, n::Int)
 
@@ -387,6 +395,8 @@ end
 #     end
 #     return population
 # end
+
+
 
 """
     triangleTournament(population0::Array, pop_size::Int)
@@ -501,14 +511,15 @@ end
 """
     triangleEvolution(image::String, number_triangles::Int, generations::Int)
 
-The actual algorithm. An evolutionary algorithm with the goal to approximate a given image as well as possible with a bunch of triangles.
+The actual algorithm. An evolutionary algorithm with the goal to approximate a given image
+as well as possible with a bunch of triangles.
 Parameters still require optimizing.
 There is a variant making use of the HGT and a varian making use of children.
 Currently the variant with children is performing better, but the HGT's parameters may be unoptimal.
 """
 function triangleEvolution(image::String, number_triangles::Int, generations::Int)
     
-    generations = 100
+    generations = 100  # FIXME: these should be keyword arguments with default values
     number_triangles = 25
     pop_size = 100
     elitism_freq = 0.1 # best x percent of population always gets through to the next generation
@@ -572,7 +583,7 @@ function triangleEvolution(image::String, number_triangles::Int, generations::In
         Plots.frame(anim)
     end
 
-    gif(anim, "triangledance.gif", fps = 2)
+    gif(anim, "triangledance.gif", fps = 2)  # do I want to know what this is?
 
     return population0
 end
