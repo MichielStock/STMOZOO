@@ -20,6 +20,7 @@ Random.seed!(10)
 #explain something about GP in general, expression tree
 
 # ╔═╡ 9659f610-3b2c-11eb-132c-cfe5fbcbb7c1
+#general grammar used for solving ODE's
 grammar = @grammar begin
 	R = |(1:9)
 	R = R + R
@@ -32,7 +33,7 @@ grammar = @grammar begin
 	R = exp(R)
 	R = log(R)
 	R = x
-	#R = y
+	#R = y #I just sticked to one variable for now
 	#R = z
 	
 end
@@ -72,36 +73,18 @@ end
 #(1) I sped up the fitness function by adjusting the discretization; (2) reduced the max_depth of the derivation trees searched; (3) reduced the number of evaluations of the fitness function by using smaller population sizes and iterations.
 
 # ╔═╡ 1aa00a80-4484-11eb-3d2f-8f4fdb6a4c61
-"""
+md"""
     fitness_test(tree::RuleNode, grammar::Grammar)
-This is a hardcoded fitness function to solve the differential equation f'(x) - f(x) = 0, 
-with boundary condition f(0) = 1. The expected solution is f(x) = exp(x). Inspired by Tsoulos and Lagaris (2006). 
+This is a hardcoded fitness function for the differential equation f'(x) - f(x) = 0, 
+with boundary condition f(0) = 1. The expected solution is f(x) = exp(x). Inspired by Tsoulos and Lagaris (2006). Returns the fitness 
+for a given tree based on a given grammar.
+
 I implemented this function to make it more clear how the fitness for each expression derived from the expression tree is evaluated. 
 This is based on evaluating the differential equation over an interval of sensible points. Also penalizes deviation from boundary conditions.
-Weighted by factor λ (here set to 100). I tested this for 5 different ODE's in the notebook. Some solutions are exact, the others very good
-approximations.  
+Weighted by factor λ (here set to 100). I tested this for 5 different ODE's in the notebook. Some solutions are exact, others are more
+approximations. The problem now it that I have a different fitness function for each differential equation, see also comment below". 
 
 """
-function fitness_test(tree::RuleNode, grammar::Grammar)
-	ex = get_executable(tree, grammar) #Get the expression from a given tree based on the grammar
-    los = 0.0
-	#Evaluate expression over an interval [0:1]. The calculus package is used to do symbolic differentiation of the expression according to the given differential equation. 
-    for x = 0.0:0.1:1.0
-		S[:x] = x
-		los += try (Core.eval(S,differentiate(ex)) - Core.eval(S,ex))^2
-		catch
-			return Inf
-		end
-    end
-	#Also boundary conditions are evaluated in this seperate step that allows for weighting the score with a factor λ. Here set default to 100 (as in Tsoulos and Lagaris (2006)). 
-	S[:x] = 0
-	λ = 100.
-	los += try λ*(((Core.eval(S,ex)-1))^2)
-	catch
-		return Inf
-	end
-	return los
-end
 
 # ╔═╡ 3e717920-44b7-11eb-18a3-bbb77312ad93
 fitness_test
@@ -116,6 +99,9 @@ fitness_test
         p_mutation::Float64;                    #probability of mutation operator) 
 """
 g = GeneticProgram(500,50,5,0.3,0.3,0.4)
+
+# ╔═╡ 07c74990-44c1-11eb-27f0-7b786b4380ae
+md""" #### General remark: the solutions change a lot for the more complex ODE's and don't seem to be super reliable yet. I could up the population size to 1000-2000 or increase the number of iterations (50 seems pretty low) butt this makes it more computationally expensive for this notebook."""
 
 # ╔═╡ 408525a0-44b1-11eb-115f-fd737e2887a4
 results_test = optimize(g, grammar, :R, fitness_test)
@@ -414,9 +400,10 @@ end
 # ╠═8e3cf55e-4179-11eb-26a1-138d1c0e9ffc
 # ╠═5046e1a0-414a-11eb-2cfd-c73667f808f7
 # ╠═6c5d5bf0-4157-11eb-3cf1-87d33b65b6e0
-# ╠═1aa00a80-4484-11eb-3d2f-8f4fdb6a4c61
+# ╟─1aa00a80-4484-11eb-3d2f-8f4fdb6a4c61
 # ╠═3e717920-44b7-11eb-18a3-bbb77312ad93
 # ╠═3ad61410-3cce-11eb-0e65-ebf59517000e
+# ╠═07c74990-44c1-11eb-27f0-7b786b4380ae
 # ╠═408525a0-44b1-11eb-115f-fd737e2887a4
 # ╠═41e10c20-44b1-11eb-0684-e1b9539e2de0
 # ╠═1c628c20-44b2-11eb-037e-a181361f55b4

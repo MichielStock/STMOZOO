@@ -40,25 +40,24 @@ function define_grammar()
         #R = y
         #R = z
 	end
-	S = SymbolTable(grammar) #ExprRule's interpreter, should increase performance according to documentation
-	return grammar, S
+	return grammar
 end
 
 
 """
     fitness_test(tree::RuleNode, grammar::Grammar)
 This is a hardcoded fitness function for the differential equation f'(x) - f(x) = 0, 
-with boundary condition f(0) = 1. The expected solution is f(x) = exp(x). Inspired by Tsoulos and Lagaris (2006). Returns the fitness 
-for a given tree based on a given grammar.
+with boundary condition f(0) = 1. The expected solution is f(x) = exp(x). It returns the fitness 
+for a given tree based on a given grammar. Inspired by Tsoulos and Lagaris (2006).
 
-I implemented this function to make it more clear how the fitness for each expression derived from the expression tree is evaluated. 
+Comment: I implemented this function to make it more clear how the fitness for each expression derived from the expression tree is evaluated. 
 This is based on evaluating the differential equation over an interval of sensible points. Also penalizes deviation from boundary conditions.
 Weighted by factor λ (here set to 100). I tested this for 5 different ODE's in the notebook. Some solutions are exact, others are more
 approximations. The problem now it that I have a different fitness function for each differential equation, see also comment below". 
 
 """
 function fitness_test(tree::RuleNode, grammar::Grammar)
-	S = SymbolTable(grammar)
+	S = SymbolTable(grammar) #ExprRule's interpreter, should increase performance according to documentation
 	ex = get_executable(tree, grammar) #Get the expression from a given tree based on the grammar
     los = 0.0
 	#Evaluate expression over an interval [0:1]. The calculus package is used to do symbolic differentiation of the expression according to the given differential equation. 
