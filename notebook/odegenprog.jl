@@ -5,7 +5,7 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ 66a50de0-39bc-11eb-1073-ef22db3f78c6
-using ExprRules, ExprOptimization, Random, Plots, Calculus, STMOZOO.ODEGenProg
+using ExprRules, ExprOptimization, Random, Plots, Calculus, TreeView, STMOZOO.ODEGenProg
 
 # ╔═╡ 0487a66e-4175-11eb-3839-79ff040436c4
 md"""### Solving ordinary differential equations with genetic programming"""
@@ -13,11 +13,17 @@ md"""### Solving ordinary differential equations with genetic programming"""
 # ╔═╡ d29547a0-44b5-11eb-01ec-a3804e3564c1
 md""" note: first and second order linear differential equations """
 
+# ╔═╡ fe2273d0-4590-11eb-0ad0-857e30bf1fc7
+#@tree :(sin((3 + 7) * x))
+
 # ╔═╡ 1496aa80-3cce-11eb-3a7f-635d62b89453
 Random.seed!(10)
 
 # ╔═╡ f347a420-44b5-11eb-1865-43ff190e3f3b
 #explain something about GP in general, expression tree
+
+# ╔═╡ a9646df0-457a-11eb-07c0-85ae52532bd8
+md""" keywords: Genetic Programming, evolutionary algorithm, population-based meta-heuristic, evolving programs"""
 
 # ╔═╡ 9659f610-3b2c-11eb-132c-cfe5fbcbb7c1
 #general grammar used for solving ODE's
@@ -31,11 +37,7 @@ grammar = @grammar begin
 	R = sin(R)
 	R = cos(R)
 	R = exp(R)
-	#R = log(R)
 	R = x
-	#R = y #I just sticked to one variable for now
-	#R = z
-	
 end
 
 # ╔═╡ 0b262180-43fc-11eb-3042-d3f83630d086
@@ -177,6 +179,9 @@ y_12 = plot_solution(results_1.expr, grammar)
 plot!(x_11,y_12, label = "GP approximation", linestyle =:dash, linewidth = 3)
 end
 
+# ╔═╡ 2588f610-4582-11eb-2c24-fb15147640f7
+md""" The 2 previous functions should be exact solutions, the following are more difficult test functions that yield viarble results, don't converge very well. This is also the case in paper where the range for iterations was pretty large (up to 1200 generations). Try different population methods. Entropy. Calculate complexity of predicted solution based grammar ?"""
+
 # ╔═╡ 15acf7f0-416d-11eb-0b0c-e9bf40b3994a
 "hardcoded fitness function for y'=(1-y*cos(x))/sin(x), y(0.1)=2.1/sin(0.1)-> y(x)=(x+2)/sin(x)"
 function fitness_2(tree::RuleNode, grammar::Grammar)
@@ -194,7 +199,8 @@ function fitness_2(tree::RuleNode, grammar::Grammar)
 	
 	#boundary conditions
 	S[:x] = 0.1
-	los += try (abs(Core.eval(S,ex)-(2.1/sin(0.1))))^4 
+	λ = 100.
+	los += try λ*(Core.eval(S,ex)-(2.1/sin(0.1)))^2
 	catch
 		return Inf
 	end
@@ -235,7 +241,8 @@ function fitness_3(tree::RuleNode, grammar::Grammar)
 	
 	#boundary conditions
 	S[:x] = 0.
-	los += try (abs(Core.eval(S,ex)-20.1))^2 
+	λ = 100.
+	los += try λ*(Core.eval(S,ex)-20.1)^2 
 	catch
 		return Inf
 	end
@@ -266,7 +273,7 @@ function fitness_4(tree::RuleNode, grammar::Grammar)
     los = 0.0
 	
 	#domain
-    for x = 0.1:0.1:1.
+    for x = 0.1:2.:20.1
 		S[:x] = x
 		los += try (abs(Core.eval(S,differentiate(differentiate(ex))) - 6*(Core.eval(S,differentiate(ex))) + 9*Core.eval(S,ex)))^2
 		catch
@@ -276,11 +283,12 @@ function fitness_4(tree::RuleNode, grammar::Grammar)
 	
 	#boundary conditions
 	S[:x] = 0.
-	los += try (abs(Core.eval(S,ex)-0))^2 
+	λ = 100.
+	los += try λ*(Core.eval(S,ex)-0)^2 
 	catch
 		return Inf
 	end
-	los += try (abs(Core.eval(S,differentiate(ex))-2))^2 
+	los += try λ*(Core.eval(S,differentiate(ex))-2)^2 
 	catch
 		return Inf
 	end
@@ -324,6 +332,114 @@ plot(x_41s,y_41s, label = "Analytic solution", color = "black", linewidth = 3)
 y_42s = plot_solution_small(results_4.expr, grammar)
 plot!(x_41s,y_42s, label = "GP approximation", linestyle =:dash, linewidth = 3)
 end
+
+# ╔═╡ b6c97abe-4580-11eb-02e8-e1dfe421cbd5
+#general grammar used for solving ODE's
+grammar_2D = @grammar begin
+	R2D2 = |(1:9)
+	R2D2 = R2D2 + R2D2
+	R2D2 = R2D2 - R2D2
+	R2D2 = R2D2 / R2D2
+	R2D2 = R2D2 * R2D2
+	R2D2 = x ^ R2D2
+	R2D2 = sin(R2D2)
+	R2D2 = cos(R2D2)
+	R2D2 = exp(R2D2)
+	R2D2 = x
+	R2D2 = y 
+end
+
+# ╔═╡ e5b818f0-4580-11eb-279f-8b6b2b2e0fe6
+S_2D = SymbolTable(grammar_2D)
+
+# ╔═╡ bf3a1fc0-4580-11eb-3b8b-1bb5d8055aec
+"hardcoded fitness function"
+function fitness_2D(tree::RuleNode, grammar::Grammar)
+    ex = get_executable(tree, grammar)
+    loss = 0.
+	
+	#domain
+    for x = 0.1:0.1:1.0
+		for y = 0.1:0.1:1.0
+			S_2D[:x] = x
+			S_2D[:y] = y
+			loss += try (Core.eval(S_2D,differentiate(differentiate(ex, :x), :x)) + Core.eval(S_2D,differentiate(differentiate(ex, :y), :y)) + (2*(Core.eval(S_2D,ex))))^2
+			catch
+				return Inf
+			end
+		end
+    end
+	
+	#boundary conditions
+	S_2D[:x] = 0.
+	λ = 10.
+	loss += try λ*(Core.eval(S_2D,ex)-0)^2 
+	catch
+		return Inf
+	end
+	
+	S_2D[:x] = 1.
+	λ = 10.
+	loss += try λ*(Core.eval(S_2D,ex)-(Core.eval(S_2D,:(sin(1)*cos(y)))))^2 
+	catch
+		return Inf
+	end
+	
+	S_2D[:y] = 0.
+	λ = 10.
+	loss += try λ*(Core.eval(S_2D,ex)-(Core.eval(S_2D,:(sin(x)))))^2 
+	catch
+		return Inf
+	end
+	
+	S_2D[:y] = 1.
+	λ = 10.
+	loss += try λ*(Core.eval(S_2D,ex)-(Core.eval(S_2D,:(sin(x)*cos(1)))))^2 
+	catch
+		return Inf
+	end
+		
+	return loss
+end
+
+# ╔═╡ 3e615600-4587-11eb-2753-c35e34d5dd2d
+g_2D = GeneticProgram(200,25,5,0.3,0.3,0.4)
+
+# ╔═╡ 404fc740-4581-11eb-0071-dbe0af850d39
+begin
+	results_2D = optimize(g_2D, grammar_2D, :R2D2, fitness_2D)
+	(results_2D.expr, results_2D.loss)
+end
+
+# ╔═╡ 0b8fb470-458b-11eb-2f41-cdd2935a94fd
+begin
+xs = range(0., stop=1., length=100)
+ys = range(0., stop=1., length=100)
+f(x,y) = sin(x)*cos(y)
+s = surface(xs, ys, f, label = "Analytic solution")
+fa(x,y) = (sin(x) / (cos(3 * cos(y)) + 4), label = "GP approximation")
+sa = surface!(xs, ys, fa)
+end
+
+# ╔═╡ 379c0852-458d-11eb-0f1c-b79755a59085
+
+
+# ╔═╡ 62b26ad0-458c-11eb-2d71-c9051a13b97e
+function plot_solution_2D(ex::Expr, grammar::Grammar)
+	#ex = get_executable(tree, grammar)
+	sol = Float64[]
+	for x = 0.1:0.01:1.
+		for y = 0.1:0.01:1.
+			S_2D[:x] = x
+			S_2D[:y] = y
+			push!(sol, Core.eval(S_2D,ex))
+		end
+	end
+	return sol
+end	
+
+# ╔═╡ 8e87ecb0-458d-11eb-3ce9-77a751d92b98
+Core.eval(S_2D, results_2D.expr)
 
 # ╔═╡ ad064680-44ae-11eb-39c1-43eb3e048ee4
 md"""### Still need to sort out stuff below"""
@@ -390,9 +506,11 @@ end
 # ╠═0487a66e-4175-11eb-3839-79ff040436c4
 # ╠═d29547a0-44b5-11eb-01ec-a3804e3564c1
 # ╠═66a50de0-39bc-11eb-1073-ef22db3f78c6
+# ╠═fe2273d0-4590-11eb-0ad0-857e30bf1fc7
 # ╠═1496aa80-3cce-11eb-3a7f-635d62b89453
 # ╠═0b262180-43fc-11eb-3042-d3f83630d086
 # ╠═f347a420-44b5-11eb-1865-43ff190e3f3b
+# ╠═a9646df0-457a-11eb-07c0-85ae52532bd8
 # ╠═9659f610-3b2c-11eb-132c-cfe5fbcbb7c1
 # ╠═66366810-3b31-11eb-37b1-132e3837fe02
 # ╠═4ee2da70-416e-11eb-0a44-7dc9ad5f95d4
@@ -412,6 +530,7 @@ end
 # ╠═3cf8f410-3cce-11eb-277e-f5cf01627feb
 # ╠═3cf96940-3cce-11eb-3d47-f762c438e963
 # ╠═37bdd520-44b1-11eb-2927-4f1bd6f21b99
+# ╠═2588f610-4582-11eb-2c24-fb15147640f7
 # ╠═15acf7f0-416d-11eb-0b0c-e9bf40b3994a
 # ╠═5f1bf520-44b1-11eb-3eff-733bb1e93077
 # ╠═3ff752a0-44b3-11eb-10cd-0ffb53fe286a
@@ -423,6 +542,15 @@ end
 # ╠═1df79920-44b4-11eb-2ddf-a3f7081a4642
 # ╟─451fe6a0-44b5-11eb-3f88-77696c6d234e
 # ╠═4a896620-44b5-11eb-03b0-d314fce42f9a
+# ╠═b6c97abe-4580-11eb-02e8-e1dfe421cbd5
+# ╠═e5b818f0-4580-11eb-279f-8b6b2b2e0fe6
+# ╠═bf3a1fc0-4580-11eb-3b8b-1bb5d8055aec
+# ╠═3e615600-4587-11eb-2753-c35e34d5dd2d
+# ╠═404fc740-4581-11eb-0071-dbe0af850d39
+# ╠═0b8fb470-458b-11eb-2f41-cdd2935a94fd
+# ╠═379c0852-458d-11eb-0f1c-b79755a59085
+# ╠═62b26ad0-458c-11eb-2d71-c9051a13b97e
+# ╠═8e87ecb0-458d-11eb-3ce9-77a751d92b98
 # ╠═ad064680-44ae-11eb-39c1-43eb3e048ee4
 # ╠═517c7490-3b2d-11eb-2470-1f864bb57d95
 # ╠═64b70a20-400a-11eb-1561-b32b24c92788
