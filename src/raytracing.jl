@@ -16,7 +16,7 @@ in the scene following the order of the array.
 function add_objects!(scene::Array{R,2}, objects::Array{Set{Tuple{Int,Int}},1},
     objects_ior::Array{R,1}) where {R<:Real}
     h, w = size(scene)
-    for o=1:length(objects)
+    for o=1:length(objects)  # FIXME using `=` in for loops is bad style, replace with `is`
         for (i,j) in objects[o]
             (i <= 0 || j <= 0 || i > h || j > w) && continue # Check bounds
             scene[i,j] = objects_ior[o]
@@ -45,6 +45,7 @@ end
 create_scene(w::Int, h::Int, object::Set{Tuple{Int,Int}}, object_ior::Real) =
     [(i,j) ∈ object ? object_ior : 1.0 for i=1:h,j=1:w]
 
+#FIXME: this definition seems redundant if you add default values for the previous one
 create_scene(w::Int, h::Int) = create_scene(w, h, Set{Tuple{Int,Int}}(), 1.0)
 
 """
@@ -55,7 +56,7 @@ and `h_center` on the y-axis (rows) with radius. The first part draws the circle
 perimeter based on the midpoint circle algorithm. Then, the points inside the inside
 are calculated using the equation of a circle.
 """
-function draw_circle(r::Int, w_center::Int, h_center::Int)
+function draw_circle(r::Int, w_center::Int, h_center::Int)  # QUESTION: can these not be just numbers instead of Int?
     points = Set{Tuple{Int,Int}}()
     x, y = r, 0
     
@@ -64,18 +65,18 @@ function draw_circle(r::Int, w_center::Int, h_center::Int)
       
     # When radius is zero only a single point will be returned
     if r > 0
-        push!(points, (-x+h_center, w_center), (h_center, r+w_center),
-            (h_center, -r+w_center))
+        push!(points, (-x + h_center, w_center), (h_center, r + w_center),
+            (h_center, -r + w_center))
     end
     
     # Initializing the value of P  
-    P = 1-r  
+    P = 1 - r  
     while x > y
         y += 1
         
         # Is the midpoint inside or outside the perimeter
-        x = P <= 0 ? x : x-1
-        P = P <= 0 ? P+2y+1 : P+2y-2x+1
+        x = P <= 0 ? x : x - 1
+        P = P <= 0 ? P + 2y + 1 : P + 2y - 2x + 1
         
         # All the perimeter points have already been added  
         x < y && break
@@ -87,17 +88,20 @@ function draw_circle(r::Int, w_center::Int, h_center::Int)
         # If the generated point is on the line x = y then  
         # the perimeter points have already been added
         if x != y
-            push!(points, (y+h_center, x+w_center), (-y+h_center, x+w_center),
-                (y+h_center, -x+w_center), (-y+h_center, -x+w_center))
+            push!(points, (y + h_center, x + w_center), (-y + h_center, x + w_center),
+                (y + h_center, -x + w_center), (-y + h_center, -x + w_center))
         end
     end
     
-    inside_pts = Set{Tuple{Int,Int}}((x,y) for x=-r+h_center:r+h_center, y=-r+w_center:r+w_center
-                    if (x-h_center)^2 + (y-w_center)^2 < r^2)
+    inside_pts = Set{Tuple{Int,Int}}((x, y) for x=-r+h_center:r+h_center,
+                                                y=-r+w_center:r+w_center
+                                            if (x-h_center)^2 + (y-w_center)^2 < r^2)
                     
     return union(points, inside_pts)
 end
 
+# FIXME: Array{R,2} => Matrix{R} ?
+# suggestion: you might make an iterator, i.e., return ((x, y) for ...), this is more memory efficient than making lists
 """
     get_neighbors(scene::Array{Real,2}, u::Tuple{Int,Int})
 
@@ -108,7 +112,7 @@ function get_neighbors(scene::Array{R,2}, u::Tuple{Int,Int}) where {R<:Real}
     m, n = size(scene)
     i, j = u
     ρ = scene[i,j] # Index of refraction
-    neighbors = []
+    neighbors = []  #FIXME: add type annotation, cannot be inferred here
     
     i < m && push!(neighbors, (ρ, (i+1, j)))  # Down
     i > 1 && push!(neighbors, (ρ, (i-1, j)))  # Up
@@ -182,6 +186,8 @@ function reconstruct_path(previous::Dict{Tuple{Int,Int},Tuple{Int,Int}},
     end
     return path
 end
+
+# FIXME: technically, these should be of the form `plot_pixels!()` as they add something to a plot
 
 """
     plot_pixels(p::Plots.Plot, scene::Array{R,2}) where {R<:Real}
