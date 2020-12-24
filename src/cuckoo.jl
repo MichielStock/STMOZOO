@@ -29,7 +29,7 @@ module Cuckoo
     # Examples
 
     Create a population of 5 where each point has 2 dimensions, respectively having as lower 
-    and upper bound x1lims = (-10, 10) and x2lims=(-15, 15)
+    and upper bound `x1lims = (-10, 10)` and `x2lims=(-15, 15)`.
 
     ```julia
     julia> x1lims=(-10,10)
@@ -68,17 +68,17 @@ module Cuckoo
         dir = [rand() for x in 1:d]
         
         #generation of stepsize  
-        sigma=(gamma(1+ lambda)*sin(pi* lambda/2)/
-            (gamma((1+ lambda)/2)* lambda*2^(( lambda-1)/2)))^(1/ lambda)
+        sigma = (gamma(1 + lambda) * sin(pi * lambda/2)/
+            (gamma((1 + lambda) / 2) * lambda * 2^((lambda - 1)/2)))^(1 / lambda)
 
-        steps = Vector{Float64}()
+        steps = Vector{Float64}()  # FIXME: if you know the size in advance, it is more efficient to allocate an array and fill it instaid of push
         for x in 1:d
-            u=rand(Normal(0,sigma))
-            v=rand(Normal(0,1))
+            u = rand(Normal(0,sigma))  # QUESTION: do you need the dependency on Distributions, just use `randn` of the base?
+            v = rand(Normal(0,1))
             push!(steps, u./abs(v).^(1/lambda))
         end
  
-        return steps.*dir  
+        return steps .* dir  
     end
 
 
@@ -116,7 +116,11 @@ module Cuckoo
 
 
     """ 
-        cuckoo(f::Function, population::Array, lims...; gen::Int=40, Pa::AbstractFloat=0.25, alpha::AbstractFloat=1.0, lambda::AbstractFloat=1.5)    
+        cuckoo(f::Function, population::Array, lims...;
+                            gen::Int=40,
+                            Pa::AbstractFloat=0.25,
+                            alpha::AbstractFloat=1.0,
+                            lambda::AbstractFloat=1.5)    
 
     Implement the backbone of the cuckoo search method and return a tuple containing the
     solution and its fitness.     
@@ -145,7 +149,11 @@ module Cuckoo
     ([-0.00401120574383079, 0.00046356024376423543], -22.706426805416967)  
     ``` 
     """
-    function cuckoo!(f::Function, population::Array, lims...; gen::Int=40, Pa::AbstractFloat=0.25, alpha::AbstractFloat=1.0, lambda::AbstractFloat=1.5)      
+    function cuckoo!(f::Function, population::Array, lims...;
+                                        gen::Int=40,
+                                        Pa::AbstractFloat=0.25,
+                                        alpha::AbstractFloat=1.0,
+                                        lambda::AbstractFloat=1.5)      
         @assert (lambda<=3.0 && lambda>=1.0) "Lambda should be between 1 and 3 (included)"
         @assert (alpha>0.0) "Alpha should be a positive value"
         @assert (Pa<=1.0 && Pa>=0.0) "Pa should be a value between 0 and 1 (included)"
@@ -183,12 +191,14 @@ module Cuckoo
             end
 
             #sort from worst to best solution
+            # FIXME: you can replace `sort` with `sort!` and it does not have to make a copy
             sorted_indexes = sort([(nests[i].fitness, i) for i in 1:n], rev=true) 
 
             #a fraction Pa of worst nests (high fitness) gets discovered by the host bird 
             #and abandoned (at least two nests are not discovered)
-            n_worst = floor(Int, n*Pa)
+            n_worst = floor(Int, n * Pa)
             n_worst = ifelse(n_worst > n-2, n-2, n_worst)
+                        # OR, equivalently: n_worst = n_worst > n-2 ? n-2 : n_worst
 
             bad_nests = [s[2] for s in sorted_indexes[1:n_worst]]
  
