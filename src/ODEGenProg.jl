@@ -7,7 +7,7 @@ module ODEGenProg
 
 # you have to import everything you need for your module to work
 # if you use a new package, don't forget to add it in the package manager
-using ExprRules, ExprOptimization, Random, Plots, Calculus
+using ExprRules, ExprOptimization, Random, Plots, Calculus, TreeView
 
 
 # export all functions that are relevant for the user
@@ -61,11 +61,11 @@ approximations. The problem now it that I have a different fitness function for 
 function fitness_test(tree::RuleNode, grammar::Grammar)
 	S = SymbolTable(grammar) #ExprRule's interpreter, should increase performance according to documentation
 	ex = get_executable(tree, grammar) #Get the expression from a given tree based on the grammar
-    los = 0.0  # FIXME: loss?
+    loss = 0.0  
 	#Evaluate expression over an interval [0:1]. The calculus package is used to do symbolic differentiation of the expression according to the given differential equation. 
     for x = 0.0:0.1:1.0
 		S[:x] = x
-		los += try (Core.eval(S,differentiate(ex)) - Core.eval(S,ex))^2
+		loss += try (Core.eval(S,differentiate(ex)) - Core.eval(S,ex))^2
 		catch
 			return Inf
 		end
@@ -73,11 +73,11 @@ function fitness_test(tree::RuleNode, grammar::Grammar)
 	#Also boundary conditions are evaluated in this seperate step that allows for weighting the score with a factor λ. Here set default to 100 (as in Tsoulos and Lagaris (2006)). 
 	S[:x] = 0
 	λ = 100.
-	los += try λ * (((Core.eval(S,ex)-1))^2)
+	loss += try λ * (((Core.eval(S,ex)-1))^2)
 	catch
 		return Inf
 	end
-	return los
+	return loss
 end
 
 """

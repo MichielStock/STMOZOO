@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.12.4
+# v0.12.17
 
 using Markdown
 using InteractiveUtils
@@ -31,7 +31,7 @@ grammar = @grammar begin
 	R = sin(R)
 	R = cos(R)
 	R = exp(R)
-	R = log(R)
+	#R = log(R)
 	R = x
 	#R = y #I just sticked to one variable for now
 	#R = z
@@ -266,7 +266,7 @@ function fitness_4(tree::RuleNode, grammar::Grammar)
     los = 0.0
 	
 	#domain
-    for x = 0.:0.1:1.0
+    for x = 0.1:0.1:1.
 		S[:x] = x
 		los += try (abs(Core.eval(S,differentiate(differentiate(ex))) - 6*(Core.eval(S,differentiate(ex))) + 9*Core.eval(S,ex)))^2
 		catch
