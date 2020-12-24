@@ -4,25 +4,27 @@ module BeesAlgorithm
 
 # you have to import everything you need for your module to work
 # if you use a new package, don't forget to add it in the package manager
-# using Zygote
 
 # export all functions that are relevant for the user
-export initialize_population, compute_objective, compute_fitness, foodsource_info_prob, create_newsolution, employed_bee_phase, onlooker_bee_phase, Scouting, ArtificialBeeColonization, sphere, ackley, rosenbrock, branin, rastrigine
+export initialize_population, compute_objective, compute_fitness, foodsource_info_prob,
+        create_newsolution, employed_bee_phase, onlooker_bee_phase, Scouting, ArtificialBeeColonization,
+        sphere, ackley, rosenbrock, branin, rastrigine
 
+#FIXME: many of these functions should not be exported, as they are only internally of interest
 """
     initialize_population(D::Number, bounds_lower::Vector, bounds_upper::Vector, Np::Number)
 
-This function generates Np random solutions (food sources) within the domain 
+This function generates `Np` random solutions (food sources) within the domain 
 of the variables to form an initial population for the ABC algorithm.
     
 Input
-- D: number of decision variables in the function to be minimized
-- bounds_lower: lower bounds of variables 
-- bounds_upper: upper bounds of variables 
-- Np: number of food sources/employed bees/onlooker bees
+- `D`: number of decision variables in the function to be minimized
+- `bounds_lower`: lower bounds of variables 
+- `bounds_upper`: upper bounds of variables 
+- `Np`: number of food sources/employed bees/onlooker bees
     
 Output 
-- population: a random population of the size Np with D variables
+- `population`: a random population of the size `Np` with `D` variables
 
 
 ## Examples
@@ -46,25 +48,26 @@ julia> initialize_population(D, bounds_lower, bounds_upper, n)
 ```
 """
 function initialize_population(D::Number, bounds_lower::Vector, bounds_upper::Vector, Np::Number)
-    population = []   
+    population = []  
     for i in 1:Np
         food_source = collect(rand(bounds_lower[i]:bounds_upper[i]) for i in 1:D)
-        append!(population, [food_source])
+        push!(population, food_source)
     end  
     return population
 end	
 
+# FIXME: not a great fan of `input` as a name, to generic, what is this?
 """
     compute_objective(input, f::Function)
 
-Compute the objective values for a certain function. This objective value is minimized in the ABC algorithm. 
+Compute the objective values for an objective function `f`. The objective value is minimized in the ABC algorithm. 
 
 Input
-- input: input values
-- f: the function that you want to use for computing objective values
+- `input`: input values
+- `f`: the function that you want to use for computing objective values
 
 Output 
-- output: objective values
+- `output`: objective values
 
 
 ## Examples
@@ -105,7 +108,8 @@ function compute_objective(input, f::Function)
         objective = f(sum(input))
         output = objective
     else
-        objectives_population = []
+        objectives_population = []  #FIXME: will not be type stable, add type annotation and/or allocate in advance
+        # objectives_population = f.(input) might also just work...
         for j in 1:length(input)
             food_source = input[j]
             objective = f(food_source)
@@ -120,14 +124,14 @@ end
     compute_fitness(objective_values)
 
 This functions computes the fitness of each solution in the population.
-The fitness is computed as ``1/(1+objective values)`` if f >= 0 and as ``1 + absolute(objective values)`` if f < 0.
+The fitness is computed as ``1/(1+objective values)`` if f(x) >= 0 and as ``1 + absolute(objective values)`` if f(x) < 0.
 The bigger the objective values the smaller the fitness values.
 
 Input
-- objective values: objective values 
+- `objective_values`: objective values 
 
 Output
-- fitness values: fitness values corresponding to the input values (objective values)
+- `fitness_values`: fitness values corresponding to the input values (objective values)
 
 ## Examples
 
@@ -141,6 +145,7 @@ julia> compute_fitness(objective_values)
 ```
 """
 function compute_fitness(objective_values)
+    #FIXME: I think you can also write this much more compactly
     fitness_values = []
     
     for i in 1:length(objective_values)
@@ -166,10 +171,10 @@ This function measures the food source information as probabilities.
 The food source information is computed as following: ``0.9 * (fitness / maximum(fitness )) + 0.1``. 
 
 Input
-- fitness_values: fitness values
+- `fitness_values`: fitness values
 
 Output
-- probabilities: probabilities of the food source information 
+- `probabilities`: probabilities of the food source information 
 
 ## Examples
 
@@ -182,12 +187,12 @@ julia> foodsource_info_prob(fitness_values)
  1.0
 ```
 """
-function foodsource_info_prob(fitness_values)
+function foodsource_info_prob(fitness_values)  # FIXME: can be more compact
     probabilities = []
     
     for i in 1:length(fitness_values)
         fitness_value = fitness_values[i] 
-        probability = 0.9*(fitness_value/maximum(fitness_values)) + 0.1
+        probability = 0.9 * (fitness_value/maximum(fitness_values)) + 0.1
         append!(probabilities, probability)
     end
     
@@ -200,17 +205,18 @@ end
 
 Creates new solution by changing one variable using a random partner solution.
 Firstly, a random variable in the solution to be modified will be selected. 
-Secondly, a random partner in the current population is chosen, and a random variable of this partner solution is picked.
-Based on the value of these two variables, a new value is interpolated and assigned to the first random variable of the original solution. 
+Secondly, a random partner in the current population is chosen, and a random 
+variable of this partner solution is picked. Based on the value of these two variables,
+a new value is interpolated and assigned to the first random variable of the original solution. 
 
 Input
-- solutions: solution 
-- population : population of solutions 
-- bounds_lower: lower bounds of variables 
-- bounds_upper: upper bounds of variables 
+- `solutions`: solution 
+- `population` : population of solutions 
+- `bounds_lower`: lower bounds of variables 
+- `bounds_upper`: upper bounds of variables 
 
 Output
-- solution_new: new solution with one variable changed using a random variable in a random partner solution
+- `solution_new`: new solution with one variable changed using a random variable in a random partner solution
 
 
 ## Examples
@@ -260,7 +266,8 @@ end
 
 
 """ 
-    employed_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Array, Np::Number, f::Function)
+    employed_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector,
+                            trial::Array, Np::Number, f::Function)
 
 In this function, the employed bee phase is implemented. 
 Employed bees try to identify better food source than the one they were associated previously. A new solution is generated using a partner solution. 
@@ -348,8 +355,12 @@ function employed_bee_phase(population, bounds_lower::Vector, bounds_upper::Vect
     return population_new_evolved, fitness_new_evolved, objective_new_evolved, trial
 end
 
+#FIXME: format the documentation to limit line length
 """ 
-    onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Array, Np::Number, f::Function)  
+    onlooker_bee_phase(population, bounds_lower::Vector,
+                                    bounds_upper::Vector,
+                                    trial::Array, Np::Number,
+                                    f::Function)  
 
 This function implements the onlooker bee phase. 
 In the onlooker bee phase, a food source is selected for further exploitation with a probability related to the nectar amount, i.e. a solution with higher fitness will have a higher probability to be chosen. 
@@ -397,7 +408,8 @@ julia> population_new_evolved
  [-5, -3, -4, 5]
 ```
 """
-function onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Array, Np::Number, f::Function)
+function onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector,
+                    trial::Array, Np::Number, f::Function)
     m = 0 # onlooker bee
     n = 1 # food source
     
@@ -441,6 +453,7 @@ function onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vect
     return population, fitness_new_evolved, objective_new_evolved, trial
 end	
 
+#FIXME: format this documentation
 """ 
     Scouting(population, bounds_lower::Vector, bounds_upper::Vector,D::Number ,trials::Array, fitness, objective, limit::Number, f::Function)  
 
@@ -504,6 +517,7 @@ julia> population_new_evolved
  [5, -1, -1, -1]
 ```
 """
+#FIXME: don't start functions with a capital letter
 function Scouting(population, bounds_lower::Vector, bounds_upper::Vector,D::Number ,trials::Array, fitness, objective, limit::Number, f::Function)
         
     # check whether the trial vector exceed the limit value and importantly where
@@ -513,7 +527,7 @@ function Scouting(population, bounds_lower::Vector, bounds_upper::Vector,D::Numb
         if sum(maximum(trials) .== trials) > 1 # multiple cases have the same maximum so chose randomly
             possible_scoutings = findall(trials .== maximum(trials))
             idx = rand(1:size(possible_scoutings)[1])
-            global scouting_array = possible_scoutings[idx]
+            global scouting_array = possible_scoutings[idx]  # FIXME: do you need this here? avoid global variables!
         else # only one array has a maximum => chose this one 
         
             global scouting_array = argmax(trials)
@@ -538,6 +552,7 @@ function Scouting(population, bounds_lower::Vector, bounds_upper::Vector,D::Numb
     return population, fitness, objective, trials  
 end
 
+# FIXME: format
 """ 
     ArtificialBeeColonization(D::Number, bounds_lower::Vector, bounds_upper::Vector, S::Number, T::Number, limit::Number, f::Function)
 
@@ -605,11 +620,13 @@ function ArtificialBeeColonization(D::Number, bounds_lower::Vector, bounds_upper
     for iterations in 1:T
     
         ## EMPLOYED BEE PHASE
-        population, fitness_values, objective_values, trial = employed_bee_phase(population, bounds_lower, bounds_upper, trial, Np, f::Function)
+        population, fitness_values, objective_values, trial = employed_bee_phase(population,
+                                                                    bounds_lower, bounds_upper, trial, Np, f)
     
     
         ## ONLOOKER BEE PHASE
-        population, fitness_values, objective_values, trial = onlooker_bee_phase(population, bounds_lower, bounds_upper, trial, Np, f::Function)  
+        population, fitness_values, objective_values, trial = onlooker_bee_phase(population,
+                                                                    bounds_lower, bounds_upper, trial, Np, f)  
        
         ## SCOUTING PHASE
         if maximum(fitness_values) > best_fitness
