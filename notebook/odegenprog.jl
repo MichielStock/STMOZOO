@@ -417,12 +417,9 @@ xs = range(0., stop=1., length=100)
 ys = range(0., stop=1., length=100)
 f(x,y) = sin(x)*cos(y)
 s = surface(xs, ys, f, label = "Analytic solution")
-fa(x,y) = (sin(x) / (cos(3 * cos(y)) + 4), label = "GP approximation")
-sa = surface!(xs, ys, fa)
+fa(x,y) = (sin(x) / (cos(3 * cos(y)) + 4))
+sa = surface!(xs, ys, fa, label = "GP approximation")
 end
-
-# ╔═╡ 379c0852-458d-11eb-0f1c-b79755a59085
-
 
 # ╔═╡ 62b26ad0-458c-11eb-2d71-c9051a13b97e
 function plot_solution_2D(ex::Expr, grammar::Grammar)
@@ -548,7 +545,6 @@ end
 # ╠═3e615600-4587-11eb-2753-c35e34d5dd2d
 # ╠═404fc740-4581-11eb-0071-dbe0af850d39
 # ╠═0b8fb470-458b-11eb-2f41-cdd2935a94fd
-# ╠═379c0852-458d-11eb-0f1c-b79755a59085
 # ╠═62b26ad0-458c-11eb-2d71-c9051a13b97e
 # ╠═8e87ecb0-458d-11eb-3ce9-77a751d92b98
 # ╠═ad064680-44ae-11eb-39c1-43eb3e048ee4
