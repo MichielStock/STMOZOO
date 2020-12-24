@@ -188,6 +188,16 @@ function reconstruct_path(previous::Dict{Tuple{Int,Int},Tuple{Int,Int}},
 end
 
 # FIXME: technically, these should be of the form `plot_pixels!()` as they add something to a plot
+# SUGGESTION: when i write custom plotting functions it might be useful to do something like
+#=
+function myplot(data; kwargs...)
+    do something
+    plot(...; kwargs...)
+end
+
+here, `kwargs...` ensures you can pass any other keyword argument to the plot, like color, alpha and line tickness
+
+=#
 
 """
     plot_pixels(p::Plots.Plot, scene::Array{R,2}) where {R<:Real}
