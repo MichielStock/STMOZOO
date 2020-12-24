@@ -87,14 +87,10 @@
         x2lims = (-10, 10)       
         population = init_nests(25, x1lims, x2lims)  
 
-        #type test
+        #type tests
         @test cuckoo!(ackley, population, x1lims, x2lims) isa Tuple 
-
-        #correctness
-        # QUESTION: for a stochastic method, I would not test whether the solution is correct, because this can raise errors
-        # maybe only test the format of the output?
-        @test cuckoo!(ackley, population, x1lims, x2lims)[1][1] ≈ 0  atol=0.1
-        @test cuckoo!(ackley, population, x1lims, x2lims)[1][2] ≈ 0  atol=0.1
+        @test cuckoo!(ackley, population, x1lims, x2lims)[1] isa Array
+        @test cuckoo!(ackley, population, x1lims, x2lims)[2] isa AbstractFloat
 
         #assertion errors
         @test_throws AssertionError cuckoo!(ackley, population, x1lims, x2lims, lambda=4.0) 
