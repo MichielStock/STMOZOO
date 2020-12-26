@@ -18,6 +18,7 @@
 
         population = initialize_population(D, bounds_lower, bounds_upper, n)
         @test length(population) == n
+        @test all([bounds_lower <= population[i] <= bounds_upper for i in length(population)])
 
     end
 
@@ -45,8 +46,7 @@
         fitness = compute_fitness(objectives)
         probab = foodsource_info_prob(fitness)
         @test length(probab) == length(fitness)
-        @test probab < ones(D)
-        @test probab > zeros(D)
+        @test all(0 .≤ probab .≤ 1)
 
     end    
 
