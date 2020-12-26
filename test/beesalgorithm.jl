@@ -18,6 +18,7 @@
 
         population = initialize_population(D, bounds_lower, bounds_upper, n)
         @test length(population) == n
+        @test all([bounds_lower <= population[i] <= bounds_upper for i in length(population)])
 
     end
 
@@ -45,8 +46,7 @@
         fitness = compute_fitness(objectives)
         probab = foodsource_info_prob(fitness)
         @test length(probab) == length(fitness)
-        @test probab < ones(D)
-        @test probab > zeros(D)
+        @test all(0 .≤ probab .≤ 1)
 
     end    
 
@@ -80,13 +80,13 @@
         @test length(newtrial) == length(trial)
     end
 
-    @testset "Scouting" begin
+    @testset "scouting_phase" begin
 
         population = initialize_population(D, bounds_lower, bounds_upper, n)
         trial = ones(size(population)[1])
         objective= compute_objective(population,sphere)
         fitness = compute_fitness(objective)
-        population_new_evolved, fitness_new_evolved, objective_new_evolved, newtrial  = Scouting(population, bounds_lower, bounds_upper,D, trial, fitness, objective, 0, sphere)
+        population_new_evolved, fitness_new_evolved, objective_new_evolved, newtrial  = scouting_phase(population, bounds_lower, bounds_upper,D, trial, fitness, objective, 0, sphere)
         
         @test length(objective) == length(fitness)
         @test length(population_new_evolved) == length(population)
