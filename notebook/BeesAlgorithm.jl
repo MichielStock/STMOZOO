@@ -177,12 +177,12 @@ end
 md" Below a **contour plot** and **surface plot** of the test function can be seen. The animation shows how the location of bees changes over time during the optimization procedure. "
 
 # ╔═╡ b81d7f30-42a5-11eb-27ce-f1cc849ffdc5
-# @bind iteration Slider(1:T; show_value=true)
 
-# ╔═╡ 9e2b4e60-42ee-11eb-0d7f-c1faa8426796
+
+# ╔═╡ ae391ef0-47d4-11eb-15ae-a7d5f188644b
 begin
 	
-		if functie == "sphere"
+			if functie == "sphere"
 			x2=range(bounds_lower[1],bounds_upper[1], step=1)
 			y2=range(bounds_lower[2],bounds_upper[2], step=1)
 			f(x2,y2) = (x2^2+y2^2)
@@ -226,8 +226,10 @@ begin
 			d=2
 		    f(x2,y2) = d*A + x2^2-A*cos(2pi*x2) + y2^2-A*cos(2pi*y2)
 		end	
-	
-		
+end
+
+# ╔═╡ 9e2b4e60-42ee-11eb-0d7f-c1faa8426796
+begin	
 		
 	@gif for iteration in 1:T
 		
@@ -255,8 +257,6 @@ begin
 		sleep(2)
 	end every 1
 	
-	
-
 end
 
 # ╔═╡ 71321ef0-42eb-11eb-0635-b1ce95226c75
@@ -369,6 +369,7 @@ Karaboga, D., & Basturk, B. (2007). A powerful and efficient algorithm for numer
 # ╠═54c02380-42a4-11eb-0240-7b2d895cb337
 # ╟─9bb28f50-4374-11eb-2b10-e5effcbc8438
 # ╟─b81d7f30-42a5-11eb-27ce-f1cc849ffdc5
+# ╟─ae391ef0-47d4-11eb-15ae-a7d5f188644b
 # ╠═9e2b4e60-42ee-11eb-0d7f-c1faa8426796
 # ╠═71321ef0-42eb-11eb-0635-b1ce95226c75
 # ╟─65bf09be-4377-11eb-2415-3b8be310a065
