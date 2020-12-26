@@ -107,7 +107,8 @@ end
     compute_fitness(objective_values)
 
 This functions computes the fitness of each solution in the population.
-The fitness is computed as ``1/(1+objective values)`` if f(x) >= 0 and as ``1 + absolute(objective values)`` if f(x) < 0.
+The fitness is computed as ``1/(1+objective values)`` if f(x) >= 0 and 
+as ``1 + absolute(objective values)`` if f(x) < 0.
 The bigger the objective values the smaller the fitness values.
 
 Input
@@ -237,7 +238,8 @@ end
                             trial::Array, Np::Number, f::Function)
 
 In this function, the employed bee phase is implemented. 
-Employed bees try to identify better food source than the one they were associated previously. A new solution is generated using a partner solution. 
+Employed bees try to identify better food source than the one they were associated previously. 
+A new solution is generated using a partner solution. 
 Thereafter, greedy selection is performed, meaning that a new solution only  will be accepted if it is better than the current solution. 
 Every bee in the swarm will explores one food source. All solutions get an opportunity to generate a new solution in the employed bee phase.
 
@@ -424,7 +426,8 @@ function onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vect
 end	
 
 """ 
-    scouting_phase(population, bounds_lower::Vector, bounds_upper::Vector,D::Number ,trials::Array, fitness, objective, limit::Number, f::Function)  
+    scouting_phase(population, bounds_lower::Vector, bounds_upper::Vector,
+                    D::Number ,trials::Array, fitness, objective, limit::Number, f::Function)  
 
 This function implements the scouting phase. 
 If the value of the trial counter for a certain solution is greater than fixed limit, then a solution can enter the scout phase. 
@@ -487,7 +490,8 @@ julia> population_new_evolved
  [5, -1, -1, -1]
 ```
 """
-function scouting_phase(population, bounds_lower::Vector, bounds_upper::Vector,D::Number ,trials::Array, fitness, objective, limit::Number, f::Function)
+function scouting_phase(population, bounds_lower::Vector, bounds_upper::Vector,
+                        D::Number ,trials::Array, fitness, objective, limit::Number, f::Function)
         
     # check whether the trial vector exceed the limit value and importantly where
     index_exceed = trials .> limit
@@ -522,7 +526,8 @@ function scouting_phase(population, bounds_lower::Vector, bounds_upper::Vector,D
 end
 
 """ 
-    ArtificialBeeColonization(D::Number, bounds_lower::Vector, bounds_upper::Vector, S::Number, T::Number, limit::Number, f::Function)
+    ArtificialBeeColonization(D::Number, bounds_lower::Vector, bounds_upper::Vector, 
+                                S::Number, T::Number, limit::Number, f::Function)
 
 This functions runs the Artificial Bee Colony Algorithm.
 First a initialize population is made. For each iteration (T) the ABC algorithm undergoes the employed bee phase, 
@@ -563,7 +568,8 @@ julia> optimal_solution
   3.9716934385662925e-11
 ```
 """
-function ArtificialBeeColonization(D::Number, bounds_lower::Vector, bounds_upper::Vector, S::Number, T::Number, limit::Number, f::Function)
+function ArtificialBeeColonization(D::Number, bounds_lower::Vector, bounds_upper::Vector, 
+                                    S::Number, T::Number, limit::Number, f::Function)
     @assert D > 0 "D must be positive" 
     @assert bounds_lower <= bounds_upper "Lower bounds must be smaller than upper bounds"
     @assert length(bounds_lower) == length(bounds_upper) == D  "The length of the lower bounds must be equal to the length of the upper bounds and the number of decision variables"
