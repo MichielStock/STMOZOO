@@ -4,25 +4,24 @@ module BeesAlgorithm
 
 # you have to import everything you need for your module to work
 # if you use a new package, don't forget to add it in the package manager
-# using Zygote
 
 # export all functions that are relevant for the user
-export initialize_population, compute_objective, compute_fitness, foodsource_info_prob, create_newsolution, employed_bee_phase, onlooker_bee_phase, Scouting, ArtificialBeeColonization, sphere, ackley, rosenbrock, branin, rastrigine
+export ArtificialBeeColonization, sphere, ackley, rosenbrock, branin, rastrigine
 
 """
     initialize_population(D::Number, bounds_lower::Vector, bounds_upper::Vector, Np::Number)
 
-This function generates Np random solutions (food sources) within the domain 
+This function generates 'Np' random solutions (food sources) within the domain 
 of the variables to form an initial population for the ABC algorithm.
     
 Input
-- D: number of decision variables in the function to be minimized
-- bounds_lower: lower bounds of variables 
-- bounds_upper: upper bounds of variables 
-- Np: number of food sources/employed bees/onlooker bees
+- 'D': number of decision variables in the function to be minimized
+- 'bounds_lower': lower bounds of variables 
+- 'bounds_upper': upper bounds of variables 
+- 'Np': number of food sources/employed bees/onlooker bees
     
 Output 
-- population: a random population of the size Np with D variables
+- 'population': a random population of the size 'Np' with 'D' variables
 
 
 ## Examples
@@ -49,22 +48,22 @@ function initialize_population(D::Number, bounds_lower::Vector, bounds_upper::Ve
     population = []   
     for i in 1:Np
         food_source = collect(rand(bounds_lower[i]:bounds_upper[i]) for i in 1:D)
-        append!(population, [food_source])
+        push!(population, food_source)
     end  
     return population
 end	
 
 """
-    compute_objective(input, f::Function)
+    compute_objective(solutions, f::Function)
 
-Compute the objective values for a certain function. This objective value is minimized in the ABC algorithm. 
+Compute the objective values for an objective function 'f'. This objective value is minimized in the ABC algorithm. 
 
 Input
-- input: input values
-- f: the function that you want to use for computing objective values
+- 'solutions': population of solutions or a single solution
+- 'f': the function that you want to use for computing objective values
 
 Output 
-- output: objective values
+- 'output': objective values
 
 
 ## Examples
@@ -100,34 +99,22 @@ julia> compute_objective(population, sphere)
  10.722262633846869
 ```
 """
-function compute_objective(input, f::Function)
-    if length(input)==1
-        objective = f(sum(input))
-        output = objective
-    else
-        objectives_population = []
-        for j in 1:length(input)
-            food_source = input[j]
-            objective = f(food_source)
-            append!(objectives_population, objective)
-        end
-        output = objectives_population
-    end
-    return output
+function compute_objective(solutions, f::Function)
+    return f.(solutions)
 end
 
 """ 
     compute_fitness(objective_values)
 
 This functions computes the fitness of each solution in the population.
-The fitness is computed as ``1/(1+objective values)`` if f >= 0 and as ``1 + absolute(objective values)`` if f < 0.
+The fitness is computed as ``1/(1+objective values)`` if f(x) >= 0 and as ``1 + absolute(objective values)`` if f(x) < 0.
 The bigger the objective values the smaller the fitness values.
 
 Input
-- objective values: objective values 
+- 'objective values': objective values 
 
 Output
-- fitness values: fitness values corresponding to the input values (objective values)
+- 'fitness values': fitness values corresponding to the input values (objective values)
 
 ## Examples
 
@@ -141,21 +128,12 @@ julia> compute_fitness(objective_values)
 ```
 """
 function compute_fitness(objective_values)
-    fitness_values = []
-    
-    for i in 1:length(objective_values)
-        objective_value = objective_values[i]
-        
-        if objective_value >= 0
-            fitness = 1/(1+objective_value)
-     
-        else
-            fitness = 1+abs(objective_value)
-        end
-        
-        append!(fitness_values, fitness)
-    end
+
+    fitness_values = zeros(length(objective_values),1)
+    fitness_values[objective_values .>= 0] = 1 ./ (1 .+ objective_value)
+    fitness_values[objective_values .< 0] = 1 .+ abs(objective_value)
     return fitness_values
+
 end	
 
 
@@ -166,10 +144,10 @@ This function measures the food source information as probabilities.
 The food source information is computed as following: ``0.9 * (fitness / maximum(fitness )) + 0.1``. 
 
 Input
-- fitness_values: fitness values
+- 'fitness_values': fitness values
 
 Output
-- probabilities: probabilities of the food source information 
+- 'probabilities': probabilities of the food source information 
 
 ## Examples
 
@@ -183,14 +161,8 @@ julia> foodsource_info_prob(fitness_values)
 ```
 """
 function foodsource_info_prob(fitness_values)
-    probabilities = []
-    
-    for i in 1:length(fitness_values)
-        fitness_value = fitness_values[i] 
-        probability = 0.9*(fitness_value/maximum(fitness_values)) + 0.1
-        append!(probabilities, probability)
-    end
-    
+
+    probabilities = 0.9 .* (fitness_value ./ maximum(fitness_values)) .+ 0.1
     return probabilities
 end	
 
@@ -200,17 +172,18 @@ end
 
 Creates new solution by changing one variable using a random partner solution.
 Firstly, a random variable in the solution to be modified will be selected. 
-Secondly, a random partner in the current population is chosen, and a random variable of this partner solution is picked.
-Based on the value of these two variables, a new value is interpolated and assigned to the first random variable of the original solution. 
+Secondly,  a random partner in the current population is chosen, and a random 
+variable of this partner solution is picked. Based on the value of these two variables,
+a new value is interpolated and assigned to the first random variable of the original solution. 
 
 Input
-- solutions: solution 
-- population : population of solutions 
-- bounds_lower: lower bounds of variables 
-- bounds_upper: upper bounds of variables 
+- 'solutions': solution 
+- 'population': population of solutions 
+- 'bounds_lower': lower bounds of variables 
+- 'bounds_upper': upper bounds of variables 
 
 Output
-- solution_new: new solution with one variable changed using a random variable in a random partner solution
+- 'solution_new': new solution with one variable changed using a random variable in a random partner solution
 
 
 ## Examples
@@ -260,7 +233,8 @@ end
 
 
 """ 
-    employed_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Array, Np::Number, f::Function)
+    employed_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, 
+                            trial::Array, Np::Number, f::Function)
 
 In this function, the employed bee phase is implemented. 
 Employed bees try to identify better food source than the one they were associated previously. A new solution is generated using a partner solution. 
@@ -268,18 +242,18 @@ Thereafter, greedy selection is performed, meaning that a new solution only  wil
 Every bee in the swarm will explores one food source. All solutions get an opportunity to generate a new solution in the employed bee phase.
 
 Input
-- population: population of solutions 
-- bounds_lower: lower bounds of variables 
-- bounds_upper: upper bounds of variables 
-- trial: Vector of current trials of solutions in the population
-- Np: number of food sources/employed bees/onlooker bees
-- f: the function that you want to use for computing objective values
+- 'population': population of solutions 
+- 'bounds_lower': lower bounds of variables 
+- 'bounds_upper': upper bounds of variables 
+- 'trial': Vector of current trials of solutions in the population
+- 'Np': number of food sources/employed bees/onlooker bees
+- 'f': the function that you want to use for computing objective values
 
 Output
-- population new evolved: newly generated population of solutions
-- fitness new evolved: fitness values of the new population
-- objective new evolved: objective values of the new population
-- trial: updated trials of new solutions in the new population
+- 'population new evolved': newly generated population of solutions
+- 'fitness new evolved': fitness values of the new population
+- 'objective new evolved': objective values of the new population
+- 'trial': updated trials of new solutions in the new population
     When original solution has failed to generate better solution, trial counter is increased by 1 unit
     When better solution has been found, the trial counter for this new solution is set to zero
 
@@ -307,7 +281,8 @@ julia> population_new_evolved
  [3, 2, -3, -3]
 ```
 """
-function employed_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Array, Np::Number, f::Function)
+function employed_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, 
+                                trial::Array, Np::Number, f::Function)
     population_new = []
     
     # create new food sources
@@ -349,7 +324,10 @@ function employed_bee_phase(population, bounds_lower::Vector, bounds_upper::Vect
 end
 
 """ 
-    onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Array, Np::Number, f::Function)  
+    onlooker_bee_phase(population, bounds_lower::Vector, 
+                                    bounds_upper::Vector, 
+                                    trial::Array, Np::Number, 
+                                    f::Function)  
 
 This function implements the onlooker bee phase. 
 In the onlooker bee phase, a food source is selected for further exploitation with a probability related to the nectar amount, i.e. a solution with higher fitness will have a higher probability to be chosen. 
@@ -357,18 +335,18 @@ Fitter solutions may undergo multiple onlooker bee explorations. As in the emplo
 In contrast to the employed bee phase, not every food source will be explored, since every onlooker bee will explore a certain food source with a certain probability (depending on nectar amount).
 
 Input
-- population: population of solutions 
-- bounds_lower: lower bounds of variables 
-- bounds_upper: upper bounds of variables 
-- trial: Vector of current trials of solutions in the population
-- Np: number of food sources/employed bees/onlooker bees
-- f: the function that you want to use for computing objective values
+- 'population': population of solutions 
+- 'bounds_lower': lower bounds of variables 
+- 'bounds_upper': upper bounds of variables 
+- 'trial': Vector of current trials of solutions in the population
+- 'Np': number of food sources/employed bees/onlooker bees
+- 'f': the function that you want to use for computing objective values
 
 Output
-- population new evolved: newly generated population of solutions
-- fitness new evolved: fitness values of the new population
-- objective new evolved: objective values of the new population
-- trial: updated trials of new solutions in the new population
+- 'population new evolved': newly generated population of solutions
+- 'fitness new evolved': fitness values of the new population
+- 'objective new evolved': objective values of the new population
+- 'trial': updated trials of new solutions in the new population
     When original solution has failed to generate better solution, trial counter is increased by 1 unit
     When better solution has been found, the trial counter for this new solution is set to zero
 
@@ -397,7 +375,8 @@ julia> population_new_evolved
  [-5, -3, -4, 5]
 ```
 """
-function onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, trial::Array, Np::Number, f::Function)
+function onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vector, 
+                    trial::Array, Np::Number, f::Function)
     m = 0 # onlooker bee
     n = 1 # food source
     
@@ -442,7 +421,7 @@ function onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vect
 end	
 
 """ 
-    Scouting(population, bounds_lower::Vector, bounds_upper::Vector,D::Number ,trials::Array, fitness, objective, limit::Number, f::Function)  
+    scouting_phase(population, bounds_lower::Vector, bounds_upper::Vector,D::Number ,trials::Array, fitness, objective, limit::Number, f::Function)  
 
 This function implements the scouting phase. 
 If the value of the trial counter for a certain solution is greater than fixed limit, then a solution can enter the scout phase. 
@@ -450,21 +429,21 @@ The latter food source is then considered as exhausted and will therefore be aba
 After discarding the exhausted solution, a new random solution is generated and the trial counter of this solution is reset to zero.
 
 Input
-- population : population of solutions 
-- bounds_lower: lower bounds of variables 
-- bounds_upper: upper bounds of variables
-- D: number of decision variables in the function to be minimized 
-- trials: current trial of solutions
-- fitness: fitness values
-- objective: objective values
-- limit: limit value
-- f: the function that you want to use for computing objective values
+- 'population': population of solutions 
+- 'bounds_lower': lower bounds of variables 
+- 'bounds_upper': upper bounds of variables
+- 'D': number of decision variables in the function to be minimized 
+- 'trials': current trial of solutions
+- 'fitness': fitness values
+- 'objective': objective values
+- 'limit': limit value
+- 'f': the function that you want to use for computing objective values
 
 Output
-- population new evolved: newly generated population of solutions
-- fitness new evolved: fitness values of the new population
-- objective new evolved: objective values of the new population
-- trial: updated trials of new solutions in the new population
+- 'population new evolved': newly generated population of solutions
+- 'fitness new evolved': fitness values of the new population
+- 'objective new evolved': objective values of the new population
+- 'trial': updated trials of new solutions in the new population
     When original solution has failed to generate better solution, trial counter is increased by 1 unit
     When better solution has been found, the trial counter for this new solution is set to zero
 
@@ -490,7 +469,7 @@ julia> population
  [5, -1, -1, -1]
 julia> objective= compute_objective(population,sphere)
 julia> fitness = compute_fitness(objective)
-julia> population_new_evolved, fitness_new_evolved, objective_new_evolved, trial  = Scouting(population, bounds_lower, bounds_upper, D, trial, fitness, objective, 0, sphere)
+julia> population_new_evolved, fitness_new_evolved, objective_new_evolved, trial  = scouting_phase(population, bounds_lower, bounds_upper, D, trial, fitness, objective, 0, sphere)
 julia> population_new_evolved
 9-element Array{Any,1}:
  [3, 1, 2, -2]
@@ -504,7 +483,7 @@ julia> population_new_evolved
  [5, -1, -1, -1]
 ```
 """
-function Scouting(population, bounds_lower::Vector, bounds_upper::Vector,D::Number ,trials::Array, fitness, objective, limit::Number, f::Function)
+function scouting_phase(population, bounds_lower::Vector, bounds_upper::Vector,D::Number ,trials::Array, fitness, objective, limit::Number, f::Function)
         
     # check whether the trial vector exceed the limit value and importantly where
     index_exceed = trials .> limit
@@ -513,10 +492,10 @@ function Scouting(population, bounds_lower::Vector, bounds_upper::Vector,D::Numb
         if sum(maximum(trials) .== trials) > 1 # multiple cases have the same maximum so chose randomly
             possible_scoutings = findall(trials .== maximum(trials))
             idx = rand(1:size(possible_scoutings)[1])
-            global scouting_array = possible_scoutings[idx]
+            scouting_array = possible_scoutings[idx]
         else # only one array has a maximum => chose this one 
         
-            global scouting_array = argmax(trials)
+            scouting_array = argmax(trials)
         end
         pop = population[scouting_array]
         fit = fitness[scouting_array]
@@ -546,20 +525,20 @@ First a initialize population is made. For each iteration (T) the ABC algorithm 
 During the process, the solution with the highest fitness value is stored separately and updated after every iteration and scouting phase. 
 
 Input
-- D: number of decision variables in the function to be minimized
-- bounds_lower: lower bounds of variables 
-- bounds_upper: upper bounds of variables 
-- S: swarm size (S/2 = Np, the number of employed bees, onlooker bees and scouting bees)
-- T: number of cycles
-- limit: decides when scouts phase needs to be executed (often taken Np*D)
-- f: the function that you want to use for computing objective values (this function will be minimized)
+- 'D': number of decision variables in the function to be minimized
+- 'bounds_lower': lower bounds of variables 
+- 'bounds_upper': upper bounds of variables 
+- 'S': swarm size (S/2 = Np, the number of employed bees, onlooker bees and scouting bees)
+- 'T': number of cycles
+- 'limit': decides when scouts phase needs to be executed (often taken Np*D)
+- 'f': the function that you want to use for computing objective values (this function will be minimized)
     
 
 
 Output
-- optimal solution: gives a vector of the size D with the optimal solution  
-- populations: all populations that were computed during the ABC algorithm
-- best fitness tracker: a vector with for each iteration the best fitness value so far encountered. 
+- 'optimal solution': gives a vector of the size D with the optimal solution  
+- 'populations': all populations that were computed during the ABC algorithm
+- 'best fitness tracker': a vector with for each iteration the best fitness value so far encountered. 
 
 ## Examples
 
@@ -605,11 +584,13 @@ function ArtificialBeeColonization(D::Number, bounds_lower::Vector, bounds_upper
     for iterations in 1:T
     
         ## EMPLOYED BEE PHASE
-        population, fitness_values, objective_values, trial = employed_bee_phase(population, bounds_lower, bounds_upper, trial, Np, f::Function)
+        population, fitness_values, objective_values, trial = employed_bee_phase(population, 
+                                                                    bounds_lower, bounds_upper, trial, Np, f)
     
     
         ## ONLOOKER BEE PHASE
-        population, fitness_values, objective_values, trial = onlooker_bee_phase(population, bounds_lower, bounds_upper, trial, Np, f::Function)  
+        population, fitness_values, objective_values, trial = onlooker_bee_phase(population, 
+                                                                    bounds_lower, bounds_upper, trial, Np, f)  
        
         ## SCOUTING PHASE
         if maximum(fitness_values) > best_fitness
@@ -619,7 +600,8 @@ function ArtificialBeeColonization(D::Number, bounds_lower::Vector, bounds_upper
             
         end
             
-        population, fitness_values, objective_values, trial = Scouting(population, bounds_lower, bounds_upper, D,trial, fitness_values, objective_values, limit, f::Function)
+        population, fitness_values, objective_values, trial = scouting_phase(population, bounds_lower, bounds_upper, 
+                                                                    D,trial, fitness_values, objective_values, limit, f)
         
         if maximum(fitness_values) > best_fitness
             best_fitness = maximum(fitness_values)
@@ -640,10 +622,10 @@ end
 This is computing the sphere function value for the vector x. 
 
 Input
-- x: input vector for the sphere function
+- 'x': input vector for the sphere function
 
 Output
-- output: output value for the sphere function
+- 'output': output value for the sphere function
 
 
 ## Examples
@@ -665,10 +647,10 @@ end
 This is computing the ackley function value for the vector x.  
         
 Input
-- x: input vector for the ackley function
+- 'x': input vector for the ackley function
         
 Output
-- output: output value for the ackley function  
+- 'output': output value for the ackley function  
         
 
 ## Examples
@@ -693,10 +675,10 @@ This is computing the rosenbrock function value for the vector x.
 Watch out! This function always needs a 2-element Array as input
         
 Input
-- x: input vector for the rosenbrock function
+- 'x': input vector for the rosenbrock function
         
 Output
-- output: output value for the rosenbrock function  
+- 'output': output value for the rosenbrock function  
         
 
 ## Examples
@@ -719,10 +701,10 @@ This is computing the branin function value for the vector x.
 Watch out! This function always needs a 2-element Array as input
         
 Input
-- x: input vector for the branin function
+- 'x': input vector for the branin function
         
 Output
-- output: output value for the branin function  
+- 'output': output value for the branin function  
         
 
 ## Examples
@@ -744,11 +726,11 @@ This is computing the rastrigine function value for the input values of x.
 
 Input
 
-- x: input vector for the rastrigine function   
+- 'x': input vector for the rastrigine function   
 
 Output
 
-- output: output value for the rastrigine function  
+- 'output': output value for the rastrigine function  
 
 ## Examples
 
