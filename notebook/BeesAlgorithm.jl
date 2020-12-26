@@ -118,7 +118,7 @@ md" Choose the **swarm size S** (even number). \
 
 
 # ╔═╡ 0388b3ce-4374-11eb-03f4-9b4c74bd5ff0
-S = 24
+S = 30
 
 # ╔═╡ 6bd962e0-439c-11eb-0ce9-c348bd45b225
 md"  
@@ -177,7 +177,7 @@ end
 md" Below a **contour plot** and **surface plot** of the test function can be seen. The animation shows how the location of bees changes over time during the optimization procedure. "
 
 # ╔═╡ b81d7f30-42a5-11eb-27ce-f1cc849ffdc5
-# @bind step Slider(1:T; show_value=true)
+# @bind iteration Slider(1:T; show_value=true)
 
 # ╔═╡ 9e2b4e60-42ee-11eb-0d7f-c1faa8426796
 begin
@@ -231,9 +231,9 @@ begin
 		
 	@gif for iteration in 1:T
 		
-		x = []; y = []; z = []
+		x_contour = []; y_contour = [];  
 		for bee in populations[iteration]
-			append!(x,bee[1]); append!(y, bee[2]); append!(z, 0)
+			append!(x_contour,bee[1]); append!(y_contour, bee[2]) 
 		end
 	 
 		plot(x2,y2,f,st=:contour,
@@ -242,7 +242,7 @@ begin
 		ylims=(bounds_lower[2],bounds_upper[2]),
 		legend=:outerbottom) 
 	
-		scatter!(x, y,  
+		scatter!(x_contour, y_contour,  
 		xlabel="x1", 
 		ylabel="x2",
 		zlabel="x3",
@@ -263,9 +263,9 @@ end
 begin
 	@gif for iteration in 1:T
 		
-		x = []; y = []; z = []
+		x_surface = []; y_surface = []; z_surface = []
 		for bee in populations[iteration]
-			append!(x,bee[1]); append!(y, bee[2]); append!(z, 0)
+			append!(x_surface,bee[1]); append!(y_surface, bee[2]); append!(z_surface, 0)
 		end
 		
 	plot(x2,y2,f,st=:surface,
@@ -276,7 +276,7 @@ begin
 		zlims=zlims,
 		legend=:outerbottom) #,c=my_cg) #,camera=(-30,30))
 	
-	scatter!(x, y, z, 
+	scatter!(x_surface, y_surface, z_surface, 
 		xlabel="x1", 
 		ylabel="x2",
 		# title="Evolution of populations over time",
@@ -360,7 +360,7 @@ Karaboga, D., & Basturk, B. (2007). A powerful and efficient algorithm for numer
 # ╟─27f302ee-42ea-11eb-2d9e-49dffc0d983d
 # ╟─3235a8d2-42ea-11eb-1fe1-6d91eca83dad
 # ╟─085c34e0-4374-11eb-1ba7-7fb1af1d38a4
-# ╟─0388b3ce-4374-11eb-03f4-9b4c74bd5ff0
+# ╠═0388b3ce-4374-11eb-03f4-9b4c74bd5ff0
 # ╟─6bd962e0-439c-11eb-0ce9-c348bd45b225
 # ╟─350644d0-4375-11eb-2b68-8fb8f4bd7c2a
 # ╟─c7c64720-437f-11eb-15a2-477ab2fe0792
@@ -369,8 +369,8 @@ Karaboga, D., & Basturk, B. (2007). A powerful and efficient algorithm for numer
 # ╠═54c02380-42a4-11eb-0240-7b2d895cb337
 # ╟─9bb28f50-4374-11eb-2b10-e5effcbc8438
 # ╟─b81d7f30-42a5-11eb-27ce-f1cc849ffdc5
-# ╟─9e2b4e60-42ee-11eb-0d7f-c1faa8426796
-# ╟─71321ef0-42eb-11eb-0635-b1ce95226c75
+# ╠═9e2b4e60-42ee-11eb-0d7f-c1faa8426796
+# ╠═71321ef0-42eb-11eb-0635-b1ce95226c75
 # ╟─65bf09be-4377-11eb-2415-3b8be310a065
 # ╟─4219c780-4381-11eb-2289-316eb02b282f
 # ╠═076d2e10-4381-11eb-3e12-6f9d9abe7f9a
