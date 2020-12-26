@@ -308,7 +308,9 @@ starting_solution = float(initialize_population(D, bounds_lower, bounds_upper, S
 
 # ╔═╡ 895b6c20-444e-11eb-0db8-3f6ce2a9db0b
 md" ###### Compare with Nelder-Mead algorithm
-Nelder-Mead is the standard algorithm when no gradient information is available. Instead, Nelder-Mead is a direct search method that keeps track of the function value at a number of points (forming a simplex) in the search space. Given a simplex, four actions (reflect, expand, contract, or shrink) are executed to iteratively replace the worst point with a better point. Below, the Nelder-Mead algorithm is run for the same amount of iterations as the ABC algorithm. "
+Nelder-Mead is the standard algorithm when no gradient information is available. Instead, Nelder-Mead is a direct search method that keeps track of the function value at a number of points (forming a simplex) in the search space. Given a simplex, four actions (reflect, expand, contract, or shrink) are executed to iteratively replace the worst point with a better point. 
+
+Below, the Nelder-Mead algorithm is run for the same amount of iterations as the ABC algorithm. "
 
 
 # ╔═╡ 8f7a52d0-43a7-11eb-3351-eb765609e56e
