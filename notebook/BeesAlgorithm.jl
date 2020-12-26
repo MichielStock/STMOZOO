@@ -320,15 +320,11 @@ Optim.minimizer(result)
 # ╔═╡ 6dea1f90-444e-11eb-1501-f99dfba633ea
 Optim.minimum(result)
 
-# ╔═╡ 59f620d0-478f-11eb-3b87-65439861d19d
-
-
 # ╔═╡ 198e69b0-4453-11eb-304f-43a227316038
-md" We see that the Nelder-Mead algorithm of the Optim package gets stuck in a local mininimum when trying to minimize the Ackley and Rastrigine function, while the ABC algorithm succeeds in finding the global minimizer. 
+md" We see that the Nelder-Mead algorithm of the Optim package happens to get stuck in a local mininimum when trying to minimize the Ackley and Rastrigine function, while the ABC algorithm always succeeds in finding the global minimizer. 
 
 For the other test functions, both the Nelder-Mead algorithm and the ABC algorithm succeed in finding the global minimum (or one of the global minima for the Branin test function). 
-
-In general, the amount of iterations needed to reach the global minimum is larger for the ABC algorithm compared to the Nelder-Mead algorithm (when correct global minimum is identified by Nelder-Mead). "
+ "
 
 # ╔═╡ 0c78a8b0-4379-11eb-20dc-3dd46dc183d3
 md" ## References
@@ -353,7 +349,7 @@ Karaboga, D., & Basturk, B. (2007). A powerful and efficient algorithm for numer
 # ╟─350644d0-4375-11eb-2b68-8fb8f4bd7c2a
 # ╟─c7c64720-437f-11eb-15a2-477ab2fe0792
 # ╟─caa5b6d0-4373-11eb-0cdd-1961e6698727
-# ╟─f347e610-42a3-11eb-2116-ef50f1246cf3
+# ╠═f347e610-42a3-11eb-2116-ef50f1246cf3
 # ╠═54c02380-42a4-11eb-0240-7b2d895cb337
 # ╟─9bb28f50-4374-11eb-2b10-e5effcbc8438
 # ╟─b81d7f30-42a5-11eb-27ce-f1cc849ffdc5
@@ -372,6 +368,5 @@ Karaboga, D., & Basturk, B. (2007). A powerful and efficient algorithm for numer
 # ╠═8f7a52d0-43a7-11eb-3351-eb765609e56e
 # ╠═4417cb40-444e-11eb-1f2d-933616b91239
 # ╠═6dea1f90-444e-11eb-1501-f99dfba633ea
-# ╠═59f620d0-478f-11eb-3b87-65439861d19d
-# ╠═198e69b0-4453-11eb-304f-43a227316038
+# ╟─198e69b0-4453-11eb-304f-43a227316038
 # ╟─0c78a8b0-4379-11eb-20dc-3dd46dc183d3
