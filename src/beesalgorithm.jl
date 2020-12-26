@@ -330,9 +330,12 @@ end
                                     f::Function)  
 
 This function implements the onlooker bee phase. 
-In the onlooker bee phase, a food source is selected for further exploitation with a probability related to the nectar amount, i.e. a solution with higher fitness will have a higher probability to be chosen. 
-Fitter solutions may undergo multiple onlooker bee explorations. As in the employed bee phase, new solutions are generated using a partner solution and greedy selection is performed. 
-In contrast to the employed bee phase, not every food source will be explored, since every onlooker bee will explore a certain food source with a certain probability (depending on nectar amount).
+In the onlooker bee phase, a food source is selected for further exploitation with a probability related to the nectar amount, 
+i.e. a solution with higher fitness will have a higher probability to be chosen. 
+Fitter solutions may undergo multiple onlooker bee explorations. As in the employed bee phase, 
+new solutions are generated using a partner solution and greedy selection is performed. 
+In contrast to the employed bee phase, not every food source will be explored, 
+since every onlooker bee will explore a certain food source with a certain probability (depending on nectar amount).
 
 Input
 - 'population': population of solutions 
@@ -425,7 +428,8 @@ end
 
 This function implements the scouting phase. 
 If the value of the trial counter for a certain solution is greater than fixed limit, then a solution can enter the scout phase. 
-The latter food source is then considered as exhausted and will therefore be abandoned by the bees. The current optimal solution will be stored separately to avoid losing it in the scouting phase.
+The latter food source is then considered as exhausted and will therefore be abandoned by the bees. 
+The current optimal solution will be stored separately to avoid losing it in the scouting phase.
 After discarding the exhausted solution, a new random solution is generated and the trial counter of this solution is reset to zero.
 
 Input
@@ -521,7 +525,8 @@ end
     ArtificialBeeColonization(D::Number, bounds_lower::Vector, bounds_upper::Vector, S::Number, T::Number, limit::Number, f::Function)
 
 This functions runs the Artificial Bee Colony Algorithm.
-First a initialize population is made. For each iteration (T) the ABC algorithm undergoes the employed bee phase, onlooker bee phase and possibly the scouting phase. 
+First a initialize population is made. For each iteration (T) the ABC algorithm undergoes the employed bee phase, 
+onlooker bee phase and possibly the scouting phase. 
 During the process, the solution with the highest fitness value is stored separately and updated after every iteration and scouting phase. 
 
 Input
