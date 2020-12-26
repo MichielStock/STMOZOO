@@ -174,10 +174,10 @@ begin
 end
 
 # ╔═╡ 9bb28f50-4374-11eb-2b10-e5effcbc8438
-md" Below a **contour plot** and **surface plot** of the test function can be seen. Move the slider to see how the location of bees changes over time during the optimization procedure. "
+md" Below a **contour plot** and **surface plot** of the test function can be seen. The animation shows how the location of bees changes over time during the optimization procedure. "
 
 # ╔═╡ b81d7f30-42a5-11eb-27ce-f1cc849ffdc5
-@bind step Slider(1:T; show_value=true)
+# @bind step Slider(1:T; show_value=true)
 
 # ╔═╡ 9e2b4e60-42ee-11eb-0d7f-c1faa8426796
 begin
@@ -252,37 +252,22 @@ begin
 		markershape=  :circle,
 		label="Position of bees after iteration "*string(iteration),
 		legend = :outerbottom)
-		sleep(5)
+		sleep(2)
 	end every 1
 	
 	
 
 end
 
-# ╔═╡ 581a22f0-42af-11eb-1d59-df5f1efa5732
-begin
-	
-	plot(x2,y2,f,st=:contour,
-		label="Objective function",
-		xlims=(bounds_lower[1],bounds_upper[1]),
-		ylims=(bounds_lower[2],bounds_upper[2]),
-		legend=:outerbottom) 
-	
-	scatter!(x, y,  
-		xlabel="x1", 
-		ylabel="x2",
-		zlabel="x3",
-		title="Evolution of populations over time",
-		titlefont = font(15),
-		c="blue", 
-		markershape=  :circle,
-		label="Position of bees after iteration "*string(step),
-		legend = :outerbottom)
-
-end
-
 # ╔═╡ 71321ef0-42eb-11eb-0635-b1ce95226c75
 begin
+	@gif for iteration in 1:T
+		
+		x = []; y = []; z = []
+		for bee in populations[iteration]
+			append!(x,bee[1]); append!(y, bee[2]); append!(z, 0)
+		end
+		
 	plot(x2,y2,f,st=:surface,
 		label="Objective function",
 		# camera=(-30,30),
@@ -298,8 +283,10 @@ begin
 		# titlefont = font(15),
 		c="blue", 
 		markershape=  :circle,
-		label="Position of bees after iteration "*string(step),
+		label="Position of bees after iteration "*string(iteration),
 		legend = :outerbottom)
+	sleep(2)
+	end every 1
 end
 
 # ╔═╡ 65bf09be-4377-11eb-2415-3b8be310a065
@@ -381,9 +368,8 @@ Karaboga, D., & Basturk, B. (2007). A powerful and efficient algorithm for numer
 # ╠═f347e610-42a3-11eb-2116-ef50f1246cf3
 # ╠═54c02380-42a4-11eb-0240-7b2d895cb337
 # ╟─9bb28f50-4374-11eb-2b10-e5effcbc8438
-# ╠═b81d7f30-42a5-11eb-27ce-f1cc849ffdc5
-# ╠═9e2b4e60-42ee-11eb-0d7f-c1faa8426796
-# ╠═581a22f0-42af-11eb-1d59-df5f1efa5732
+# ╟─b81d7f30-42a5-11eb-27ce-f1cc849ffdc5
+# ╟─9e2b4e60-42ee-11eb-0d7f-c1faa8426796
 # ╟─71321ef0-42eb-11eb-0635-b1ce95226c75
 # ╟─65bf09be-4377-11eb-2415-3b8be310a065
 # ╟─4219c780-4381-11eb-2289-316eb02b282f
