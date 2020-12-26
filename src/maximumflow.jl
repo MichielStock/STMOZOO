@@ -8,7 +8,7 @@ module MaximumFlow
 export cap,res_network,augmenting_path,bfs
 
 # Returns the edges of the graph
-# function edges(nw::Array{Int,2})
+# function edges(nw::Matrix{Int})
 #     es = []
 #     for i in nw
 #         i != 0 && push!(caps, i)
@@ -18,12 +18,12 @@ export cap,res_network,augmenting_path,bfs
 # edges(mf::Array{Tuple{Int,Int,Int},1}) = [mf[i][2:3] for i in 1:length(mf)] 
 
 """
-    cap(nw::Array{Int,2})
+    cap(nw::Matrix{Int})
 
 Get the capacities or values of the edges of a graph `nw` implemented as an 
 adjacency matrix.
 """
-function cap(nw::Array{Int,2})
+function cap(nw::Matrix{Int})  # maybe a oneliner using `filter`? likely faster
     caps = []
     for c in nw
         c != 0 && push!(caps, c)
@@ -31,13 +31,16 @@ function cap(nw::Array{Int,2})
     return caps
 end
 
+# SUGGESTION: you could also use `AbstractMatrix{Int}` as a type, then it will also work
+# for space matrices and the like
+
 """
-    cap(nw::Array{Int,2}, nw_sol::Array{Int,2})
+    cap(nw::Matrix{Int}, nw_sol::Matrix{Int})
 
 Get the flows in a network `nw_sol` resulting from the solution of a maximum flow problem
 `nw`. Both networks are implemented as adjacency matrices.
 """
-function cap(nw::Array{Int,2}, nw_sol::Array{Int,2})
+function cap(nw::Matrix{Int}, nw_sol::Matrix{Int})
     caps = []
     for (i,c) in enumerate(nw)
         c != 0 && push!(caps, nw_sol[i])
@@ -46,13 +49,13 @@ function cap(nw::Array{Int,2}, nw_sol::Array{Int,2})
 end
 
 """
-    res_network(mf_oc::Array{Int,2},mf_cur::Array{Int,2})
+    res_network(mf_oc::Matrix{Int},mf_cur::Matrix{Int})
 
 Calculate the residual network of a network from a maximum flow problem `mf_oc` 
 and a network containing the current flow `mf_cur`, both implemented as 
 adjacency matrices.
 """
-function res_network(mf_oc::Array{Int,2}, mf_cur::Array{Int,2})
+function res_network(mf_oc::Matrix{Int}, mf_cur::Matrix{Int})
     r = size(mf_oc, 1) # rows
     c = size(mf_oc, 2) # columns
     @assert r == c "Adjacency matrix has to be square."
@@ -68,7 +71,7 @@ function res_network(mf_oc::Array{Int,2}, mf_cur::Array{Int,2})
 end
 
 """ 
-    bfs(nw::Array{Int,2}, s::Int, t::Int)
+    bfs(nw::Matrix{Int}, s::Int, t::Int)
 
 Search an existing path in the network `nw` with a breadth-first-search from 
 source `s` to sink `t`.
@@ -76,17 +79,17 @@ Return `true` if path exists and an array with the predecessor vertices
 to make backtracking possible. 
 Return `false` if path does not exist.
 """
-    function bfs(nw::Array{Int,2}, s::Int, t::Int)
+function bfs(nw::Matrix{Int}, s::Int, t::Int)
     n = size(nw, 1) # number of vertices
     @assert n == size(nw, 2) "Adjacency matrix has to be square."
-    @assert all(nw .>= 0) "There are negative flow capacities, which is not possible."
+    @assert all(nw .≥ 0) "There are negative flow capacities, which is not possible."
 
     labeled = falses(n) # true if vertex is labeled
     labeled[s] = true # start at source
     L = [s] # labels, start at source
     pred = zeros(Int, n) # predecessor labels
 
-    while ! labeled[t] && ! isempty(L)# as long as t is not labeled and there are still unvisited nodes
+    while !labeled[t] && !isempty(L)# as long as t is not labeled and there are still unvisited nodes
         i = pop!(L) # select labeled node
         for j in findall(nw[i,:] .> 0) # there is still possible flow from node i to node j
         # if j is unlabeled, label it and save the predecessor
@@ -101,13 +104,13 @@ Return `false` if path does not exist.
 end
 
 """
-    augmenting_path(mf::Array{Int,2}, s::Int, t::Int)
+    augmenting_path(mf::Matrix{Int}, s::Int, t::Int)
 
 Execute Ford-Fulkerson method with breadth-first-search (Edmonds-Karp algorithm)
 to find the maximum flow of a network from a maximum flow problem `mf` 
 from source `s` to sink `t`.
 """
-function augmenting_path(mf::Array{Int,2}, s::Int, t::Int)
+function augmenting_path(mf::Matrix{Int}, s::Int, t::Int)
     n = size(mf, 1) # number of vertices
     @assert n == size(mf, 2) "Adjacency matrix has to be square."
     @assert all(mf .>= 0) "There are negative flow capacities, which is not possible." 
@@ -129,7 +132,7 @@ function augmenting_path(mf::Array{Int,2}, s::Int, t::Int)
         end
         P
     # calculate lowest capacity
-    Δ = minimum([res_flow[x,y] for (y, x) in zip(P[1:end - 1], P[2:end]) ])
+    Δ = minimum((res_flow[x,y] for (y, x) in zip(P[1:end - 1], P[2:end]) ))  # changed with round brackets, so it is an iterator (memory efficiency)
     # add this flow to current flow
         [cur_flow[x,y] += Δ for (y, x) in zip(P[1:end - 1], P[2:end])]
         res_flow = res_network(mf, cur_flow) # update residual network
@@ -141,23 +144,23 @@ function augmenting_path(mf::Array{Int,2}, s::Int, t::Int)
 end
 
 """
-    augmenting_path(mf::Array{Int,2}, s::Array{Int,1}, t::Int)
+    augmenting_path(mf::Matrix{Int}, s::Array{Int,1}, t::Int)
 
 Execute Ford-Fulkerson method with breadth-first-search (Edmonds-Karp algorithm)
 to find the maximum flow of a network from a maximum flow problem `mf` 
 from multiple sources `s` to sink `t`.
 """
-function augmenting_path(mf::Array{Int,2}, s::Array{Int,1}, t::Int)
+function augmenting_path(mf::Matrix{Int}, s::Array{Int,1}, t::Int)
     n = size(mf, 1) # number of vertices
     @assert n == size(mf, 2) "Adjacency matrix has to be square."
-    @assert all(mf .>= 0) "There are negative flow capacities, which is not possible." 
+    @assert all(mf .≥ 0) "There are negative flow capacities, which is not possible." 
 
     # multiple sources
     # add node in front of the graph with huge capacities to each source node
     mf_sourcerow = zeros(Int, n + 1)
     mf_sourcerow[s .+ 1] .= 10^20 
     mf_sourcecol = zeros(Int, n)
-    mf_new = [mf_sourcerow';mf_sourcecol mf] # new network
+    mf_new = [mf_sourcerow'; mf_sourcecol mf] # new network
 
     cur_flow, max_flow = augmenting_path(mf_new, 1, t + 1)
     cur_flow_new = cur_flow[2:end,2:end] # delete extra row and column from source
@@ -165,13 +168,13 @@ function augmenting_path(mf::Array{Int,2}, s::Array{Int,1}, t::Int)
 end
 
 """
-    augmenting_path(mf::Array{Int,2}, s::Int, t::Array{Int,1})
+    augmenting_path(mf::Matrix{Int}, s::Int, t::Array{Int,1})
 
 Execute Ford-Fulkerson method with breadth-first-search (Edmonds-Karp algorithm)
 to find the maximum flow of a network from a maximum flow problem `mf` 
 from source `s` to multiple sinks `t`.
 """
-function augmenting_path(mf::Array{Int,2}, s::Int, t::Array{Int,1})
+function augmenting_path(mf::Matrix{Int}, s::Int, t::Array{Int,1})
     n = size(mf, 1) # number of vertices
     @assert n == size(mf, 2) "Adjacency matrix has to be square."
     @assert all(mf .>= 0) "There are negative flow capacities, which is not possible." 
@@ -189,16 +192,16 @@ function augmenting_path(mf::Array{Int,2}, s::Int, t::Array{Int,1})
 end
 
 """
-    augmenting_path(mf::Array{Int,2}, s::Array{Int,1}, t::Array{Int,1})
+    augmenting_path(mf::Matrix{Int}, s::Array{Int,1}, t::Array{Int,1})
 
 Execute Ford-Fulkerson method with breadth-first-search (Edmonds-Karp algorithm)
 to find the maximum flow of a network from a maximum flow problem `mf` 
 with multiple sources `s` and multiple sinks `t`.
 """
-function augmenting_path(mf::Array{Int,2}, s::Array{Int,1}, t::Array{Int,1})
+function augmenting_path(mf::Matrix{Int}, s::Array{Int,1}, t::Array{Int,1})
     n = size(mf, 1) # number of vertices
     @assert n == size(mf, 2) "Adjacency matrix has to be square."
-    @assert all(mf .>= 0) "There are negative flow capacities, which is not possible." 
+    @assert all(mf .≥ 0) "There are negative flow capacities, which is not possible." 
 
     # multiple sources and sinks
     # add node in front of the graph with huge capacities to each source node
