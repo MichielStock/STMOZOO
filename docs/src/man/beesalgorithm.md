@@ -47,7 +47,7 @@ Main.BeesAlgorithm.foodsource_info_prob
 Main.BeesAlgorithm.create_newsolution
 Main.BeesAlgorithm.employed_bee_phase
 Main.BeesAlgorithm.onlooker_bee_phase
-Main.BeesAlgorithm.Scouting
+Main.BeesAlgorithm.scouting_phase
 Main.BeesAlgorithm.ArtificialBeeColonization
 Main.BeesAlgorithm.sphere
 Main.BeesAlgorithm.ackley
