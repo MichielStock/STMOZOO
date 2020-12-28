@@ -4,7 +4,7 @@ module Cuckoo
     export init_nests, cuckoo!  
  
     # import external packages
-    using Distributions, SpecialFunctions
+    using SpecialFunctions
  
     """
         Nest
@@ -73,8 +73,8 @@ module Cuckoo
 
         steps = Vector{Float64}(undef, d)
         for x in 1:d
-            u = rand(Normal(0, sigma))
-            v = rand(Normal(0, 1))
+            u = sigma*randn()
+            v = randn()
             steps[x] = u ./ abs(v) .^ (1/lambda)
         end
  
