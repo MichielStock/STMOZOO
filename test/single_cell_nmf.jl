@@ -1,6 +1,7 @@
 @testset "SingleCellNMF" begin
 	using STMOZOO.SingleCellNMF, DataFrames, Distributions
 
+	# QUESTION maybe a smaller example for speed?
 	n_cells = 100
 	n_rows_rna = 500
 	n_rows_atac = 1000

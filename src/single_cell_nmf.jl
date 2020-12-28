@@ -26,7 +26,7 @@ function reduce_dims_atac(atac_df::DataFrame, Z::Array{Float64}, R::Array{Bool})
 end
 
 function reduce_dims_atac(atac_df::DataFrame)
-	n_cells = size(atac_df)[2] - 1
+	n_cells = size(atac_df, 2) - 1
 	Z = Matrix{Float64}(I, n_cells, n_cells) 
 	R = Matrix{Bool}(I, n_cells, n_cells) 
 
@@ -34,17 +34,16 @@ function reduce_dims_atac(atac_df::DataFrame)
 end
 
 """
+	perform_nmf(rna_df::DataFrame, atac_df::DataFrame, k::Int64;
+			dropout_prob = 0.25, n_iter = 500.0, alpha = 1.0, lambda = 100000.0,
+			gamma = 1.0, verbose = false)
+
 Perform non-negative matrix factorization(NMF) using both scRNA-seq and scATAC-seq data.
 The function returns cell loadings, as well as modality-specific loadings. The choice of
 `k` can reflect the prior knowledge about the major sources of variability in both scRNA-seq
 and scATAC-seq data. Alternatively, the best value of `k` can be determined empirically.
 `n_iter` determines the number of iterations. `dropout_prob` helps prevent over-aggregation of
 the data. `alpha`, `lambda`, and `gamma` are regularization parameters.
-
-	perform_nmf(rna_df::DataFrame, atac_df::DataFrame, k::Int64;
-			dropout_prob = 0.25, n_iter = 500.0, alpha = 1.0, lambda = 100000.0,
-			gamma = 1.0, verbose = false)
-
 
 Note that input DataFrames must have `gene_name` and `locus_name` columns for scRNA-seq and
 scATAC-seq data, respectively.
@@ -78,15 +77,16 @@ function perform_nmf(rna_df::DataFrame, atac_df::DataFrame, k::Int64;
 	for i = 1:n_iter
 		verbose && println("Iteration $(i)")
 
+		# inplace version: H ./= sum(H, dims = 2)
 		H = H ./ sum(H, dims = 2)
 		W_rna = update_W_rna(W_rna, X_rna, H)  
 		w_atac = update_W_atac(W_atac, X_atac, H, Z, R)
 		H = update_H(W_rna, W_atac, X_rna, X_atac, H, Z, R, alpha, lambda, gamma)
 		Z = update_Z(W_atac, X_atac, H, Z, R, lambda)
 
-		current_obj = alpha * norm(X_rna - W_rna * H)^2 + 
-				norm(X_atac * (Z .* R) - W_atac * H)^2 +
-				lambda * norm(Z - H' * H) + gamma * sum(sum(H, dims = 1).^2)
+		current_obj = alpha * norm(X_rna .- W_rna * H)^2 + 
+				norm(X_atac * (Z .* R) .- W_atac * H)^2 +
+				lambda * norm(Z .- H' * H) + gamma * sum(sum(H, dims = 1).^2)
 		push!(obj_history, current_obj)
 	end
 	
@@ -119,19 +119,20 @@ end
 function update_H(W_rna::Array{Float64}, W_atac::Array{Float64}, X_rna::Array{Float64},
 			X_atac::Array{Float64}, H::Array{Float64}, Z::Array{Float64},
 			R::Array{Bool}, alpha::Float64, lambda::Float64, gamma::Float64)
-	numerator = alpha * W_rna' * X_rna + W_atac' * X_atac * (Z .* R)
-			+ lambda * H * (Z + Z')
+	numerator = alpha * W_rna' * X_rna .+ W_atac' * X_atac * (Z .* R)
+			.+ lambda * H * (Z + Z')
 	k = size(H)[1]
 	denominator = (alpha * W_rna' * W_rna + W_atac' * W_atac + 2 * lambda * H * H'
 			+ gamma * zeros(k, k)) * H
+			  # QUESTION: why add here zeros?
 
 	return H .* numerator ./ (denominator .+ eps(Float64))	
 end
 
 function update_Z(W_atac::Array{Float64}, X_atac::Array{Float64}, H::Array{Float64},
 			Z::Array{Float64}, R::Array{Bool}, lambda::Float64)
-	numerator = (X_atac' * W_atac * H) .* R + lambda * H' * H 
-	denominator = X_atac' * X_atac * (Z .* R) .* R + lambda * Z
+	numerator = (X_atac' * W_atac * H) .* R .+ lambda * H' * H 
+	denominator = X_atac' * X_atac * (Z .* R) .* R .+ lambda * Z
 		
 	return Z .* numerator ./ (denominator .+ eps(Float64))
 end
