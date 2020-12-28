@@ -4,14 +4,17 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ 66a50de0-39bc-11eb-1073-ef22db3f78c6
-using ExprRules, ExprOptimization, Random, Plots, Calculus, TreeView, STMOZOO.ODEGenProg
+# ╔═╡ 0f9a6600-48a6-11eb-2b1f-59ab11633adc
+using STMOZOO.ODEGenProg, Plots, PlutoUI
 
 # ╔═╡ 0487a66e-4175-11eb-3839-79ff040436c4
 md"""### Solving ordinary differential equations with genetic programming"""
 
 # ╔═╡ d29547a0-44b5-11eb-01ec-a3804e3564c1
 md""" note: first and second order linear differential equations """
+
+# ╔═╡ 66a50de0-39bc-11eb-1073-ef22db3f78c6
+#using ExprRules, ExprOptimization, Random, Plots, Calculus, TreeView, STMOZOO.ODEGenProg
 
 # ╔═╡ fe2273d0-4590-11eb-0ad0-857e30bf1fc7
 #@tree :(sin((3 + 7) * x))
@@ -46,7 +49,7 @@ Returns the minimum depth achievable for each production rule, dmap."""
 dmap = mindepth_map(grammar)
 
 # ╔═╡ 66366810-3b31-11eb-37b1-132e3837fe02
-S = SymbolTable(grammar)
+global S = SymbolTable(grammar)
 
 # ╔═╡ 4ee2da70-416e-11eb-0a44-7dc9ad5f95d4
 #general fitness function
@@ -503,6 +506,7 @@ end
 # ╠═0487a66e-4175-11eb-3839-79ff040436c4
 # ╠═d29547a0-44b5-11eb-01ec-a3804e3564c1
 # ╠═66a50de0-39bc-11eb-1073-ef22db3f78c6
+# ╠═0f9a6600-48a6-11eb-2b1f-59ab11633adc
 # ╠═fe2273d0-4590-11eb-0ad0-857e30bf1fc7
 # ╠═1496aa80-3cce-11eb-3a7f-635d62b89453
 # ╠═0b262180-43fc-11eb-3042-d3f83630d086
