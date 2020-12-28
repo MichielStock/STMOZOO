@@ -114,17 +114,6 @@ results_test = optimize(g, grammar, :R, fitness_test)
 # ╔═╡ 41e10c20-44b1-11eb-0684-e1b9539e2de0
 (results_test.expr, results_test.loss)
 
-# ╔═╡ 1c628c20-44b2-11eb-037e-a181361f55b4
-function plot_solution(ex::Expr, grammar::Grammar)
-	#ex = get_executable(tree, grammar)
-	sol = Float64[]
-	for x = 0.1:0.01:10.
-		S[:x] = x
-		push!(sol, Core.eval(S,ex))
-	end
-	return sol
-end	
-
 # ╔═╡ e48e17f0-3fda-11eb-07f5-c3a3e3bb07b5
 begin 
 x_t = 0.1:0.01:10.
@@ -133,37 +122,6 @@ plot(x_t,y_t, label = "Analytic solution", color = "black", linewidth = 3)
 
 y_t2 = plot_solution(results_test.expr, grammar)
 plot!(x_t,y_t2, linestyle =:dash, label = "GP approximation", linewidth = 3)
-end
-
-# ╔═╡ 2828cd90-3cd7-11eb-0815-658096d0dff0
-"hardcoded fitness function for y''=100y, y(0)=0, y(0)=10 -> y(x)=sin(10x)"
-function fitness_1(tree::RuleNode, grammar::Grammar)
-    ex = get_executable(tree, grammar)
-    los = 0.0
-	
-	#domain
-    for x = 0.0:0.1:1.0
-		S[:x] = x
-		#los += try (abs(Core.eval(S,differentiate(ex)) - Core.eval(S,ex)))^2
-		los += try ((Core.eval(S,differentiate(differentiate(ex))) + 100*Core.eval(S,ex)))^2
-		catch
-			return Inf
-		end
-    end
-	
-	#boundary conditions
-	S[:x] = 0
-	λ = 100.
-	los += try λ*((((Core.eval(S,ex)-0))^2) + (((Core.eval(S,differentiate(ex))-10))^2)) 
-	catch
-		return Inf
-	end
-	#los += try ((Core.eval(S,differentiate(ex))-10))^2
-	#catch
-		#return Inf
-	#end
-	
-	return los
 end
 
 # ╔═╡ 3cf8f410-3cce-11eb-277e-f5cf01627feb
@@ -186,30 +144,7 @@ end
 md""" The 2 previous functions should be exact solutions, the following are more difficult test functions that yield viarble results, don't converge very well. This is also the case in paper where the range for iterations was pretty large (up to 1200 generations). Try different population methods. Entropy. Calculate complexity of predicted solution based grammar ?"""
 
 # ╔═╡ 15acf7f0-416d-11eb-0b0c-e9bf40b3994a
-"hardcoded fitness function for y'=(1-y*cos(x))/sin(x), y(0.1)=2.1/sin(0.1)-> y(x)=(x+2)/sin(x)"
-function fitness_2(tree::RuleNode, grammar::Grammar)
-    ex = get_executable(tree, grammar)
-    los = 0.0
-	
-	#domain
-    for x = 0.1:0.1:1.0
-		S[:x] = x
-		los += try (abs(Core.eval(S,differentiate(ex)) - ((1-(Core.eval(S,ex)*cos(x)))/sin(x))))^2
-		catch
-			return Inf
-		end
-    end
-	
-	#boundary conditions
-	S[:x] = 0.1
-	λ = 100.
-	los += try λ*(Core.eval(S,ex)-(2.1/sin(0.1)))^2
-	catch
-		return Inf
-	end
-		
-	return los
-end
+
 
 # ╔═╡ 5f1bf520-44b1-11eb-3eff-733bb1e93077
 begin
@@ -227,32 +162,6 @@ y_22 = plot_solution(results_2.expr, grammar)
 plot!(x_21,y_22, label = "GP approximation", linestyle =:dash, linewidth = 3)
 end
 
-# ╔═╡ 34823660-4175-11eb-2555-23ae963b2331
-"hardcoded fitness function for y'=(2x-y)/x, y(0)=20.1-> y(x)=x+2/x"
-function fitness_3(tree::RuleNode, grammar::Grammar)
-    ex = get_executable(tree, grammar)
-    los = 0.0
-	
-	#domain
-    for x = 0.1:0.1:1.0
-		S[:x] = x
-		los += try (abs(x*Core.eval(S,differentiate(ex)) - 2*x + Core.eval(S,ex)))^2
-		catch
-			return Inf
-		end
-    end
-	
-	#boundary conditions
-	S[:x] = 0.
-	λ = 100.
-	los += try λ*(Core.eval(S,ex)-20.1)^2 
-	catch
-		return Inf
-	end
-		
-	return los
-end
-
 # ╔═╡ 6f70dda0-44b1-11eb-18f2-d76f37ec9519
 begin
 	results_3 = optimize(g, grammar, :R, fitness_3)
@@ -267,36 +176,6 @@ plot(x_31,y_31, label = "Analytic solution", color = "black", linewidth = 3)
 
 y_32 = plot_solution(results_3.expr, grammar)
 plot!(x_31,y_32, label = "GP approximation", linestyle =:dash, linewidth = 3)
-end
-
-# ╔═╡ a33d4f70-4177-11eb-24e4-2b5bce116674
-"hardcoded fitness function for y''-6y'+9y=0"
-function fitness_4(tree::RuleNode, grammar::Grammar)
-    ex = get_executable(tree, grammar)
-    los = 0.0
-	
-	#domain
-    for x = 0.1:2.:20.1
-		S[:x] = x
-		los += try (abs(Core.eval(S,differentiate(differentiate(ex))) - 6*(Core.eval(S,differentiate(ex))) + 9*Core.eval(S,ex)))^2
-		catch
-			return Inf
-		end
-    end
-	
-	#boundary conditions
-	S[:x] = 0.
-	λ = 100.
-	los += try λ*(Core.eval(S,ex)-0)^2 
-	catch
-		return Inf
-	end
-	los += try λ*(Core.eval(S,differentiate(ex))-2)^2 
-	catch
-		return Inf
-	end
-		
-	return los
 end
 
 # ╔═╡ 756cd920-44b1-11eb-0ad6-c95c100c57f6
@@ -355,56 +234,6 @@ end
 # ╔═╡ e5b818f0-4580-11eb-279f-8b6b2b2e0fe6
 S_2D = SymbolTable(grammar_2D)
 
-# ╔═╡ bf3a1fc0-4580-11eb-3b8b-1bb5d8055aec
-"hardcoded fitness function"
-function fitness_2D(tree::RuleNode, grammar::Grammar)
-    ex = get_executable(tree, grammar)
-    loss = 0.
-	
-	#domain
-    for x = 0.1:0.1:1.0
-		for y = 0.1:0.1:1.0
-			S_2D[:x] = x
-			S_2D[:y] = y
-			loss += try (Core.eval(S_2D,differentiate(differentiate(ex, :x), :x)) + Core.eval(S_2D,differentiate(differentiate(ex, :y), :y)) + (2*(Core.eval(S_2D,ex))))^2
-			catch
-				return Inf
-			end
-		end
-    end
-	
-	#boundary conditions
-	S_2D[:x] = 0.
-	λ = 10.
-	loss += try λ*(Core.eval(S_2D,ex)-0)^2 
-	catch
-		return Inf
-	end
-	
-	S_2D[:x] = 1.
-	λ = 10.
-	loss += try λ*(Core.eval(S_2D,ex)-(Core.eval(S_2D,:(sin(1)*cos(y)))))^2 
-	catch
-		return Inf
-	end
-	
-	S_2D[:y] = 0.
-	λ = 10.
-	loss += try λ*(Core.eval(S_2D,ex)-(Core.eval(S_2D,:(sin(x)))))^2 
-	catch
-		return Inf
-	end
-	
-	S_2D[:y] = 1.
-	λ = 10.
-	loss += try λ*(Core.eval(S_2D,ex)-(Core.eval(S_2D,:(sin(x)*cos(1)))))^2 
-	catch
-		return Inf
-	end
-		
-	return loss
-end
-
 # ╔═╡ 3e615600-4587-11eb-2753-c35e34d5dd2d
 g_2D = GeneticProgram(200,25,5,0.3,0.3,0.4)
 
@@ -437,9 +266,6 @@ function plot_solution_2D(ex::Expr, grammar::Grammar)
 	end
 	return sol
 end	
-
-# ╔═╡ 8e87ecb0-458d-11eb-3ce9-77a751d92b98
-Core.eval(S_2D, results_2D.expr)
 
 # ╔═╡ ad064680-44ae-11eb-39c1-43eb3e048ee4
 md"""### Still need to sort out stuff below"""
@@ -525,9 +351,7 @@ end
 # ╠═07c74990-44c1-11eb-27f0-7b786b4380ae
 # ╠═408525a0-44b1-11eb-115f-fd737e2887a4
 # ╠═41e10c20-44b1-11eb-0684-e1b9539e2de0
-# ╠═1c628c20-44b2-11eb-037e-a181361f55b4
 # ╠═e48e17f0-3fda-11eb-07f5-c3a3e3bb07b5
-# ╠═2828cd90-3cd7-11eb-0815-658096d0dff0
 # ╠═3cf8f410-3cce-11eb-277e-f5cf01627feb
 # ╠═3cf96940-3cce-11eb-3d47-f762c438e963
 # ╠═37bdd520-44b1-11eb-2927-4f1bd6f21b99
@@ -535,22 +359,18 @@ end
 # ╠═15acf7f0-416d-11eb-0b0c-e9bf40b3994a
 # ╠═5f1bf520-44b1-11eb-3eff-733bb1e93077
 # ╠═3ff752a0-44b3-11eb-10cd-0ffb53fe286a
-# ╠═34823660-4175-11eb-2555-23ae963b2331
 # ╠═6f70dda0-44b1-11eb-18f2-d76f37ec9519
 # ╠═ec5c9fa0-44b3-11eb-038a-232443353943
-# ╠═a33d4f70-4177-11eb-24e4-2b5bce116674
 # ╠═756cd920-44b1-11eb-0ad6-c95c100c57f6
 # ╠═1df79920-44b4-11eb-2ddf-a3f7081a4642
-# ╟─451fe6a0-44b5-11eb-3f88-77696c6d234e
+# ╠═451fe6a0-44b5-11eb-3f88-77696c6d234e
 # ╠═4a896620-44b5-11eb-03b0-d314fce42f9a
 # ╠═b6c97abe-4580-11eb-02e8-e1dfe421cbd5
 # ╠═e5b818f0-4580-11eb-279f-8b6b2b2e0fe6
-# ╠═bf3a1fc0-4580-11eb-3b8b-1bb5d8055aec
 # ╠═3e615600-4587-11eb-2753-c35e34d5dd2d
 # ╠═404fc740-4581-11eb-0071-dbe0af850d39
 # ╠═0b8fb470-458b-11eb-2f41-cdd2935a94fd
 # ╠═62b26ad0-458c-11eb-2d71-c9051a13b97e
-# ╠═8e87ecb0-458d-11eb-3ce9-77a751d92b98
 # ╠═ad064680-44ae-11eb-39c1-43eb3e048ee4
 # ╠═517c7490-3b2d-11eb-2470-1f864bb57d95
 # ╠═64b70a20-400a-11eb-1561-b32b24c92788

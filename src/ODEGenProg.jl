@@ -329,6 +329,7 @@ end
 """
 function plot_solution(ex::Expr, grammar::Grammar)
 #ex = get_executable(tree, grammar)
+S = ExprRules.SymbolTable(grammar) #ExprRule's interpreter, should increase performance according to documentation
 sol = Float64[]
 for x = 0.1:0.01:10.
     S[:x] = x
