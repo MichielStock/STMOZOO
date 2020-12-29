@@ -1,10 +1,9 @@
 @testset "SingleCellNMF" begin
 	using STMOZOO.SingleCellNMF, DataFrames, Distributions
 
-	# QUESTION maybe a smaller example for speed?
-	n_cells = 100
-	n_rows_rna = 500
-	n_rows_atac = 1000
+	n_cells = 50
+	n_rows_rna = 100
+	n_rows_atac = 200
 	
 	rna_df = DataFrame(rand(n_rows_rna, n_cells))
 	atac_df = DataFrame(rand(n_rows_atac, n_cells))

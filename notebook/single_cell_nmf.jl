@@ -37,11 +37,20 @@ md"""
 md"""
 #### Download data
 
-Use your tool of choice (wget, curl) to download the following files:
+Download the following files into the folder with the notebook:
 - [RNA](https://raw.githubusercontent.com/f6v/data/master/simulation_RNA.csv)
 - [ATAC](https://raw.githubusercontent.com/f6v/data/master/simulation_ATAC.csv)
 - [Labels](https://raw.githubusercontent.com/f6v/data/master/labels.csv)
+
+Alternatively, uncomment and run the code block below if you have `wget` installed.
 """
+
+# ╔═╡ 038be600-49f6-11eb-3734-590b7d723c66
+# begin
+# 	run(`wget https://raw.githubusercontent.com/f6v/data/master/simulation_RNA.csv`)
+# 	run(`wget https://raw.githubusercontent.com/f6v/data/master/simulation_ATAC.csv`)
+# 	run(`wget https://raw.githubusercontent.com/f6v/data/master/labels.csv`)
+# end
 
 # ╔═╡ b3e57a5e-3f89-11eb-1122-17218be3ec4c
 md"""
@@ -198,6 +207,7 @@ Martínez C, Tarazona S (2020). MOSim: Multi-Omics Simulation (MOSim). R package
 # ╟─62dbdaf2-3f89-11eb-2738-530350bccb92
 # ╠═a3c2226c-3f89-11eb-389e-9925792fc108
 # ╠═d3c4c74a-3f8d-11eb-3918-8d7bff6cef04
+# ╠═038be600-49f6-11eb-3734-590b7d723c66
 # ╠═b3e57a5e-3f89-11eb-1122-17218be3ec4c
 # ╟─74322ba8-3f9a-11eb-2833-dbf876466683
 # ╠═766fa040-3f8a-11eb-0142-5b8439fe7110

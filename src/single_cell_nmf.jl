@@ -123,8 +123,7 @@ function update_H(W_rna::Array{Float64}, W_atac::Array{Float64}, X_rna::Array{Fl
 			.+ lambda * H * (Z + Z')
 	k = size(H)[1]
 	denominator = (alpha * W_rna' * W_rna + W_atac' * W_atac + 2 * lambda * H * H'
-			+ gamma * zeros(k, k)) * H
-			  # QUESTION: why add here zeros?
+			+ gamma * ones(k, k)) * H
 
 	return H .* numerator ./ (denominator .+ eps(Float64))	
 end
