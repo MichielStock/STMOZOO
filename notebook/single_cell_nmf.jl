@@ -24,7 +24,7 @@ This tutorial provides an introduction to using non-negative matrix factorizatio
 
 #### What is SingleCellNMF?
 
-SingleCellNMF is a module that implements NMF as proposed by Jin and colleagues in scAI (Jin et al. 2020). Therein, single-cell RNA-seq and ATAC-seq data is jointly factorized to find an optimal representation of both transcriptomic and epigenomic features in a shared latent space. The low-dimensional representation of the data can be used for downstream analysis. Additionally, sparse epigenomic signal is aggregated to achieve better separation between clusters when analyzing scATAC-seq data. Please see the documentation page and scAI publication for more details.
+`SingleCellNMF` is a module that implements NMF as proposed by Jin and colleagues in `scAI` (Jin et al. 2020). Therein, single-cell RNA-seq and ATAC-seq data is jointly factorized to find an optimal representation of both transcriptomic and epigenomic features in a shared latent space. The low-dimensional representation of the data can be used for downstream analysis. Additionally, sparse epigenomic signal is aggregated to achieve better separation between clusters when analyzing scATAC-seq data. Please see the documentation page and scAI publication for more details.
 """
 
 # ╔═╡ 62dbdaf2-3f89-11eb-2738-530350bccb92
@@ -56,7 +56,7 @@ Alternatively, uncomment and run the code block below if you have `wget` install
 md"""
 #### Read the data
 
-Here we will apply SingleCellNMF to a simulated single-cell multiomics dataset which contains scRNA-seq and scATAC-seq data. The data has been previosly simulated using MOSim (Martínez-Mira and Tarazona 2018). Since it is a simulated dataset, we know the true number of clusters - 5.
+Here we will apply `SingleCellNMF` to a simulated single-cell multiomics dataset which contains scRNA-seq and scATAC-seq data. The data has been previosly simulated using `MOSim` (Martínez-Mira and Tarazona 2018). Since it is a simulated dataset, we know the true number of clusters - 5.
 """
 
 # ╔═╡ 74322ba8-3f9a-11eb-2833-dbf876466683
@@ -106,7 +106,7 @@ first(labels_data, 5)
 md"""
 ### Running NMF
 
-We can now run coupled NMF on RNA and ATAC data. Choice of k (dimensionality of latent space) is usually determined empirically (rather computationally intensive, as algoritm needs to be run many times). Since we have simulated data, we know the "true dimensionality" of the data. 
+We can now run coupled NMF on RNA and ATAC data. Choice of `k` (dimensionality of latent space) is usually determined empirically (rather computationally intensive, as algoritm needs to be run many times). Since we have simulated data, we know the "true dimensionality" of the data. 
 """
 
 # ╔═╡ 95c93ea2-3f9d-11eb-27cd-6bb7b62ec299
@@ -132,9 +132,6 @@ md"""
 We can now assess the effect of aggregation of epigenetic signal by visualizing ATAC data in a low-dimensional space using UMAP. Let's define a helper function first.
 """
 
-# ╔═╡ 7de6b38a-3fbd-11eb-1743-1941dc2b489d
-H
-
 # ╔═╡ f21d582c-3fa5-11eb-0efe-b396524a0075
 function plot_umap(umap_data::Array{Float64}, plot_title::String)
 	scatter(umap_data[1,:], umap_data[2,:], color = labels_data[!, "group"], 
@@ -157,12 +154,12 @@ end
 
 # ╔═╡ 8248cb3c-3fa6-11eb-2c78-8d3f04584cb9
 md"""
-We can see that the sparse ATAC signal has been aggregated across similar cells, which makes identification of clusters easier. You can also try changing the value of k to see how it affects the results!
+We can see that the sparse ATAC signal has been aggregated across similar cells, which makes identification of clusters easier. You can also try changing the value of `k` to see how it affects the results!
 """
 
 # ╔═╡ 99c2caec-3fbd-11eb-24a6-17595dac79da
 md"""
-We can also visualize the factors in the cells. Matrix H captures cell loadings and the ith row of matrix H can be used to visualize the "importance" of the ith factor in each cell. Hopefully, the factors would capture major variability, such as cell type.
+We can also visualize the importance of the factors in the cells. Matrix `H` captures cell loadings and the ith row of matrix `H` can be used to visualize the importance of the ith factor in each cell. Hopefully, the factors would capture major variability, such as cell type.
 
 We start by defining a helper function:
 """
@@ -222,7 +219,6 @@ Martínez C, Tarazona S (2020). MOSim: Multi-Omics Simulation (MOSim). R package
 # ╠═1c4ab4b0-3fa5-11eb-35dd-e330112258c6
 # ╠═c8e29f3e-3fa4-11eb-3691-2b437f5b2621
 # ╠═979bf0f0-3fa5-11eb-245f-8b5f0c2d6c38
-# ╠═7de6b38a-3fbd-11eb-1743-1941dc2b489d
 # ╠═f21d582c-3fa5-11eb-0efe-b396524a0075
 # ╠═61f440d0-3fa6-11eb-0cbb-e75f3aa2570f
 # ╠═c10bcf50-3fa5-11eb-3243-1b951ee4ce0b
