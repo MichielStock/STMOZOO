@@ -52,3 +52,8 @@ ${Z}^{ij}\leftarrow {Z}^{ij}\frac{{\left(\left({X}_2^T{W}_2H\right)\circ R+\lamb
 ## Choice of dimensionality
 
 $W_{1}$ and $W_{2}$ have dimensionality of $(N_{features}, k)$, and H is $(N_{cells}, k)$. As we seek a low-dimensional representation of data, $k$ should be lower than number of features(genes and loci) and cells. We can use our knowledge about biological system at hand to approximately choose $k$, and to further improve the choice of $k$ by trying out different values.
+
+```@docs
+perform_nmf
+reduce_dims_atac
+```
