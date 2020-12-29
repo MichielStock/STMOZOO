@@ -131,6 +131,7 @@ It simply goes over all pixels in the rectangle defined by the vertices of the t
 
 #     return img
 # end
+
 """
     getboundaries(triangle::Triangle, m::Int, n::Int)
 
@@ -266,6 +267,27 @@ end
 #FIXEDME: draw*i*mage! # Yes sir (bless replace all)
 # I think you should loop over all triangles within the function drawimage
 # @Michiel But that's what it does? Or do you mean within drawtriangle?
+# Or do you mean something like this? Because this one is very slow compared to the current version.
+
+function alternatedrawimage(triangles::Array, canvas::Array)
+    m = length(canvas[:, 1]) # y-values
+    n = length(canvas[1, :]) # x-values
+    img = deepcopy(canvas)
+
+    for i in 1:m # y
+        for j in 1:n # x
+            for triangle in triangles
+                if complex(j, i) in triangle
+                    img[i, j] = triangle.color
+                end
+            end
+        end
+    end
+
+    return img
+end
+
+
 """
     drawimage(triangles::Array, canvas::Array)
 
@@ -279,6 +301,9 @@ function drawimage(triangles::Array, canvas::Array)
     end
     return polyimg
 end
+
+
+
 
 """
     colordiffsum(img1::Array, img2::Array, m::Int, n::Int)
