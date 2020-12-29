@@ -7,7 +7,7 @@
 @testset "Polygon" begin
     using STMOZOO.polygon, Colors  # load YOUR module
 
-    @testset "sameSideOfLine" begin
+    @testset "samesideofline" begin
         line = [1 + 1im, 2 + 3im]
         point1 = 0 + 3im #left of line
         point2 = 1 + 4im #left
@@ -24,13 +24,13 @@
         # end
         # display(p)
 
-        @test sameSideOfLine(point1, point2, line) == true
-        @test sameSideOfLine(point1, point3, line) == true
-        @test sameSideOfLine(point1, point4, line) == false
-        @test sameSideOfLine(point1, point5, line) == false
-        @test sameSideOfLine(point1, point6, line) == false
-        @test sameSideOfLine(point3, point4, line) == false
-        @test sameSideOfLine(point5, point6, line) == true
+        @test samesideofline(point1, point2, line) == true
+        @test samesideofline(point1, point3, line) == true
+        @test samesideofline(point1, point4, line) == false
+        @test samesideofline(point1, point5, line) == false
+        @test samesideofline(point1, point6, line) == false
+        @test samesideofline(point3, point4, line) == false
+        @test samesideofline(point5, point6, line) == true
 
 
     end
@@ -41,7 +41,7 @@
         testpoint1[1] = 1 + 3im # not in T1
         testpoint1[2] = 5 + 2im # not in T1
         testpoint1[3] = 4 + 5im # not
-        testpoint1[4] = 0.9 + 2im # no
+        testpoint1[4] = 0.9 + 2im # noac
         testpoint1[5] = 3 + 2im # in T1 (on edge)
         testpoint1[6] = 4 + 3im # in T1
         testpoint1[7] = 4.5 + 1im # in
@@ -68,7 +68,7 @@
         end 
     end
 
-    @testset "checkTriangle" begin
+    @testset "checktriangle" begin
         m = 232
         n = 412
         testtriangle = Vector{Triangle}(undef, 10)
@@ -85,11 +85,11 @@
         testtriangle[10] = Triangle(211 + 209im, 338 + 334im, 544 + 534im, RGB(1, 0, 0)) # STUPID triangle (very elongated)
 
         for i in 1:5
-            @test checkTriangle(testtriangle[i], m, n) == false # These are not stupid triangles
+            @test checktriangle(testtriangle[i], m, n) == false # These are not stupid triangles
         end
 
         for i in 6:10
-            @test checkTriangle(testtriangle[i], m, n) == true # These are stupid triangles
+            @test checktriangle(testtriangle[i], m, n) == true # These are stupid triangles
         end
     end
 

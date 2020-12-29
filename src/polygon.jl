@@ -11,7 +11,7 @@ module polygon
 using Images, Colors, Plots, Random
 import Base: in
 
-export Triangle, drawtriangle, olddrawtriangle, colordiffsum, sameSideOfLine, triangleEvolution, generateTriangle
+export Triangle, drawtriangle, olddrawtriangle, colordiffsum, samesideofline, triangleevolution, generatetriangle
 
 """
 A type Shape so the code can be made to work with e.g. rectangles as well. For now, only triangles are supported.
@@ -25,16 +25,16 @@ struct Triangle <: Shape
     p1::ComplexF64 
     p2::ComplexF64
     p3::ComplexF64
-    color::RGB  # I think RGB is an abstract type, so RGB{Float64}
+    color::RGB{Float64} # I think RGB is an abstract type, so RGB{Float64} # Done
 end
 
 """
-    sameSideOfLine(point::Complex, trianglepoint::Complex, line::Complex)
+    samesideofline(point::Complex, trianglepoint::Complex, line::Complex)
 
 Computes whether point and trianglepoint are on the same side of the line "line".
 x value of a point is represented with the real part of a complex number, y value by the imaginary part.
 """
-function sameSideOfLine(point::Complex, trianglepoint::Complex, line::Tuple)
+function samesideofline(point::Complex, trianglepoint::Complex, line::Tuple)
     p1 = line[1]
     p2 = line[2]
     x1, y1 = real(p1), imag(p1)
@@ -53,7 +53,7 @@ function sameSideOfLine(point::Complex, trianglepoint::Complex, line::Tuple)
         # if both points are on the same side of the line, both values will have the same sign
         # if we multiply the values, a positive sign will indicate they're on the same side and a negative sign means they're on separate sides
 
-        return linediff_point*linediff_trianglepoint ≥ 0
+        return sign(linediff_point) == sign(linediff_trianglepoint)
 
     else #x1 == x2: A vertical line: a cannot be calculated (division by 0)
         #equation is now x = b
@@ -62,7 +62,7 @@ function sameSideOfLine(point::Complex, trianglepoint::Complex, line::Tuple)
         linediff_trianglepoint = real(trianglepoint) - b
         # Difference between point's x-value and line's x-value
         # Same principle as above
-        return sign(linediff_point) == sign(linediff_trianglepoint)  # I like this better
+        return sign(linediff_point) == sign(linediff_trianglepoint)  # I like this better # Accepted as replacement for linediff_point*linediff_trianglepoint ≥ 0
     end  
 
 end
@@ -85,17 +85,22 @@ function in(point::Complex, triangle::Triangle)
     tpoints = (triangle.p1, triangle.p2, triangle.p3)
     checks = Vector{Bool}(undef, 3)
 
-    for i in 1:3  # FIXME: if you hardcode it using `&&` it will be much faster
-        line = tpoints[1:3 .!= i] # e.g. points 2 and 3 if i = 1
-        trianglepoint = tpoints[i] #e.g. point 1 if i = 1
+    # for i in 1:3  # FIXEDME: if you hardcode it using `&&` it will be much faster # hardcoded: increased speed of algorithm by 150%! Glorious!
+    #     line = tpoints[1:3 .!= i] # e.g. points 2 and 3 if i = 1
+    #     trianglepoint = tpoints[i] #e.g. point 1 if i = 1
         
-        checks[i] = sameSideOfLine(point, trianglepoint, line)
-    end
+    #     checks[i] = samesideofline(point, trianglepoint, line)
+    # end
+    # check = all(checks)
 
-    return all(checks)
+    check = samesideofline(point, tpoints[1], tpoints[2:3]) && samesideofline(point, tpoints[2], tpoints[[1, 3]]) && samesideofline(point, tpoints[3], tpoints[1:2])
+
+    return check
 end
 
 in((x, y), shape::Shape) = in(complex(x, y), shape)
+
+
 
 """
 Unused function. Easy to understand, but very inefficient. 
@@ -126,6 +131,23 @@ It simply goes over all pixels in the rectangle defined by the vertices of the t
 
 #     return img
 # end
+"""
+    getboundaries(triangle::Triangle, m::Int, n::Int)
+
+Establishes the place of the box around a triangle 
+"""
+function getboundaries(triangle::Triangle, m::Int, n::Int)
+    xmin = Int(min(real(triangle.p1), real(triangle.p2), real(triangle.p3)))
+    xmin = max(xmin, 1) # In case a point of the triangle is outside of the canvas
+    xmax = Int(max(real(triangle.p1), real(triangle.p2), real(triangle.p3)))
+    xmax = min(xmax, n) # In case a point of the triangle is outside of the canvas
+    ymin = Int(min(imag(triangle.p1), imag(triangle.p2), imag(triangle.p3)))
+    ymin = max(ymin, 1) # This poses no danger to starting at ymin and not actually finding your triangle
+    ymax = Int(max(imag(triangle.p1), imag(triangle.p2), imag(triangle.p3)))
+    ymax = min(ymax, m) # Idem
+
+    return xmin, xmax, ymin, ymax
+end
 
 """
     drawtriangle(triangle::Triangle, img0::Array)
@@ -139,19 +161,17 @@ a) keep checking whether the point you expect to be part of the triangle based o
 b) keep calculating the slope
 By using these tricks, the function is about 30 times faster than olddrawtriangle.
 """
-function drawtriangle(triangle::Triangle, img0::Array)
-    m, n = size(img0)  # the original one needed to allocate memory
-    img = deepcopy(img0)  # QUESTION: why take a copy: just fill in image (preallocated memory), will be faster if you run this many times
+function drawtriangle(triangle::Triangle, img::Array)
+    m, n = size(img)  # the original one needed to allocate memory
+    
+    #img = deepcopy(img0)  # QUESTION: why take a copy: just fill in image (preallocated memory), will be faster if you run this many times
+    # @Michiel: This is to prevent the white canvas we use as img0 to get filled with triangles as well.
+    # If I don't make a copy of it, I would have to generate a new white canvas every time I run drawtriangle
+    # Would this be more efficient? Or is there a better way to retain img0 without making a copy of it?
+    # For now I moved the copying to drawimage, since it's only really necessary there and it makes for less copies. 
 
-    # FIXME: this can be defined in a different function...
-    xmin = Int(min(real(triangle.p1), real(triangle.p2), real(triangle.p3)))
-    xmin = max(xmin, 1) # In case a point of the triangle is outside of the canvas
-    xmax = Int(max(real(triangle.p1), real(triangle.p2), real(triangle.p3)))
-    xmax = min(xmax, n) # In case a point of the triangle is outside of the canvas
-    ymin = Int(min(imag(triangle.p1), imag(triangle.p2), imag(triangle.p3)))
-    ymin = max(ymin, 1) # This poses no danger to starting at ymin and not actually finding your triangle
-    ymax = Int(max(imag(triangle.p1), imag(triangle.p2), imag(triangle.p3)))
-    ymax = min(ymax, m) # Idem
+    # FIXEDME: this can be defined in a different function... # It certainly is a little neater now
+    xmin, xmax, ymin, ymax = getboundaries(triangle, m, n)
 
     j_left = xmin
     j_right = xmax
@@ -161,6 +181,9 @@ function drawtriangle(triangle::Triangle, img0::Array)
     ymin0 = ymin
 
     # QUESTION: is it not nearly as effecient to check the box around the triangle?
+    # @Michiel Do you mean as was done in olddrawtriangle (above this one), where you just go over every pixel in the box around the triangle? 
+    # That one was 30 times slower, and probably scales a lot worse with larger images. Or do you mean something else still?
+
     while counter <= 2 # We need the first 2 points of both sides of the triangle for their slopes
 
         j = xmin # Start at left side of line and go right
@@ -190,7 +213,7 @@ function drawtriangle(triangle::Triangle, img0::Array)
 
     lastleft = left_points[2]
     leftslope = left_points[2] - left_points[1]
-    leftslope = leftslope - 3*abs(leftslope) 
+    leftslope = leftslope - 3*abs(leftslope)
     # The initial slope is very important. If it goes too much to the right, you'll end up INSIDE of the triangle rather than at an edge.
     # The reason this can happen is because some triangles are very weird around the top corner (e.g. one point separated from the rest of the triangle by a blank line).
     # To make sure this kind of thing doesn't ruin the whole triangle, we make the initial slope supersafe by making it go a bit more to the left than should be necessary
@@ -240,15 +263,16 @@ function drawtriangle(triangle::Triangle, img0::Array)
     return img
 end
 
-#FIXME: draw*i*mage!
+#FIXEDME: draw*i*mage! # Yes sir (bless replace all)
 # I think you should loop over all triangles within the function drawimage
+# @Michiel But that's what it does? Or do you mean within drawtriangle?
 """
-    drawImage(triangles::Array, canvas::Array)
+    drawimage(triangles::Array, canvas::Array)
 
 Goes over all triangles in an array and draws them all on the same canvas, then returns the resulting image. 
 """
-function drawImage(triangles::Array, canvas::Array)
-    polyimg = canvas
+function drawimage(triangles::Array, canvas::Array)
+    polyimg = copy(canvas)
     for triangle in triangles
         #print(triangle.p1, " ", triangle.p2, " ", triangle.p3, "\n")
         polyimg = drawtriangle(triangle, polyimg)
@@ -273,9 +297,9 @@ end
 
 # or: colordiffsum(img1::Array, img2::Array, m::Int, n::Int) = sum(colordiff.(img1. img2))
 
-# FIXME: no capitals in function  names :s
+# FIXEDME: no capitals in function  names :s
 """
-    checkTriangle(triangle::Triangle, m::Int, n::Int)
+    checktriangle(triangle::Triangle, m::Int, n::Int)
 
 Checks a triangle to make sure we don't have any STUPID triangles.
 A stupid triangle is a triangle which:
@@ -284,7 +308,7 @@ A stupid triangle is a triangle which:
 - Is very stretched out
 These stupid triangles can all mess with the drawtriangle function, which is why checking for them and weeding them out is essential.
 """
-function checkTriangle(triangle::Triangle, m::Int, n::Int)
+function checktriangle(triangle::Triangle, m::Int, n::Int)
     # Rather than using the actual boundaries of the canvas, we use a slightly smaller rectangle for safety reasons
     s = 10 # safety factor
     x1, x2, x3 = real(triangle.p1), real(triangle.p2), real(triangle.p3)
@@ -293,17 +317,17 @@ function checkTriangle(triangle::Triangle, m::Int, n::Int)
     max_y = max(y1, y2, y3)
     min_y = min(y1, y2, y3)
     max_delta_y = max_y - min_y
-    YisStupid = max_delta_y <= s # Too thin
+    YisStupid = max_delta_y <= s && return true # Too thin
 
     max_x = max(x1, x2, x3)
     min_x = min(x1, x2, x3)
     max_delta_x = max_x - min_x
-    XisStupid = max_delta_x <= s # Too thin
+    XisStupid = max_delta_x <= s && return true # Too thin
 
     p1_out_of_canvas = (x1 <= s || x1 >= (n - s)) || (y1 <= s || y1 >= (m - s))
     p2_out_of_canvas = (x2 <= s || x2 >= (n - s)) || (y2 <= s || y2 >= (m - s))
     p3_out_of_canvas = (x3 <= s || x3 >= (n - s)) || (y3 <= s || y3 >= (m - s))
-    pointsAreStupid = all([p1_out_of_canvas, p2_out_of_canvas, p3_out_of_canvas]) # All points are (almost) outside of the canvas, that's no bueno
+    pointsAreStupid = all([p1_out_of_canvas, p2_out_of_canvas, p3_out_of_canvas]) && return true # All points are (almost) outside of the canvas, that's no bueno
 
     # Very elongated triangles cause trouble: check for these as well
     # Credit for idea of using the centroid: Her Magnificence, Gender Equality Expert Dr. Roets
@@ -311,25 +335,25 @@ function checkTriangle(triangle::Triangle, m::Int, n::Int)
     dist1 = abs(triangle.p1 - midpoint)
     dist2 = abs(triangle.p2 - midpoint)
     dist3 = abs(triangle.p3 - midpoint)
-    isStretchyBoi = max(dist1, dist2, dist3) > 2*min(dist1, dist2, dist3) 
+    isStretchyBoi = max(dist1, dist2, dist3) > 2*min(dist1, dist2, dist3) && return true
     # An elongated triangle has a big difference in max distance from a point to the centroid to min distance from a point to the centroid (2 is a good threshhold)
 
-    isStupid = any([YisStupid, XisStupid, pointsAreStupid, isStretchyBoi])
+    # isStupid = any([YisStupid, XisStupid, pointsAreStupid, isStretchyBoi])
 
-    # FIXME: faster if you stop when you found that the triangle is stupid
+    # FIXEDME: faster if you stop when you found that the triangle is stupid # Fast is good
     # YisStupid && return true (put this as early as possible)
 
-    return isStupid
+    return false # Only gets to this return false if all the other returns true conidtions weren't met (and thus the triangle isnt stupid)
 end
 
-# FIXME: no capitals in function  names :s
-# FIXME: not sure if this matters, your GA will select visible triangles anyway
+# FIXEDME: no capitals in function  names :s # Yessir
+# FIXEDME: not sure if this matters, your GA will select visible triangles anyway # the checktriangle function is mainly to prevent glitchy triangles that cause errors in drawtriangle
 """
-    generateTriangle(m::Int, n::Int)
+    generatetriangle(m::Int, n::Int)
 
 Generates a random triangle.
 """
-function generateTriangle(m::Int, n::Int)
+function generatetriangle(m::Int, n::Int)
     # Generate a triangle which is not stupid
     badTriangle = true
     t = nothing
@@ -341,19 +365,19 @@ function generateTriangle(m::Int, n::Int)
         # Prevents white borders
         col = RGB(rand(), rand(), rand())
         t = Triangle(points[1], points[2], points[3], col)
-        badTriangle = checkTriangle(t, m, n)
+        badTriangle = checktriangle(t, m, n)
     end
 
     return t
 end
 
 """
-    generatePopulation(pop_size::Int, number_triangles::Int, img::Array)
+    generatepopulation(pop_size::Int, number_triangles::Int, img::Array)
 
 Generates an entire population. The individuals of this population consist of a bunch of triangles, the image made from drawing all these triangles,
 and the score of the individual, which is too say how much it differs from the target image, img.
 """
-function generatePopulation(pop_size::Int, number_triangles::Int, img::Array)
+function generatepopulation(pop_size::Int, number_triangles::Int, img::Array)
 
     m = length(img[:, 1])
     n = length(img[1, :])
@@ -362,8 +386,8 @@ function generatePopulation(pop_size::Int, number_triangles::Int, img::Array)
     population = Vector{Array}(undef, pop_size)
 
     for i in 1:pop_size
-        triangles = [generateTriangle(m, n) for i in 1:number_triangles]
-        polyimg = drawImage(triangles, canvas)
+        triangles = [generatetriangle(m, n) for i in 1:number_triangles]
+        polyimg = drawimage(triangles, canvas)
 
         score = colordiffsum(polyimg, img, m, n)
         population[i] = [triangles, polyimg, score]
@@ -371,7 +395,7 @@ function generatePopulation(pop_size::Int, number_triangles::Int, img::Array)
     return population
 end
 
-# function rasterizedGeneratePopulation(pop_size, number_triangles, img)
+# function rasterizedgeneratepopulation(pop_size, number_triangles, img)
 
 #     m = length(img[:, 1])
 #     n = length(img[1, :])
@@ -387,8 +411,8 @@ end
 #     population = Vector{Array}(undef, pop_size)
 
 #     for i in 1:pop_size
-#         triangles = [generateTriangle(y0 + (i-1)*deltay, x0 + (j-1)*deltax) for i in 1:triangles_on_y_axis for j in 1:triangles_on_x_axis]
-#         polyimg = drawImage(triangles, canvas)
+#         triangles = [generatetriangle(y0 + (i-1)*deltay, x0 + (j-1)*deltax) for i in 1:triangles_on_y_axis for j in 1:triangles_on_x_axis]
+#         polyimg = drawimage(triangles, canvas)
 
 #         score = colordiffsum(polyimg, img, m, n)
 #         population[i] = [triangles, polyimg, score]
@@ -399,11 +423,11 @@ end
 
 
 """
-    triangleTournament(population0::Array, pop_size::Int)
+    triangletournament(population0::Array, pop_size::Int)
 
 Picks 2 random triangles from a population and returns the one with the best (lowest) score.
 """
-function triangleTournament(population0::Array, pop_size::Int)
+function triangletournament(population0::Array, pop_size::Int)
     contestant1 = population0[Int(ceil(rand()*pop_size))] #Choose a random image from the population, using ceil because 0 is not a valid index
     contestant2 = population0[Int(ceil(rand()*pop_size))]
     if contestant1[3] <= contestant2[3] # Lower score than contestant 2 means he's better
@@ -415,11 +439,11 @@ function triangleTournament(population0::Array, pop_size::Int)
 end
 
 """
-    mutateTriangle(triangle::Triangle, m::Int, n::Int)
+    mutatetriangle(triangle::Triangle, m::Int, n::Int)
 
 Mutates a single triangle, changing the position of its points and its color, while making sure this doesn't result in a stupid triangle.
 """
-function mutateTriangle(triangle::Triangle, m::Int, n::Int)
+function mutatetriangle(triangle::Triangle, m::Int, n::Int)
 
     badTriangle = true
     p1 = nothing
@@ -430,7 +454,7 @@ function mutateTriangle(triangle::Triangle, m::Int, n::Int)
         p1, p2, p3 = round.([triangle.p1, triangle.p2, triangle.p3] + (rand(3) .- 0.5)*(n/10) + (rand(3) .- 0.5)*(m/10)*im)
         # Position of all 3 points is changed, with the change in x and y value scaling with the width and height of the canvas respectively
         t = Triangle(p1, p2, p3, triangle.color)
-        badTriangle = checkTriangle(t, m, n)
+        badTriangle = checktriangle(t, m, n)
     end
 
     col = triangle.color + RGB((rand() - 0.5)/2, (rand() - 0.5)/2, (rand() - 0.5)/2)
@@ -441,20 +465,20 @@ function mutateTriangle(triangle::Triangle, m::Int, n::Int)
 end
 
 """
-    mutatePopulation(population::Array, pop_size::Int, mutation_freq::Number, number_triangles::Int, m::Int, n::Int, img::Array, canvas::Array)
+    mutatepopulation(population::Array, pop_size::Int, mutation_freq::Number, number_triangles::Int, m::Int, n::Int, img::Array, canvas::Array)
 
 Mutates an entire population, going over every individual and randomly mutating some of their triangles.
 Then, the new image based on the updated list of triangles is created and the score for this image is computed for every individual.
 """
-function mutatePopulation(population::Array, pop_size::Int, mutation_freq::Number, number_triangles::Int, m::Int, n::Int, img::Array, canvas::Array)
+function mutatepopulation(population::Array, pop_size::Int, mutation_freq::Number, number_triangles::Int, m::Int, n::Int, img::Array, canvas::Array)
     # Mutates an entire population of polygon images, by chance
     for i in 1:pop_size
         for j in 1:number_triangles
             if mutation_freq >= rand() # Mutation happens with a probability of the mtuation frequency
-                population[i][1][j] = mutateTriangle(population[i][1][j], m, n)
+                population[i][1][j] = mutatetriangle(population[i][1][j], m, n)
             end
         end
-        population[i][2] = drawImage(population[i][1], canvas) # Update mutated individual's image
+        population[i][2] = drawimage(population[i][1], canvas) # Update mutated individual's image
         population[i][3] = colordiffsum(population[i][2], img, m, n) # Update mutated individual's score
     end
 
@@ -462,13 +486,13 @@ function mutatePopulation(population::Array, pop_size::Int, mutation_freq::Numbe
 end
 
 """
-    makeChildPopulation(population1::Array, population2::Array, number_triangles::Int)
+    makechildpopulation(population1::Array, population2::Array, number_triangles::Int)
 
 Takes 2 images and returns a new image with triangles randomly taken from both images.
 The order of the triangles is retained since it plays a big role in how the image looks.
 Only the triangle list is updated, not yet the matrix or score.
 """
-function makeChildPopulation(population1::Array, population2::Array, number_triangles::Int)
+function makechildpopulation(population1::Array, population2::Array, number_triangles::Int)
     childTriangles = Vector{Triangle}(undef, number_triangles)
     for i in 1:number_triangles
         if rand() > 0.5
@@ -487,13 +511,13 @@ end
 
 
 """
-    horizontalGeneTransfer(triangles1::Array, triangles2::Array, number_triangles::Int, HGT_rate::Number)
+    horizontalgenetransfer(triangles1::Array, triangles2::Array, number_triangles::Int, HGT_rate::Number)
 
-Alternative function for the makeChildPopulation, in which HGT is simulated rather than good old having kids.
-Current version of the algorithm is using makeChildPopulation instead, this was implemented to test out how much the results would differ.
+Alternative function for the makechildpopulation, in which HGT is simulated rather than good old having kids.
+Current version of the algorithm is using makechildpopulation instead, this was implemented to test out how much the results would differ.
 Not enough tests were done for a definitive conclusion.
 """
-function horizontalGeneTransfer(triangles1::Array, triangles2::Array, number_triangles::Int, HGT_rate::Number)
+function horizontalgenetransfer(triangles1::Array, triangles2::Array, number_triangles::Int, HGT_rate::Number)
     triangles1_new = deepcopy(triangles1)
     triangles2_new = deepcopy(triangles2)
 
@@ -509,7 +533,7 @@ function horizontalGeneTransfer(triangles1::Array, triangles2::Array, number_tri
 end
 
 """
-    triangleEvolution(image::String, number_triangles::Int, generations::Int)
+    triangleevolution(image::String, number_triangles::Int, generations::Int)
 
 The actual algorithm. An evolutionary algorithm with the goal to approximate a given image
 as well as possible with a bunch of triangles.
@@ -517,29 +541,34 @@ Parameters still require optimizing.
 There is a variant making use of the HGT and a varian making use of children.
 Currently the variant with children is performing better, but the HGT's parameters may be unoptimal.
 """
-function triangleEvolution(image::String, number_triangles::Int, generations::Int)
+function triangleevolution(image::String = "src/figures/TotoroTester4.jpeg"; gifname::String = "no_gif", number_triangles::Int = 25, generations::Int = 30, pop_size::Int = 100, elitism_freq::Number = 0.1, newblood_freq::Number =  0.05, mutation_freq::Number = 0.10)
     
-    generations = 100  # FIXME: these should be keyword arguments with default values
-    number_triangles = 25
-    pop_size = 100
-    elitism_freq = 0.1 # best x percent of population always gets through to the next generation
-    elite_size = Int(round(pop_size*elitism_freq))
-    newblood_freq = 0.05 # A certain percent of the population gets replaced by newcomes every generation, to keep our gene pool fresh and sparkly
-    newblood_size = Int(round(pop_size*newblood_freq))
-    HGT_freq = 0.5
-    HGT_rate = 0.2
+    #generations = 10  # FIXEDME: these should be keyword arguments with default values
+    #number_triangles = 25
+    #pop_size = 50
+    #elitism_freq = 0.1 # best x percent of population always gets through to the next generation
+    #newblood_freq = 0.05 # A certain percent of the population gets replaced by newcomes every generation, to keep our gene pool fresh and sparkly
+    # HGT_freq = 0.5
+    # HGT_rate = 0.2
 
-    mutation_freq = 0.10
-    image = "src/figures/TotoroTester4.jpeg"
+    #mutation_freq = 0.10
+    #image = "src/figures/TotoroTester4.jpeg"
+
+    makegif = gifname != "no_gif" # Only make the result into a gif if the user enters a name for it
+
+    elite_size = Int(round(pop_size*elitism_freq))
+    newblood_size = Int(round(pop_size*newblood_freq))
 
     img = load(image)
     m = length(img[:, 1])
     n = length(img[1, :])
     canvas = fill(RGB(1, 1, 1), m, n)
     childPopulation = Vector{Array}(undef, pop_size)
-    anim = Plots.Animation()
+    if makegif
+        anim = Plots.Animation()
+    end
 
-    population0 = generatePopulation(pop_size, number_triangles, img)
+    population0 = generatepopulation(pop_size, number_triangles, img)
     sort!(population0, by = x -> x[3]) # sort population by score
 
     for i in 1:generations
@@ -547,11 +576,11 @@ function triangleEvolution(image::String, number_triangles::Int, generations::In
         #population = vcat(population, population0[1:elite_size])
 
         for i in (elite_size+1):(pop_size-newblood_size) # Generate the next part of the population by means of A GRAND TOURNAMENT! MOSTLY THE STRONG SHALL WIN!
-            winner = triangleTournament(population0, pop_size)
+            winner = triangletournament(population0, pop_size)
             population = vcat(population, [winner])
         end
 
-        population = vcat(population, generatePopulation(newblood_size, number_triangles, img)) # The last part of the population is made up of new people! Yay!
+        population = vcat(population, generatepopulation(newblood_size, number_triangles, img)) # The last part of the population is made up of new people! Yay!
 
         # The winners gain the ultimate price! Children! (For the child-version)
         couples = [shuffle(1:pop_size) shuffle(1:pop_size)] # Two list of all the people of the population in a random order make up our array of couples
@@ -559,7 +588,7 @@ function triangleEvolution(image::String, number_triangles::Int, generations::In
         for i in 1:pop_size
             parent1 = population[couples[i, 1]]
             parent2 = population[couples[i, 2]] 
-            childPopulation[i] = makeChildPopulation(parent1, parent2, number_triangles)
+            childPopulation[i] = makechildpopulation(parent1, parent2, number_triangles)
         end
 
         # Or, for the HGT version, switched genes! Marvelous!
@@ -570,20 +599,25 @@ function triangleEvolution(image::String, number_triangles::Int, generations::In
         #         partner1 = childPopulation[couples[i, 1]]
         #         partner2 = childPopulation[couples[i, 2]]
 
-        #         childPopulation[couples[i, 1]][1], childPopulation[couples[i, 2]][1] = horizontalGeneTransfer!(partner1[1], partner2[1], number_triangles, HGT_rate)
+        #         childPopulation[couples[i, 1]][1], childPopulation[couples[i, 2]][1] = horizontalgenetransfer!(partner1[1], partner2[1], number_triangles, HGT_rate)
         #     end
         # end
 
         # The children gain random mutations because of UV-radiation. Damn you Ozon hole!
-        childPopulation = mutatePopulation(childPopulation, pop_size, mutation_freq, number_triangles, m, n, img, canvas)
+        childPopulation = mutatepopulation(childPopulation, pop_size, mutation_freq, number_triangles, m, n, img, canvas)
         population0 = sort(childPopulation, by = x -> x[3]) # The children grow up and become the new population0. The cycle of life continues.
         print(i, " ", population0[1][3], "\n")
-        bestscore = population0[1][3]
-        plot(population0[1][2], title = "Generation $i, score: $bestscore")
-        Plots.frame(anim)
+        if makegif
+            bestscore = population0[1][3]
+            plot(population0[1][2], title = "Generation $i, score: $bestscore")
+            Plots.frame(anim)
+        end
     end
 
-    gif(anim, "triangledance.gif", fps = 2)  # do I want to know what this is?
+    if makegif
+        gif(anim, gifname, fps = 2)  # do I want to know what this is?
+    end
+    # @Michiel It's a gif of the progression of the evolution (best individual of every generation)! You can watch the example triangledance on my github branch!
 
     return population0
 end
