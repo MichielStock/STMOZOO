@@ -83,8 +83,8 @@ Computes whether your point is inside of your triangle
 function in(point::Complex, triangle::Triangle)
     # Checks whether the point on a canvas is part of the triangle
     tpoints = (triangle.p1, triangle.p2, triangle.p3)
-    checks = Vector{Bool}(undef, 3)
-
+    
+    #checks = Vector{Bool}(undef, 3)
     # for i in 1:3  # FIXEDME: if you hardcode it using `&&` it will be much faster # hardcoded: increased speed of algorithm by 150%! Glorious!
     #     line = tpoints[1:3 .!= i] # e.g. points 2 and 3 if i = 1
     #     trianglepoint = tpoints[i] #e.g. point 1 if i = 1
@@ -138,13 +138,12 @@ It simply goes over all pixels in the rectangle defined by the vertices of the t
 Establishes the place of the box around a triangle 
 """
 function getboundaries(triangle::Triangle, m::Int, n::Int)
-    xmin = Int(min(real(triangle.p1), real(triangle.p2), real(triangle.p3)))
+    xmin, xmax = Int(extrema([real(triangle.p1), real(triangle.p2), real(triangle.p3)]))
     xmin = max(xmin, 1) # In case a point of the triangle is outside of the canvas
-    xmax = Int(max(real(triangle.p1), real(triangle.p2), real(triangle.p3)))
     xmax = min(xmax, n) # In case a point of the triangle is outside of the canvas
-    ymin = Int(min(imag(triangle.p1), imag(triangle.p2), imag(triangle.p3)))
-    ymin = max(ymin, 1) # This poses no danger to starting at ymin and not actually finding your triangle
-    ymax = Int(max(imag(triangle.p1), imag(triangle.p2), imag(triangle.p3)))
+
+    ymin, ymax = Int(extrema([imag(triangle.p1), imag(triangle.p2), imag(triangle.p3)]))
+    ymin = max(ymin, 1) # Idem
     ymax = min(ymax, m) # Idem
 
     return xmin, xmax, ymin, ymax
@@ -304,7 +303,6 @@ end
 
 
 
-
 """
     colordiffsum(img1::Array, img2::Array, m::Int, n::Int)
 
@@ -360,7 +358,7 @@ function checktriangle(triangle::Triangle, m::Int, n::Int)
     dist1 = abs(triangle.p1 - midpoint)
     dist2 = abs(triangle.p2 - midpoint)
     dist3 = abs(triangle.p3 - midpoint)
-    isStretchyBoi = max(dist1, dist2, dist3) > 2*min(dist1, dist2, dist3) && return true
+    isStretchyBoi = max(dist1, dist2, dist3) > 2.1*min(dist1, dist2, dist3) && return true
     # An elongated triangle has a big difference in max distance from a point to the centroid to min distance from a point to the centroid (2 is a good threshhold)
 
     # isStupid = any([YisStupid, XisStupid, pointsAreStupid, isStretchyBoi])
@@ -566,7 +564,7 @@ Parameters still require optimizing.
 There is a variant making use of the HGT and a varian making use of children.
 Currently the variant with children is performing better, but the HGT's parameters may be unoptimal.
 """
-function triangleevolution(image::String = "src/figures/TotoroTester4.jpeg"; gifname::String = "no_gif", number_triangles::Int = 25, generations::Int = 30, pop_size::Int = 100, elitism_freq::Number = 0.1, newblood_freq::Number =  0.05, mutation_freq::Number = 0.10)
+function triangleevolution(image::String = "src/figures/TotoroTester4.jpeg"; gifname::String = "no_gif", number_triangles::Int = 25, generations::Int = 50, pop_size::Int = 70, elitism_freq::Number = 0.15, newblood_freq::Number =  0.03, mutation_freq::Number = 0.05)
     
     #generations = 10  # FIXEDME: these should be keyword arguments with default values
     #number_triangles = 25
