@@ -4,7 +4,7 @@ An **Eulerian path** (or Eulerian trail) is a trail in a finite graph that visit
 
 An **Eulerian circuit** (or Eulerian cycle) is an Eulerian path that starts and ends on the same node.
 
-Euler proves that the necessary condition for the existance of Eulerian circuits is that all the nodes have an even degree.
+Euler proved that the necessary condition for the existance of Eulerian circuits is that all the nodes have an even degree.
 
 **Euler's Theorem** : A connected graph has an Euler cycle if and only if every node has even degree. 
 

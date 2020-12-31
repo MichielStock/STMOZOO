@@ -11,4 +11,8 @@
     @testset "has_eulerian_cycle" begin
         @test has_eulerian_cycle(adj_list) == true
     end
+
+    @testset "has_eulerian_path" begin
+        @test has_eulerian_cycle(adj_list) == true
+    end
 end
