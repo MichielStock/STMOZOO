@@ -138,13 +138,22 @@ It simply goes over all pixels in the rectangle defined by the vertices of the t
 Establishes the place of the box around a triangle 
 """
 function getboundaries(triangle::Triangle, m::Int, n::Int)
-    xmin, xmax = Int(extrema([real(triangle.p1), real(triangle.p2), real(triangle.p3)]))
-    xmin = max(xmin, 1) # In case a point of the triangle is outside of the canvas
-    xmax = min(xmax, n) # In case a point of the triangle is outside of the canvas
+    # xmin, xmax = extrema([real(triangle.p1), real(triangle.p2), real(triangle.p3)])
+    # xmin = Int(max(xmin, 1)) # In case a point of the triangle is outside of the canvas
+    # xmax = Int(min(xmax, n)) # In case a point of the triangle is outside of the canvas
 
-    ymin, ymax = Int(extrema([imag(triangle.p1), imag(triangle.p2), imag(triangle.p3)]))
-    ymin = max(ymin, 1) # Idem
-    ymax = min(ymax, m) # Idem
+    # ymin, ymax = extrema([imag(triangle.p1), imag(triangle.p2), imag(triangle.p3)])
+    # ymin = Int(max(ymin, 1)) # Idem
+    # ymax = Int(min(ymax, m)) # Idem
+
+    xmin = Int(min(real(triangle.p1), real(triangle.p2), real(triangle.p3)))
+    xmin = max(xmin, 1) # In case xmin = 0
+    xmax = Int(max(real(triangle.p1), real(triangle.p2), real(triangle.p3)))
+    xmax = min(xmax, n) # In case xmax > canvas width
+    ymin = Int(min(imag(triangle.p1), imag(triangle.p2), imag(triangle.p3)))
+    ymin = max(ymin, 1)
+    ymax = Int(max(imag(triangle.p1), imag(triangle.p2), imag(triangle.p3)))
+    ymax = min(ymax, m)
 
     return xmin, xmax, ymin, ymax
 end
@@ -184,7 +193,7 @@ function drawtriangle(triangle::Triangle, img::Array)
     # @Michiel Do you mean as was done in olddrawtriangle (above this one), where you just go over every pixel in the box around the triangle? 
     # That one was 30 times slower, and probably scales a lot worse with larger images. Or do you mean something else still?
 
-    while counter <= 2 # We need the first 2 points of both sides of the triangle for their slopes
+    while counter <= 2 && ymin <= ymax # We need the first 2 points of both sides of the triangle for their slopes, && ymin <= ymax is to prevent getting stuck
 
         j = xmin # Start at left side of line and go right
         while j <= xmax # Loop breaks if you find point in triangle or you reach end of line without finding anything
@@ -564,25 +573,24 @@ Parameters still require optimizing.
 There is a variant making use of the HGT and a varian making use of children.
 Currently the variant with children is performing better, but the HGT's parameters may be unoptimal.
 """
-function triangleevolution(image::String = "src/figures/TotoroTester4.jpeg"; gifname::String = "no_gif", number_triangles::Int = 25, generations::Int = 50, pop_size::Int = 70, elitism_freq::Number = 0.15, newblood_freq::Number =  0.03, mutation_freq::Number = 0.05)
+function triangleevolution(image::String = "src/figures/TotoroTester4.jpeg"; gifname = nothing, number_triangles::Int = 25, generations::Int = 50, pop_size::Int = 70, elitism_freq::Number = 0.15, newblood_freq::Number =  0.03, mutation_freq::Number = 0.07)
     
-    #generations = 10  # FIXEDME: these should be keyword arguments with default values
-    #number_triangles = 25
-    #pop_size = 50
-    #elitism_freq = 0.1 # best x percent of population always gets through to the next generation
-    #newblood_freq = 0.05 # A certain percent of the population gets replaced by newcomes every generation, to keep our gene pool fresh and sparkly
+    # generations = 10  # FIXEDME: these should be keyword arguments with default values
+    # number_triangles = 25
+    # pop_size = 50
+    # elitism_freq = 0.1 # best x percent of population always gets through to the next generation
+    # newblood_freq = 0.05 # A certain percent of the population gets replaced by newcomes every generation, to keep our gene pool fresh and sparkly
     # HGT_freq = 0.5
     # HGT_rate = 0.2
+    # mutation_freq = 0.10
+    # image = "src/figures/TotoroTester4.jpeg"
 
-    #mutation_freq = 0.10
-    #image = "src/figures/TotoroTester4.jpeg"
-
-    makegif = gifname != "no_gif" # Only make the result into a gif if the user enters a name for it
+    makegif = !isnothing(gifname) # Only make the result into a gif if the user enters a name for it
 
     elite_size = Int(round(pop_size*elitism_freq))
     newblood_size = Int(round(pop_size*newblood_freq))
 
-    img = load(image)
+    img = RGB.(load(image)) #png images are loaded as RGBA (with opacity which we dont use) so we convert those to RGB (jpgs load as RGB by default)
     m = length(img[:, 1])
     n = length(img[1, :])
     canvas = fill(RGB(1, 1, 1), m, n)
