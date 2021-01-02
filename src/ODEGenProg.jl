@@ -7,7 +7,7 @@ module ODEGenProg
 
 # you have to import everything you need for your module to work
 # if you use a new package, don't forget to add it in the package manager
-using ExprRules, ExprOptimization, Random, Plots, Calculus, TreeView
+using ExprRules, ExprOptimization, Random, Calculus, TreeView #,Plots
 
 export @dag, @dag_cse, @tree, @tree_with_call, LabelledTree, TreeView, make_dag, tikz_representation, walk_tree, walk_tree!
 export @sexpr, AbstractVariable, BasicVariable, Calculus, SymbolParameter, Symbolic, SymbolicVariable, check_derivative, check_gradient, check_hessian, check_second_derivative, deparse, derivative, differentiate, hessian, integrate, jacobian, processExpr, second_derivative, simplify, symbolic_derivative_bessel_list, symbolic_derivatives_1arg
@@ -17,7 +17,8 @@ export @grammar, ExprRules, ExpressionIterator, Grammar, NodeLoc, NodeRecycler, 
 
 
 # export all functions that are relevant for the user
-export fitness_test, define_grammar_1D, define_grammar_2D, ODEinit, fitness_general, FineGrainedTournamentSelection, fitness_1, fitness_2, fitness_3, fitness_4, fitness_2D, plot_solution
+export fitness_test, define_grammar_1D, define_grammar_2D, fitness_1, fitness_2, fitness_3, fitness_4, fitness_2D, plot_solution, plot_solution_2D
+export crossover, mutate, permutate, select, genetic_program, fitness_basic
 #, ExprOptimization, GeneticProgram, optimize
 
 """
@@ -76,10 +77,35 @@ Weighted by factor λ (here set to 100). I tested this for 5 different ODE's in 
 approximations. The problem now it that I have a different fitness function for each differential equation, see also comment below". 
 
 """
-function fitness_test(tree::RuleNode, grammar::Grammar)
+function fitness_test(tree::RuleNode, grammar=grammar)
 	S = ExprRules.SymbolTable(grammar) #ExprRule's interpreter, should increase performance according to documentation
 	ex = ExprRules.get_executable(tree, grammar) #Get the expression from a given tree based on the grammar
     loss = 0.  #I minimize fitness 
+	#Evaluate expression over an interval [0:1]. The calculus package is used to do symbolic differentiation of the expression according to the given differential equation. 
+    for x = 0.0:0.1:1.0
+		S[:x] = x
+		loss += try (Core.eval(S,differentiate(ex)) - Core.eval(S,ex))^2
+		catch
+			return Inf
+		end
+    end
+	#Also boundary conditions are evaluated in this seperate step that allows for weighting the score with a factor λ. Here set default to 100 (as in Tsoulos and Lagaris (2006)). 
+	S[:x] = 0
+	λ = 100.
+	loss += try λ * (((Core.eval(S,ex)-1))^2)
+	catch
+		return Inf
+	end
+	return loss
+end
+
+"""
+"""
+function fitness_basic(tree::RuleNode)
+	grammar = define_grammar_1D()
+	S = ExprRules.SymbolTable(grammar) #ExprRule's interpreter, should increase performance according to documentation
+	ex = ExprRules.get_executable(tree, grammar) #Get the expression from a given tree based on the grammar
+    loss = 0.  #minimize fitness 
 	#Evaluate expression over an interval [0:1]. The calculus package is used to do symbolic differentiation of the expression according to the given differential equation. 
     for x = 0.0:0.1:1.0
 		S[:x] = x
@@ -250,79 +276,42 @@ function fitness_2D(tree::RuleNode, grammar::Grammar)
 end
 
 
-"""
-	Standardize ODE form: the problem is that now I test 4-5 ODE in my notebook but each time have a seperate fitness function
-	where I 'hardcoded' the system and boundary conditions. I guess it would be tidier if I have one function that could generate 
-	a proper fitness function based on a standardized input of ODE f(x,y,y',y'',...) = 0 + boundary conditions. 
-"""
-function ODEinit(ODE,boundary,interval)
-end
+# """
+# 	Standardize ODE form: the problem is that now I test 4-5 ODE in my notebook but each time have a seperate fitness function
+# 	where I 'hardcoded' the system and boundary conditions. I guess it would be tidier if I have one function that could generate 
+# 	a proper fitness function based on a standardized input of ODE f(x,y,y',y'',...) = 0 + boundary conditions. 
+# """
+# function ODEinit(ODE,boundary,interval)
+# end
 
-"""
-	General fitness function
-"""
-function fitness_general(tree::RuleNode, grammar::Grammar)
-end
+# """
+# 	General fitness function
+# """
+# function fitness_general(tree::RuleNode, grammar::Grammar)
+# end
 
-abstract type InitializationMethod end 
-
-"""
-    RandomInit
-Uniformly random initialization method.
-"""
-struct RandomInit <: InitializationMethod end
-
-"""
-    EntropyInit
-Uniformly random initialization method.
-"""
-struct EntropyInit <: InitializationMethod end
-
-"""
-    initialize(::RandomInit, pop_size::Int, grammar::Grammar, typ::Symbol, dmap::AbstractVector{Int}, 
-max_depth::Int)
-Random population initialization.
-"""
-function initialize(::RandomInit, pop_size::Int, grammar::Grammar, typ::Symbol, 
-    dmap::AbstractVector{Int}, max_depth::Int)
-    [rand(RuleNode, grammar, typ, dmap, max_depth) for i = 1:pop_size]
-end
-
-"""
-    initialize(::EntropyInit, pop_size::Int, grammar::Grammar, typ::Symbol, dmap::AbstractVector{Int}, 
-max_depth::Int)
-To uniformly distribute the initial population in the solutionspace, avoid a centralized distribution 
-in the local region ofthe solution space, and increase the diversity of the initialpopulation, 
-the population can be initialized by calculatingthe information entropy (Jiacheng and Lei, 2019).
-"""
-function initialize_entropy(::EntropyInit, pop_size::Int, grammar::Grammar, typ::Symbol, 
-    dmap::AbstractVector{Int}, max_depth::Int)
-    [rand(RuleNode, grammar, typ, dmap, max_depth) for i = 1:pop_size]
-end
-
-#abstract type InitializationMethod end 
 #abstract type SelectionMethod end
 
-"""
-	FineGrainedTournamentSelection
-Tournament selection method with tournament size k.
-"""
-struct FineGrainedTournamentSelection <: ExprOptimization.GeneticPrograms.SelectionMethod 
-    k::Int
-end
-FineGrainedTournamentSelection() = FineGrainedTournamentSelection(4)
+# """
+# 	FineGrainedTournamentSelection
+# Tournament selection method with tournament size k.
+# """
+# struct FineGrainedTournamentSelection <: ExprOptimization.GeneticPrograms.SelectionMethod 
+#     k::Int
+# end
+# FineGrainedTournamentSelection() = FineGrainedTournamentSelection(4)
 
-"""
-    select(p::FineGrainedTournamentSelection, pop::Vector{RuleNode}, losses::Vector{Union{Float64,Missing}})
-Tournament selection.
-"""
-function select(p::FineGrainedTournamentSelection, pop::Vector{RuleNode}, 
-	losses::Vector{Union{Float64,Missing}})
-	δ = rand([-2,-1,0,1,2])
-    ids = StatsBase.sample(1:length(pop), p.k + δ; replace=false, ordered=true) 
-    i = ids[1] #assumes pop is sorted
-    pop[i], i
-end
+# """
+#     select(p::FineGrainedTournamentSelection, pop::Vector{RuleNode}, losses::Vector{Union{Float64,Missing}})
+# Tournament selection.
+# """
+# function select(p::FineGrainedTournamentSelection, pop::Vector{RuleNode}, 
+# 	losses::Vector{Union{Float64,Missing}})
+# 	δ = rand([-2,-1,0,1,2])
+#     ids = StatsBase.sample(1:length(pop), p.k + δ; replace=false, ordered=true) 
+#     i = ids[1] #assumes pop is sorted
+#     pop[i], i
+# end
 
 
 """
@@ -331,13 +320,111 @@ function plot_solution(ex::Expr, grammar::Grammar)
 #ex = get_executable(tree, grammar)
 S = ExprRules.SymbolTable(grammar) #ExprRule's interpreter, should increase performance according to documentation
 sol = Float64[]
-for x = 0.1:0.01:10.
+for x = 0.1:0.001:10.
     S[:x] = x
     push!(sol, Core.eval(S,ex))
 end
 return sol
 end	
 
+"""
+"""
+function plot_solution_2D(x,y)
+	g_2D = define_grammar_2D()
+	S_2D = SymbolTable(g_2D)
+	res_2D = results_2D.expr
+	S_2D[:x] = x
+	S_2D[:y] = y
+	return  Core.eval(S_2D,res_2D)
+end	
 
+"""
+"""
+function crossover(p, a, b, max_depth)
+	grammar = define_grammar_1D()
+	child = deepcopy(a)
+	crosspoint = sample(b)
+	typ = return_type(grammar, crosspoint.ind)
+	d_subtree = depth(crosspoint)
+	d_max = max_depth + 1 - d_subtree
+	if d_max > 0 && contains_returntype(child, grammar, typ, d_max)
+		loc = sample(NodeLoc, child, typ, grammar, d_max)
+		insert!(child, loc, deepcopy(crosspoint))
+	end
+	return child
+end
+
+"""
+"""
+function mutate(a, p)
+	grammar = define_grammar_1D()
+	child = deepcopy(a)
+	if rand() < p
+		loc = sample(NodeLoc, child)
+		typ = return_type(grammar, get(child, loc).ind)
+		subtree = rand(RuleNode, grammar, typ)
+		insert!(child, loc, subtree)
+	end
+	return child
+end
+
+"""
+"""
+function permutate(a, p)
+	grammar = define_grammar_1D()
+	child = deepcopy(a)
+	if rand() < p
+		node = sample(child)
+		n = length(node.children)
+		types = child_types(grammar, node)
+		for i in 1 : n-1
+			c = 1
+			for k in i+1 : n
+				if types[k] == types[i] &&
+				rand() < 1/(c+=1)
+				node.children[i], node.children[k] =
+				node.children[k], node.children[i]
+				end
+			end
+		end
+	end
+	return child
+end
+
+"""
+	tournamentselection method, S number of winners ?
+"""
+function select(y, S)
+	grammar = define_grammar_1D()
+	getparent() = begin
+	p = randperm(length(y))
+	p[argmin(y[p[1:S]])]
+	end
+	return [[getparent(), getparent()] for i in y]
+end
+
+"""
+"""
+function genetic_program(f, population, k_max, S, C, M, max_depth)
+	grammar = define_grammar_1D()
+	sol_iter = Expr[]
+	fit_iter = Float64[]
+	for k in 1 : k_max
+		parents = select(f.(population), S)
+		children = [crossover(C, population[p[1]], population[p[2]], max_depth) for p in parents]
+		population .= permutate.(children, M) #Ref(M)
+		fittest = population[argmin(f.(population))]
+		fittest_expr = get_executable(fittest, grammar)
+		push!(sol_iter, fittest_expr)
+		push!(fit_iter, f(fittest))
+	end
+	final = population[argmin(f.(population))]
+	expr = get_executable(final, grammar)
+	return (expr = expr, sol_iter = sol_iter, fit_iter = fit_iter)
+end
+
+#grammar = define_grammar_1D()
+#population = [rand(RuleNode, grammar, :R, 5) for i in 1:2000]
+#gp = genetic_program(fitness_basic, population, 15, 2,  0.3, 0.3, 5)
 
 end

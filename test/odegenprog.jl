@@ -35,6 +35,8 @@
     @test results_gp.loss ≈ 0.
     #@test results_gp.expr == :(exp(x))
 
+    @test plot_solution(:(exp(x)),grammar_1D) isa Array{Float64,1}
+
     end
 
 end
