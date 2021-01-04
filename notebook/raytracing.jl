@@ -50,7 +50,8 @@ let
 	h, w = size(tiny_scene)
 	p = plot(xticks=0:5:w+1, xlims=(0,w+1),
 			 yticks=0:5:h+1, ylims=(0,h+1),
-			 legend=false, aspectratio=1, yflip=true)
+			 legend=false, aspectratio=1,
+			 yflip=true, size=(450, 300))
 	plot_pixel_edges(p, tiny_scene)
 	plot_pixels(p, tiny_scene)
 	plot(p)
@@ -68,7 +69,7 @@ circle = draw_circle(5, 45, 20);
 scene = create_scene(80, 60, circle, 0.7);
 
 # ╔═╡ ac63f0f0-4059-11eb-0676-078ce8af6a46
-heatmap(scene, yflip=true, seriescolor=:ice)
+heatmap(scene, yflip=true, seriescolor=:ice, size=(300,200))
 
 # ╔═╡ d36523e0-4059-11eb-3379-153b66651a92
 md"""We can add another circle to the scene with the function `add_objects!`, which modifies the scene in-place."""
@@ -77,7 +78,7 @@ md"""We can add another circle to the scene with the function `add_objects!`, wh
 add_objects!(scene, draw_circle(5, 20, 30), 0.9)
 
 # ╔═╡ d1e38cf2-4059-11eb-266a-ddc98480544e
-heatmap(scene, yflip=true, seriescolor=:ice)
+heatmap(scene, yflip=true, seriescolor=:ice, size=(300,200))
 
 # ╔═╡ b07eb3e0-405a-11eb-3c2a-65bd7c1b796b
 md"""It is also possible to define a scene with multiple objects from the start. In addition, we demonstrate an alternate way to visualize the scene in the code chunk below. The `plot_circle` function plots the circle(s) as a vector by default."""
@@ -93,7 +94,8 @@ let
 
 	p = plot(xticks=0:5:w+1, xlims=(0,w+1),
 			 yticks=0:5:h+1, ylims=(0,h+1),
-			 legend=false, aspectratio=1, yflip=true)
+			 legend=false, aspectratio=1, yflip=true,
+			 size=(450,300))
 
 	for i=1:length(circles)
 		plot_circle(p, r[i], w_center[i], h_center[i])
@@ -166,7 +168,7 @@ As you may have noticed, the code runs substantially slower with the maximum num
 
 Indeed, traditional ray tracers (RTs) use analytical methods to determine how far a light ray is from a certain object. This is often implemented as vectors instead of discrete pixels like we have done in this tutorial. Solving the intersection between a ray and a circle boils down to solving the equation $(x_c-x_p)^2+(y_c-y_p)^2 = r^2$, where $c$ and $p$ subscripts represent the circle and light ray, respectively. As this is just solving the quadratic equation, finding the path of this ray can essentially be done in constant time. Nonetheless, different shapes would require solving different equations, so an intersection method would have to be defined separately for each shape.
 
-What about more complicated shapes which cannnot be defined by an equation, i.e., shapes which are not [parametric](https://en.wikipedia.org/wiki/Parametric_surface) and/or [implicit](https://en.wikipedia.org/wiki/Implicit_surface)? In that case, the traditional approach to to model the shape using polygons. These polygons are then converted to triangles because it is generally much easier to ray trace each individual triangle rather than develop an algorithm to ray trace polygons.
+What about more complicated shapes which cannnot be defined by an equation, i.e., shapes which are not [parametric](https://en.wikipedia.org/wiki/Parametric_surface) and/or [implicit](https://en.wikipedia.org/wiki/Implicit_surface)? In that case, the traditional approach is to model the shape using polygons. These polygons are then converted to triangles because it is generally much easier to ray trace each individual triangle rather than develop an algorithm to ray trace polygons.
 
 The Dijkstra RT does not have these drawbacks. Since we follow the ray pixel-by-pixel (and light will always travel using the shortest path), we do not need to define an intersection between a ray and an object. By extension, this also means that the Dijkstra RT works with any shape without a need for object conversion (e.g., to triangles). In addition, Dijkstra could be useful for when there are many objects in a scene. In contrast to traditional RT, the runtime of Dijkstra does not depend on the number of objects in the scene but rather on the size of the scene itself."""
 
@@ -203,4 +205,8 @@ Thanks for reading, and hope you enjoyed the tutorial!"""
 # ╠═2846c3e2-405b-11eb-3a0e-f3686b82c142
 # ╟─e8696900-406c-11eb-1a6c-c78c52b20ac5
 # ╟─103d9170-406f-11eb-0a04-dd7f46ec64b2
+# ╠═3e0394e0-40c1-11eb-17bb-0d12587988a9
+# ╠═97c1e842-40c3-11eb-3a37-b33f8251a7d4
+# ╠═e23c8a20-40c7-11eb-3753-1b77fe37d576
+# ╠═29b86162-40c0-11eb-2279-9fe69b07c307
 # ╟─23afba50-4081-11eb-3c62-e3d9c19ece56
