@@ -3,29 +3,8 @@ module Raytracing
 
 using Plots, DataStructures
 
-export add_objects!, create_scene, dijkstra, reconstruct_path, get_neighbors, 
-draw_circle, plot_pixels, plot_pixel_edges, plot_paths, plot_circle
-
-"""
-    add_objects!(scene::Array{R,2}, objects::Array{Set{Tuple{Int,Int}},1},
-        objects_ior::Array{R,1}) where {R<:Real}
-
-Add one or more objects to a pre-existing `scene`. The objects are placed
-in the scene following the order of the array.
-"""
-function add_objects!(scene::Array{R,2}, objects::Array{Set{Tuple{Int,Int}},1},
-    objects_ior::Array{R,1}) where {R<:Real}
-    h, w = size(scene)
-    for o=1:length(objects)  # FIXME using `=` in for loops is bad style, replace with `is`
-        for (i,j) in objects[o]
-            (i <= 0 || j <= 0 || i > h || j > w) && continue # Check bounds
-            scene[i,j] = objects_ior[o]
-        end
-    end 
-end
-
-add_objects!(scene::Array{R,2}, object::Set{Tuple{Int,Int}},
-    object_ior::Real) where {R<:Real} = add_objects!(scene, [object], [object_ior])
+export create_scene, add_objects!, dijkstra, reconstruct_path, get_neighbors, 
+draw_circle, plot_pixels!, plot_pixel_edges!, plot_paths!, plot_circle!
 
 """
     create_scene(w::Int, h::Int, objects::Array{Set{Tuple{Int,Int}},1},
@@ -37,16 +16,35 @@ order of the array.
 """
 function create_scene(w::Int, h::Int, objects::Array{Set{Tuple{Int,Int}},1},
         objects_ior::Array{R,1}) where {R<:Real}
-    scene = [1.0 for i=1:h,j=1:w]
+    scene = Matrix{R}(undef, h, w)
+    fill!(scene, 1.0)
     add_objects!(scene, objects, objects_ior)
     return scene
 end
 
-create_scene(w::Int, h::Int, object::Set{Tuple{Int,Int}}, object_ior::Real) =
-    [(i,j) ∈ object ? object_ior : 1.0 for i=1:h,j=1:w]
+create_scene(w::Int, h::Int, object::Set{Tuple{Int,Int}}=Set{Tuple{Int,Int}}(),
+    object_ior::Real=1.0) = [(i,j) ∈ object ? object_ior : 1.0 for i=1:h,j=1:w]
 
-#FIXME: this definition seems redundant if you add default values for the previous one
-create_scene(w::Int, h::Int) = create_scene(w, h, Set{Tuple{Int,Int}}(), 1.0)
+"""
+    add_objects!(scene::Matrix{R}, objects::Array{Set{Tuple{Int,Int}},1},
+        objects_ior::Array{R,1}) where {R<:Real}
+
+Add one or more objects to a pre-existing `scene`. The objects are placed
+in the scene following the order of the array.
+"""
+function add_objects!(scene::Matrix{R}, objects::Array{Set{Tuple{Int,Int}},1},
+    objects_ior::Array{R,1}) where {R<:Real}
+    h, w = size(scene)
+    for o in 1:length(objects)  
+        for (i,j) in objects[o]
+            (i <= 0 || j <= 0 || i > h || j > w) && continue # Check bounds
+            scene[i,j] = objects_ior[o]
+        end
+    end 
+end
+
+add_objects!(scene::Matrix{R}, object::Set{Tuple{Int,Int}},
+    object_ior::Real) where {R<:Real} = add_objects!(scene, [object], [object_ior])
 
 """
     draw_circle(r::Int, w_center::Int, h_center::Int)
@@ -56,7 +54,7 @@ and `h_center` on the y-axis (rows) with radius. The first part draws the circle
 perimeter based on the midpoint circle algorithm. Then, the points inside the inside
 are calculated using the equation of a circle.
 """
-function draw_circle(r::Int, w_center::Int, h_center::Int)  # QUESTION: can these not be just numbers instead of Int?
+function draw_circle(r::Int, w_center::Int, h_center::Int)
     points = Set{Tuple{Int,Int}}()
     x, y = r, 0
     
@@ -100,19 +98,17 @@ function draw_circle(r::Int, w_center::Int, h_center::Int)  # QUESTION: can thes
     return union(points, inside_pts)
 end
 
-# FIXME: Array{R,2} => Matrix{R} ?
-# suggestion: you might make an iterator, i.e., return ((x, y) for ...), this is more memory efficient than making lists
 """
     get_neighbors(scene::Array{Real,2}, u::Tuple{Int,Int})
 
 Get adjacent neighbors (including diagonals) of an element `u` in the scene.
 Returns a list of tuples.
 """
-function get_neighbors(scene::Array{R,2}, u::Tuple{Int,Int}) where {R<:Real}
+function get_neighbors(scene::Matrix{R}, u::Tuple{Int,Int}) where {R<:Real}
     m, n = size(scene)
     i, j = u
     ρ = scene[i,j] # Index of refraction
-    neighbors = []  #FIXME: add type annotation, cannot be inferred here
+    neighbors = Array{Tuple{R, Tuple{Int,Int}},1}()
     
     i < m && push!(neighbors, (ρ, (i+1, j)))  # Down
     i > 1 && push!(neighbors, (ρ, (i-1, j)))  # Up
@@ -129,15 +125,15 @@ function get_neighbors(scene::Array{R,2}, u::Tuple{Int,Int}) where {R<:Real}
         i > 1 && push!(neighbors, (ρ*sqrt(2), (i-1, j-1)))  # Top left
     end
 
-    return neighbors
+    return (x for x in neighbors)
 end
 
 """
-    dijkstra(scene::Array{R,2}, source::Tuple{Int,Int}, sink::Tuple{Int,Int}) where {R<:Real}
+    dijkstra(scene::Matrix{R}, source::Tuple{Int,Int}, sink::Tuple{Int,Int}) where {R<:Real}
 
 Dijkstra's shortest path algorithm on a 2D array. Returns the `distances` and `previous` dictionaries.
 """
-function dijkstra(scene::Array{R,2}, source::Tuple{Int,Int}, sink::Tuple{Int,Int}) where {R<:Real}
+function dijkstra(scene::Matrix{R}, source::Tuple{Int,Int}, sink::Tuple{Int,Int}) where {R<:Real}
     m, n = size(scene)
     
     # Initialize the tentative distances as Inf except for source
@@ -187,81 +183,69 @@ function reconstruct_path(previous::Dict{Tuple{Int,Int},Tuple{Int,Int}},
     return path
 end
 
-# FIXME: technically, these should be of the form `plot_pixels!()` as they add something to a plot
-# SUGGESTION: when i write custom plotting functions it might be useful to do something like
-#=
-function myplot(data; kwargs...)
-    do something
-    plot(...; kwargs...)
-end
-
-here, `kwargs...` ensures you can pass any other keyword argument to the plot, like color, alpha and line tickness
-
-=#
-
 """
-    plot_pixels(p::Plots.Plot, scene::Array{R,2}) where {R<:Real}
+    plot_pixels!(p::Plots.Plot, scene::Matrix{R}; kwargs...) where {R<:Real}
 
 Add individual pixels of the `scene` to a `Plots` object.
 """
-function plot_pixels(p::Plots.Plot, scene::Array{R,2}) where {R<:Real}
+function plot_pixels!(p::Plots.Plot, scene::Matrix{R}; kwargs...) where {R<:Real}
     m,n = size(scene)
     pixels = [(i,j) for i=1:m,j=1:n]
-    plot!(p, last.(pixels), first.(pixels), seriestype = :scatter,
-        markersize = 50/maximum(first.(pixels)), color=:red)
+    plot!(p, last.(pixels), first.(pixels), seriestype=:scatter,
+    markersize=50/m, color=:red; kwargs...)
 end
 
 """
-    plot_pixel_edges(p::Plots.Plot, scene::Array{R,2}) where {R<:Real}
+    plot_pixel_edges!(p::Plots.Plot, scene::Matrix{R}; kwargs...) where {R<:Real}
 
-Add edges between adjacent pixels of the `scene` to a `Plots` object.
+Add edges between adjacent pixels of the `scene` to a `Plots` object. 
 """
-function plot_pixel_edges(p::Plots.Plot, scene::Array{R,2}) where {R<:Real}
+function plot_pixel_edges!(p::Plots.Plot, scene::Matrix{R}; kwargs...) where {R<:Real}
     m,n = size(scene)
     # Get neighbors of each point, store original node as first element of list
     neighbors_matrix = [vcat((i,j), last.(get_neighbors(scene, (i,j)))) for i=1:m,j=1:n]
     for neighbors in neighbors_matrix
         for neighbor in neighbors[2:end]
             plot!(p, [neighbors[1][2], neighbor[2]], [neighbors[1][1], neighbor[1]],
-                        label=false, color=:black, lw=0.5, linealpha=0.3)
+                        label=false, color=:black, lw=0.5, linealpha=0.3; kwargs...)
         end
     end
 end
 
 """
-    plot_paths(p::Plots.Plot, paths::Array{Array{Tuple{Int64,Int64},1},1}) 
+    plot_paths!(p::Plots.Plot, paths::Array{Array{Tuple{Int64,Int64},1},1}; kwargs...) 
 
 Plot reconstructed paths on a `Plots` object. Each element in the `paths` array
 is an output of `reconstruct_path.`
 """
-function plot_paths(p::Plots.Plot, paths::Array{Array{Tuple{Int,Int},1},1})
+function plot_paths!(p::Plots.Plot, paths::Array{Array{Tuple{Int,Int},1},1}; kwargs...)
     for path in paths
         for (i, pixel) in enumerate(path[1:end-1])
             # Connect point i to point i+1 with a line
             plot!(p, [pixel[2], path[i+1][2]], [pixel[1], path[i+1][1]],
-                label=false, color=:red, lw=2)
+                label=false, color=:red, lw=2; kwargs...)
         end
     end
 end
 
 """
-    plot_circle(p::Plots.Plot, r::Int, w_center::Int, h_center::Int,
-                plot_pixels::Bool=true) 
+    plot_circle!(p::Plots.Plot, r::Int, w_center::Int, h_center::Int,
+                plot_pixels::Bool=true; kwargs...) 
 
 Plot a circle centered at `w_center` on the x-axis (columns) and `h_center`
 on the y-axis (rows) with radius `r` on a `Plots` object. If `plot_pixels=true`,
 individual pixels are plotted instead of a vector shape.
 """
-function plot_circle(p::Plots.Plot, r::Int, w_center::Int, h_center::Int,
-                    plot_pixels::Bool=false)
+function plot_circle!(p::Plots.Plot, r::Int, w_center::Int, h_center::Int,
+                    plot_pixels::Bool=false; kwargs...)
     if plot_pixels
         points = draw_circle(r, w_center, h_center)
-        plot!(p, last.(points), first.(points), seriestype = :scatter,
-            markerstrokewidth=0, markeralpha=0.5, color=:blue)
+        plot!(p, last.(points), first.(points), seriestype=:scatter,
+            markerstrokewidth=0, markeralpha=0.5, color=:blue; kwargs...)
     else
         θ = LinRange(0, 2π, 500)
         plot!(p, w_center .+ r*sin.(θ), h_center .+ r*cos.(θ),
-            seriestype=[:shape], legend=false, fillalpha=0.5)
+            seriestype=[:shape], legend=false, fillalpha=0.5; kwargs...)
     end
 end
 
