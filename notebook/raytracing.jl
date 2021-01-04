@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.12.4
+# v0.12.17
 
 using Markdown
 using InteractiveUtils
@@ -52,8 +52,8 @@ let
 			 yticks=0:5:h+1, ylims=(0,h+1),
 			 legend=false, aspectratio=1,
 			 yflip=true, size=(450, 300))
-	plot_pixel_edges(p, tiny_scene)
-	plot_pixels(p, tiny_scene)
+	plot_pixel_edges!(p, tiny_scene)
+	plot_pixels!(p, tiny_scene)
 	plot(p)
 end
 
@@ -98,7 +98,7 @@ let
 			 size=(450,300))
 
 	for i=1:length(circles)
-		plot_circle(p, r[i], w_center[i], h_center[i])
+		plot_circle!(p, r[i], w_center[i], h_center[i])
 	end
 	plot(p)
 end
@@ -153,8 +153,8 @@ let
 	path = [reconstruct_path(dijkstra(scene, source, sinks[i])[2],
 			source, sinks[i]) for i=1:length(sinks)];
 
-	plot_circle(p, r, w_center, h_center)
-	plot_paths(p, path)
+	plot_circle!(p, r, w_center, h_center)
+	plot_paths!(p, path)
 	plot(p)
 end
 
@@ -205,8 +205,4 @@ Thanks for reading, and hope you enjoyed the tutorial!"""
 # ╠═2846c3e2-405b-11eb-3a0e-f3686b82c142
 # ╟─e8696900-406c-11eb-1a6c-c78c52b20ac5
 # ╟─103d9170-406f-11eb-0a04-dd7f46ec64b2
-# ╠═3e0394e0-40c1-11eb-17bb-0d12587988a9
-# ╠═97c1e842-40c3-11eb-3a37-b33f8251a7d4
-# ╠═e23c8a20-40c7-11eb-3753-1b77fe37d576
-# ╠═29b86162-40c0-11eb-2279-9fe69b07c307
 # ╟─23afba50-4081-11eb-3c62-e3d9c19ece56
