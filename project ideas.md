@@ -11,7 +11,7 @@ Optimization methods not covered in the theory. Provide a working implementation
 - Conjugate gradient descent
 - [Cross-entropy method](https://en.wikipedia.org/wiki/Cross-Entropy_Method)
 - Firefly algorithm
-- Bee Colony Optimization
+- ~~Bee Colony Optimization~~
 - Cuckoo search
 - maximum flow problems
 - Levenberg–Marquardt algorithm (for nonlinear regression and inverse kinematics)
