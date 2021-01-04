@@ -18,8 +18,8 @@ get_neighbors
 
 ### Plotting
 ```@docs
-plot_pixels
-plot_pixel_edges
-plot_paths
-plot_circle
+plot_pixels!
+plot_pixel_edges!
+plot_paths!
+plot_circle!
 ```

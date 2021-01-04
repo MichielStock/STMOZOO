@@ -1,11 +1,11 @@
 @testset "Raytracing" begin
-    using STMOZOO.Raytracing
+    using STMOZOO.Raytracing, Plots
 
     w, h = 80, 60
     @testset "create_scene" begin
         # Create empty scene
         scene = create_scene(w, h)
-        @test scene isa Array
+        @test scene isa Matrix
         @test size(scene) == (h,w)
         @test all(element == 1.0 for element in scene)
 
@@ -37,7 +37,7 @@
         # Add single object
         circle = draw_circle(3, 25, 45)
         add_objects!(scene, circle, 0.5)
-        @test scene isa Array
+        @test scene isa Matrix
         @test count(x == 0.5 for x in scene) == length(circle)
 
         # Add two objects
@@ -72,4 +72,61 @@
         (16, 36), (16, 37), (16, 38), (16, 39), (16, 40)]
     end
 
+    w, h = 20, 10
+    scene = create_scene(w, h)
+    @testset "plot_pixel_edges!" begin
+        p = plot()
+        plot_pixel_edges!(p, scene)
+        @test p isa Plots.Plot
+        p[1][1][:linealpha] == 0.3
+
+        p = plot()
+        plot_pixel_edges!(p, scene; linealpha=0.7, yflip=true)
+        @test p[1][1][:linealpha] == 0.7
+        @test p[1][:yaxis][:flip] == true
+    end
+
+    @testset "plot_pixels!" begin
+        p = plot()
+        plot_pixels!(p, scene)
+        @test p isa Plots.Plot
+        @test p[1][1][:markersize] == 50/h
+
+        p = plot()
+        plot_pixels!(p, scene;  xlims=(0,w+1), xticks=0:5:w+1, markersize=8)
+        @test Plots.get_ticks(p[1], p[1][:xaxis])[2] == string.(0:5:w+1)
+        @test p[1][1][:markersize] == 8
+    end
+
+    @testset "plot_circle!" begin
+        r, w_center, h_center = 3, 10, 5
+        p = plot()
+        plot_circle!(p, r, w_center, h_center)
+        @test p isa Plots.Plot
+        @test p[1][1][:seriestype] == :shape
+        @test p[1][1][:x] ≈ w_center .+ r*sin.(LinRange(0, 2π, 500))
+
+        p = plot()
+        plot_circle!(p, r, w_center, h_center, true; markeralpha=0.8)
+        @test p[1][1][:seriestype] == :scatter
+        @test p[1][1][:markeralpha] == 0.8
+        @test p[1][1][:x] == last.(draw_circle(r, w_center, h_center))
+
+    end
+
+    @testset "plot_paths!" begin
+        test_circle = draw_circle(20, 45, 30)
+        w,h = 80,60
+        scene = create_scene(w, h, test_circle, 0.7)
+        source, sink = (h÷2,1), (45, w)
+        path = [reconstruct_path(dijkstra(scene, source, sink)[2],
+                source, sink)]
+
+        p = plot()
+        plot_paths!(p, path; ylims=(0,h+1), yticks=0:5:h+1)
+        @test p isa Plots.Plot
+        @test p[1][1][:x] == last.(path[1][1:2])
+        @test p[1][1][:linecolor] == RGBA{Float64}(1.0,0.0,0.0,1.0)
+        @test Plots.get_ticks(p[1], p[1][:yaxis])[2] == string.(0:5:h+1)
+    end
 end
