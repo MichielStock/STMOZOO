@@ -169,16 +169,21 @@ Reconstruct the path from the `previous` dictionary obtained from `dijkstra`.
 """
 function reconstruct_path(previous::Dict{Tuple{Int,Int},Tuple{Int,Int}},
         source::Tuple{Int,Int}, sink::Tuple{Int,Int})
+
+    path = Array{Tuple{Int64,Int64},1}()
+
     # Return empty path if source is not in previous 
-    if source ∉ values(previous)
-        return []
-    end
+    source ∉ values(previous) && return path
     
-    v = sink        # Path is reconstructed backwards
-    path = [v]      # Path is a list of no
+    v = sink            # Path is reconstructed backwards
+    push!(path, v)      # Path is a list of grid coordinates
     while v != source
-       v = previous[v] 
+        # No way to reach source, return empty array
+        v ∉ keys(previous) && return Array{Tuple{Int64,Int64},1}()
+
+        v = previous[v] 
         pushfirst!(path, v)
+
     end
     return path
 end
