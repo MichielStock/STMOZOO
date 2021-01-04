@@ -28,7 +28,9 @@ function fill_in(sudoku::Matrix)
     check_value(sudoku, val_i::Int, val_j::Int, value =nothing)
 
 Gives the number of repetitions in row, column and subgrid for a number in position [val_i, val_j] in the sudoku
-it is used to check if a particular number meets the sudoku constraints
+it is used to check if a particular number meets the sudoku constraints.
+It takes as inputs a filled sudoku grid, two coordinates of the evaluated position (row, column) and an optional argument.
+If the optional argument is given then it will return the number of constrains violations when this value is placed in the input position. 
 """
 function check_value(sudoku::Matrix, val_i::Int, val_j::Int, value =nothing)
   
@@ -223,7 +225,7 @@ end
     search(sudoku::Matrix, max_repl::Int, max_flips::Int)
 
 Takes an empty Sudoku, and search for the solution that minimizes the number of constraint violations
-To find the solution the search must be done at least 1000 times
+To find the solution the search must be done at least 1000 times. This algorithm is not efficient.
 """
 function search(sudoku::Matrix, max_repl::Int, max_flips::Int)
     @assert length(sudoku[1,:]) == length(sudoku[:,1]) == 9 "Sudoku must be 9x9"
