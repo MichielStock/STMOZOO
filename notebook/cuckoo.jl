@@ -74,7 +74,7 @@ md"""Using the implemented function `plot_solution` it is possible to visualize 
 # ╔═╡ 279492ea-405b-11eb-2af7-13ec8531169a
 function plot_solution_2D(f, x1lims, x2lims)	
 	#initialize population
-	population = init_nests(15, x1lims, x2lims)
+	population = init_nests(20, x1lims, x2lims)
 	
 	#draw function landscape
 	heatmap(x1lims[1]:0.1:x1lims[2], x2lims[1]:0.1:x2lims[2], f)
@@ -90,8 +90,11 @@ function plot_solution_2D(f, x1lims, x2lims)
 	solution_stat = cuckoo!(f, population, x1lims, x2lims) 
 	
 	#plot the final solution
+	s1=round(solution_stat[1][1],digits=1)	
+	s2=round(solution_stat[1][2],digits=1)
 	scatter!([solution_stat[1][1]],[solution_stat[1][2]], color=:white, 
-		     label="Solution", markersize=4)
+		     label="Solution [$(s1),$(s2)]", markersize=4)
+ 
 end
 
 # ╔═╡ c9c0363e-493e-11eb-25c5-271196c1a76f
@@ -209,15 +212,40 @@ md"""### More complex functions"""
 
 # ╔═╡ cb3d1354-493b-11eb-29af-4d36cb31f4e4
 begin
-	rastrigine(x; A=10) = length(x) * A + sum(x.^2 .+ A .* cos.(2pi .* x))
-	rastrigine(x...; A=10) = rastrigine(x; A=A)
+	rosenbrock((x1, x2); a=1, b=5) = (a-x1)^2 + b*(x2-x1^2)^2
+    rosenbrock(x1, x2; kwargs...) = rosenbrock((x1, x2); kwargs...)
 end
+
+# ╔═╡ 93c7588c-4eb1-11eb-1e5a-a7bedb46fefd
+md"""**Rosenbrock function** global minimum: (1,1)"""
 
 # ╔═╡ f1110a4e-493c-11eb-234d-ddc38917505c
 begin
-	x1lims_rastrigine = (-10, 10) #dimension 1
-	x2lims_rastrigine= (-10, 10)  #dimension 2
-	plot_solution_2D(rastrigine, x1lims_rastrigine, x2lims_rastrigine)
+	x1lims_rastrigine = (-2.048, 2.048) #dimension 1
+	x2lims_rastrigine= (-2.048, 2.048)  #dimension 2
+	plot_solution_2D(rosenbrock, x1lims_rastrigine, x2lims_rastrigine)
+end
+
+# ╔═╡ a946be48-4eaf-11eb-1e20-a152a2278921
+begin
+	function branin((x1, x2); a=1, b=5.1/(4pi^2), c=5/pi, r=6, s=10, t=1/8pi)
+    	return a * (x2 - b * x1^2 + c * x1 - r)^2 + s * (1 - t) * cos(x1) + s
+	end
+
+	branin(x1, x2; kwargs...) = branin((x1, x2); kwargs...)
+end
+
+# ╔═╡ 362f0eae-4eb1-11eb-26a2-15c63cfa9cf0
+md""" **Branin function** global minima: 
+* (-3.14, 12.275)
+* (3.14, 2.275)
+* (9.42,2.475)"""
+
+# ╔═╡ b64b72c2-4eb0-11eb-2434-1b0824d7fa17
+begin
+	x1lims_branin = (-5, 10) #dimension 1
+	x2lims_branin= (0, 15)  #dimension 2
+	plot_solution_2D(branin, x1lims_branin, x2lims_branin)
 end
 
 # ╔═╡ Cell order:
@@ -252,4 +280,8 @@ end
 # ╠═24b5909a-4942-11eb-2768-a1586788bff2
 # ╟─9a9b2b30-493d-11eb-2db1-f39a0782c896
 # ╟─cb3d1354-493b-11eb-29af-4d36cb31f4e4
+# ╟─93c7588c-4eb1-11eb-1e5a-a7bedb46fefd
 # ╟─f1110a4e-493c-11eb-234d-ddc38917505c
+# ╟─a946be48-4eaf-11eb-1e20-a152a2278921
+# ╟─362f0eae-4eb1-11eb-26a2-15c63cfa9cf0
+# ╠═b64b72c2-4eb0-11eb-2434-1b0824d7fa17
