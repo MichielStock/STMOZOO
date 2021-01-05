@@ -7,8 +7,9 @@ module ODEGenProg
 
 # you have to import everything you need for your module to work
 # if you use a new package, don't forget to add it in the package manager
-using ExprRules, ExprOptimization, Random, Calculus, TreeView #,Plots
+using ExprRules, ExprOptimization, Random, Calculus, AbstractTrees
 
+export AbstractTrees, AnnotationNode, Leaves, PostOrderDFS, PreOrderDFS, ShadowTree, StatelessBFS, Tree, TreeCharSet, TreeIterator, children, print_tree, treemap, treemap!
 export @dag, @dag_cse, @tree, @tree_with_call, LabelledTree, TreeView, make_dag, tikz_representation, walk_tree, walk_tree!
 export @sexpr, AbstractVariable, BasicVariable, Calculus, SymbolParameter, Symbolic, SymbolicVariable, check_derivative, check_gradient, check_hessian, check_second_derivative, deparse, derivative, differentiate, hessian, integrate, jacobian, processExpr, second_derivative, simplify, symbolic_derivative_bessel_list, symbolic_derivatives_1arg
 export AbstractRNG, MersenneTwister, Random, RandomDevice, bitrand, rand!, randcycle, randcycle!, randexp, randexp!, randn!, randperm, randperm!, randstring, randsubseq, randsubseq!, shuffle, shuffle!
@@ -17,7 +18,7 @@ export @grammar, ExprRules, ExpressionIterator, Grammar, NodeLoc, NodeRecycler, 
 
 
 # export all functions that are relevant for the user
-export fitness_test, define_grammar_1D, define_grammar_2D, fitness_1, fitness_2, fitness_3, fitness_4, fitness_2D, plot_solution, plot_solution_2D
+export fitness_0, define_grammar_1D, define_grammar_2D, fitness_1, fitness_2, fitness_3, fitness_4, fitness_2D, plot_solution, plot_solution_2D
 export crossover, mutate, permutate, select, genetic_program, fitness_basic
 #, ExprOptimization, GeneticProgram, optimize
 
@@ -77,7 +78,7 @@ Weighted by factor λ (here set to 100). I tested this for 5 different ODE's in 
 approximations. The problem now it that I have a different fitness function for each differential equation, see also comment below". 
 
 """
-function fitness_test(tree::RuleNode, grammar=grammar)
+function fitness_0(tree::RuleNode, grammar=grammar)
 	S = ExprRules.SymbolTable(grammar) #ExprRule's interpreter, should increase performance according to documentation
 	ex = ExprRules.get_executable(tree, grammar) #Get the expression from a given tree based on the grammar
     loss = 0.  #I minimize fitness 
@@ -125,7 +126,7 @@ function fitness_basic(tree::RuleNode)
 end
 
 """
-    hardcoded fitness function for y''=100y, y(0)=0, y(0)=10 -> y(x)=sin(10x)
+    hardcoded fitness function for y''=100y, y(0)=0, y'(0)=10 -> y(x)=sin(10x)
 """
 function fitness_1(tree::RuleNode, grammar::Grammar)
     S = ExprRules.SymbolTable(grammar) #ExprRule's interpreter, should increase performance according to documentation
@@ -275,69 +276,6 @@ function fitness_2D(tree::RuleNode, grammar::Grammar)
 	return loss
 end
 
-
-# """
-# 	Standardize ODE form: the problem is that now I test 4-5 ODE in my notebook but each time have a seperate fitness function
-# 	where I 'hardcoded' the system and boundary conditions. I guess it would be tidier if I have one function that could generate 
-# 	a proper fitness function based on a standardized input of ODE f(x,y,y',y'',...) = 0 + boundary conditions. 
-# """
-# function ODEinit(ODE,boundary,interval)
-# end
-
-# """
-# 	General fitness function
-# """
-# function fitness_general(tree::RuleNode, grammar::Grammar)
-# end
-
-#abstract type SelectionMethod end
-
-# """
-# 	FineGrainedTournamentSelection
-# Tournament selection method with tournament size k.
-# """
-# struct FineGrainedTournamentSelection <: ExprOptimization.GeneticPrograms.SelectionMethod 
-#     k::Int
-# end
-# FineGrainedTournamentSelection() = FineGrainedTournamentSelection(4)
-
-# """
-#     select(p::FineGrainedTournamentSelection, pop::Vector{RuleNode}, losses::Vector{Union{Float64,Missing}})
-# Tournament selection.
-# """
-# function select(p::FineGrainedTournamentSelection, pop::Vector{RuleNode}, 
-# 	losses::Vector{Union{Float64,Missing}})
-# 	δ = rand([-2,-1,0,1,2])
-#     ids = StatsBase.sample(1:length(pop), p.k + δ; replace=false, ordered=true) 
-#     i = ids[1] #assumes pop is sorted
-#     pop[i], i
-# end
-
-
-"""
-"""
-function plot_solution(ex::Expr, grammar::Grammar)
-#ex = get_executable(tree, grammar)
-S = ExprRules.SymbolTable(grammar) #ExprRule's interpreter, should increase performance according to documentation
-sol = Float64[]
-for x = 0.1:0.001:10.
-    S[:x] = x
-    push!(sol, Core.eval(S,ex))
-end
-return sol
-end	
-
-"""
-"""
-function plot_solution_2D(x,y)
-	g_2D = define_grammar_2D()
-	S_2D = SymbolTable(g_2D)
-	res_2D = results_2D.expr
-	S_2D[:x] = x
-	S_2D[:y] = y
-	return  Core.eval(S_2D,res_2D)
-end	
-
 """
 """
 function crossover(p, a, b, max_depth)
@@ -392,7 +330,7 @@ function permutate(a, p)
 end
 
 """
-	tournamentselection method, S number of winners ?
+    tournamentselection method, S number of winners ?
 """
 function select(y, S)
 	grammar = define_grammar_1D()
@@ -422,6 +360,36 @@ function genetic_program(f, population, k_max, S, C, M, max_depth)
 	expr = get_executable(final, grammar)
 	return (expr = expr, sol_iter = sol_iter, fit_iter = fit_iter)
 end
+
+"""
+	plot_solution(ex::Expr, gr::Grammar, s::Float64, t::Float64)
+
+Plot a function of one variable given as an expression `ex` and the corresponding grammar `gr` 
+over an interval from `s` to `t`. 
+"""
+function plot_solution(ex, grammar, s, t)
+S = ExprRules.SymbolTable(grammar) #ExprRule's interpreter, should increase performance according to documentation
+sol = Float64[]
+for x = s:0.01:t
+    S[:x] = x
+    push!(sol, Core.eval(S,ex))
+end
+return sol
+end	
+
+"""
+	plot_solution_2D(x::Float64, y::Float64)
+
+Define a function of two variables `x` and `y` compatible with 
+"""
+function plot_solution_2D(x,y)
+	g_2D = define_grammar_2D()
+	S_2D = SymbolTable(g_2D)
+	res_2D = results_2D.expr
+	S_2D[:x] = x
+	S_2D[:y] = y
+	return  Core.eval(S_2D,res_2D)
+end	
 
 #grammar = define_grammar_1D()
 #population = [rand(RuleNode, grammar, :R, 5) for i in 1:2000]

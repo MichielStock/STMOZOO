@@ -16,12 +16,18 @@
     rulenode_1D = rand(RuleNode, grammar_1D, :R, 10)
     rulenode_2D = rand(RuleNode, grammar_2D, :R, 10)
 
-    @test fitness_test(rulenode_1D, grammar_1D) isa Float64
+    @test fitness_0(rulenode_1D, grammar_1D) isa Float64
     @test fitness_1(rulenode_1D, grammar_1D) isa Float64
     @test fitness_2(rulenode_1D, grammar_1D) isa Float64
     @test fitness_3(rulenode_1D, grammar_1D) isa Float64
     @test fitness_4(rulenode_1D, grammar_1D) isa Float64
     @test fitness_2D(rulenode_2D, grammar_2D) isa Float64
+
+    @test mutate(a, p)
+    @test permutate(a, p)
+    @test crossover(p, a, b, max_depth)
+    @test select(y, S)
+    @test genetic_program(f, population, k_max, S, C, M, max_depth)
 
 
     #test every fitness function with solution -> 0, expr type
