@@ -170,7 +170,33 @@ Indeed, traditional ray tracers (RTs) use analytical methods to determine how fa
 
 What about more complicated shapes which cannnot be defined by an equation, i.e., shapes which are not [parametric](https://en.wikipedia.org/wiki/Parametric_surface) and/or [implicit](https://en.wikipedia.org/wiki/Implicit_surface)? In that case, the traditional approach is to model the shape using polygons. These polygons are then converted to triangles because it is generally much easier to ray trace each individual triangle rather than develop an algorithm to ray trace polygons.
 
-The Dijkstra RT does not have these drawbacks. Since we follow the ray pixel-by-pixel (and light will always travel using the shortest path), we do not need to define an intersection between a ray and an object. By extension, this also means that the Dijkstra RT works with any shape without a need for object conversion (e.g., to triangles). In addition, Dijkstra could be useful for when there are many objects in a scene. In contrast to traditional RT, the runtime of Dijkstra does not depend on the number of objects in the scene but rather on the size of the scene itself."""
+The Dijkstra RT does not have these drawbacks. Since we follow the ray pixel-by-pixel (and light will always travel using the shortest path), we do not need to define an intersection between a ray and an object. By extension, this also means that the Dijkstra RT works with any shape without a need for object conversion (e.g., to triangles). In addition, Dijkstra could be useful for when there are many objects in a scene. In contrast to traditional RT, the runtime of Dijkstra does not depend on the number of objects in the scene but rather on the size of the scene itself.
+
+Knowing this, we can go crazy with the scene creation! A final example is shown below, where the light source is placed in the center, and we trace its path to the scene boundaries. Observe how the rays try to avoid circles with a high index of refraction, and go towards circles with a low index of refraction."""
+
+# ╔═╡ c3a18370-4f42-11eb-0bbd-f7c18b3dd76d
+let
+	w, h = 80, 60
+	circles = draw_circle.([12, 10, 5, 2, 7, 5],	 # radii
+						   [60, 0, 15, 23, 45, 75],	 # w_center
+						   [15,40, 12, 50, 56, 45]); # h_center
+	circles_ior = [0.7, 0.9, 1.5, 0.3, 0.5, 1.2]
+	scene = create_scene(w, h, circles, circles_ior);
+	
+	source = (h÷2,w÷2) # Center of scene
+	# Create sinks for all four edges of the scene
+	sinks = hcat([(k,j) for j in (1, w), k=round.(Int64, LinRange(1, h, 30))],
+             [(i,k) for i in (1, h), k=round.(Int64, LinRange(1, w, 60))])
+	paths = [reconstruct_path(dijkstra(scene, source, sink)[2],
+        	source, sink) for sink in vcat(sinks...)]; # flatten sinks with vcat
+	
+	p = heatmap(scene, yflip=true, aspectratio=1, c=:redsblues, clim=(0,2))
+	plot_paths!(p, paths)
+	p
+end
+
+# ╔═╡ 68578a30-4f44-11eb-398c-91b744c83610
+md"""Thanks for reading, and hope you enjoyed the tutorial!"""
 
 # ╔═╡ 23afba50-4081-11eb-3c62-e3d9c19ece56
 md"""## References & Further Reading
@@ -179,8 +205,7 @@ md"""## References & Further Reading
 * A great introductory video about CG rendering and ray tracing [[2](https://www.youtube.com/watch?v=LAsnQoBUG4Q)].
 * Tutorials for implementation of the reverse tracing algorithm (and reflections): Python [[3](https://medium.com/swlh/ray-tracing-from-scratch-in-python-41670e6a96f9)] \(beginner\), Julia [[4](https://www.youtube.com/watch?v=MkkZb5V6HqM),[5](https://computationalthinking.mit.edu/Fall20/hw7/)] \(intermediate\).
 * Explanation of several concepts were taken from [scratchapixel](https://www.scratchapixel.com), in particular the overview of ray tracing [[6](https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-overview/ray-tracing-rendering-technique-overview)] and ray tracing polygons [[7](https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-polygon-mesh)].
-
-Thanks for reading, and hope you enjoyed the tutorial!"""
+"""
 
 # ╔═╡ Cell order:
 # ╟─e1779dd0-4056-11eb-0e2d-b5b2899e9b47
@@ -205,4 +230,6 @@ Thanks for reading, and hope you enjoyed the tutorial!"""
 # ╠═2846c3e2-405b-11eb-3a0e-f3686b82c142
 # ╟─e8696900-406c-11eb-1a6c-c78c52b20ac5
 # ╟─103d9170-406f-11eb-0a04-dd7f46ec64b2
+# ╟─c3a18370-4f42-11eb-0bbd-f7c18b3dd76d
+# ╟─68578a30-4f44-11eb-398c-91b744c83610
 # ╟─23afba50-4081-11eb-3c62-e3d9c19ece56
