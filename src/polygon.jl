@@ -5,7 +5,10 @@ module polygon
 using Images, Colors, Plots, Random
 import Base: in
 
-export Triangle, drawtriangle, olddrawtriangle, colordiffsum, samesideofline, triangleevolution, generatetriangle
+export triangleevolution, Triangle, drawtriangle, checktriangle, colordiffsum, samesideofline, checktriangle, getboundaries, generatetriangle, triangletournament, generatepopulation, Shape, drawimage, makechildpopulation, mutatetriangle, mutatepopulation
+# It was mentioned we should only export the functions useful for the user, but on the other hand I can only test the functions I export here
+# So currently I'm exporting everything (so I can test them) even though only triangleevolution is necessary for the user.
+# Any more elegant way to handle this?
 
 """
 A type Shape so the code can be made to work with e.g. rectangles as well. For now, only triangles are supported.
@@ -13,6 +16,8 @@ A type Shape so the code can be made to work with e.g. rectangles as well. For n
 abstract type Shape end
 
 """
+    Triangle <: Shape
+
 I define triangles with the coordinates of their 3 points and a color.
 """
 struct Triangle <: Shape
@@ -46,7 +51,10 @@ function samesideofline(point::Complex, trianglepoint::Complex, line::Tuple)
         # if a point is above the line, this value will be positive, if it's beneath the line, the value will be negative
         # if both points are on the same side of the line, both values will have the same sign
 
-        return sign(linediff_point) == sign(linediff_trianglepoint)
+        return linediff_point*linediff_trianglepoint >= 0
+        # This is the same as sign(linediff_point) == sign(linediff_trianglepoint)
+        # But if the point is ON the line it also returns true (which the sign(...) == sign(...) thing does not for some reason)
+        # And it should do that. A point on the line of a triangle is part of the triangle.
 
     else #x1 == x2: A vertical line: a cannot be calculated (division by 0)
         #equation is now x = b
@@ -55,7 +63,7 @@ function samesideofline(point::Complex, trianglepoint::Complex, line::Tuple)
         linediff_trianglepoint = real(trianglepoint) - b
         # Difference between point's x-value and line's x-value
         # Same principle as above
-        return sign(linediff_point) == sign(linediff_trianglepoint)
+        return linediff_point*linediff_trianglepoint >= 0
     end  
 
 end
@@ -81,13 +89,6 @@ in((x, y), shape::Shape) = in(complex(x, y), shape)
 Establishes the place of the box around a triangle 
 """
 function getboundaries(triangle::Triangle, m::Int, n::Int)
-    # xmin, xmax = extrema([real(triangle.p1), real(triangle.p2), real(triangle.p3)])
-    # xmin = Int(max(xmin, 1)) # In case a point of the triangle is outside of the canvas
-    # xmax = Int(min(xmax, n)) # In case a point of the triangle is outside of the canvas
-
-    # ymin, ymax = extrema([imag(triangle.p1), imag(triangle.p2), imag(triangle.p3)])
-    # ymin = Int(max(ymin, 1)) # Idem
-    # ymax = Int(min(ymax, m)) # Idem
 
     xmin = Int(min(real(triangle.p1), real(triangle.p2), real(triangle.p3)))
     xmin = max(xmin, 1) # In case xmin = 0
@@ -326,6 +327,11 @@ Picks 2 random triangles from a population and returns the one with the best (= 
 function triangletournament(population0::Array, pop_size::Int)
     contestant1 = population0[Int(ceil(rand()*pop_size))] #Choose a random image from the population, using ceil because 0 is not a valid index
     contestant2 = population0[Int(ceil(rand()*pop_size))]
+
+    while contestant1 == contestant2 #If it happened to pick the same individual twice, change it until you have 2 unique individuals
+        contestant2 = population0[Int(ceil(rand()*pop_size))]
+    end
+
     if contestant1[3] <= contestant2[3] # Lower score than contestant 2 means he's better
         winner = contestant1
     else
@@ -408,11 +414,25 @@ end
 """
     triangleevolution(image::String, number_triangles::Int, generations::Int)
 
-The actual algorithm. An evolutionary algorithm with the goal to approximate a given image as well as possible with a bunch of triangles.
+An evolutionary algorithm with the goal to approximate a given image as well as possible with a bunch of triangles.
 If a name for a gif is given (e.g. gifname = "nicegif.gif"), it will also make a gif out of the best individual's image for every generation.
-There's a lot of parameters here to play around with, try out some crazy stuff! 
+There's a lot of parameters here to play around with, try out some crazy stuff!
+Inputs:
+
+REQUIRED
+- image: The name of your target image
+
+OPTIONAL
+- number_triangles: The amount of triangles the algorithm uses to try and recreate your image
+- generations: The amount of generations in the evolutionary algorithm
+- pop_size: The population size per generation
+- elitism_freq: The fraction of your population that gets to be part of the elite. The best individuals of your generation will become part of the elite and get a free pass to the next generation.
+- newblood_freq: The fraction of your population that gets replaced by new, random individuals every generation.
+- mutation_freq: The chance for a triangle (= "a gene") of an individual to get mutated every generation
+- gifname: If you want to make a gif out of the evolutionary proces, enter a gifname like "amazinggif.gif"
+- fps: The FPS of your gif
 """
-function triangleevolution(image::String = "src/figures/TotoroTester4.jpeg"; gifname = nothing, fps = 2, number_triangles::Int = 25, generations::Int = 50, pop_size::Int = 70, elitism_freq::Number = 0.15, newblood_freq::Number =  0.03, mutation_freq::Number = 0.07)
+function triangleevolution(image::String = "src/figures/TotoroTester4.jpeg"; number_triangles::Int = 25, generations::Int = 50, pop_size::Int = 70, elitism_freq::Number = 0.15, newblood_freq::Number =  0.03, mutation_freq::Number = 0.07, gifname = nothing, fps = 2)
     
     makegif = !isnothing(gifname) # Only make the result into a gif if the user enters a name for it
 

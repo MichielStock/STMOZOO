@@ -8,7 +8,7 @@
     using STMOZOO.polygon, Colors  # load YOUR module
 
     @testset "samesideofline" begin
-        line = [1 + 1im, 2 + 3im]
+        line = (1 + 1im, 2 + 3im)
         point1 = 0 + 3im #left of line
         point2 = 1 + 4im #left
         point3 = 2 + 3.3im #left
@@ -68,22 +68,23 @@
         end 
     end
 
+    m = 232
+    n = 412
+    testtriangle = Vector{Triangle}(undef, 10)
+    testtriangle[1] = Triangle(20 + 30im, 400 + 250im, 450 + 120im, RGB(1, 0, 0)) # Good triangle
+    testtriangle[2] = Triangle(20 + 30im, 100 + 100im, 50 + 120im, RGB(1, 1, 0)) # Good triangle
+    testtriangle[3] = Triangle(300 + 450im, 100 + 100im, 60 + 400im, RGB(1, 0, 1)) # Good triangle
+    testtriangle[4] = Triangle(300 + 100im, 300 + 400im, 60 + 100im, RGB(0, 1, 0)) # Good triangle
+    testtriangle[5] = Triangle(-100 + 50im, 200 + 150im, 100 + 250im, RGB(0.5, 0, 0)) # Good triangle
+
+    testtriangle[6] = Triangle(446 + 193im, 401 + 246im, 495 + 298im, RGB(1, 0, 0)) # STUPID triangle (all points outside of canvas)
+    testtriangle[7] = Triangle(59 + 189im, 58 + 270im, 57 + 5im, RGB(1, 0, 1)) # STUPID triangle (too thin)
+    testtriangle[8] = Triangle(-59 + 189im, -20 + 63im, -200 + 69im, RGB(1, 0, 1)) # STUPID triangle (points outside of canvas, all x are wrong)
+    testtriangle[9] = Triangle(40 + 150im, 239 + 151im, 20 + 150im, RGB(1, 0, 1)) # STUPID triangle (too thin)
+    testtriangle[10] = Triangle(211 + 209im, 338 + 334im, 544 + 534im, RGB(1, 0, 0)) # STUPID triangle (very elongated)
+
+
     @testset "checktriangle" begin
-        m = 232
-        n = 412
-        testtriangle = Vector{Triangle}(undef, 10)
-        testtriangle[1] = Triangle(20 + 30im, 400 + 250im, 450 + 120im, RGB(1, 0, 0)) # Good triangle
-        testtriangle[2] = Triangle(20 + 30im, 100 + 100im, 50 + 120im, RGB(1, 1, 0)) # Good triangle
-        testtriangle[3] = Triangle(300 + 450im, 100 + 100im, 60 + 400im, RGB(1, 0, 1)) # Good triangle
-        testtriangle[4] = Triangle(300 + 100im, 300 + 400im, 60 + 100im, RGB(0, 1, 0)) # Good triangle
-        testtriangle[5] = Triangle(-100 + 50im, 200 + 150im, 100 + 250im, RGB(0.5, 0, 0)) # Good triangle
-
-        testtriangle[6] = Triangle(446 + 193im, 401 + 246im, 495 + 298im, RGB(1, 0, 0)) # STUPID triangle (all points outside of canvas)
-        testtriangle[7] = Triangle(59 + 189im, 58 + 270im, 57 + 5im, RGB(1, 0, 1)) # STUPID triangle (too thin)
-        testtriangle[8] = Triangle(-59 + 189im, -20 + 63im, -200 + 69im, RGB(1, 0, 1)) # STUPID triangle (points outside of canvas, all x are wrong)
-        testtriangle[9] = Triangle(40 + 150im, 239 + 151im, 20 + 150im, RGB(1, 0, 1)) # STUPID triangle (too thin)
-        testtriangle[10] = Triangle(211 + 209im, 338 + 334im, 544 + 534im, RGB(1, 0, 0)) # STUPID triangle (very elongated)
-
         for i in 1:5
             @test checktriangle(testtriangle[i], m, n) == false # These are not stupid triangles
         end
@@ -93,5 +94,39 @@
         end
     end
 
+    @testset "getboundaries" begin
+        @test getboundaries(testtriangle[1], m, n) == (20, n, 30, m)
+        @test getboundaries(testtriangle[5], m, n) == (1, 200, 50, m)
+    end
 
+    @testset "generatetriangle" begin
+        @test typeof(generatetriangle(m, n)) == Triangle
+        anystupids = false
+        for i in 1:100
+            anystupids = anystupids || checktriangle(generatetriangle(m, n), m, n) # Has one of the generated triangles been a stupid triangle?
+        end
+        @test anystupids == false
+    end
+
+    @testset "colordiffsum" begin
+        whitebox = fill(RGB(1, 1, 1), 100, 100)
+        blackbox = fill(RGB(0, 0, 0), 100, 100)
+        bluebox = fill(RGB(0, 0, 1), 100, 100)
+        purplebox = fill(RGB(1, 0, 1), 100, 100)
+        greenbox = fill(RGB(0, 1, 0), 100, 100)
+        @test colordiffsum(whitebox, whitebox) == 0
+        @test colordiffsum(whitebox, blackbox) > colordiffsum(whitebox, greenbox)
+        @test colordiffsum(bluebox, purplebox) < colordiffsum(greenbox, purplebox)
+    end
+
+    @testset "triangletournament" begin
+        target = fill(RGB(0, 1, 1), 100, 100)
+        pop = generatepopulation(3, 10, target)
+        sort!(pop, by = x -> x[3])
+        anyweakest = false
+        for i in 1:100
+            anyweakest = anyweakest || triangletournament(pop, 3) == pop[3] # Did the worst individual of the population ever win? (Shouldn't happen)
+        end
+        @test anyweakest == false
+    end
 end
