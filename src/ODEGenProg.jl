@@ -102,7 +102,7 @@ end
     fitness_basic(tree::RuleNode)
 	
 Fitness function for the differential equation y'(x) - y(x) = 0, 
-with boundary condition y(0) = 1. The expected solution is y(x) = exp(x). It returns the fitness 
+with boundary condition y(1) = ℯ. The expected solution is y(x) = exp(x). It returns the fitness 
 for a given expression tree based on a given grammar by evaluating the expression tree over a specific interval of existence.
 Penalizes deviation from boundary conditions weighted by factor λ = 100.
 """
@@ -111,7 +111,7 @@ function fitness_basic(tree::RuleNode)
 	S = ExprRules.SymbolTable(grammar) 
 	ex = ExprRules.get_executable(tree, grammar) 
     loss = 0.   
-    for x = 0.0:0.1:1.0
+    for x = 0.1:0.1:1.0
 		S[:x] = x
 		loss += try (Core.eval(S,differentiate(ex)) - Core.eval(S,ex))^2
 		catch
@@ -119,9 +119,9 @@ function fitness_basic(tree::RuleNode)
 		end
 	end
 	
-	S[:x] = 0
+	S[:x] = 1.
 	λ = 100.
-	loss += try λ * (((Core.eval(S,ex)-1))^2)
+	loss += try λ * (((Core.eval(S,ex)-ℯ))^2)
 	catch
 		return Inf
 	end
@@ -371,9 +371,10 @@ function permutate(a, p)
 end
 
 """
-	select(y, S)
+	select(y::Vector{Float64}, S::Int)
 Tournament selection with tournament size `S`, where each
-parent is the fittest out of `S` randomly chosen expression trees of the population.
+parent is the fittest, given a vector `y` with fitnesses for the whole population, 
+out of `S` randomly chosen expression trees of the population.
 """
 function select(y, S)
 	grammar = define_grammar_1D()
@@ -381,7 +382,8 @@ function select(y, S)
 	p = randperm(length(y))
 	p[argmin(y[p[1:S]])]
 	end
-	return [[getparent(), getparent()] for i in y]
+	return [[getparent(), getparent()] for i in y] #returns a vector of vectors of 2 expression trees 
+	#that will serve as input for crossing over
 end
 
 """

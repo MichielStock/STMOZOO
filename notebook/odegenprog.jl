@@ -51,7 +51,7 @@ S = SymbolTable(grammar)
 
 # ╔═╡ 08fdb830-4efd-11eb-3f3d-d18ec22bf313
 md""" Next is a simple example to illuminate the usage of grammars to construct trees. 
-This tree represents the function f(x)=x+2. The tree structure should be visible in the REPL"""
+This tree represents the function f(x)=x+2. The tree structure should be visible in the REPL."""
 
 # ╔═╡ ee453bb0-4ef9-11eb-148a-514618b54711
 tree = (RuleNode(10, [RuleNode(2), RuleNode(18)]))
@@ -99,14 +99,15 @@ sort(fitness_basic.(population))
 
 # ╔═╡ 1ce96da0-505e-11eb-0c0b-bfa9f83610e6
 begin
-	scatter(fitness_basic.(population),label = false, title = "Fitness of population")
+	scatter(fitness_basic.(population),label = false, title = "Fitness of starting population")
 	xlabel!("genotype")
 	ylabel!("fitness")
+	ylims!((0.,500.))
 end
 
 # ╔═╡ 6ea07710-505e-11eb-2e5b-c587005d5000
-md""" Subsequently the population will undergo selection, crossing over and mutation. I sticked to tournament selection with tournament size `S`, where each
-parent is the fittest out of `S` randomly chosen expression trees of the population. I refer to the documentation for the specifics of these methods."""
+md""" Subsequently the population will undergo selection, crossing over and mutation as shown below. I sticked to tournament selection with tournament size `S`, where each
+parent is the fittest out of `S` randomly chosen expression trees of the population. I refer to the documentation for the specifics of these functions."""
 
 # ╔═╡ 8ca83b30-4c67-11eb-39df-cd1c840e847c
 parents = select(fitness_basic.(population), 2)
@@ -115,10 +116,13 @@ parents = select(fitness_basic.(population), 2)
 children = [crossover(0.3, population[p[1]], population[p[2]], 5) for p in parents]
 
 # ╔═╡ 04a27430-4c67-11eb-34fd-0fd565c829ab
-populationS = permutate.(children, 0.3)
+populationP = permutate.(children, 0.3)
+
+# ╔═╡ 79e43510-5065-11eb-16fc-f58c5e10c3e3
+populationM = mutate.(children, 0.3)
 
 # ╔═╡ c44ee7a0-4c67-11eb-1cf6-abfa18225908
-fittest = population[argmin(fitness_basic.(population))]
+fittest = populationP[argmin(fitness_basic.(populationP))]
 
 # ╔═╡ 3c815230-4c68-11eb-068d-43b594d30e2c
 typeof(fittest)
@@ -145,7 +149,7 @@ gp_anim.fit_iter
 gp_anim.sol_iter
 
 # ╔═╡ d67b6110-505e-11eb-1d9d-7f38302c0d44
-md""" The fittest solutions of each different generation can be plotted in an interactive way to visually inspect convergence to the exact sollution, which in this case is f(x) = exp(x)."""
+md""" The fittest solutions of each different generation can be plotted in an interactive way to visually inspect convergence to the exact solution, which in this case is f(x) = exp(x)."""
 
 # ╔═╡ 3f3df2be-4b0b-11eb-3571-dba4fedcbc52
 md"""
@@ -161,8 +165,8 @@ plot(x_i,y_i, label = "Analytic solution", color = "black", linewidth = 3)
 
 y_ti = plot_solution(gp_anim.sol_iter[Ni], grammar, 0.1, 10.)
 plot!(x_i,y_ti, linestyle =:dash, label = "GP approximation", linewidth = 3)
-xlims!((0.,10.))
-ylims!((0.,10.))
+xlims!((0.,5.))
+ylims!((0.,5.))
 end
 
 # ╔═╡ 33b7e230-4f02-11eb-0850-99bb90897832
@@ -368,7 +372,7 @@ Tsoulos, I. G., & Lagaris, I. E. (2006). Solving differential equations with gen
 # ╠═3fca38a0-4efa-11eb-3b0e-8d2ccafe2772
 # ╠═15826632-4efa-11eb-3b23-abe491db2b75
 # ╟─59e439a0-505a-11eb-3334-eddf62db2840
-# ╠═f8a66d22-5059-11eb-041b-f1e31f7c2418
+# ╟─f8a66d22-5059-11eb-041b-f1e31f7c2418
 # ╟─be2c55b0-4ef6-11eb-0bb0-b725aa483399
 # ╟─1aa00a80-4484-11eb-3d2f-8f4fdb6a4c61
 # ╟─ac7a2a00-505d-11eb-3a07-95b08b1fef2b
@@ -381,6 +385,7 @@ Tsoulos, I. G., & Lagaris, I. E. (2006). Solving differential equations with gen
 # ╠═8ca83b30-4c67-11eb-39df-cd1c840e847c
 # ╠═0b708cc0-4c67-11eb-1810-5be9ab23eb05
 # ╠═04a27430-4c67-11eb-34fd-0fd565c829ab
+# ╠═79e43510-5065-11eb-16fc-f58c5e10c3e3
 # ╠═c44ee7a0-4c67-11eb-1cf6-abfa18225908
 # ╠═3c815230-4c68-11eb-068d-43b594d30e2c
 # ╠═d5ba4930-4c67-11eb-1bad-89b269317466
@@ -390,9 +395,9 @@ Tsoulos, I. G., & Lagaris, I. E. (2006). Solving differential equations with gen
 # ╠═b3c146d0-4a41-11eb-0b43-9fea8083390e
 # ╠═40f4e050-4c65-11eb-25a9-07ad6a2c3876
 # ╠═c0caadd0-4a41-11eb-1b06-138c65916be3
-# ╟─d67b6110-505e-11eb-1d9d-7f38302c0d44
-# ╠═3f3df2be-4b0b-11eb-3571-dba4fedcbc52
-# ╟─61b66940-4b0b-11eb-1e14-311fb485c4d2
+# ╠═d67b6110-505e-11eb-1d9d-7f38302c0d44
+# ╟─3f3df2be-4b0b-11eb-3571-dba4fedcbc52
+# ╠═61b66940-4b0b-11eb-1e14-311fb485c4d2
 # ╟─33b7e230-4f02-11eb-0850-99bb90897832
 # ╠═3ad61410-3cce-11eb-0e65-ebf59517000e
 # ╟─9c8a99b0-4f02-11eb-2eed-bf59946b8e12
