@@ -20,7 +20,7 @@ export @grammar, ExprRules, ExpressionIterator, Grammar, NodeLoc, NodeRecycler, 
 
 # export all functions that are relevant for the user
 export fitness_0, define_grammar_1D, define_grammar_2D, fitness_1, fitness_2, fitness_3, fitness_4, fitness_2D, plot_solution, plot_solution_2D
-export crossover, mutate, permutate, select, genetic_program, fitness_basic
+export crossover, mutate, permutate, genetic_program, fitness_basic, tournament_selection, truncation_selection
 #, ExprOptimization, GeneticProgram, optimize
 
 """
@@ -371,12 +371,12 @@ function permutate(a, p)
 end
 
 """
-	select(y::Vector{Float64}, S::Int)
+	tournament_selection(y::Vector{Float64}, S::Int)
 Tournament selection with tournament size `S`, where each
 parent is the fittest, given a vector `y` with fitnesses for the whole population, 
 out of `S` randomly chosen expression trees of the population.
 """
-function select(y, S)
+function tournament_selection(y, S)
 	grammar = define_grammar_1D()
 	getparent() = begin
 	p = randperm(length(y))
@@ -385,6 +385,16 @@ function select(y, S)
 	return [[getparent(), getparent()] for i in y] #returns a vector of vectors of 2 expression trees 
 	#that will serve as input for crossing over
 end
+
+"""
+	truncation_selection(y::Vector{Float64}, T::Int)
+Truncation `selection` that chooses parents from among the
+best T chromosomes in the population.
+"""
+function truncation_selection(y, T)
+	p = sortperm(y)
+	return [p[rand(1:T, 2)] for i in y]
+	end
 
 """
 	genetic_program(f::Function, population::Vector{RuleNode}, k_max::Int, S:Int, C:Float64, M:Float64, max_depth:Int)
@@ -399,9 +409,10 @@ function genetic_program(f, population, k_max, S, C, M, max_depth)
 	sol_iter = Expr[] #keeps track of best solution for every generation
 	fit_iter = Float64[] #keeps track of fitness of best solution for every generation
 	for k in 1 : k_max #iterates over k_max generations
-		parents = select(f.(population), S) #selection step
+		parents = truncation_selection(f.(population), S) #selection step
 		children = [crossover(C, population[p[1]], population[p[2]], max_depth) for p in parents] #crossover step
-		population .= permutate.(children, M) #Ref(M) #mutation step
+		population .= mutate.(children, M) #Ref(M) #mutation step
+		population = children
 		fittest = population[argmin(f.(population))] #finds the best solution 
 		fittest_expr = get_executable(fittest, grammar) #gets the expression for the best solution
 		push!(sol_iter, fittest_expr)
@@ -409,7 +420,8 @@ function genetic_program(f, population, k_max, S, C, M, max_depth)
 	end
 	final = population[argmin(f.(population))]
 	expr = get_executable(final, grammar)
-	return (expr = expr, sol_iter = sol_iter, fit_iter = fit_iter)
+	pop_fit = f.(population)
+	return (expr = expr, sol_iter = sol_iter, fit_iter = fit_iter, pop_fit = pop_fit)
 end
 
 """

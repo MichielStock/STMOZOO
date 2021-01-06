@@ -86,7 +86,7 @@ weighted by factor λ (default = 100) in accordance with Tsoulos and Lagaris (20
 md"""Below I show the general outline of the method for the ODE f'(x) - f(x) = 0. I start from a randomly generated population of expression trees."""
 
 # ╔═╡ 517c7490-3b2d-11eb-2470-1f864bb57d95
-population = [rand(RuleNode, grammar, :R, 5) for i in 1:1000] #limits max depth to 5
+population = [rand(RuleNode, grammar, :R, 5) for i in 1:2000] #limits max depth to 5
 
 # ╔═╡ ceb98f22-505d-11eb-32b7-fd601b0f8cf9
 md""" Subsequently the fitness for each expression tree of this population can be calculated with the fitness function.""" 
@@ -110,7 +110,7 @@ md""" Subsequently the population will undergo selection, crossing over and muta
 parent is the fittest out of `S` randomly chosen expression trees of the population. I refer to the documentation for the specifics of these functions."""
 
 # ╔═╡ 8ca83b30-4c67-11eb-39df-cd1c840e847c
-parents = select(fitness_basic.(population), 2)
+parents = truncation_selection(fitness_basic.(population), 2)
 
 # ╔═╡ 0b708cc0-4c67-11eb-1810-5be9ab23eb05
 children = [crossover(0.3, population[p[1]], population[p[2]], 5) for p in parents]
@@ -124,23 +124,17 @@ populationM = mutate.(children, 0.3)
 # ╔═╡ c44ee7a0-4c67-11eb-1cf6-abfa18225908
 fittest = populationP[argmin(fitness_basic.(populationP))]
 
-# ╔═╡ 3c815230-4c68-11eb-068d-43b594d30e2c
-typeof(fittest)
-
 # ╔═╡ d5ba4930-4c67-11eb-1bad-89b269317466
 fittest_expr = get_executable(fittest, grammar)
 
 # ╔═╡ dcffb4a0-4c67-11eb-03bd-91f02ea44521
 fitness_basic(fittest)
 
-# ╔═╡ 1cc7fbb2-4c68-11eb-07bf-5d9556033910
-fitness_0(fittest, grammar)
+# ╔═╡ 5ef5f700-506c-11eb-3f9c-3fa6eff67552
+md""" Previous steps are combined into a single genetic program algorithm. In this case it is run for 50 generations."""
 
 # ╔═╡ 85a04e50-4a40-11eb-1a8b-7d5e3e9b122c
-gp_anim = genetic_program(fitness_basic, population, 50, 2,  0.3, 0.3, 5)
-
-# ╔═╡ b3c146d0-4a41-11eb-0b43-9fea8083390e
-gp_anim.expr
+gp_anim = genetic_program(fitness_basic, population, 30, 2,  0.3, 0.3, 5)
 
 # ╔═╡ 40f4e050-4c65-11eb-25a9-07ad6a2c3876
 gp_anim.fit_iter
@@ -148,12 +142,20 @@ gp_anim.fit_iter
 # ╔═╡ c0caadd0-4a41-11eb-1b06-138c65916be3
 gp_anim.sol_iter
 
+# ╔═╡ 9d599310-506e-11eb-3327-0954439a6b11
+begin
+	scatter(gp_anim.pop_fit,label = false, title = "Fitness of population after selection")
+	xlabel!("genotype")
+	ylabel!("fitness")
+	ylims!((0.,500.))
+end
+
 # ╔═╡ d67b6110-505e-11eb-1d9d-7f38302c0d44
 md""" The fittest solutions of each different generation can be plotted in an interactive way to visually inspect convergence to the exact solution, which in this case is f(x) = exp(x)."""
 
 # ╔═╡ 3f3df2be-4b0b-11eb-3571-dba4fedcbc52
 md"""
--Ni $(@bind Ni Slider(1:50, default=50, show_value=true))
+-Ni $(@bind Ni Slider(1:30, default=30, show_value=true))
 """
 
 # ╔═╡ 61b66940-4b0b-11eb-1e14-311fb485c4d2
@@ -163,7 +165,7 @@ y_i = exp.(x_i)
 
 plot(x_i,y_i, label = "Analytic solution", color = "black", linewidth = 3)
 
-y_ti = plot_solution(gp_anim.sol_iter[Ni], grammar, 0.1, 10.)
+y_ti = plot_solution(reverse(gp_anim.sol_iter)[Ni], grammar, 0.1, 10.)
 plot!(x_i,y_ti, linestyle =:dash, label = "GP approximation", linewidth = 3)
 xlims!((0.,5.))
 ylims!((0.,5.))
@@ -204,11 +206,11 @@ y_t2 = plot_solution(results_0.expr, grammar, 0.1, 10.)
 plot!(x_t,y_t2, linestyle =:dash, label = "GP approximation", linewidth = 3)
 end
 
-# ╔═╡ 3cf8f410-3cce-11eb-277e-f5cf01627feb
-results_1 = optimize(g, grammar, :R, fitness_1)
-
 # ╔═╡ 4daf91a0-4f03-11eb-050e-0f978842a720
 md""" The next ODE I checked is y'' - 100y = 0, with boundary conditions y(0) = 0 and y'(0) = 10 on the interval [0,1]. The expected solution is f(x)= sin(10x)."""
+
+# ╔═╡ 3cf8f410-3cce-11eb-277e-f5cf01627feb
+results_1 = optimize(g, grammar, :R, fitness_1)
 
 # ╔═╡ 3cf96940-3cce-11eb-3d47-f762c438e963
 (results_1.expr, results_1.loss)
@@ -387,25 +389,24 @@ Tsoulos, I. G., & Lagaris, I. E. (2006). Solving differential equations with gen
 # ╠═04a27430-4c67-11eb-34fd-0fd565c829ab
 # ╠═79e43510-5065-11eb-16fc-f58c5e10c3e3
 # ╠═c44ee7a0-4c67-11eb-1cf6-abfa18225908
-# ╠═3c815230-4c68-11eb-068d-43b594d30e2c
 # ╠═d5ba4930-4c67-11eb-1bad-89b269317466
 # ╠═dcffb4a0-4c67-11eb-03bd-91f02ea44521
-# ╠═1cc7fbb2-4c68-11eb-07bf-5d9556033910
+# ╟─5ef5f700-506c-11eb-3f9c-3fa6eff67552
 # ╠═85a04e50-4a40-11eb-1a8b-7d5e3e9b122c
-# ╠═b3c146d0-4a41-11eb-0b43-9fea8083390e
 # ╠═40f4e050-4c65-11eb-25a9-07ad6a2c3876
 # ╠═c0caadd0-4a41-11eb-1b06-138c65916be3
-# ╠═d67b6110-505e-11eb-1d9d-7f38302c0d44
+# ╠═9d599310-506e-11eb-3327-0954439a6b11
+# ╟─d67b6110-505e-11eb-1d9d-7f38302c0d44
 # ╟─3f3df2be-4b0b-11eb-3571-dba4fedcbc52
-# ╠═61b66940-4b0b-11eb-1e14-311fb485c4d2
+# ╟─61b66940-4b0b-11eb-1e14-311fb485c4d2
 # ╟─33b7e230-4f02-11eb-0850-99bb90897832
 # ╠═3ad61410-3cce-11eb-0e65-ebf59517000e
 # ╟─9c8a99b0-4f02-11eb-2eed-bf59946b8e12
 # ╠═408525a0-44b1-11eb-115f-fd737e2887a4
 # ╠═41e10c20-44b1-11eb-0684-e1b9539e2de0
 # ╟─e48e17f0-3fda-11eb-07f5-c3a3e3bb07b5
-# ╠═3cf8f410-3cce-11eb-277e-f5cf01627feb
 # ╟─4daf91a0-4f03-11eb-050e-0f978842a720
+# ╠═3cf8f410-3cce-11eb-277e-f5cf01627feb
 # ╠═3cf96940-3cce-11eb-3d47-f762c438e963
 # ╟─37bdd520-44b1-11eb-2927-4f1bd6f21b99
 # ╟─07c74990-44c1-11eb-27f0-7b786b4380ae
