@@ -23,11 +23,16 @@
     @test fitness_4(rulenode_1D, grammar_1D) isa Float64
     @test fitness_2D(rulenode_2D, grammar_2D) isa Float64
 
-#=     @test mutate(a, p)
-    @test permutate(a, p)
-    @test crossover(p, a, b, max_depth)
-    @test select(y, S)
-    @test genetic_program(f, population, k_max, S, C, M, max_depth) =#
+    a = rand(RuleNode, grammar_1D, :R, 10)
+    b = rand(RuleNode, grammar_1D, :R, 10)
+    p = 0.5
+    max_depth = 5
+
+    @test mutate(a, p) isa RuleNode
+    @test permutate(a, p) isa RuleNode
+    @test crossover(p, a, b, max_depth) isa RuleNode
+    #@test select(y, S)
+    #@test genetic_program(f, population, k_max, S, C, M, max_depth) =#
 
 
     #test every fitness function with solution -> 0, expr type
@@ -35,13 +40,13 @@
 
     #I switched to using the build in GP from the ExprOptimization package with my custom fitness functions because its much faster to evaluate than a manual implementation. 
     #This test evalutates the fitness_test function for ODE f'(x) - f(x) = 0, with boundary condition f(0) = 1. The expected solution is f(x) = exp(x)
-    g = ExprOptimization.GeneticProgram(250,50,5,0.3,0.3,0.4) 
-    results_gp = ExprOptimization.optimize(g, grammar_1D, :R, fitness_test)
+    g = ExprOptimization.GeneticProgram(2000,100,5,0.3,0.3,0.4) 
+    results_gp = ExprOptimization.optimize(g, grammar_1D, :R, fitness_0)
     @test results_gp.expr isa Expr
     @test results_gp.loss ≈ 0.
     #@test results_gp.expr == :(exp(x))
 
-    @test plot_solution(:(exp(x)),grammar_1D) isa Array{Float64,1}
+    @test plot_solution(:(exp(x)),grammar_1D,0.,1.) isa Array{Float64,1}
 
     end
 

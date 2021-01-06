@@ -307,18 +307,18 @@ end
 
 """
 	crossover(p::Float64, a::RuleNode, b::RuleNode, max_depth::Int)
-Crossover genetic operator. Picks a random node from `a`, then picks a random node 
-from `b` that has the same type, then replaces the subtree. The crossover is constrained to 
+Crossover genetic operator. Picks a random node from an expression tree `a`, then picks a random node 
+from an expression tree `b` that has the same type, then replaces the subtree. The crossover is constrained to 
 a maximum depth `max depth` so the size of expression trees doesn't get too large.
 """
 function crossover(p, a, b, max_depth)
 	grammar = define_grammar_1D()
 	child = deepcopy(a)
-	if rand() < p
-		crosspoint = sample(b)
-		typ = return_type(grammar, crosspoint.ind)
+	if rand() < p #mutation probability p
+		crosspoint = sample(b) #samples random node from b
+		typ = return_type(grammar, crosspoint.ind) #checks type
 		d_subtree = depth(crosspoint)
-		d_max = max_depth + 1 - d_subtree
+		d_max = max_depth + 1 - d_subtree #constraints max depth
 		if d_max > 0 && contains_returntype(child, grammar, typ, d_max)
 			loc = sample(NodeLoc, child, typ, grammar, d_max)
 			insert!(child, loc, deepcopy(crosspoint))
@@ -335,11 +335,11 @@ then replaces the subtree with a random one.
 function mutate(a, p)
 	grammar = define_grammar_1D()
 	child = deepcopy(a)
-	if rand() < p
-		loc = sample(NodeLoc, child)
-		typ = return_type(grammar, get(child, loc).ind)
-		subtree = rand(RuleNode, grammar, typ)
-		insert!(child, loc, subtree)
+	if rand() < p #mutation probability p
+		loc = sample(NodeLoc, child) #picks random node from expression tree
+		typ = return_type(grammar, get(child, loc).ind) #checks the type of the random node
+		subtree = rand(RuleNode, grammar, typ) #creates a new random subtree that starts in the correct node type
+		insert!(child, loc, subtree) #substitutes new subtree into old expression tree
 	end
 	return child
 end
@@ -352,7 +352,7 @@ The children of a randomly chosen node are randomly permuted.
 function permutate(a, p)
 	grammar = define_grammar_1D()
 	child = deepcopy(a)
-	if rand() < p
+	if rand() < p #mutation probability p
 		node = sample(child)
 		n = length(node.children)
 		types = child_types(grammar, node)
