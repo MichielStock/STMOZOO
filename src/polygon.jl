@@ -5,7 +5,7 @@ module polygon
 using Images, Colors, Plots, Random
 import Base: in
 
-export triangleevolution, Triangle, drawtriangle, checktriangle, colordiffsum, samesideofline, checktriangle, getboundaries, generatetriangle, triangletournament, generatepopulation, Shape, drawimage, makechildpopulation, mutatetriangle, mutatepopulation
+export triangleevolution, Triangle, drawtriangle, colordiffsum, samesideofline, checktriangle, getboundaries, generatetriangle, triangletournament, generatepopulation, Shape, drawimage, makechildpopulation, mutatetriangle, mutatepopulation
 # It was mentioned we should only export the functions useful for the user, but on the other hand I can only test the functions I export here
 # So currently I'm exporting everything (so I can test them) even though only triangleevolution is necessary for the user.
 # Any more elegant way to handle this?
@@ -264,7 +264,7 @@ function checktriangle(triangle::Triangle, m::Int, n::Int)
     dist1 = abs(triangle.p1 - midpoint)
     dist2 = abs(triangle.p2 - midpoint)
     dist3 = abs(triangle.p3 - midpoint)
-    isStretchyBoi = max(dist1, dist2, dist3) > 2.1*min(dist1, dist2, dist3) && return true
+    isStretchyBoi = max(dist1, dist2, dist3) > 2*min(dist1, dist2, dist3) && return true
     # An elongated triangle has a big difference in max distance from a point to the centroid to min distance from a point to the centroid (2 is a good threshhold)
 
     return false # Only gets to this return false if all the other returns true coniditions weren't met (and thus the triangle isnt stupid)
@@ -432,7 +432,7 @@ OPTIONAL
 - gifname: If you want to make a gif out of the evolutionary proces, enter a gifname like "amazinggif.gif"
 - fps: The FPS of your gif
 """
-function triangleevolution(image::String = "src/figures/TotoroTester4.jpeg"; number_triangles::Int = 25, generations::Int = 50, pop_size::Int = 70, elitism_freq::Number = 0.15, newblood_freq::Number =  0.03, mutation_freq::Number = 0.07, gifname = nothing, fps = 2)
+function triangleevolution(image::String = "src/figures/TotoroTester.jpeg"; number_triangles::Int = 25, generations::Int = 50, pop_size::Int = 70, elitism_freq::Number = 0.10, newblood_freq::Number =  0.03, mutation_freq::Number = 0.07, gifname = nothing, fps = 2)
     
     makegif = !isnothing(gifname) # Only make the result into a gif if the user enters a name for it
 
@@ -440,7 +440,17 @@ function triangleevolution(image::String = "src/figures/TotoroTester4.jpeg"; num
     newblood_size = Int(round(pop_size*newblood_freq)) # A part of the population will be replaced with new, random individuals every generation.
     # This keeps our gene pool fresh and sparkly!
 
-    img = RGB.(load(image)) # png images are loaded as RGBA (with opacity which we dont use) so we convert those to RGB (jpgs load as RGB by default)
+    if image[1:5] == "https" #file from internet: credits to Dan Getz from stackoverflow for this
+        img = mktemp() do fn,f
+            download(image, fn)
+            load(fn)
+        end
+    else #local file
+        img = load(image) 
+    end
+
+    img = RGB.(img) # png images are loaded as RGBA (with opacity which we dont use) so we convert those to RGB (jpgs load as RGB by default)
+
     m = length(img[:, 1])
     n = length(img[1, :])
     canvas = fill(RGB(1, 1, 1), m, n)
