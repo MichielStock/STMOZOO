@@ -6,12 +6,6 @@
     test_mult = [0 0 0 4 0 0 0 0; 0 0 0 7 0 0 0 0; 0 0 0 0 2 0 0 0; 0 0 0 0 5 0 5 10;
                  0 0 0 0 0 8 0 0; 0 0 0 0 0 0 0 0; 0 0 0 0 0 0 0 0; 0 0 0 0 0 0 0 0] # case
 
-    @testset "cap" begin
-        @test cap(test_mat) isa Array # test type
-        @test all(cap(test_mat) .>= 0) # # test property
-        @test length(cap(test_mat)) == 5 # test case
-    end
-
     @testset "res_network" begin
         @test res_network(test_mat, cur_mat) isa Array{Int,2} # test type
         @test res_network(test_mat, test_mat) == test_mat' # test case
@@ -60,5 +54,33 @@
         @test bfs(test_mat, 1, 4)[1] # test case
         @test bfs(test_mat2, 1, 5)[1] # test case
         @test ! bfs(no_path, 1, 4)[1] # test case
+    end
+
+    @testset "isfeasible" begin
+        flow_a,mflow_a = augmenting_path(test_mult,[1,2,3],[6,7,8], send = [3,3,2]) # case
+        flow_b,mflow_b = augmenting_path(test_mult,[1,2,3],[6,7,8], desired = [1,1,1]); # case
+        flow_c,mflow_c = augmenting_path(test_mult,[1,3],[6,7,8], desired = [1,1,1]); # case
+        flow_d,mflow_d = augmenting_path(test_mult,[1],[8], send = [3],desired = [3]); # case
+        flow_e,mflow_e = augmenting_path(test_mult,[1,2],[8], send = [4,6],desired = [10]); # case
+        flow_g,mflow_g = augmenting_path(test_mult,[1,3],[6,8], send = [3,1],desired = [1,3]); # case
+        @test isfeasible(flow_a,s=[1,2,3],t=[6,7,8], send = [3,3,2]) # test case
+        @test isfeasible(flow_b,s=[1,2,3],t=[6,7,8], desired = [1,1,1]) # test case
+        @test isfeasible(flow_c,s=[1,3],t=[6,7,8], desired = [1,1,1]) # test case
+        @test isfeasible(flow_d,s=[1],t=[8], send = [3],desired = [3]) # test case
+        @test isfeasible(flow_e,s=[1,2],t=[8], send = [4,6],desired = [10]) # test case
+        @test isfeasible(flow_g,s=[1,3],t=[6,8], send = [3,1],desired = [1,3]) # test case
+        @test_throws AssertionError isfeasible(flow_e,s=[1],t=[8], send = [4,6],desired = [10])
+        @test_throws AssertionError isfeasible(flow_e,s=[1,2],t=[7,8], send = [4,6],desired = [10])
+    end
+
+    @testset "clean!" begin
+        flow_a,mflow_a = augmenting_path(test_mult,[1,2],[8], send = [4,6],desired = [10]); # case
+        flow_b,mflow_b = augmenting_path(test_mult,[1,3],[6,8], send = [3,1],desired = [1,3]); # case
+        clean!(flow_a)
+        clean!(flow_b)
+        @test all(flow_a .>=0)
+        @test all(flow_b .>=0)
+        @test isfeasible(flow_a,s=[1,2],t=[8], send = [4,6],desired = [10]) # test case
+        @test isfeasible(flow_b,s=[1,3],t=[6,8], send = [3,1],desired = [1,3]) # test case
     end
 end
