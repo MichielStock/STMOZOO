@@ -86,7 +86,7 @@ weighted by factor λ (default = 100) in accordance with Tsoulos and Lagaris (20
 md"""Below I show the general outline of the method for the ODE f'(x) - f(x) = 0. I start from a randomly generated population of expression trees."""
 
 # ╔═╡ 517c7490-3b2d-11eb-2470-1f864bb57d95
-population = [rand(RuleNode, grammar, :R, 5) for i in 1:2000] #limits max depth to 5
+population = [rand(RuleNode, grammar, :R, 5) for i in 1:1000] #limits max depth to 5
 
 # ╔═╡ ceb98f22-505d-11eb-32b7-fd601b0f8cf9
 md""" Subsequently the fitness for each expression tree of this population can be calculated with the fitness function.""" 
@@ -134,7 +134,7 @@ fitness_basic(fittest)
 md""" Previous steps are combined into a single genetic program algorithm. In this case it is run for 50 generations."""
 
 # ╔═╡ 85a04e50-4a40-11eb-1a8b-7d5e3e9b122c
-gp_anim = genetic_program(fitness_basic, population, 30, 2,  0.3, 0.3, 5)
+gp_anim = genetic_program(fitness_basic, population, 50, 2,  0.3, 0.3, 5)
 
 # ╔═╡ 40f4e050-4c65-11eb-25a9-07ad6a2c3876
 gp_anim.fit_iter
@@ -151,11 +151,11 @@ begin
 end
 
 # ╔═╡ d67b6110-505e-11eb-1d9d-7f38302c0d44
-md""" The fittest solutions of each different generation can be plotted in an interactive way to visually inspect convergence to the exact solution, which in this case is f(x) = exp(x)."""
+md""" The fittest solutions of each different generation can be plotted in an interactive way to visually inspect convergence to the exact solution, which in this case is f(x) = exp(x). Comment: This example is a bit silly though if exp(x) is already in the starting population."""
 
 # ╔═╡ 3f3df2be-4b0b-11eb-3571-dba4fedcbc52
 md"""
--Ni $(@bind Ni Slider(1:30, default=30, show_value=true))
+-Ni $(@bind Ni Slider(1:50, default=50, show_value=true))
 """
 
 # ╔═╡ 61b66940-4b0b-11eb-1e14-311fb485c4d2
@@ -397,7 +397,7 @@ Tsoulos, I. G., & Lagaris, I. E. (2006). Solving differential equations with gen
 # ╠═c0caadd0-4a41-11eb-1b06-138c65916be3
 # ╠═9d599310-506e-11eb-3327-0954439a6b11
 # ╟─d67b6110-505e-11eb-1d9d-7f38302c0d44
-# ╟─3f3df2be-4b0b-11eb-3571-dba4fedcbc52
+# ╠═3f3df2be-4b0b-11eb-3571-dba4fedcbc52
 # ╟─61b66940-4b0b-11eb-1e14-311fb485c4d2
 # ╟─33b7e230-4f02-11eb-0850-99bb90897832
 # ╠═3ad61410-3cce-11eb-0e65-ebf59517000e
