@@ -110,7 +110,7 @@ md""" Subsequently the population will undergo selection, crossing over and muta
 parent is the fittest out of `S` randomly chosen expression trees of the population. I refer to the documentation for the specifics of these functions."""
 
 # ╔═╡ 8ca83b30-4c67-11eb-39df-cd1c840e847c
-parents = truncation_selection(fitness_basic.(population), 2)
+parents = tournament_selection(fitness_basic.(population), 2)
 
 # ╔═╡ 0b708cc0-4c67-11eb-1810-5be9ab23eb05
 children = [crossover(0.3, population[p[1]], population[p[2]], 5) for p in parents]

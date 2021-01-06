@@ -388,8 +388,8 @@ end
 
 """
 	truncation_selection(y::Vector{Float64}, T::Int)
-Truncation `selection` that chooses parents from among the
-best T chromosomes in the population.
+Truncation selection that chooses parents from among the
+best `T` expression trees in the population.
 """
 function truncation_selection(y, T)
 	p = sortperm(y)
