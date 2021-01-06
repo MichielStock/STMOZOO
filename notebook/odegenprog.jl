@@ -20,7 +20,7 @@ using STMOZOO.ODEGenProg, Plots, PlutoUI
 md"""### Genetic programming to solve differential equations"""
 
 # ╔═╡ bc79c4b0-4eeb-11eb-1347-2994621dd40c
-md""" This project is an attempt at solving differential equations analytically or approximating them by using genetic programming. The inspiration for the general approach and test cases comes mostly from two papers (Burgess, 1999; Tsoulos and Lagaris, 2006)."""
+md""" This project is an attempt at solving differential equations analytically or approximating the solution by using genetic programming. The inspiration for the general approach and test cases comes mostly from two papers (Burgess, 1999; Tsoulos and Lagaris, 2006)."""
 
 # ╔═╡ d110df2e-4ef5-11eb-18fe-491213fbaacd
 md""" Genetic programming is an evolutionary algorithm where genotypes are represented as trees instead of bit strings (as can be the case in classical genetic algorithms). Using trees that allow for a hierarchical structure is an elegant way to respresent for example functions. Representing functions is what we are after when we try to solve differential equations analytically. A general introduction to genetic programming can be found on wikipedia: https://en.wikipedia.org/wiki/Genetic_programming.
@@ -51,16 +51,25 @@ S = SymbolTable(grammar)
 
 # ╔═╡ 08fdb830-4efd-11eb-3f3d-d18ec22bf313
 md""" Next is a simple example to illuminate the usage of grammars to construct trees. 
-This tree represents the function f(x)=(x^2). The tree structure should be visible in the REPL"""
+This tree represents the function f(x)=x+2. The tree structure should be visible in the REPL"""
 
 # ╔═╡ ee453bb0-4ef9-11eb-148a-514618b54711
-tree = (RuleNode(14, [RuleNode(2), RuleNode(18)]))
+tree = (RuleNode(10, [RuleNode(2), RuleNode(18)]))
 
 # ╔═╡ 3fca38a0-4efa-11eb-3b0e-8d2ccafe2772
 get_executable(tree, grammar)
 
 # ╔═╡ 15826632-4efa-11eb-3b23-abe491db2b75
 print_tree(tree)
+
+# ╔═╡ 59e439a0-505a-11eb-3334-eddf62db2840
+md"""It can also be plotted with the GraphRecipes package. Node 10 corresponds to the + operator, here summing 2 (node 2) and x (node 18)."""
+
+# ╔═╡ f8a66d22-5059-11eb-041b-f1e31f7c2418
+begin
+	#(size=(200, 200))
+	plot(TreePlot(tree), method=:tree, fontsize=10, nodeshape=:ellipse)
+end
 
 # ╔═╡ be2c55b0-4ef6-11eb-0bb0-b725aa483399
 md"""Similar to genetic algorithms, a genetic program starts from a population that is initialized randomly. This population is allowed to evolve over a certain number of generations. Methods like crossover and mutation are applied to create stochastic variation in the population. Subsequently an appropriate fitness function associates each genotype with a numeric fitness value. This individual fitness is used for a selection method that aims at increasing the mean fitness of the population each generation."""
@@ -73,27 +82,31 @@ Each expression tree in the population is conceptualized as a solution (i.e. a f
 weighted by factor λ (default = 100) in accordance with Tsoulos and Lagaris (2006). It is thus to be noted that in this case the aim will be to minimize the fitness. 
 """
 
-# ╔═╡ 517c7490-3b2d-11eb-2470-1f864bb57d95
-#limit max depth
-population = [rand(RuleNode, grammar, :R, 5) for i in 1:1000]
+# ╔═╡ ac7a2a00-505d-11eb-3a07-95b08b1fef2b
+md"""Below I show the general outline of the method for the ODE f'(x) - f(x) = 0. I start from a randomly generated population of expression trees."""
 
-# ╔═╡ 64b70a20-400a-11eb-1561-b32b24c92788
-sort(fitness_basic.(population))
+# ╔═╡ 517c7490-3b2d-11eb-2470-1f864bb57d95
+population = [rand(RuleNode, grammar, :R, 5) for i in 1:1000] #limits max depth to 5
+
+# ╔═╡ ceb98f22-505d-11eb-32b7-fd601b0f8cf9
+md""" Subsequently the fitness for each expression tree of this population can be calculated with the fitness function.""" 
 
 # ╔═╡ 42ac5de0-4c71-11eb-3855-4db90448a8e3
 fitness_basic.(population)
 
-# ╔═╡ 69160bc0-4c71-11eb-0962-d99041bfbcaf
-population[26]
+# ╔═╡ 64b70a20-400a-11eb-1561-b32b24c92788
+sort(fitness_basic.(population))
 
-# ╔═╡ 772d3940-4c71-11eb-35cc-872adaef8954
-typeof(population[26])
+# ╔═╡ 1ce96da0-505e-11eb-0c0b-bfa9f83610e6
+begin
+	scatter(fitness_basic.(population),label = false, title = "Fitness of population")
+	xlabel!("genotype")
+	ylabel!("fitness")
+end
 
-# ╔═╡ 5b237d40-4c71-11eb-3925-9ff13fe9d330
-fitness_basic(population[26])
-
-# ╔═╡ 7f7cc1ae-4c71-11eb-19a5-dfa656a40431
-get_executable(population[26], grammar)
+# ╔═╡ 6ea07710-505e-11eb-2e5b-c587005d5000
+md""" Subsequently the population will undergo selection, crossing over and mutation. I sticked to tournament selection with tournament size `S`, where each
+parent is the fittest out of `S` randomly chosen expression trees of the population. I refer to the documentation for the specifics of these methods."""
 
 # ╔═╡ 8ca83b30-4c67-11eb-39df-cd1c840e847c
 parents = select(fitness_basic.(population), 2)
@@ -131,9 +144,12 @@ gp_anim.fit_iter
 # ╔═╡ c0caadd0-4a41-11eb-1b06-138c65916be3
 gp_anim.sol_iter
 
+# ╔═╡ d67b6110-505e-11eb-1d9d-7f38302c0d44
+md""" The fittest solutions of each different generation can be plotted in an interactive way to visually inspect convergence to the exact sollution, which in this case is f(x) = exp(x)."""
+
 # ╔═╡ 3f3df2be-4b0b-11eb-3571-dba4fedcbc52
 md"""
--Ni $(@bind Ni Slider(25:50, default=50, show_value=true))
+-Ni $(@bind Ni Slider(1:50, default=50, show_value=true))
 """
 
 # ╔═╡ 61b66940-4b0b-11eb-1e14-311fb485c4d2
@@ -147,31 +163,6 @@ y_ti = plot_solution(gp_anim.sol_iter[Ni], grammar, 0.1, 10.)
 plot!(x_i,y_ti, linestyle =:dash, label = "GP approximation", linewidth = 3)
 xlims!((0.,10.))
 ylims!((0.,10.))
-end
-
-# ╔═╡ 8b5e24d2-4a3f-11eb-2e5b-71f3dae61ca4
-begin
-	x_a = collect(0.1:0.01:10.)
-	#y = sin.(x)
-	df = 2
-	j = 1
-
-	anim =  @animate for i = 1:df:length(x_a)
-		j = 1
-		sol_approx = gp_anim.sol_iter[j]
-		function plot_solution_1D(x)
-			g_1D = define_grammar_1D()
-			S_1D = SymbolTable(g_1D)
-			res_1D = sol_approx
-			S_1D[:x] = x
-			return  Core.eval(S_1D,res_1D)
-		end	
-		y_a = plot_solution_1D(x_a)
-	    plot(x_a[1:i], y_a[1:i], legend=false)
-		j += 1
-	end
-	 
-	gif(anim, "tutorial_anim_fps30.gif", fps = 30)
 end
 
 # ╔═╡ 33b7e230-4f02-11eb-0850-99bb90897832
@@ -251,7 +242,7 @@ plot!(x_21,y_22, label = "GP approximation", linestyle =:dash, linewidth = 3)
 end
 
 # ╔═╡ 699e5622-4f04-11eb-3588-5d8363a90b10
-md""" ODE numero quatro: y'=(2x-y)/x, y(0)=20.1-> y(x)=x+2/x on [0.1:1.0]."""
+md""" ODE number four: y' - (2x-y)/x = 0, with boundary condition y(0) = 20.1. The expected solution is y(x) = (x+2)/x on [0.1,1.0]."""
 
 # ╔═╡ d3650fc0-4ef2-11eb-1b0f-a195652faa0c
 results_3 = optimize(g, grammar, :R, fitness_3)
@@ -270,7 +261,7 @@ plot!(x_31,y_32, label = "GP approximation", linestyle =:dash, linewidth = 3)
 end
 
 # ╔═╡ 97259c20-4f04-11eb-1a8e-1526cb03ee8b
-md""" The last one: y''-6y'+9y=0, y(0) = 0 and y0(0) = 2, on [0,1]. The analytical solution is y(x) = 2x exp(3x)."""
+md""" The last one: y'' - 6y' + 9y = 0, with boundary conditions y(0) = 0 and y'(0) = 2. The expected solution is y(x) = 2x*exp(3x) on [0,1]."""
 
 # ╔═╡ df204be2-4ef2-11eb-3883-858e93736417
 results_4 = optimize(g, grammar, :R, fitness_4)
@@ -324,9 +315,7 @@ S_2D = SymbolTable(grammar_2D)
 g_2D = GeneticProgram(1000,25,5,0.3,0.3,0.4)
 
 # ╔═╡ 1c1e2320-4f05-11eb-3e87-4f23573bd2c4
-md"""r2	(x; y) =2	(x; y)
-with x 2 [0; 1] and y 2 [0; 1] and boundary conditions: 	(0; y) = 0, 	(1; y) = sin(1) cos(y),
-	(x; 0) = sin(x), 	(x; 1) = sin(x) cos(1). The exact solution is 	(x; y) = sin(x) cos(y)."""
+md"""Below I test the method on the the differential equation 	▽*▽(ψ(x,y)) - 2ψ(x,y) = 0, with boundary conditions (0, y) = 0, (1, y) = sin(1)cos(y), (x, 0) = sin(x), (x, 1) = sin(x)cos(1). The exact solution is f(x, y) = sin(x)cos(y)."""
 
 # ╔═╡ f31bce30-4ef2-11eb-2d18-43c8990a3555
 results_2D = optimize(g_2D, grammar_2D, :R2D2, fitness_2D)
@@ -335,14 +324,14 @@ results_2D = optimize(g_2D, grammar_2D, :R2D2, fitness_2D)
 (results_2D.expr, results_2D.loss)
 
 # ╔═╡ 215e21a0-4f05-11eb-2b91-050f91ed3424
-md""" The plotted solutions (exact and approximate) are now surfaces instead of planes. When the found solution is exact the two surfaces perfeclty overlap."""
+md""" The plotted solutions (exact in red and approximation in green) are now surfaces instead of planes. When the found solution is exact the two surfaces perfeclty overlap."""
 
 # ╔═╡ 0b8fb470-458b-11eb-2f41-cdd2935a94fd
 begin
 xs = range(0., stop=1., length=100)
 ys = range(0., stop=1., length=100)
 f(x,y) = sin(x)*cos(y)
-s = surface(xs, ys, f, label = "Analytic solution")
+s = surface(xs, ys, f, label = "Analytic solution", fc=:red, camera=(10,30))
 #fa(x,y) = (sin(x) / (cos(3 * cos(y)) + 4))
 function plot_solution_2D(x,y)
 	g_2D = define_grammar_2D()
@@ -353,7 +342,7 @@ function plot_solution_2D(x,y)
 	return  Core.eval(S_2D,res_2D)
 end	
 fa(x,y) = plot_solution_2D(x,y)
-sa = surface!(xs, ys, fa, label = "GP approximation")
+sa = surface!(xs, ys, fa, label = "GP approximation", fc=:green)
 end
 
 # ╔═╡ 4d18a040-4eec-11eb-31c9-4f2176b40823
@@ -378,15 +367,17 @@ Tsoulos, I. G., & Lagaris, I. E. (2006). Solving differential equations with gen
 # ╠═ee453bb0-4ef9-11eb-148a-514618b54711
 # ╠═3fca38a0-4efa-11eb-3b0e-8d2ccafe2772
 # ╠═15826632-4efa-11eb-3b23-abe491db2b75
+# ╟─59e439a0-505a-11eb-3334-eddf62db2840
+# ╠═f8a66d22-5059-11eb-041b-f1e31f7c2418
 # ╟─be2c55b0-4ef6-11eb-0bb0-b725aa483399
 # ╟─1aa00a80-4484-11eb-3d2f-8f4fdb6a4c61
+# ╟─ac7a2a00-505d-11eb-3a07-95b08b1fef2b
 # ╠═517c7490-3b2d-11eb-2470-1f864bb57d95
-# ╠═64b70a20-400a-11eb-1561-b32b24c92788
+# ╟─ceb98f22-505d-11eb-32b7-fd601b0f8cf9
 # ╠═42ac5de0-4c71-11eb-3855-4db90448a8e3
-# ╠═69160bc0-4c71-11eb-0962-d99041bfbcaf
-# ╠═772d3940-4c71-11eb-35cc-872adaef8954
-# ╠═5b237d40-4c71-11eb-3925-9ff13fe9d330
-# ╠═7f7cc1ae-4c71-11eb-19a5-dfa656a40431
+# ╠═64b70a20-400a-11eb-1561-b32b24c92788
+# ╟─1ce96da0-505e-11eb-0c0b-bfa9f83610e6
+# ╟─6ea07710-505e-11eb-2e5b-c587005d5000
 # ╠═8ca83b30-4c67-11eb-39df-cd1c840e847c
 # ╠═0b708cc0-4c67-11eb-1810-5be9ab23eb05
 # ╠═04a27430-4c67-11eb-34fd-0fd565c829ab
@@ -399,9 +390,9 @@ Tsoulos, I. G., & Lagaris, I. E. (2006). Solving differential equations with gen
 # ╠═b3c146d0-4a41-11eb-0b43-9fea8083390e
 # ╠═40f4e050-4c65-11eb-25a9-07ad6a2c3876
 # ╠═c0caadd0-4a41-11eb-1b06-138c65916be3
+# ╟─d67b6110-505e-11eb-1d9d-7f38302c0d44
 # ╠═3f3df2be-4b0b-11eb-3571-dba4fedcbc52
 # ╟─61b66940-4b0b-11eb-1e14-311fb485c4d2
-# ╠═8b5e24d2-4a3f-11eb-2e5b-71f3dae61ca4
 # ╟─33b7e230-4f02-11eb-0850-99bb90897832
 # ╠═3ad61410-3cce-11eb-0e65-ebf59517000e
 # ╟─9c8a99b0-4f02-11eb-2eed-bf59946b8e12
@@ -417,11 +408,11 @@ Tsoulos, I. G., & Lagaris, I. E. (2006). Solving differential equations with gen
 # ╠═c63709c0-4ef2-11eb-22dc-2d5b8ff40338
 # ╠═5f1bf520-44b1-11eb-3eff-733bb1e93077
 # ╟─3ff752a0-44b3-11eb-10cd-0ffb53fe286a
-# ╠═699e5622-4f04-11eb-3588-5d8363a90b10
+# ╟─699e5622-4f04-11eb-3588-5d8363a90b10
 # ╠═d3650fc0-4ef2-11eb-1b0f-a195652faa0c
 # ╠═6f70dda0-44b1-11eb-18f2-d76f37ec9519
 # ╟─ec5c9fa0-44b3-11eb-038a-232443353943
-# ╠═97259c20-4f04-11eb-1a8e-1526cb03ee8b
+# ╟─97259c20-4f04-11eb-1a8e-1526cb03ee8b
 # ╠═df204be2-4ef2-11eb-3883-858e93736417
 # ╠═756cd920-44b1-11eb-0ad6-c95c100c57f6
 # ╟─1df79920-44b4-11eb-2ddf-a3f7081a4642

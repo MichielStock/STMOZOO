@@ -23,11 +23,11 @@
     @test fitness_4(rulenode_1D, grammar_1D) isa Float64
     @test fitness_2D(rulenode_2D, grammar_2D) isa Float64
 
-    @test mutate(a, p)
+#=     @test mutate(a, p)
     @test permutate(a, p)
     @test crossover(p, a, b, max_depth)
     @test select(y, S)
-    @test genetic_program(f, population, k_max, S, C, M, max_depth)
+    @test genetic_program(f, population, k_max, S, C, M, max_depth) =#
 
 
     #test every fitness function with solution -> 0, expr type
