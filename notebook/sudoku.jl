@@ -208,12 +208,11 @@ Now, lets use `sudoku_greedydesc` to find the true solution. As mentioned before
 """
 
 # ╔═╡ a932ed90-3dee-11eb-3c98-71279cf5e3bb
-md"""
 begin
 	solution5 =[]
 	min_cost3 = Inf
 	m = 0
-	for i in 1:10000
+	for i in 1:100
 		global m, min_cost3, solution5
 		m += 1 #to count iterations
 		start = fill_in(sudoku_1) #restart in a different state
@@ -228,23 +227,16 @@ begin
 		end
 	end		
 end
-"""
+
 # ╔═╡ 5c5853f0-3df0-11eb-1a78-274cceaf7711
-md"""
 solution5
-"""
 
 # ╔═╡ 633fe7f0-3df0-11eb-3f20-1d38fa05b17c
-md"""
 sudoku_cost(solution5)
-"""
-# ╔═╡ 2e7a2ca2-3df6-11eb-11d8-c7c06bb7400b
-md"""
-solution3 == solution5 #checking if solutions obtained by the two functions are the same
-"""
+
 # ╔═╡ 1fe59f80-3dfb-11eb-08f2-b1e4a62e679f
 md"""
-This approach is far less effecient than the previous. It found the correct solution in **$m iterations**
+This approach is far less effecient than the previous. It will need at least 10000 iterations to find the correct solution
 """
 
 # ╔═╡ Cell order:
@@ -285,5 +277,4 @@ This approach is far less effecient than the previous. It found the correct solu
 # ╠═a932ed90-3dee-11eb-3c98-71279cf5e3bb
 # ╠═5c5853f0-3df0-11eb-1a78-274cceaf7711
 # ╠═633fe7f0-3df0-11eb-3f20-1d38fa05b17c
-# ╠═2e7a2ca2-3df6-11eb-11d8-c7c06bb7400b
-# ╟─1fe59f80-3dfb-11eb-08f2-b1e4a62e679f
+# ╠═1fe59f80-3dfb-11eb-08f2-b1e4a62e679f
