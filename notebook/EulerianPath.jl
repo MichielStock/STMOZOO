@@ -4,156 +4,104 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ 5ad5c202-20f8-11eb-23f1-4f38b687c285
-using STMOZOO.Example
-
 # ╔═╡ d2d007b8-20f8-11eb-0ddd-1181d4565a85
 using Plots
 
-# ╔═╡ 45189a82-20fa-11eb-0423-05ce1b84639d
-using Zygote
+# ╔═╡ 54286c74-5015-11eb-214e-352bbdb7e252
+using STMOZOO.EulerianPath
 
 # ╔═╡ 171fee18-20f6-11eb-37e5-2d04caea8c35
 md"""
-# Example: solving quadratic systems
+# Eulerian Path
 
-By Michiel Stock
+By Ke Zhang
 
 ## Introduction
+An **Eulerian path** (or Eulerian trail) is a trail in a finite graph that visits every edge only once, allowing for revisiting nodes.
 
-In this notebook, I have chosen to write code so minimize *quadratic functions* of the form:
+An **Eulerian circuit** (or Eulerian cycle) is an Eulerian path that starts and ends on the same node.
 
-$$f(\mathbf{x}) =  \frac{1}{2} \mathbf{x}^\intercal P\mathbf{x} + \mathbf{q} \cdot \mathbf{x} + r\,,$$
+Euler proved that the necessary condition for the existance of Eulerian circuits is that all the nodes have an even degree.
 
-where $P \succ 0$.
+**Euler's Theorem** : A connected graph has an Euler cycle if and only if every node has even degree. 
 
-Hence, solving
-
-$$\min_\mathbf{x}\, f(\mathbf{x})\,.$$
 """
 
 # ╔═╡ fb4aeb8c-20f7-11eb-0444-259de7b76883
 md"""
 
-## Derivation
+## Properities
+- An undirected graph has an Eulerian trail if and only if exactly zero or two vertices have odd degree, and all of its vertices with nonzero degree belong to a single connected component.
 
-The gradient of the quadratic function is
+- An undirected graph can be decomposed into edge-disjoint cycles if and only if all of its vertices have even degree. So, a graph has an Eulerian cycle if and only if it can be decomposed into edge-disjoint cycles and its nonzero-degree vertices belong to a single connected component.
 
-$$\nabla f(\mathbf{x})=P\mathbf{x} +\mathbf{q}\,.$$
-
-Setting this to zero gives
-
-$$\mathbf{x}^\star=-P^{-1}\mathbf{q}\,.$$
-
-We also know that $\nabla^2f(\mathbf{x}) = P \succ 0$, so $\mathbf{x}^\star$ is a minimizer.
+- A directed graph has an Eulerian cycle if and only if every vertex has equal in degree and out degree, and all of its vertices with nonzero degree belong to a single strongly connected component. 
+  
+- Equivalently, a directed graph has an Eulerian cycle if and only if it can be decomposed into edge-disjoint directed cycles and all of its vertices with nonzero degree belong to a single strongly connected component.
 """
 
-# ╔═╡ 52e87238-20f8-11eb-2ea0-27ee1208d3c3
+# ╔═╡ ecf20b6a-5018-11eb-3b6d-6fab71836faa
 md"""
 ## Illustration
 
-We will use a simple 2D example to illustrate this code.
+Let's start with a list of lists, for each list inside indicates two nodes that have edges between them. For example, node1 has edges with node5, node2, node4 and node3 according to the *adjacent_list* infomation.
+
 """
-
-# ╔═╡ e9a9d69e-20f8-11eb-0d9d-330ee5e9cf25
-P = [7 -1; -1 2]
-
-# ╔═╡ fdd4e550-20f8-11eb-227b-25f36708484d
-q = [-14.0, -2.0]
 
 # ╔═╡ 025fd6e8-20f9-11eb-3e7d-3519f3c4b58f
-r = 1
+adjacent_list = [[1, 5], [1, 2], [1, 4], [1, 3], [5, 2], [2, 3], [2, 4], [3, 4], [3, 6], [4, 6]]
 
-# ╔═╡ 096eff98-20f9-11eb-1e61-99d5714895ba
-md"We have a function to generate the quadratic function."
-
-# ╔═╡ 165509ca-20f9-11eb-107c-550cbba0f0e9
-f_quadr = quadratic_function(P, q, r)
-
-# ╔═╡ 1fffc82a-20f9-11eb-198c-c160d7dac87d
-f_quadr([2, 1])
-
-# ╔═╡ 26ab6ce2-20f9-11eb-1836-1756b290e5e3
-md"No more need to remember the formulla for the minimizer! Just use `solve_quadratic_system`!"
-
-# ╔═╡ 49832a8e-20f9-11eb-0841-19a40a12db18
-x_star = solve_quadratic_system(P, q, r)
-
-# ╔═╡ 55e0e274-20f9-11eb-36c0-753f228f7e9b
-begin
-	contourf(-20:0.1:20, -20:0.1:20, (x, y) -> f_quadr([x,y]), color=:speed)
-	scatter!([x_star[1]], [x_star[2]], label="minimizer")
-end
-
-# ╔═╡ b1551758-20f9-11eb-3e8f-ff9a7127d7f8
+# ╔═╡ 5e98cb66-5017-11eb-28d8-65a7aec77180
 md"""
-## Approximating non-quadratic functions
-
-We can approximate non-quadratic functions by a quadratic function: The second order Taylor approximation $\hat{f}$ of a function $f$ at $\mathbf{x}$ is
-$$f(\mathbf{x}+\mathbf{v})\approx\hat{f}(\mathbf{x}+\mathbf{v}) = f(\mathbf{x}) + \nabla f(\mathbf{x})^\top \mathbf{v} + \frac{1}{2} \mathbf{v}^\top \nabla^2 f(\mathbf{x}) \mathbf{v}\,.$$
-
-Let us use this idea for the Rosenbrock function.
+First we need to create a dictionary whose key is each node, and the value returns a list of nodes that have edges to this node.
 """
 
-# ╔═╡ 41d8f1dc-20fa-11eb-3586-a989427c1fd6
-f_nonquadr((x1, x2); a=1, b=5) = (a-x1)^2 + b * (x2 - x1^2)^2
+# ╔═╡ 43f93fc8-5019-11eb-1b59-a1da4675ae81
+adj_dict = create_adj_list(adjcent_list)
 
-# ╔═╡ 4ed4215e-20fa-11eb-11ee-f7741591163c
-x = [0.0, 0.0]
+# ╔═╡ 77a637fe-5019-11eb-3c4b-7962e4e8ac3d
+md"""
+After convert into dictionary, we can check if this dictionary of nodes has eulerian cycle or not, based on the theory: 
 
-# ╔═╡ 56af99ee-20fa-11eb-0240-69c675efb78c
-fx = f_nonquadr(x)
+**An undirected graph has an Eulerian cycle if and only if exactly zero or two vertices have odd degree, and all of its vertices with nonzero degree belong to a single connected component.**
 
-# ╔═╡ 6c5473b4-20fa-11eb-327b-51ac560530eb
-∇fx = f_nonquadr'(x)
+So here we check for each key, the length of the value is odd or even. If all of the lengths are even, the nodes has an eulerian cycle.
 
-# ╔═╡ 7518c2c0-20fa-11eb-32c0-a9db2a91cbc5
-∇²fx = Zygote.hessian(f_nonquadr, x)
+"""
 
-# ╔═╡ 34027942-20fb-11eb-261e-3b991ce4c9f8
-v = solve_quadratic_system(∇²fx, ∇fx, fx)
+# ╔═╡ 3c4b4a72-501a-11eb-1de4-aff349f00abc
+has_eulerian_cycle(adj_dict)
+
+# ╔═╡ 4916fbfc-501a-11eb-246f-0fc3bf6544cd
+md"""
+For eulerian path, its condition is different from has_eulerian_cycle condition. If there are 0 **or** two nodes have even degree, an eulerian path can be created.
+
+"""
+
+# ╔═╡ bd367d32-501a-11eb-1010-9b8f044407a5
+has_eulerian_path(adj_dict)
 
 # ╔═╡ 3bbeb85c-20fc-11eb-04d0-fb12d8ace50a
-f̂(x′) = quadratic_function(∇²fx, ∇fx, fx)(x′ .- x)
+md"""
+## References:
+[https://en.wikipedia.org/wiki/Eulerian_path#Applications](https://en.wikipedia.org/wiki/Eulerian_path#Applications)
 
-# ╔═╡ 8623ac1a-20fa-11eb-2d45-49cce0fdac86
-begin
-	plot_nonquadr = contourf(-2:0.01:2, -2:0.01:2, (x, y) -> f_nonquadr([x,y]), color=:speed, title="non-quadratic function")
-	scatter!(plot_nonquadr, [x[1]], [x[2]], label="x")
-	scatter!(plot_nonquadr, [x[1]+v[1]], [x[2]+v[2]], label="x + v")
-	
-	plot_approx = contourf(-2:0.01:2, -2:0.01:2, (x, y) -> f̂([x,y]), color=:speed,
-		title="quadratic approximation")
-	scatter!(plot_approx, [x[1]], [x[2]], label="x")
-	scatter!(plot_approx, [x[1]+v[1]], [x[2]+v[2]], label="x + v")
-	
-	plot(plot_nonquadr, plot_approx, layout=(2,1), size=(600, 800))
-	
-end
+[https://www.youtube.com/watch?v=8MpoO2zA2l4](https://www.youtube.com/watch?v=8MpoO2zA2l4)
 
+[https://github.com/gaviral/Algorithms/blob/0e2d564ef27411a461800dc10160ba21a0e52336/5_Graphs/eulerian_cycle_path.py](https://github.com/gaviral/Algorithms/blob/0e2d564ef27411a461800dc10160ba21a0e52336/5_Graphs/eulerian_cycle_path.py)
+"""
 
 # ╔═╡ Cell order:
-# ╠═171fee18-20f6-11eb-37e5-2d04caea8c35
-# ╠═5ad5c202-20f8-11eb-23f1-4f38b687c285
+# ╟─171fee18-20f6-11eb-37e5-2d04caea8c35
 # ╠═d2d007b8-20f8-11eb-0ddd-1181d4565a85
+# ╠═54286c74-5015-11eb-214e-352bbdb7e252
 # ╟─fb4aeb8c-20f7-11eb-0444-259de7b76883
-# ╟─52e87238-20f8-11eb-2ea0-27ee1208d3c3
-# ╠═e9a9d69e-20f8-11eb-0d9d-330ee5e9cf25
-# ╠═fdd4e550-20f8-11eb-227b-25f36708484d
+# ╟─ecf20b6a-5018-11eb-3b6d-6fab71836faa
 # ╠═025fd6e8-20f9-11eb-3e7d-3519f3c4b58f
-# ╟─096eff98-20f9-11eb-1e61-99d5714895ba
-# ╠═165509ca-20f9-11eb-107c-550cbba0f0e9
-# ╠═1fffc82a-20f9-11eb-198c-c160d7dac87d
-# ╟─26ab6ce2-20f9-11eb-1836-1756b290e5e3
-# ╠═49832a8e-20f9-11eb-0841-19a40a12db18
-# ╠═55e0e274-20f9-11eb-36c0-753f228f7e9b
-# ╟─b1551758-20f9-11eb-3e8f-ff9a7127d7f8
-# ╠═41d8f1dc-20fa-11eb-3586-a989427c1fd6
-# ╠═45189a82-20fa-11eb-0423-05ce1b84639d
-# ╠═4ed4215e-20fa-11eb-11ee-f7741591163c
-# ╠═56af99ee-20fa-11eb-0240-69c675efb78c
-# ╠═6c5473b4-20fa-11eb-327b-51ac560530eb
-# ╠═7518c2c0-20fa-11eb-32c0-a9db2a91cbc5
-# ╠═34027942-20fb-11eb-261e-3b991ce4c9f8
-# ╠═3bbeb85c-20fc-11eb-04d0-fb12d8ace50a
-# ╟─8623ac1a-20fa-11eb-2d45-49cce0fdac86
+# ╟─5e98cb66-5017-11eb-28d8-65a7aec77180
+# ╠═43f93fc8-5019-11eb-1b59-a1da4675ae81
+# ╠═77a637fe-5019-11eb-3c4b-7962e4e8ac3d
+# ╠═3c4b4a72-501a-11eb-1de4-aff349f00abc
+# ╠═4916fbfc-501a-11eb-246f-0fc3bf6544cd
+# ╠═bd367d32-501a-11eb-1010-9b8f044407a5
+# ╟─3bbeb85c-20fc-11eb-04d0-fb12d8ace50a
