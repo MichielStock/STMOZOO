@@ -2,12 +2,14 @@ using Documenter
 
 using STMOZOO
 using STMOZOO.Example
+using STMOZOO.Raytracing
 
 makedocs(sitename="STMO ZOO",
     format = Documenter.HTML(),
-    modules=[Example], # add your module
+    modules=[Example, Raytracing], # add your module
     pages=Any[
         "Example"=> "man/example.md",  # add the page to your documentation
+        "Raytracing" => "man/raytracing.md"
     ])
 
 #=
