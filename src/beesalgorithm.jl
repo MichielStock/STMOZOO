@@ -360,13 +360,13 @@ Output
 ## Examples
  
 ```julia-repl
-julia> trial = zeros(size(population)[1])
 julia> bounds_lower = [-5,-5,-5,-5]
 julia> bounds_upper = [5,5,5,5]
 julia> D=4
 julia> N=9
-julia> population = initialize_population(D, bounds_lower, bounds_upper, n)
-julia> population_new_evolved, fitness_new_evolved, objective_new_evolved, trial = onlooker_bee_phase(population, bounds_lower, bounds_upper, trial,n ,sphere)
+julia> population = initialize_population(D, bounds_lower, bounds_upper, N)
+julia> trial = zeros(size(population)[1])
+julia> population_new_evolved, fitness_new_evolved, objective_new_evolved, trial = onlooker_bee_phase(population, bounds_lower, bounds_upper, trial,N ,sphere)
 julia> population_new_evolved
 9-element Array{Any,1}:
  [-1.0, -5.0, 0.5313751547457599, 5.0]
@@ -395,7 +395,7 @@ function onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vect
         if r <= proba[n]
             solution = population[n, :][1] # solution n
             objective_values_old = compute_objective([solution], f)
-            fitness_old = compute_fitness(objective_values_old)
+            fitness_old = compute_fitness(objective_values_old)[1]
             
             solution_new = solution
             while solution_new == solution
@@ -403,8 +403,8 @@ function onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vect
             end
     
             objective_values_new = compute_objective([solution_new], f)
-            fitness_new = compute_fitness(objective_values_new)
-            
+            fitness_new = compute_fitness(objective_values_new)[1]
+            print(fitness_new)
             if fitness_new > fitness_old # if this get accepted 
                 population[n, :] = [solution_new]
                 trial[n]=0
