@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.12.4
+# v0.12.17
 
 using Markdown
 using InteractiveUtils
@@ -24,7 +24,7 @@ This tutorial provides an introduction to using non-negative matrix factorizatio
 
 #### What is SingleCellNMF?
 
-`SingleCellNMF` is a module that implements NMF as proposed by Jin and colleagues in `scAI` (Jin et al. 2020). Therein, single-cell RNA-seq and ATAC-seq data is jointly factorized to find an optimal representation of both transcriptomic and epigenomic features in a shared latent space. The low-dimensional representation of the data can be used for downstream analysis. Additionally, sparse epigenomic signal is aggregated to achieve better separation between clusters when analyzing scATAC-seq data. Please see the documentation page and scAI publication for more details.
+`SingleCellNMF` is a module that implements NMF as proposed by Jin and colleagues in `scAI` (Jin et al. 2020). Therein, single-cell RNA-seq and ATAC-seq data is jointly factorized to find an optimal representation of both transcriptomic and epigenomic features in a shared latent space. The low-dimensional representation of the data can be used for downstream analysis. Additionally, sparse epigenomic signal is aggregated to achieve better separation between clusters when analyzing scATAC-seq data. For more details on sequencing technologies and the NMF algorithm, please see the documentation page and the scAI publication.
 """
 
 # ╔═╡ 62dbdaf2-3f89-11eb-2738-530350bccb92
@@ -73,13 +73,13 @@ end
 
 # ╔═╡ f638a082-3f9a-11eb-2bd6-f567e55363a2
 begin
-	rna_data = CSV.read(rna_file)
+	rna_data = CSV.read(rna_file, DataFrame)
 	rename!(rna_data, :Column1 => :gene_name)
 	
-	atac_data = CSV.read(atac_file)
+	atac_data = CSV.read(atac_file, DataFrame)
 	rename!(atac_data, :Column1 => :locus_name)
 
-	labels_data = CSV.read(labels_file)
+	labels_data = CSV.read(labels_file, DataFrame)
 	rename!(labels_data, :Column1 => :cell_name)
 end;
 
@@ -106,7 +106,7 @@ first(labels_data, 5)
 md"""
 ### Running NMF
 
-We can now run coupled NMF on RNA and ATAC data. Choice of `k` (dimensionality of latent space) is usually determined empirically (rather computationally intensive, as algoritm needs to be run many times). Since we have simulated data, we know the "true dimensionality" of the data. 
+We can now run coupled NMF on RNA and ATAC data. Choice of `k` (dimensionality of latent space) is usually determined empirically (rather computationally intensive, as the algorithm needs to be run many times). Since we have simulated data, we know the "true dimensionality" of the data. 
 """
 
 # ╔═╡ 95c93ea2-3f9d-11eb-27cd-6bb7b62ec299
@@ -115,7 +115,7 @@ H, W_rna, W_atac, Z, R, obj_history = perform_nmf(rna_data, atac_data, 5;
 
 # ╔═╡ 1c4ab4b0-3fa5-11eb-35dd-e330112258c6
 md"""
-Does objective value decrease?
+The value of the objective function at each iteration is stored and returned as `obj_history`. In the plot below we can see the objective value decrease, especially in the beginning iterations.
 """
 
 # ╔═╡ c8e29f3e-3fa4-11eb-3691-2b437f5b2621
@@ -200,32 +200,32 @@ Martínez C, Tarazona S (2020). MOSim: Multi-Omics Simulation (MOSim). R package
 """
 
 # ╔═╡ Cell order:
-# ╠═d8139d04-3f87-11eb-10fa-c3e4fa828b57
+# ╟─d8139d04-3f87-11eb-10fa-c3e4fa828b57
 # ╟─62dbdaf2-3f89-11eb-2738-530350bccb92
 # ╠═a3c2226c-3f89-11eb-389e-9925792fc108
-# ╠═d3c4c74a-3f8d-11eb-3918-8d7bff6cef04
+# ╟─d3c4c74a-3f8d-11eb-3918-8d7bff6cef04
 # ╠═038be600-49f6-11eb-3734-590b7d723c66
-# ╠═b3e57a5e-3f89-11eb-1122-17218be3ec4c
+# ╟─b3e57a5e-3f89-11eb-1122-17218be3ec4c
 # ╟─74322ba8-3f9a-11eb-2833-dbf876466683
 # ╠═766fa040-3f8a-11eb-0142-5b8439fe7110
 # ╠═f638a082-3f9a-11eb-2bd6-f567e55363a2
-# ╠═1204a49e-3f9d-11eb-06c5-f91c92257ffd
+# ╟─1204a49e-3f9d-11eb-06c5-f91c92257ffd
 # ╠═1e3593e0-3f9d-11eb-1c03-8b9ead1e7172
 # ╠═5039cc3c-3f9d-11eb-1b6a-0b09cfa7a4e8
-# ╠═b07789ac-3fd4-11eb-3157-7d56d5007b18
+# ╟─b07789ac-3fd4-11eb-3157-7d56d5007b18
 # ╠═541c7ba2-3f9d-11eb-29a4-97295a582477
-# ╠═799bb0ae-3f9d-11eb-00dc-aff4153a09c1
+# ╟─799bb0ae-3f9d-11eb-00dc-aff4153a09c1
 # ╠═95c93ea2-3f9d-11eb-27cd-6bb7b62ec299
-# ╠═1c4ab4b0-3fa5-11eb-35dd-e330112258c6
+# ╟─1c4ab4b0-3fa5-11eb-35dd-e330112258c6
 # ╠═c8e29f3e-3fa4-11eb-3691-2b437f5b2621
-# ╠═979bf0f0-3fa5-11eb-245f-8b5f0c2d6c38
+# ╟─979bf0f0-3fa5-11eb-245f-8b5f0c2d6c38
 # ╠═f21d582c-3fa5-11eb-0efe-b396524a0075
 # ╠═61f440d0-3fa6-11eb-0cbb-e75f3aa2570f
 # ╠═c10bcf50-3fa5-11eb-3243-1b951ee4ce0b
-# ╠═8248cb3c-3fa6-11eb-2c78-8d3f04584cb9
-# ╠═99c2caec-3fbd-11eb-24a6-17595dac79da
+# ╟─8248cb3c-3fa6-11eb-2c78-8d3f04584cb9
+# ╟─99c2caec-3fbd-11eb-24a6-17595dac79da
 # ╠═c86c10be-3fbd-11eb-2121-435d901c1f06
-# ╠═7422de64-3fd1-11eb-3a12-f3908e7c3eec
+# ╟─7422de64-3fd1-11eb-3a12-f3908e7c3eec
 # ╠═2c1a3a58-3fbe-11eb-325c-73d5e92f851d
-# ╠═ca589470-3fbf-11eb-2099-a1834113d287
+# ╟─ca589470-3fbf-11eb-2099-a1834113d287
 # ╟─cf71609a-3f88-11eb-3173-0d3274ed03af
