@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.12.17
+# v0.12.11
 
 using Markdown
 using InteractiveUtils
@@ -93,7 +93,7 @@ has_eulerian_cycle(adj_dict)
 
 # ╔═╡ 4916fbfc-501a-11eb-246f-0fc3bf6544cd
 md"""
-For eulerian path, its condition is different from has_eulerian_cycle condition. If there are 0 **or** two nodes have even degree, an eulerian path can be created.
+For eulerian path, its condition is different from has\_eulerian\_cycle condition. If there are 0 **or** two nodes have even degree, an eulerian path can be created.
 
 """
 
@@ -128,4 +128,4 @@ md"""
 # ╠═3c4b4a72-501a-11eb-1de4-aff349f00abc
 # ╟─4916fbfc-501a-11eb-246f-0fc3bf6544cd
 # ╠═bd367d32-501a-11eb-1010-9b8f044407a5
-# ╠═3bbeb85c-20fc-11eb-04d0-fb12d8ace50a
+# ╟─3bbeb85c-20fc-11eb-04d0-fb12d8ace50a
