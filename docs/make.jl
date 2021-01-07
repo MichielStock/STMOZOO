@@ -1,13 +1,13 @@
 using Documenter
 
 using STMOZOO
-using STMOZOO.Example
+using STMOZOO.LocalSearch
 
 makedocs(sitename="STMO ZOO",
     format = Documenter.HTML(),
-    modules=[Example], # add your module
+    modules=[LocalSearch], # add your module
     pages=Any[
-        "Example"=> "man/example.md",  # add the page to your documentation
+        "Sudoku_local" => "man/Sudoku_local.md"
     ])
 
 #=

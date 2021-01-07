@@ -1,4 +1,3 @@
 using Test
-
-include("example.jl")
+include("sudoku_local.jl")
 # add here the file with your unit tests
