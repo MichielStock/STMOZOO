@@ -129,7 +129,7 @@ cost2 = sudoku_cost(solution2)
 md"""
 Again, since the **cost is $cost2**, the obtained state is not the global minimum.
 
-The problem with these approaches is that they are strongly affected by the initial state, therefore, is necessary to restart or iteratively change the initial state to avoid getting stuck in a local minimum. 
+The problem with these approaches is that they are strongly affected by the initial state, therefore, it is necessary to restart or iteratively change the initial state to avoid getting stuck in a local minimum. 
 
 We can use the swapping approach. Start with a random assigment, then make swaps to reduce the cost of the solution, if the cost is not zero, start from another random assigment. 
 """
