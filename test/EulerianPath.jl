@@ -13,7 +13,7 @@
     end
 
     @testset "has_eulerian_path" begin
-        @test has_eulerian_cycle(adj_list) == true
+        @test has_eulerian_path(adj_list) == true
     end
 
     adj_list = create_adj_list([[1, 2], [1, 4], [1, 3], [2, 3], [2, 4], [3, 4]])
@@ -26,7 +26,7 @@
     end
 
     @testset "has_eulerian_path" begin
-        @test has_eulerian_cycle(adj_list) == false
+        @test has_eulerian_path(adj_list) == false
     end
 
 end
