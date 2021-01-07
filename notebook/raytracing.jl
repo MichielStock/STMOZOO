@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.12.18
+# v0.12.17
 
 using Markdown
 using InteractiveUtils
@@ -14,7 +14,7 @@ macro bind(def, element)
 end
 
 # ╔═╡ 297c8c20-4058-11eb-1971-33d12e5164de
-using Plots, DataStructures, STMOZOO.Raytracing, PlutoUI
+using Plots, DataStructures, STMOZOO.Raytracing
 
 # ╔═╡ e1779dd0-4056-11eb-0e2d-b5b2899e9b47
 md"""# Ray Tracing with Dijkstra's Algorithm
@@ -24,20 +24,20 @@ Welcome to the notebook on ray tracing based on Dijkstra's algorithm!"""
 # ╔═╡ 2c27d600-4058-11eb-1b24-4bd3cab88d09
 md"""## What is Ray Tracing?
 
-One problem with discussing ray-tracing is that ray-tracing is an overloaded term. In 3D computer graphics (CG), ray tracing is a **rendering technique** for generating an image by tracing the path of light as pixels in an image plane and simulating the effects of its encounters with virtual objects. It is the technique that studios like Disney and Pixar use to create their animated 3D films. In physics, ray tracing is a **method for calculating the path of waves or particles** through a system with regions of varying propagation velocity, absorption characteristics, and reflecting surfaces.
+One problem with discussing ray tracing is that ray tracing is an overloaded term. In 3D computer graphics (CG), ray tracing is a **rendering technique** for generating an image by tracing the path of light as pixels in an image plane and simulating the effects of its encounters with virtual objects. It is the technique that studios like Disney and Pixar use to create their animated 3D films. In physics, ray tracing is a **method for calculating the path of waves or particles** through a system with regions of varying propagation velocity, absorption characteristics, and reflecting surfaces.
 
-While these two definitions are highly similar (we essentially trace a path of light from a source to a sink), an important distinction lies on how the source is defined (see figure below). Ray-tracing in physics is the more intuitive way: we start at a light source and follow the path of each ray, a process called forward tracing. This process is not very useful for computer graphics, as most of the rays will not hit the observer and many computations will not be used. Therefore, modern rendering techniques rely on reverse tracing, where we define the observer as the source, and we only follow the rays that reaches the light source.
+While these two definitions are highly similar (we essentially trace a path of light from a source to a sink), an important distinction lies on how the source is defined (see figure below). Ray tracing in physics is the more intuitive way: we start at a light source and follow the path of each ray, a process called forward tracing. This process is not very useful for computer graphics, as most of the rays will not hit the observer and many computations will not be used. Therefore, modern rendering techniques rely on reverse tracing, where we define the observer as the source, and we only follow the rays that reaches the light source.
 
 ![](https://raysect.github.io/documentation/_images/ray-tracing_directions.png)
 
 (Figure taken from the [Raysect](https://raysect.github.io/documentation/how_it_works.html#id1) package.)
 
-In this notebook, we will only concern ourselves with the forward tracing algorithm in the 2D space (so no fancy rendered images, unfortunately). We will also only implement refraction of light rays."""
+In this notebook, we will only concern ourselves with the forward tracing algorithm in 2D space (so no fancy rendered images, unfortunately). We will also only implement refraction of light rays and not reflection."""
 
 # ╔═╡ 7a325230-4058-11eb-0668-31cd724624c3
 md"""## Constructing a Scene
 
-We would like to follow the path of light rays emanating from a single source. To do that, we will construct a 2D grid (representative of our "scene") and trace the path of light to designated edges of the grid. First we will create a scene with width 20 and height 10 (a $10\times20$ grid)."""
+We would like to follow the path of light rays emanating from a single source. To do that, we will construct a 2D grid (representative of our "scene") and trace the path of light to designated edges of the grid. First we will create a scene with a width of 20 pixels and height of 10 pixels (a $10\times20$ grid)."""
 
 # ╔═╡ cf690c80-4058-11eb-0651-378b92054e4d
 tiny_scene = create_scene(20, 10);
@@ -60,25 +60,25 @@ end
 # ╔═╡ 120ed0fe-4059-11eb-2ed4-f33531ba8588
 md"""### Drawing objects in a scene
 
-To study the refraction of rays, there would need to be some objects in the scene. Let us start by creating another scene and placing some circles in there."""
+To study the refraction of rays, there would need to be some objects in the scene. Let us start by creating another scene and placing a circle in there. The index of refraction of this circle was arbitrarily set at 1.5. This means that light travels 1.5 times slower through this circle than in the surroundings (assumed to be a vacuum)."""
 
 # ╔═╡ 30febd00-4059-11eb-15b6-57b68583a378
 circle = draw_circle(5, 45, 20);
 
 # ╔═╡ 1e363c70-4059-11eb-0d3d-5312bd042d56
-scene = create_scene(80, 60, circle, 0.7);
+scene = create_scene(80, 60, circle, 1.5);
 
 # ╔═╡ ac63f0f0-4059-11eb-0676-078ce8af6a46
-heatmap(scene, yflip=true, seriescolor=:ice, size=(300,200))
+heatmap(scene, yflip=true, seriescolor=:ice, size=(300,200), clim=(1,2))
 
 # ╔═╡ d36523e0-4059-11eb-3379-153b66651a92
 md"""We can add another circle to the scene with the function `add_objects!`, which modifies the scene in-place."""
 
 # ╔═╡ beee08f0-4059-11eb-16b1-73fca7023e32
-add_objects!(scene, draw_circle(5, 20, 30), 0.9)
+add_objects!(scene, draw_circle(5, 20, 30), 2.0)
 
 # ╔═╡ d1e38cf2-4059-11eb-266a-ddc98480544e
-heatmap(scene, yflip=true, seriescolor=:ice, size=(300,200))
+heatmap(scene, yflip=true, seriescolor=:ice, size=(300,200), clim=(1,2))
 
 # ╔═╡ b07eb3e0-405a-11eb-3c2a-65bd7c1b796b
 md"""It is also possible to define a scene with multiple objects from the start. In addition, we demonstrate an alternate way to visualize the scene in the code chunk below. The `plot_circle` function plots the circle(s) as a vector by default."""
@@ -90,7 +90,7 @@ let
 	circles = draw_circle.(r, w_center, h_center)
 
 	w,h = 80,60
-	scene = create_scene(w, h, circles, [0.7, 0.9])
+	scene = create_scene(w, h, circles, [1.5, 2.0])
 
 	p = plot(xticks=0:5:w+1, xlims=(0,w+1),
 			 yticks=0:5:h+1, ylims=(0,h+1),
@@ -130,7 +130,7 @@ md"""
 `w_center` $(@bind w_center html"<input type=range min=1 max=80 value=40 >")
 `h_center` $(@bind h_center html"<input type=range min=1 max=60 value=30 >")
 
-`ior` $(@bind ior html"<input type=range min=0.2 max=1.2 step=0.1 value=0.7 >")
+`ior` $(@bind ior html"<input type=range min=0.7 max=1.7 step=0.1 value=1 >")
 """
 
 # ╔═╡ 388758b0-4069-11eb-2cbb-19d5f2aa84df
