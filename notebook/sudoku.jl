@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.12.12
+# v0.12.17
 
 using Markdown
 using InteractiveUtils
@@ -12,7 +12,7 @@ md"""
 
 # Solving a Sudoku using Local Search
 
-Sudoku is a world wide popular japanesse puzzle. Although very challenging, Sudoku rules are quite simple: Place digits between 1-9 on a 9×9 grid such that
+Sudoku is a world wide popular Japanese puzzle. Although very challenging, Sudoku rules are quite simple: Place digits between 1-9 on a 9×9 grid such that
 each digit appears once in each row, column and each 3x3 sub-grid.
 
 Local search methods, opposed to brute force algorithm, move from state to state in the space of states by applying local changes, trying to get closer to the solution each time.
@@ -40,7 +40,7 @@ sudoku_2
 md"""
 #### Get an initial state
 
-Randomly assign numbers from 1 to 9 to each missing value
+Randomly assign numbers from 1 to 9 to each missing value:
 
 """
 
@@ -65,7 +65,7 @@ cc1 = check_value(sudoku_full1, 1, 1)
 
 # ╔═╡ 8523fd2e-3d6d-11eb-30f2-cd1240c6f3d6
 md"""
-Now we can assign a different number, for example "5", to that position and evaluate if the cost increase or decrease 
+Now we can assign a different number, for example "5", to that position and evaluate if the cost increases or decreases. 
 """
 
 
@@ -135,6 +135,7 @@ We can use the swapping approach. Start with a random assigment, then make swaps
 """
 
 # ╔═╡ 5c5fa760-3d76-11eb-074d-b57c5caed0ba
+#SUGGESTION: maybe move this to the src ?
 begin
 	solution3 =[]
 	min_cost = Inf
@@ -236,7 +237,7 @@ sudoku_cost(solution5)
 
 # ╔═╡ 1fe59f80-3dfb-11eb-08f2-b1e4a62e679f
 md"""
-This approach is far less effecient than the previous. It will need at least 10000 iterations to find the correct solution
+This approach is far less effecient than the previous. It will need at least 10000 iterations to find the correct solution.
 """
 
 # ╔═╡ Cell order:
