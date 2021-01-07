@@ -2,12 +2,14 @@ using Documenter
 
 using STMOZOO
 using STMOZOO.Example
+using STMOZOO.Cuckoo
 
 makedocs(sitename="STMO ZOO",
     format = Documenter.HTML(),
-    modules=[Example], # add your module
+    modules=[Example, Cuckoo],  
     pages=Any[
-        "Example"=> "man/example.md",  # add the page to your documentation
+        "Example"=> "man/example.md",  
+        "Cuckoo"=> "man/cuckoo.md"
     ])
 
 #=
