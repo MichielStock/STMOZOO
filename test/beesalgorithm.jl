@@ -6,6 +6,15 @@
 # wrap all your tests and subgroups in a `@testset` block
 @testset "BeesAlgorithm" begin
     using STMOZOO.BeesAlgorithm  # load YOUR module
+    using STMOZOO.BeesAlgorithm: initialize_population
+    using STMOZOO.BeesAlgorithm: compute_objective
+    using STMOZOO.BeesAlgorithm: compute_fitness
+    using STMOZOO.BeesAlgorithm: employed_bee_phase
+    using STMOZOO.BeesAlgorithm: scouting_phase
+    using STMOZOO.BeesAlgorithm: onlooker_bee_phase
+    using STMOZOO.BeesAlgorithm: foodsource_info_prob
+    using STMOZOO.BeesAlgorithm: create_newsolution
+
     S = 24
     bounds_lower = [-100,-100,-100,-100]
     bounds_upper = [100,100,100,100]
@@ -18,7 +27,7 @@
 
         population = initialize_population(D, bounds_lower, bounds_upper, n)
         @test length(population) == n
-        @test all([bounds_lower <= population[i] <= bounds_upper for i in length(population)])
+        @test all([bounds_lower <= population[i] <= bounds_upper for i in 1:length(population)])
 
     end
 

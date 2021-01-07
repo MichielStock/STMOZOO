@@ -131,8 +131,8 @@ julia> compute_fitness(objective_values)
 function compute_fitness(objective_values)
 
     fitness_values = zeros(length(objective_values),1)
-    fitness_values[objective_values .>= 0] = 1 ./ (1 .+ objective_value)
-    fitness_values[objective_values .< 0] = 1 .+ abs(objective_value)
+    fitness_values[objective_values .>= 0] = 1 ./ (1 .+ objective_values[objective_values .>= 0])
+    fitness_values[objective_values .< 0] = 1 .+ abs.(objective_values[objective_values .< 0]) 
     return fitness_values
 
 end	
@@ -163,7 +163,7 @@ julia> foodsource_info_prob(fitness_values)
 """
 function foodsource_info_prob(fitness_values)
 
-    probabilities = 0.9 .* (fitness_value ./ maximum(fitness_values)) .+ 0.1
+    probabilities = 0.9 .* (fitness_values ./ maximum(fitness_values)) .+ 0.1
     return probabilities
 end	
 
