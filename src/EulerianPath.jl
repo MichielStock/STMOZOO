@@ -2,11 +2,13 @@ module EulerianPath
 
 export  create_adj_list, has_eulerian_cycle, has_eulerian_path
 
-
+#SUGGESTION: Consider naming the function create_adj_dict 
+# and the variable adj_dict so that it's clearer what 
+# type of variable you create (same in the other functions)
 """
     create_adj_list(edges)
 
-    This is function to create adjacent list.
+    This is the function to create adjacent list.
     The input is a list of edges, the output is a dictionary. 
     The key is each node, the value is the node has edges with it.
 """
@@ -28,6 +30,9 @@ function create_adj_list(edges)
 return adj_list    
 end
 
+#SUGGESTION: Consider specifying the type of the parameter adj_list as adj_list::Dict
+#both in has_eulerian_cycle and has_eulerian_path to clarify what thenfunction takes as
+#input parameter
 """
     has_eulerian_cycle(adj_list)
 
