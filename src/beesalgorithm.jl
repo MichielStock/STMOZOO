@@ -404,7 +404,6 @@ function onlooker_bee_phase(population, bounds_lower::Vector, bounds_upper::Vect
     
             objective_values_new = compute_objective([solution_new], f)
             fitness_new = compute_fitness(objective_values_new)[1]
-            print(fitness_new)
             if fitness_new > fitness_old # if this get accepted 
                 population[n, :] = [solution_new]
                 trial[n]=0
@@ -457,7 +456,7 @@ Output
 ## Examples
  
 ```julia-repl
-julia> trial = trial = ones(size(population)[1])
+julia> trial = ones(size(population)[1])
 julia> bounds_lower = [-5,-5,-5,-5]
 julia> bounds_upper = [5,5,5,5]
 julia> D=4
@@ -495,30 +494,32 @@ function scouting_phase(population, bounds_lower::Vector, bounds_upper::Vector,
         
     # check whether the trial vector exceed the limit value and importantly where
     index_exceed = trials .> limit
-
     if sum(index_exceed) >= 1 # there is minimal one case where we exceed the limit
         if sum(maximum(trials) .== trials) > 1 # multiple cases have the same maximum so chose randomly
+            
             possible_scoutings = findall(trials .== maximum(trials))
             idx = rand(1:size(possible_scoutings)[1])
             scouting_array = possible_scoutings[idx]
         else # only one array has a maximum => chose this one 
-        
+
             scouting_array = argmax(trials)
+            
         end
         pop = population[scouting_array]
         fit = fitness[scouting_array]
         obj = objective[scouting_array]
         trail = trials[scouting_array]
-    
+        
         #creating random population
         sol_new = bounds_lower + (bounds_upper-bounds_lower) .* rand(D) # -5 *(10*rand)
         new_obj = compute_objective([sol_new],f)
         new_fit = compute_fitness(new_obj)
-    
+        
         # replacing the new population
         population[scouting_array] = sol_new
+        
         fitness[scouting_array] = new_fit[1]
-        objective[scouting_array] = new_obj
+        objective[scouting_array] = new_obj[1]
         trials[scouting_array] = 0
     
     end
