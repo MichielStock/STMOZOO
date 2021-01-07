@@ -15,4 +15,18 @@
     @testset "has_eulerian_path" begin
         @test has_eulerian_cycle(adj_list) == true
     end
+
+    adj_list = create_adj_list([[1, 2], [1, 4], [1, 3], [2, 3], [2, 4], [3, 4]])
+    @testset "create_adj_list" begin
+        @test adj_list == Dict(4 => [1, 2, 3],2 => [1, 3, 4],3 => [1, 2, 4],1 => [2, 4, 3])
+    end
+
+    @testset "has_eulerian_cycle" begin
+        @test has_eulerian_cycle(adj_list) == false
+    end
+
+    @testset "has_eulerian_path" begin
+        @test has_eulerian_cycle(adj_list) == false
+    end
+
 end
