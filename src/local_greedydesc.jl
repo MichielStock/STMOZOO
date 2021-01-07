@@ -2,6 +2,30 @@ module LocalSearch
 
 export fill_in, check_value, sudoku_cost, sudoku_greedydesc, flip, fliprow, makeflip, makefliprow, search 
 
+#SUGGESTION
+# You could use this function to plot the sudoku's in Pluto. 
+# you will need to add "using Plots"
+function show_sudoku(sudoku)
+	xloc = [0.19,0.5,0.8,1.19,1.5,1.8,2.19,2.5,2.8] # x-axis locations (left to right)
+    yloc = [2.8,2.5,2.19,1.8,1.5,1.19,0.8,0.5,0.19] # y-axis locations (up to down)
+    # plot grid
+	vline([0,1,2,3],color = "black",axis = false,ticks = false, lim = [0,9], legend = false,width = 2)
+    hline!([0,1,2,3],color = "black",width = 2)
+	vline!([0.33,0.66,1.33,1.66,2.33,2.66],color = "black",width = 0.5)
+    hline!([0.33,0.66,1.33,1.66,2.33,2.66],color = "black",width = 0.5)
+    # plot numbers
+    # I tried this with a for-loop but then there is no plot shown, I don't know why...
+	annotate!(xloc[1],yloc,sudoku[:,1])
+	annotate!(xloc[2],yloc,sudoku[:,2])
+	annotate!(xloc[3],yloc,sudoku[:,3])
+	annotate!(xloc[4],yloc,sudoku[:,4])
+	annotate!(xloc[5],yloc,sudoku[:,5])
+	annotate!(xloc[6],yloc,sudoku[:,6])
+	annotate!(xloc[7],yloc,sudoku[:,7])
+	annotate!(xloc[8],yloc,sudoku[:,8])
+	annotate!(xloc[9],yloc,sudoku[:,9])
+end
+
 """
     fill_in(sudoku::Matrix)
 
@@ -30,10 +54,14 @@ function fill_in(sudoku::Matrix)
 Gives the number of repetitions in row, column and subgrid for a number in position [val_i, val_j] in the sudoku
 it is used to check if a particular number meets the sudoku constraints.
 It takes as inputs a filled sudoku grid, two coordinates of the evaluated position (row, column) and an optional argument.
-If the optional argument is given then it will return the number of constrains violations when this value is placed in the input position. 
+If the optional argument is given then it will return the number of constraint violations when this value is placed in the input position. 
 """
-function check_value(sudoku::Matrix, val_i::Int, val_j::Int, value =nothing)
-  
+function check_value(sudoku::Matrix, val_i::Int, val_j::Int, value = nothing)
+    #SUGGESTION: you could use a default value for `val` in the argument list
+    #instead of the code below
+    #so: function check_value(sudoku::Matrix, val_i::Int, val_j::Int, val = sudoku[val_i, val_j])
+    #and not the if val === nothing construction
+
     if value === nothing
         val = sudoku[val_i, val_j]
     else
@@ -41,6 +69,10 @@ function check_value(sudoku::Matrix, val_i::Int, val_j::Int, value =nothing)
     end
     
     constr = 0.0
+    #SUGGESTION: for the calculation of rows and columns, something like
+    # constr += sum(sudoku_full1[val_i,val_j] .== sudoku_full1[val_i,:]) - 1
+    # should work I think (-1 because the value itself cannot be counted twice)
+
     #for a particular position [val_i][val_j] how many repetions are in the row.
     for j in 1:length(sudoku[val_i,:])
         if sudoku[val_i, val_j] != 0 && sudoku[val_i, j] == val && j != val_j 
@@ -106,17 +138,18 @@ function sudoku_cost(sudoku::Matrix)
     return Int(total_cost)
 end
 
-"""" 
+"""
     sudoku_greedydesc(sudoku::Matrix, empty::Matrix, max_iter::Int)
 
-Selects a random position in the sudoku and changes its number with a different random number, 
-if the number of constraints violations increase, tries another random, otherwise, 
-assigns the new number to that position. Then repeats the same process 'max_iter' times
+Selects a random position in the sudoku and changes its number with a different random
+number, if the number of constraints violations increase, tries another random, otherwise, 
+assigns the new number to that position. Then repeats the same process `max_iter` times
 """
 function sudoku_greedydesc(sudoku::Matrix, empty::Matrix, max_iter::Int)
     board = deepcopy(sudoku)
     i = 0
     while i < max_iter
+        #QUESTION: why is this a global variable?
         global total_cost
         #calculate number of conflicts
         total_cost = sudoku_cost(board)
@@ -149,7 +182,7 @@ end
     flip(sudoku::Matrix, empty::Matrix) 
 
 Randomly selects two positions in the sudoku and makes a swap. 
-Returns the new sudoku and the indices of changed positions
+Returns the new sudoku and the indices of changed positions.
 """
 function flip(sudoku::Matrix, empty::Matrix)
     (i1, j1, i2, j2) = (rand(1:9), rand(1:9), rand(1:9), rand(1:9))
@@ -165,7 +198,7 @@ end
     fliprow(sudoku::Matrix, empty::Matrix) 
 
 Randomly selects two positions in the same row in the sudoku and makes a swap. 
-Returns the new sudoku and the indices of changed positions
+Returns the new sudoku and the indices of changed positions.
 """
 function fliprow(sudoku::Matrix, empty::Matrix)
     (i1, j1, j2) = (rand(1:9), rand(1:9), rand(1:9))
@@ -177,12 +210,12 @@ function fliprow(sudoku::Matrix, empty::Matrix)
     return res, (i1,j1), (i1,j2)
 end
 
-"""" 
+""" 
     makeflip(sudoku::Matrix, empty::Matrix, max_iter::Int)
 
-Evaluates if the swap make by 'flip' function increased/decreased the total cost of the sudoku, if increase,
-doesnt make the swap and selects another swap, otherwise makes the swap. 
-Repeat the process 'max_iter' times
+Evaluates if the swap made by `flip` function increased/decreased the total cost of the sudoku, if increase,
+doesn't make the swap and selects another swap, otherwise makes the swap. 
+Repeat the process `max_iter` times.
 """
 function makeflip(sudoku::Matrix, empty::Matrix, max_iter::Int)
     resp = deepcopy(sudoku)
@@ -199,12 +232,12 @@ function makeflip(sudoku::Matrix, empty::Matrix, max_iter::Int)
     return resp
 end
 
-"""" 
+""" 
     makefliprow(sudoku::Matrix, empty::Matrix, max_iter::Int)
 
-Evaluates if the swap made by 'flip_row' function increased/decreased the total cost of the sudoku, if increase,
-doesnt make the swap and selects another swap, otherwise makes the swap. 
-Repeat the process 'max_iter' times
+Evaluates if the swap made by `flip_row` function increased/decreased the total cost of the sudoku, if increase,
+doesn't make the swap and selects another swap, otherwise makes the swap. 
+Repeat the process `max_iter` times.
 """
 function makefliprow(sudoku::Matrix, empty::Matrix, max_iter::Int)
     resp = deepcopy(sudoku)
@@ -221,10 +254,10 @@ function makefliprow(sudoku::Matrix, empty::Matrix, max_iter::Int)
     return resp
 end
 
-"""" 
+""" 
     search(sudoku::Matrix, max_repl::Int, max_flips::Int)
 
-Takes an empty Sudoku, and search for the solution that minimizes the number of constraint violations
+Takes an empty Sudoku, and search for the solution that minimizes the number of constraint violations.
 To find the solution the search must be done at least 1000 times. This algorithm is not efficient.
 """
 function search(sudoku::Matrix, max_repl::Int, max_flips::Int)
