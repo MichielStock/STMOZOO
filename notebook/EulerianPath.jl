@@ -124,7 +124,7 @@ has_eulerian_cycle(adj_dict2)
 
 # ╔═╡ 4916fbfc-501a-11eb-246f-0fc3bf6544cd
 md"""
-For eulerian path, its condition is different from has_eulerian_cycle condition. If there are 0 **or** two nodes have even degree, an eulerian path can be created.
+For eulerian path, its condition is different from has\_eulerian\_cycle condition. If there are 0 **or** two nodes have even degree, an eulerian path can be created.
 
 """
 
