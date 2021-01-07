@@ -1,11 +1,10 @@
-
 # SingleCellNMF
 
 This project implements coupled non-negative matrix factorization(NMF) for multiomics single-cell data analysis.
 
 ## Motivation
 
-Single-cell technologies allow studying cellular heterogeneity at unprecedented resolution thousands of cells. It is possible to sequence transcriptome, epigenome, proteome, and other -omes of single cells, and the price is constantly dropping. As it is possible to profile both epigenetic features and transcriptome, we can try to connect these features to uncover the mechanisms of regulatory heterogeneity. However, integrating the data from multiple experiments and modalities can be quite challenging due to technical and biological variability. Single-cell data analysis is full of challenges and most tools are relatively new. Notably, chromatin accessibility measurements at the single-cell level are extremely sparse, and it is not always possible to reliably recover all the cell types from such measurements.
+Single-cell technologies allow studying cellular heterogeneity at unprecedented resolution thousands of cells. It is possible to sequence transcriptome, epigenome, proteome, and other -omes of single cells, and the price is constantly dropping. As it is possible to profile both epigenetic features and the transcriptome, we can try to connect these features to uncover the mechanisms of regulatory heterogeneity. However, integrating the data from multiple experiments and modalities can be quite challenging due to technical and biological variability. Single-cell data analysis is full of challenges and most tools are relatively new. Notably, chromatin accessibility measurements at the single-cell level are extremely sparse, and it is not always possible to reliably recover all the cell types from such measurements.
 
 ## What is matrix factorization?
 
@@ -31,7 +30,7 @@ Here $X_{1}$ is a gene expression matrix with cells in the columns and features 
 
 ## Solving NMF
 
-Two-block coordinate descent approach is commonly used to solve the optimization problem. Therein, one of the factors is updated, while others are fixed. Below is the pseudocode For factorizing two input matrices:
+Two-block coordinate descent approach is commonly used to solve the optimization problem. Therein, one of the factors is updated, while others are fixed. Below is the pseudocode for factorizing two input matrices:
 ```
 Given matrices X1(p by n) and X2(q by n):
 Randomly initialize W1(p by k), W2(q by k), H(k by n), Z(n by n)
@@ -51,7 +50,7 @@ ${Z}^{ij}\leftarrow {Z}^{ij}\frac{{\left(\left({X}_2^T{W}_2H\right)\circ R+\lamb
 
 ## Choice of dimensionality
 
-$W_{1}$ and $W_{2}$ have dimensionality of $(N_{features}, k)$, and H is $(N_{cells}, k)$. As we seek a low-dimensional representation of data, $k$ should be lower than number of features(genes and loci) and cells. We can use our knowledge about biological system at hand to approximately choose $k$, and to further improve the choice of $k$ by trying out different values.
+$W_{1}$ and $W_{2}$ have dimensionality of $(N_{features}, k)$, and $H$ is $(N_{cells}, k)$. As we seek a low-dimensional representation of data, $k$ should be lower than number of features (genes and loci) and cells. We can use our knowledge about biological system at hand to approximately choose $k$, and to further improve the choice of $k$ by trying out different values.
 
 ```@docs
 perform_nmf
