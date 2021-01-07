@@ -9,6 +9,7 @@ export triangleevolution, Triangle, drawtriangle, colordiffsum, samesideofline, 
 # It was mentioned we should only export the functions useful for the user, but on the other hand I can only test the functions I export here
 # So currently I'm exporting everything (so I can test them) even though only triangleevolution is necessary for the user.
 # Any more elegant way to handle this?
+# You can type using STMOZOO.polygon to access your other functions
 
 """
 A type Shape so the code can be made to work with e.g. rectangles as well. For now, only triangles are supported.
