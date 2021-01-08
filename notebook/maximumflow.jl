@@ -47,26 +47,39 @@ To be able to completely understand the problem, some definitions and terminolog
 !!! terminology "Capacitated network"
     A *capacitated network* is a network ``G`` with *nodes* ``N`` and *arcs* ``A``, noted as ``G = (N,A)``, with a *capacity* ``u_{i,j}`` for the arc ``(i,j) \in A``. In this notebook the network is implemented as an ``n \times n`` adjacency matrix ``A``, with ``n`` the number of nodes in ``N`` and where ``A[i,j] = u_{i,j}``. Say an arc ``(i,j) \in A`` exists if ``A[i,j] > 0`` and the corresponding capacity is ``u_{i,j}``.
 
-An example of a capacitated network is illustrated below.
+There are two special nodes: the source ``s`` and sink ``t``. In each node of the network there should be a correct mass balance, i.e. what comes in has to go out, except for the source and sink. The source can create flow and the sink can consume it.
+
+There are two examples implemented to illustrate the concepts in this section. Select one using the dropdown menu.
+
+$(@bind ex Select(["a" => "Example 1", "b" => "Example 2"]))
 """
 
 
 # ╔═╡ 17321b8e-4a24-11eb-286d-47e441d012e9
-begin
-		example = [0 8 2 0; 0 0 2 4;0 0 0 5;0 0 0 0];
-		nodelabs = ["a","b","c","d"];
-		x_loc = [0, 0.5, 0.5, 1];
-		y_loc = [0.5,1,0,0.5];
+if ex == "a"
+	example = [0 8 2 0; 0 0 2 4;0 0 0 5;0 0 0 0];
+	nodelabs = ["s","a","b","t"];
+	x_loc = [0, 0.5, 0.5, 1];
+	y_loc = [0.5,1,0,0.5];
+	colors = ["red", "lightblue","lightblue","red"]
+	example_flow = [0 3 1 0; 0 0 1 2; 0 0 0 2; 0 0 0 0]
+	s,t = 1,4
+elseif ex == "b"
+	example = [0 20 10 14 0; 0 0 10 0 17; 0 0 0 5 12; 0 0 0 0 11; 0 0 0 0 0];
+	nodelabs = ["s","a","b","c","t"];
+	x_loc = [0, 0.35, 0.35, 0.35, 0.7];
+	y_loc = [0.5,1,0.5,0,0.5];
+	colors = ["red", "lightblue", "lightblue", "lightblue","red"]
+	example_flow = [0 14 5 6 0; 0 0 7 0 7; 0 0 0 5 12; 0 0 0 0 11; 0 0 0 0 0];
+	s,t = 1,5
 end;
 
 # ╔═╡ 8279cab0-4a24-11eb-13de-8f3a13d74c63
 graphplot(example, x=x_loc, y=y_loc, nodeshape = :circle
-, nodesize = 0.2, nodecolor = ["red", "lightblue","lightblue","red"], names = nodelabs, edgelabel = example, fontsize = 8, curves = false, arrows = true )
+, nodesize = 0.2, nodecolor = colors, names = nodelabs, edgelabel = example, fontsize = 8, curves = false, arrows = true )
 
 # ╔═╡ 0a9929a0-4a24-11eb-34ac-49fe1e92fefa
 md"""
-Two special nodes are highlighted, the source ``s`` and sink ``t``. In each node of the network there should be a correct mass balance, i.e. what comes in has to go out, except for the source and sink. The source can create flow and the sink can consume it.
-
 !!! terminology "Flow and value of flow"
     A *flow* ``x`` is in this case defined as a matrix with elements ``x_{i,j}`` representing the sent flow on the arc ``(i,j)`` from node ``i`` to ``j``. The *flow* ``x`` is a proposed solution to the maximum flow problem, but not necessarily the best. The *value of the flow* ``v`` can be calculated by taking the sum of the flows of the arcs leaving the source (``x_{s,i}``) or arriving at the sink (``x_{i,t}``).
 
@@ -95,23 +108,19 @@ At last, a critical concept in the following algorithm is the residual network. 
 !!! terminology "Residual network"
     A *residual network* given a flow ``x``, ``G(x)``, exists of the *residual capacities* ``r_{i,j}`` from a network ``G``. The residual capacity of an arc ``(i,j) \in A`` is the maximal additional flow that can be sent from node ``i`` to ``j`` using the arcs ``(i,j)`` and ``(j,i)``, so ``r_{i,j} = u_{i,j} - x_{i,j} + x_{j,i}``. It consists of two parts: the unused capacity ``u_{i,j} - x_{i,j}`` of arc ``(i,j)`` and the current flow ``x_{j,i}`` on arc ``(j,i)``, which can be canceled to increase the flow ``x_{i,j}`` on arc ``(i,j)``.
 
-The residual network of the example above, given flow 
-``x = \begin{bmatrix} 0 & 3 & 1 & 0 \\ 0 & 0 & 1 & 2 \\ 0 & 0 & 0 & 2 \\ 0 &0&0&0 \end{bmatrix}`` is shown below.
-
+The residual network of the example above, given a flow 
+``x`` is shown below.
 """
 
 # ╔═╡ 03b26e12-4a26-11eb-32ae-5b3dca2e4708
-begin
-	example_flow = [0 3 1 0; 0 0 1 2; 0 0 0 2; 0 0 0 0]
-	res_net = res_network(example,example_flow)
-end;
+res_net = res_network(example,example_flow);
 
 # ╔═╡ 3641b2a0-4a26-11eb-037b-856bede74976
 begin
 	l = @layout [a b c] 
-	p1 = graphplot(example, x=x_loc, y=y_loc, nodeshape = :circle, nodesize = 0.25, nodecolor = ["red", "lightblue","lightblue","red"], names = nodelabs, edgelabel = example, fontsize = 8, curves = false, arrows = true, title = "original network" )
-	p2 = graphplot(example_flow, x=x_loc, y=y_loc, nodeshape = :circle, nodesize = 0.25, nodecolor = ["red", "lightblue","lightblue","red"], names = nodelabs, edgelabel = example_flow, fontsize = 8, curves = false, arrows = true, title = "flow" )
-	p3 = graphplot(res_net, x=x_loc, y=y_loc, nodeshape = :circle, nodesize = 0.25, nodecolor = ["red", "lightblue","lightblue","red"], names = nodelabs, edgelabel = res_net, fontsize = 8, curves = true, arrows = true, title = "residual network" )
+	p1 = graphplot(example, x=x_loc, y=y_loc, nodeshape = :circle, nodesize = 0.25, nodecolor = colors, names = nodelabs, edgelabel = example, fontsize = 8, curves = false, arrows = true, title = "original network" )
+	p2 = graphplot(example_flow, x=x_loc, y=y_loc, nodeshape = :circle, nodesize = 0.25, nodecolor = colors, names = nodelabs, edgelabel = example_flow, fontsize = 8, curves = false, arrows = true, title = "flow" )
+	p3 = graphplot(res_net, x=x_loc, y=y_loc, nodeshape = :circle, nodesize = 0.25, nodecolor = colors, names = nodelabs, edgelabel = res_net, fontsize = 8, curves = true, arrows = true, title = "residual network" )
 	plot(p1,p2,p3,layout = l)
 end
 
@@ -157,32 +166,34 @@ The example above is used to illustrate the augmenting path algorithm. First the
 """
 
 # ╔═╡ 476e6b6e-4f32-11eb-0465-133b96d6fbe2
-graphplot(example, x= x_loc, y = y_loc, nodeshape = :circle, nodesize = 0.2, nodecolor = ["red", "lightblue","lightblue","red"], names = nodelabs, edgelabel = example, fontsize = 8, curves = false, arrows = true, title = "original network" )
+graphplot(example, x= x_loc, y = y_loc, nodeshape = :circle, nodesize = 0.2, nodecolor = colors, names = nodelabs, edgelabel = example, fontsize = 8, curves = false, arrows = true, title = "original network" )
 
 # ╔═╡ 981e1540-4ea9-11eb-1d1b-9167a3e9e4d7
-example_sol, example_mflow, example_t =  augmenting_path(example,1,4,track = true);
+example_sol, example_mflow, example_track =  augmenting_path(example,s,t,track = true);
 
 # ╔═╡ 29f78920-4ea9-11eb-3edf-015742b50e29
-@bind teller Slider(1:length(example_t))
+@bind teller Slider(1:length(example_track))
 
 # ╔═╡ 09f10790-4eaa-11eb-2f8c-97431d5516ba
 md"Use the slider to scroll through the steps. You are currently viewing step $teller."
 
 # ╔═╡ a80d9420-4c57-11eb-396c-8743eb36b0ca
 let
-	colors = ["red","lightblue","lightblue","red"]
-	colors[example_t[teller][3]] .= "orange"; 
-	or_flow = example_t[teller][1];
-	res_nw = example_t[teller][2];
-	if teller == length(example_t)
+	colors_path = copy(colors)
+	colors_path[example_track[teller][3]] .= "orange"; 
+	or_flow = example_track[teller][1];
+	res_nw = example_track[teller][2];
+	flow_value = sum(or_flow[s,:])
+	if teller == length(example_track)
 		update_flow = example_sol;
 	else
-		update_flow = example_t[teller+1][1]
+		update_flow = example_track[teller+1][1]
 	end
+	flow_value_update = sum(update_flow[s,:])
 	l2 = @layout [a b c]
-	f1 = graphplot(example, x=x_loc, y=y_loc, nodeshape = :circle, nodesize = 0.25, nodecolor = ["red", "lightblue","lightblue","red"], names = nodelabs, edgelabel = or_flow, fontsize = 8, curves = false, arrows = true, title = "original flow" )
-	f2 = graphplot(res_nw, x=x_loc, y=y_loc, nodeshape = :circle, nodesize = 0.25, nodecolor = colors, names = nodelabs, edgelabel = res_nw, fontsize = 8, curves = true, arrows = true, title = "residual network \n with augmenting path" )
-	f3 = graphplot(update_flow, x=x_loc, y=y_loc, nodeshape = :circle, nodesize = 0.25, nodecolor = ["red", "lightblue","lightblue","red"], names = nodelabs, edgelabel = update_flow, fontsize = 8, curves = false, arrows = true, title = "updated flow" )
+	f1 = graphplot(example, x=x_loc, y=y_loc, nodeshape = :circle, nodesize = 0.25, nodecolor = colors, names = nodelabs, edgelabel = or_flow, fontsize = 8, curves = false, arrows = true, title = "original flow (= $flow_value)" )
+	f2 = graphplot(res_nw, x=x_loc, y=y_loc, nodeshape = :circle, nodesize = 0.25, nodecolor = colors_path, names = nodelabs, edgelabel = res_nw, fontsize = 8, curves = true, arrows = true, title = "residual network \n with augmenting path" )
+	f3 = graphplot(update_flow, x=x_loc, y=y_loc, nodeshape = :circle, nodesize = 0.25, nodecolor = colors, names = nodelabs, edgelabel = update_flow, fontsize = 8, curves = false, arrows = true, title = "updated flow (= $flow_value_update)" )
 	plot(f1,f2,f3,layout = l2)
 end
 
@@ -503,7 +514,7 @@ end;
 # ╟─17321b8e-4a24-11eb-286d-47e441d012e9
 # ╟─8279cab0-4a24-11eb-13de-8f3a13d74c63
 # ╟─0a9929a0-4a24-11eb-34ac-49fe1e92fefa
-# ╟─03b26e12-4a26-11eb-32ae-5b3dca2e4708
+# ╠═03b26e12-4a26-11eb-32ae-5b3dca2e4708
 # ╟─3641b2a0-4a26-11eb-037b-856bede74976
 # ╟─0a8c4af0-4169-11eb-2d4d-6d8a9f515b94
 # ╟─476e6b6e-4f32-11eb-0465-133b96d6fbe2
