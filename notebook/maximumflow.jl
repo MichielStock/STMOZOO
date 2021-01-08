@@ -45,7 +45,7 @@ md"""
 To be able to completely understand the problem, some definitions and terminology are needed.
 
 !!! terminology "Capacitated network"
-    A capacitated network is a network ``G`` with nodes ``N`` and arcs ``A``, noted as ``G = (N,A)``, with a capacity ``u_{i,j}`` for the arc ``(i,j) \in A``. In this notebook the network is implemented as an ``n \times n`` adjacency matrix ``A``, with ``n`` the number of nodes in ``N`` and where ``A[i,j] = u_{i,j}``. Say an arc ``(i,j) \in A`` exists if ``A[i,j] > 0`` and the corresponding capacity is ``u_{i,j}``.
+    A *capacitated network* is a network ``G`` with *nodes* ``N`` and *arcs* ``A``, noted as ``G = (N,A)``, with a *capacity* ``u_{i,j}`` for the arc ``(i,j) \in A``. In this notebook the network is implemented as an ``n \times n`` adjacency matrix ``A``, with ``n`` the number of nodes in ``N`` and where ``A[i,j] = u_{i,j}``. Say an arc ``(i,j) \in A`` exists if ``A[i,j] > 0`` and the corresponding capacity is ``u_{i,j}``.
 
 An example of a capacitated network is illustrated below.
 """
@@ -65,7 +65,12 @@ graphplot(example, x=x_loc, y=y_loc, nodeshape = :circle
 
 # ╔═╡ 0a9929a0-4a24-11eb-34ac-49fe1e92fefa
 md"""
-Two special nodes are highlighted, the source ``s`` and sink ``t``. The maximum flow problem can then formally be written as:
+Two special nodes are highlighted, the source ``s`` and sink ``t``. In each node of the network there should be a correct mass balance, i.e. what comes in has to go out, except for the source and sink. The source can create flow and the sink can consume it.
+
+!!! terminology "Flow and value of flow"
+    A *flow* ``x`` is in this case defined as a matrix with elements ``x_{i,j}`` representing the sent flow on the arc ``(i,j)`` from node ``i`` to ``j``. The *flow* ``x`` is a proposed solution to the maximum flow problem, but not necessarily the best. The *value of the flow* ``v`` can be calculated by taking the sum of the flows of the arcs leaving the source (``x_{s,i}``) or arriving at the sink (``x_{i,t}``).
+
+The maximum flow problem can then formally be written as:
 
 maximize ``v``, subject to:
 
@@ -76,7 +81,6 @@ and
 ```math
 0 \leq x_{i,j} \leq u_{i,j}  \hspace{2em} \text{for each } (i,j) \in A
 ``` 
-where ``x`` is a matrix with elements ``x_{i,j}`` called 'a flow' and ``v`` the value of the flow.
 
 Furthermore the problem is subject to some assumptions:
 
@@ -86,9 +90,10 @@ Furthermore the problem is subject to some assumptions:
 * If there is an arc ``(i,j)``, there can also be an arc ``(j,i)``
 * There are no parallel arcs (an arc with the same source and sink node).
 
-At last, a critical concept in the following algorithm is the residual network:
+At last, a critical concept in the following algorithm is the residual network. It is a network with adapted capacities, containing the remainder of the capacities of the original network that can still be sent given a current flow ``x``. For example if there is an arc ``(i,j)`` with capacity 8 but along which 5 flow units are already sent, the residual capacity will be 3. Furthermore the residual network has the ability to cancel sent flow, so there is an extra arc ``(j,i)`` with capacity 5.
+
 !!! terminology "Residual network"
-    A residual network given a flow ``x``, ``G(x)``, exists of the residual capacities ``r_{i,j}`` from a network ``G``. The residual capacity of an arc ``(i,j) \in A`` is the maximal additional flow that can be sent from node ``i`` to ``j`` using the arcs ``(i,j)`` and ``(j,i)``, so ``r_{i,j} = u_{i,j} - x_{i,j} + x_{j,i}``. It consists of two parts: the unused capacity ``u_{i,j} - x_{i,j}`` of arc ``(i,j)`` and the current flow ``x_{j,i}`` using arc ``(j,i)``, which can be canceled to increase the flow ``x_{i,j}``.
+    A *residual network* given a flow ``x``, ``G(x)``, exists of the *residual capacities* ``r_{i,j}`` from a network ``G``. The residual capacity of an arc ``(i,j) \in A`` is the maximal additional flow that can be sent from node ``i`` to ``j`` using the arcs ``(i,j)`` and ``(j,i)``, so ``r_{i,j} = u_{i,j} - x_{i,j} + x_{j,i}``. It consists of two parts: the unused capacity ``u_{i,j} - x_{i,j}`` of arc ``(i,j)`` and the current flow ``x_{j,i}`` on arc ``(j,i)``, which can be canceled to increase the flow ``x_{i,j}`` on arc ``(i,j)``.
 
 The residual network of the example above, given flow 
 ``x = \begin{bmatrix} 0 & 3 & 1 & 0 \\ 0 & 0 & 1 & 2 \\ 0 & 0 & 0 & 2 \\ 0 &0&0&0 \end{bmatrix}`` is shown below.
