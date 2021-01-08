@@ -2,7 +2,7 @@
 
 module polygon
 
-using Images, Colors, Plots, Random, QuartzImageIO
+using Images, Colors, Plots, Random
 import Base: in
 
 export triangleevolution, Triangle, samesideofline, checktriangle, getboundaries, generatetriangle, colordiffsum, triangletournament, generatepopulation
@@ -133,7 +133,7 @@ function drawtriangle(triangle::Triangle, img::Array)
     j_right = xmax
     left_points = Vector{Int}(undef, 2)
     right_points = Vector{Int}(undef, 2)
-    counter = 1
+    counter = 1 # Counts the amount of the triangle's points found
     ymin0 = ymin
 
     while counter <= 2 && ymin <= ymax # We need the first 2 points of both sides of the triangle for their slopes, && ymin <= ymax is to prevent getting stuck
@@ -300,10 +300,10 @@ function generatetriangle(m::Int, n::Int)
         # Prevents white borders
         col = RGB(rand(), rand(), rand())
         currentTriangle = Triangle(points[1], points[2], points[3], col)
-        badTriangle = checktriangle(t, m, n)
+        badTriangle = checktriangle(currentTriangle, m, n)
     end
 
-    return t
+    return currentTriangle
 end
 
 """
@@ -371,7 +371,7 @@ function mutatetriangle(triangle::Triangle, mutation_intensity::Number, mutation
         p1, p2, p3 = round.([triangle.p1, triangle.p2, triangle.p3] + (rand(3) .- 0.5)*(n*mutation_intensity) + (rand(3) .- 0.5)*(m*mutation_intensity)*im)
         # Position of all 3 points is changed, with the change in x and y value scaling with the width and height of the canvas respectively
         currentTriangle = Triangle(p1, p2, p3, triangle.color)
-        badTriangle = checktriangle(t, m, n)
+        badTriangle = checktriangle(currentTriangle, m, n)
     end
 
     col = triangle.color + RGB((rand() - 0.5)*mutation_intensity_color, (rand() - 0.5)*mutation_intensity_color, (rand() - 0.5)*mutation_intensity_color)
@@ -499,7 +499,7 @@ function triangleevolution(image::String = "notebook/examplefigures/TotoroTester
             load(fn)
         end
     else #local file
-        img = load(image) 
+        img = load(image)
     end
 
     img = RGB.(img) # png images are loaded as RGBA (with opacity which we dont use) so we convert those to RGB (jpgs load as RGB by default)

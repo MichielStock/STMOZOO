@@ -29,66 +29,72 @@
 
     @testset "in triangle" begin
         T1 = Triangle(3 + 2im, 4 + 4im, 5 + 0im, RGB(0, 0, 1))
-        testpoint1 = Vector{Complex}(undef, 8)
-        testpoint1[1] = 1 + 3im # not in T1
-        testpoint1[2] = 5 + 2im # not in T1
-        testpoint1[3] = 4 + 5im # not
-        testpoint1[4] = 0.9 + 2im # noac
-        testpoint1[5] = 3 + 2im # in T1 (on edge)
-        testpoint1[6] = 4 + 3im # in T1
-        testpoint1[7] = 4.5 + 1im # in
-        testpoint1[8] = 3.5 + 2.5im # yes
+
+        invalidpoints1 = Vector{Complex}(undef, 4)
+        validpoints1 = Vector{Complex}(undef, 4)
+        
+        invalidpoints1[1] = 1 + 3im # not in T1
+        invalidpoints1[2] = 5 + 2im # not in T1
+        invalidpoints1[3] = 4 + 5im # not
+        invalidpoints1[4] = 0.9 + 2im # noac
+
+        validpoints1[1] = 3 + 2im # in T1 (on edge)
+        validpoints1[2] = 4 + 3im # in T1
+        validpoints1[3] = 4.5 + 1im # in
+        validpoints1[4] = 3.5 + 2.5im # yes
         
         T2 = Triangle(3 + 2im, 3 + 4im, 5 + 1im, RGB(0, 0, 1))
-        testpoint2 = Vector{Complex}(undef, 8)
-        testpoint2[1] = 4 + 1im #not
-        testpoint2[2] = 3 + 0.5im #not
-        testpoint2[3] = 5 + 3im #not
-        testpoint2[4] = 1 + 2im #not
-        testpoint2[5] = 4 + 2im #yes
-        testpoint2[6] = 3 + 2im #yes
-        testpoint2[7] = 3.5 + 2.5im #yes
-        testpoint2[8] = 3.1 + 3.5im #yes
+
+        invalidpoints2 = Vector{Complex}(undef, 4)
+        validpoints2 = Vector{Complex}(undef, 4)
+
+        invalidpoints2[1] = 4 + 1im #not
+        invalidpoints2[2] = 3 + 0.5im #not
+        invalidpoints2[3] = 5 + 3im #not
+        invalidpoints2[4] = 1 + 2im #not
+
+        validpoints2[1] = 4 + 2im #yes
+        validpoints2[2] = 3 + 2im #yes
+        validpoints2[3] = 3.5 + 2.5im #yes
+        validpoints2[4] = 3.1 + 3.5im #yes
 
         for i in 1:4
-            @test !(testpoint1[i] in T1)
-            @test !(testpoint2[i] in T2)
+            @test !(invalidpoints1[i] in T1)
+            @test (validpoints1[i] in T1)
+
+            @test !(invalidpoints2[i] in T2)
+            @test (validpoints2[i] in T2)
+
         end
-        for i in 5:8
-            @test (testpoint1[i] in T1)
-            @test (testpoint2[i] in T2)
-        end 
     end
 
     m = 232
     n = 412
-    testtriangle = Vector{Triangle}(undef, 10)
-    testtriangle[1] = Triangle(20 + 30im, 400 + 250im, 450 + 120im, RGB(1, 0, 0)) # Good triangle
-    testtriangle[2] = Triangle(20 + 30im, 100 + 100im, 50 + 120im, RGB(1, 1, 0)) # Good triangle
-    testtriangle[3] = Triangle(300 + 450im, 100 + 100im, 60 + 400im, RGB(1, 0, 1)) # Good triangle
-    testtriangle[4] = Triangle(300 + 100im, 300 + 400im, 60 + 100im, RGB(0, 1, 0)) # Good triangle
-    testtriangle[5] = Triangle(-100 + 50im, 200 + 150im, 100 + 250im, RGB(0.5, 0, 0)) # Good triangle
+    goodtriangles = Vector{Triangle}(undef, 5)
+    goodtriangles[1] = Triangle(20 + 30im, 400 + 250im, 450 + 120im, RGB(1, 0, 0)) # Good triangle
+    goodtriangles[2] = Triangle(20 + 30im, 100 + 100im, 50 + 120im, RGB(1, 1, 0)) # Good triangle
+    goodtriangles[3] = Triangle(300 + 450im, 100 + 100im, 60 + 400im, RGB(1, 0, 1)) # Good triangle
+    goodtriangles[4] = Triangle(300 + 100im, 300 + 400im, 60 + 100im, RGB(0, 1, 0)) # Good triangle
+    goodtriangles[5] = Triangle(-100 + 50im, 200 + 150im, 100 + 250im, RGB(0.5, 0, 0)) # Good triangle
 
-    testtriangle[6] = Triangle(446 + 193im, 401 + 246im, 495 + 298im, RGB(1, 0, 0)) # STUPID triangle (all points outside of canvas)
-    testtriangle[7] = Triangle(59 + 189im, 58 + 270im, 57 + 5im, RGB(1, 0, 1)) # STUPID triangle (too thin)
-    testtriangle[8] = Triangle(-59 + 189im, -20 + 63im, -200 + 69im, RGB(1, 0, 1)) # STUPID triangle (points outside of canvas, all x are wrong)
-    testtriangle[9] = Triangle(40 + 150im, 239 + 151im, 20 + 150im, RGB(1, 0, 1)) # STUPID triangle (too thin)
-    testtriangle[10] = Triangle(211 + 209im, 338 + 334im, 544 + 534im, RGB(1, 0, 0)) # STUPID triangle (very elongated)
+    badtriangles = Vector{Triangle}(undef, 5)
+    badtriangles[1] = Triangle(446 + 193im, 401 + 246im, 495 + 298im, RGB(1, 0, 0)) # STUPID triangle (all points outside of canvas)
+    badtriangles[2] = Triangle(59 + 189im, 58 + 270im, 57 + 5im, RGB(1, 0, 1)) # STUPID triangle (too thin)
+    badtriangles[3] = Triangle(-59 + 189im, -20 + 63im, -200 + 69im, RGB(1, 0, 1)) # STUPID triangle (points outside of canvas, all x are wrong)
+    badtriangles[4] = Triangle(40 + 150im, 239 + 151im, 20 + 150im, RGB(1, 0, 1)) # STUPID triangle (too thin)
+    badtriangles[5] = Triangle(211 + 209im, 338 + 334im, 544 + 534im, RGB(1, 0, 0)) # STUPID triangle (very elongated)
 
 
     @testset "checktriangle" begin
         for i in 1:5
-            @test checktriangle(testtriangle[i], m, n) == false # These are not stupid triangles
-        end
-
-        for i in 6:10
-            @test checktriangle(testtriangle[i], m, n) == true # These are stupid triangles
+            @test !checktriangle(goodtriangles[i], m, n) # These are not stupid triangles (should return false)
+            @test checktriangle(badtriangles[i], m, n) # These are stupid triangles (should return true)
         end
     end
 
     @testset "getboundaries" begin
-        @test getboundaries(testtriangle[1], m, n) == (20, n, 30, m)
-        @test getboundaries(testtriangle[5], m, n) == (1, 200, 50, m)
+        @test getboundaries(goodtriangles[1], m, n) == (20, n, 30, m)
+        @test getboundaries(goodtriangles[5], m, n) == (1, 200, 50, m)
     end
 
     @testset "generatetriangle" begin
