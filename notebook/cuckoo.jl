@@ -19,7 +19,11 @@ To abstract this concept to a computational method the phenomenon is simplified 
 * The nests containing the best eggs are carried over (elitist selection) to the next generation
 * The number of available host nests is fixed and at each generation the alien cuckoo egg can be discovered with a certain probability. At this point the nest is abandoned and a new nest is generated.
 
+The peculiarity of this method is that in the first step, the position of each new nest is chosen randomly from a Lévy distribution, mimicking the Lévy flight which is a fliying pattern observed in some bird species.
+
 It's important to note that this implementation allows a single egg for each nest, hence the terms nest and egg are used interchangeably.
+
+More details about the implementation are found in the documentation of the module `STMOZOO.Cuckoo`.
 """
 
 # ╔═╡ 3c8f220e-4086-11eb-175b-f92b3e3e8253
