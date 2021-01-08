@@ -73,7 +73,7 @@ end
 md"""### Visualization"""
 
 # ╔═╡ dcd0b396-43af-11eb-1aa9-d3baa5317357
-md"""Using the implemented function `plot_solution` it is possible to visualize how starting from the initial population (green points) the method reaches the final solution (white point):"""
+md"""Using the implemented function `plot_solution` it is possible to visualize how by starting from the initial population (green points) the method reaches the final solution (white point):"""
 
 # ╔═╡ 279492ea-405b-11eb-2af7-13ec8531169a
 function plot_solution_2D(f, x1lims, x2lims)	
@@ -168,7 +168,7 @@ md"""### Parameters and population size"""
 md"""The method allows to specify some parameters, namely:
 * `gen`: number of generation. If the number is too small you may get a suboptimal solution due to the fact that the problem may have not yet converged to its optimal solution. 
 * `alpha`: stepsize when transitioning to a new solution. By default it is 1.0 but can be varied depending on the dimension of the landscape.
-* `Pa`: rate of cuckoo's egg discovery. This parameter allows to balance how much the method relies on exploring known solutions (default `Pa`=0.25) as compared to inspecting new solution through Lévy flights
+* `Pa`: rate of cuckoo's egg discovery. This parameter allows to balance how much the method relies on exploring known solutions (default `Pa`=0.25) as compared to inspecting new solution through Lévy flights.
 * `lambda`: exponent of the Lévy distribution used to sample stepsizes."""
 
 # ╔═╡ 703cb04e-446e-11eb-2954-ebf4cd33851e
