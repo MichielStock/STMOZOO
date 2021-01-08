@@ -408,13 +408,13 @@ md"""
 To solve the problem, first some extra concepts in graph theory are needed.
 
 !!! terminology "s-t cut"
-    A cut is a partition of the node set ``N`` into two subsets ``S`` and ``\bar{S} = N\setminus S``. If `` s \in S`` and ``t \in \bar{S}`` it is called an s-t cut. Arcs ``(i,j)`` with ``i \in S`` and ``j \in \bar{S}`` are called forward arcs of the cut and if ``j \in S`` and ``i \in \bar{S}``, arc ``(i,j)`` is called a backward arc.
+    A *cut* is a partition of the node set ``N`` into two subsets ``S`` and ``\bar{S} = N\setminus S``. If `` s \in S`` and ``t \in \bar{S}`` it is called an *s-t cut*. Arcs ``(i,j)`` with ``i \in S`` and ``j \in \bar{S}`` are called *forward arcs* of the cut and if ``j \in S`` and ``i \in \bar{S}``, arc ``(i,j)`` is called a *backward arc*.
 
 !!! terminology "Capacity of an s-t cut"
-    The capacity of an s-t cut is the sum of the capacities of the forward arcs in the cut.
+    The *capacity of an s-t cut* is the sum of the capacities of the forward arcs in the cut.
 
 !!! terminology "Minimum cut"
-    A minimum cut is an s-t cut whose capacity is minimum among all the s-t cuts in a network.
+    A *minimum cut* is an s-t cut whose capacity is minimum among all the s-t cuts in a network.
 
 From these definitions it is clear that thanks to the specific construction of the network, the total computational cost of an assignment of modules to different processors is given by the capacity of an s-t cut and the problem is in fact a **min-cut problem**. This can be illustrated with the following example cut. Let ``S = \{a,b\}`` and ``\bar{S} = \{c,d\}``. In the table above, it can be seen that the computational cost of running module ``a`` on processor 1 is equal to 6 and this is equal to the capacity of the upper right edge that is cut by the red line. This can be checked for each module. Further ``c`` and ``d`` have to communicate with ``b``, so two additional costs of 6 and 2 respectively are added (note that double arcs are counted only once). The total cost of this cut is ``8+3+6+2+5+6 = 30``.
 """
@@ -558,7 +558,7 @@ end;
 # ╟─cb847020-4f7e-11eb-2ecb-4b51f41f4c8a
 # ╟─efd3baf2-4fa9-11eb-3ab5-016a3af98589
 # ╟─31ca4922-4fa9-11eb-2b3d-3d204532629c
-# ╟─28964c4e-5026-11eb-1ff2-c3a416bfcdbe
+# ╠═28964c4e-5026-11eb-1ff2-c3a416bfcdbe
 # ╟─0d32c91e-502b-11eb-2ef4-97528999fb37
 # ╟─042adb3e-502d-11eb-2702-413da0439d26
 # ╠═24b62e60-4f96-11eb-367d-cbe8af57dcdd
