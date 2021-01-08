@@ -120,7 +120,7 @@ The Ford-Fulkerson method is the first method that was developed to solve this k
 
 It starts with calculating the residual network of a capacitated network given a flow (which is initially zero) as described above. Then it searches this residual network for existing augmenting paths, that is a path from source to sink of which all residual capacities are larger than zero. The residual capacity of an augmenting path is defined as the minimum residual capacity of the arcs in the path. If such a path exists, the residual capacity is by definition positive, so it can be added to the flow along each arc in the augmenting path. This proces is repeated until no augmenting paths can be found.
 
-Note that it is not mentioned how the augmenting paths can be found, therefore it is called a **method** instead of an algorithm. A frequently used search algorithm to find these augmenting paths is the breadth-first-search, which finds a shortest path in a network (in terms of number of arcs in the path). When this search algorithm is used in the Ford-Fulkerson method, the algorithm is called the Edmonds-Karp algorithm and it solves the maximum flow problem in maximally ``\mathcal{O}(na^2)`` time, where ``n`` and ``a`` are the number of nodes and arcs respectively. It works as follows.
+Note that it is not mentioned how the augmenting paths can be found, therefore it is called a **method** instead of an algorithm. A frequently used search algorithm to find these augmenting paths is the breadth-first search, which finds a shortest path in a network (in terms of number of arcs in the path). When this search algorithm is used in the Ford-Fulkerson method, the algorithm is called the Edmonds-Karp algorithm and it solves the maximum flow problem in maximally ``\mathcal{O}(na^2)`` time, where ``n`` and ``a`` are the number of nodes and arcs respectively. It works as follows.
 The distinction is made between labeled and unlabeled nodes, where a labeled node is already visited and an unlabeled not. Further a queue is used, containing the nodes of which the neighboring nodes still have to be explored. Starting with the source, which is labeled and added to the queue, all the unlabeled nodes connected to it with an arc with a larger than zero residual capacity, are labeled and added at the back of the queue. Subsequently the source is removed from the queue and the first node in the queue is further explored. The algorithm stops if the sink gets labeled, or if all the nodes are labeled and there are no nodes left in the queue, which means there is no augmenting path. Because for each labeled node it is memorised which parent node led to it's labeling, the path can be reconstructed using backtracking.
 
 ### Pseudocode 
@@ -254,9 +254,8 @@ isfeasible(train_flow,s=[1,3,9,10],t=6, send= [600,500,300,800])
 
 # ╔═╡ 08cb80d0-4f4e-11eb-2d93-d1d6812076b8
 md"
-<!-- Maybe add a clarification here that the Brussels fans are the ones that can't reach their desination? -->
-
-Because it is a special day, the SNCB adds extra railway carriages on the lines going directly to Oudenaarde and on the most important line from Ghent to Oudenaarde, thus increasing these capacities. The improved network is shown below.
+Apparently there are 200 fans from Brussels that can't reach their destination.
+But because it is a special day, the SNCB adds extra railway carriages on the lines going directly to Oudenaarde and on the most important line from Ghent to Oudenaarde, thus increasing these capacities. The improved network is shown below.
 "
 
 # ╔═╡ 4371eece-4f45-11eb-2374-7751be6d12df
