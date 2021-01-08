@@ -1,11 +1,14 @@
 ### A Pluto.jl notebook ###
-# v0.12.17
+# v0.12.18
 
 using Markdown
 using InteractiveUtils
 
 # ╔═╡ 44194c10-3d62-11eb-2089-2b2813796028
 using STMOZOO.LocalSearch
+
+# ╔═╡ 6dbd6ff2-51a4-11eb-22c1-5d054a1547b4
+using Plots
 
 # ╔═╡ 9db0d300-3d63-11eb-31bb-b3a8acc6a1c9
 md""" 
@@ -22,10 +25,6 @@ A naive local search algorithm starts from a complete random assignment, then at
 #### Get a Sudoku puzzle
 """
 
-# ╔═╡ 9ca452c4-5105-11eb-15b4-7b0e6caa8a7d
-# Would it better to put just one example to help to follow up?
-
-
 # ╔═╡ dec03be0-3d6a-11eb-003a-197ac59933dc
 md"""
 The puzzle is presented so that in the beginning there are
@@ -37,8 +36,8 @@ givens does not determine the difficulty of the puzzle. In the matrix, the zeros
 # ╔═╡ dd7c43d0-3d62-11eb-2f9c-69eb6819d094
 sudoku_1
 
-# ╔═╡ 479a4660-3d6b-11eb-2453-399baa5b059f
-sudoku_2
+# ╔═╡ 78cb5512-51a4-11eb-321c-0baeb53b0325
+show_sudoku(sudoku_1)
 
 # ╔═╡ 58841be0-3d6b-11eb-3e22-b5465d1cf3a3
 md"""
@@ -50,9 +49,6 @@ Randomly assign numbers from 1 to 9 to each missing value
 
 # ╔═╡ f2e96870-3d6b-11eb-1dee-61f5f48f8ba4
 sudoku_full1 = fill_in(sudoku_1)
-
-# ╔═╡ 088135a0-3d6c-11eb-03a1-d5b500d99e92
-sudoku_full2 = fill_in(sudoku_2)
 
 # ╔═╡ 45f09890-3d6c-11eb-2653-b17cf5ebd7fd
 md"""
@@ -245,14 +241,13 @@ This approach is far less effecient than the previous. It will need at least 100
 
 # ╔═╡ Cell order:
 # ╠═44194c10-3d62-11eb-2089-2b2813796028
+# ╠═6dbd6ff2-51a4-11eb-22c1-5d054a1547b4
 # ╟─9db0d300-3d63-11eb-31bb-b3a8acc6a1c9
-# ╠═9ca452c4-5105-11eb-15b4-7b0e6caa8a7d
 # ╟─dec03be0-3d6a-11eb-003a-197ac59933dc
 # ╠═dd7c43d0-3d62-11eb-2f9c-69eb6819d094
-# ╠═479a4660-3d6b-11eb-2453-399baa5b059f
+# ╠═78cb5512-51a4-11eb-321c-0baeb53b0325
 # ╟─58841be0-3d6b-11eb-3e22-b5465d1cf3a3
 # ╠═f2e96870-3d6b-11eb-1dee-61f5f48f8ba4
-# ╠═088135a0-3d6c-11eb-03a1-d5b500d99e92
 # ╟─45f09890-3d6c-11eb-2653-b17cf5ebd7fd
 # ╠═652f7270-3d6d-11eb-034f-4b9a8852189e
 # ╟─8523fd2e-3d6d-11eb-30f2-cd1240c6f3d6

@@ -1,6 +1,32 @@
 module LocalSearch
+using Plots
 
-export fill_in, check_value, sudoku_cost, sudoku_greedydesc, flip, fliprow, makeflip, makefliprow, search 
+export fill_in, check_value, sudoku_cost, sudoku_greedydesc, flip, fliprow, makeflip, makefliprow, search, show_sudoku 
+
+"""
+    show_sudoku(sudoku::Matrix)
+    Print a sudoku grid with a nice format
+"""
+function show_sudoku(sudoku)
+	xloc = [0.19,0.5,0.8,1.19,1.5,1.8,2.19,2.5,2.8] # x-axis locations (left to right)
+    yloc = [2.8,2.5,2.19,1.8,1.5,1.19,0.8,0.5,0.19] # y-axis locations (up to down)
+    # plot grid
+	vline([0,1,2,3],color = "black",axis = false,ticks = false, lim = [0,9], legend = false,width = 2)
+    hline!([0,1,2,3],color = "black",width = 2)
+	vline!([0.33,0.66,1.33,1.66,2.33,2.66],color = "black",width = 0.5)
+    hline!([0.33,0.66,1.33,1.66,2.33,2.66],color = "black",width = 0.5)
+    # plot numbers
+    # I tried this with a for-loop but then there is no plot shown, I don't know why...
+	annotate!(xloc[1],yloc,sudoku[:,1])
+	annotate!(xloc[2],yloc,sudoku[:,2])
+	annotate!(xloc[3],yloc,sudoku[:,3])
+	annotate!(xloc[4],yloc,sudoku[:,4])
+	annotate!(xloc[5],yloc,sudoku[:,5])
+	annotate!(xloc[6],yloc,sudoku[:,6])
+	annotate!(xloc[7],yloc,sudoku[:,7])
+	annotate!(xloc[8],yloc,sudoku[:,8])
+	annotate!(xloc[9],yloc,sudoku[:,9])
+end
 
 """
     fill_in(sudoku::Matrix)
@@ -32,14 +58,8 @@ it is used to check if a particular number meets the sudoku constraints.
 It takes as inputs a filled sudoku grid, two coordinates of the evaluated position (row, column) and an optional argument.
 If the optional argument is given then it will return the number of constrains violations when this value is placed in the input position. 
 """
-function check_value(sudoku::Matrix, val_i::Int, val_j::Int, value =nothing)
+function check_value(sudoku::Matrix, val_i::Int, val_j::Int, val = sudoku[val_i, val_j])
   
-    if value === nothing
-        val = sudoku[val_i, val_j]
-    else
-        val = value
-    end
-    
     constr = 0.0
     #for a particular position [val_i][val_j] how many repetions are in the row.
     for j in 1:length(sudoku[val_i,:])
