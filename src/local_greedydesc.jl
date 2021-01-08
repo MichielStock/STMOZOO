@@ -1,10 +1,13 @@
 module LocalSearch
+using Plots
 
-export fill_in, check_value, sudoku_cost, sudoku_greedydesc, flip, fliprow, makeflip, makefliprow, search 
+export fill_in, check_value, sudoku_cost, sudoku_greedydesc, flip, fliprow, makeflip, makefliprow, show_sudoku  
 
-#SUGGESTION
-# You could use this function to plot the sudoku's in Pluto. 
-# you will need to add "using Plots"
+"""
+    show_sudoku(sudoku::Matrix)
+
+    Print a sudoku grid with a nice format
+"""
 function show_sudoku(sudoku)
 	xloc = [0.19,0.5,0.8,1.19,1.5,1.8,2.19,2.5,2.8] # x-axis locations (left to right)
     yloc = [2.8,2.5,2.19,1.8,1.5,1.19,0.8,0.5,0.19] # y-axis locations (up to down)
@@ -56,22 +59,9 @@ it is used to check if a particular number meets the sudoku constraints.
 It takes as inputs a filled sudoku grid, two coordinates of the evaluated position (row, column) and an optional argument.
 If the optional argument is given then it will return the number of constraint violations when this value is placed in the input position. 
 """
-function check_value(sudoku::Matrix, val_i::Int, val_j::Int, value = nothing)
-    #SUGGESTION: you could use a default value for `val` in the argument list
-    #instead of the code below
-    #so: function check_value(sudoku::Matrix, val_i::Int, val_j::Int, val = sudoku[val_i, val_j])
-    #and not the if val === nothing construction
+function check_value(sudoku::Matrix, val_i::Int, val_j::Int, val = sudoku[val_i, val_j])
 
-    if value === nothing
-        val = sudoku[val_i, val_j]
-    else
-        val = value
-    end
-    
     constr = 0.0
-    #SUGGESTION: for the calculation of rows and columns, something like
-    # constr += sum(sudoku_full1[val_i,val_j] .== sudoku_full1[val_i,:]) - 1
-    # should work I think (-1 because the value itself cannot be counted twice)
 
     #for a particular position [val_i][val_j] how many repetions are in the row.
     for j in 1:length(sudoku[val_i,:])
@@ -149,7 +139,7 @@ function sudoku_greedydesc(sudoku::Matrix, empty::Matrix, max_iter::Int)
     board = deepcopy(sudoku)
     i = 0
     while i < max_iter
-        #QUESTION: why is this a global variable?
+        #QUESTION: why is this a global variable? Re: not sure, but it didnt work without it
         global total_cost
         #calculate number of conflicts
         total_cost = sudoku_cost(board)
@@ -254,23 +244,4 @@ function makefliprow(sudoku::Matrix, empty::Matrix, max_iter::Int)
     return resp
 end
 
-""" 
-    search(sudoku::Matrix, max_repl::Int, max_flips::Int)
-
-Takes an empty Sudoku, and search for the solution that minimizes the number of constraint violations.
-To find the solution the search must be done at least 1000 times. This algorithm is not efficient.
-"""
-function search(sudoku::Matrix, max_repl::Int, max_flips::Int)
-    @assert length(sudoku[1,:]) == length(sudoku[:,1]) == 9 "Sudoku must be 9x9"
-    grid = fill_in(sudoku)
-    sol, cost = sudoku_greedydesc(grid, sudoku, max_repl)
-    if cost == 0
-        return sol, cost
-    else res = makeflip(sol, sudoku, max_flips)
-    end
-    return res
-end
-
-include("print_sudoku.jl")
-include("examples.jl")
 end #module

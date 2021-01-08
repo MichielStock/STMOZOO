@@ -1,11 +1,14 @@
 ### A Pluto.jl notebook ###
-# v0.12.17
+# v0.12.18
 
 using Markdown
 using InteractiveUtils
 
 # ╔═╡ 44194c10-3d62-11eb-2089-2b2813796028
 using STMOZOO.LocalSearch
+
+# ╔═╡ 0cdca6a0-519b-11eb-34e2-856b6f3f8c2c
+using Plots
 
 # ╔═╡ 9db0d300-3d63-11eb-31bb-b3a8acc6a1c9
 md""" 
@@ -35,6 +38,9 @@ sudoku_1
 
 # ╔═╡ 479a4660-3d6b-11eb-2453-399baa5b059f
 sudoku_2
+
+# ╔═╡ e6aaf8b0-519a-11eb-1e30-95a84c024224
+show_sudoku(sudoku_1)
 
 # ╔═╡ 58841be0-3d6b-11eb-3e22-b5465d1cf3a3
 md"""
@@ -246,6 +252,8 @@ This approach is far less effecient than the previous. It will need at least 100
 # ╟─dec03be0-3d6a-11eb-003a-197ac59933dc
 # ╠═dd7c43d0-3d62-11eb-2f9c-69eb6819d094
 # ╠═479a4660-3d6b-11eb-2453-399baa5b059f
+# ╠═0cdca6a0-519b-11eb-34e2-856b6f3f8c2c
+# ╠═e6aaf8b0-519a-11eb-1e30-95a84c024224
 # ╟─58841be0-3d6b-11eb-3e22-b5465d1cf3a3
 # ╠═f2e96870-3d6b-11eb-1dee-61f5f48f8ba4
 # ╠═088135a0-3d6c-11eb-03a1-d5b500d99e92
@@ -278,4 +286,4 @@ This approach is far less effecient than the previous. It will need at least 100
 # ╠═a932ed90-3dee-11eb-3c98-71279cf5e3bb
 # ╠═5c5853f0-3df0-11eb-1a78-274cceaf7711
 # ╠═633fe7f0-3df0-11eb-3f20-1d38fa05b17c
-# ╠═1fe59f80-3dfb-11eb-08f2-b1e4a62e679f
+# ╟─1fe59f80-3dfb-11eb-08f2-b1e4a62e679f
