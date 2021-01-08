@@ -15,6 +15,7 @@ and a network containing the current flow `mf_cur`, both implemented as
 adjacency matrices.
 """
 function res_network(mf_oc::AbstractMatrix{Int}, mf_cur::AbstractMatrix{Int})
+    # Maybe it is a style choice on your part, but you can also do: r, c = size(mf_oc)
     r = size(mf_oc, 1) # rows
     c = size(mf_oc, 2) # columns
     @assert r == c "Adjacency matrix has to be square."
@@ -52,7 +53,7 @@ function bfs(nw::AbstractMatrix{Int}, s::Int, t::Int)
         i = popfirst!(L) # select labeled node
         for j in findall(nw[i,:] .> 0) # there is still possible flow from node i to node j
         # if j is unlabeled, label it and save the predecessor
-            if ! labeled[j]
+            if !labeled[j] # remove space here?
                 labeled[j] = true
                 pred[j] = i
                 push!(L, j)
@@ -270,8 +271,9 @@ true
 ```
 """
 function isfeasible(flow::AbstractMatrix{Int}; s, t, send::Array{Int,1}=Int[], desired::Array{Int,1}=Int[])
-    r,c = size(flow) # # rows and columns of flow
+    r,c = size(flow) # rows and columns of flow
     @assert r == c "Flow matrix has to be square"
+    # Maybe delete the space between the exclamation mark and isempty? Or make it consistent, cause line 52 had no space in between
     ! isempty(send) && @assert length(s) == length(send) "Length of `send` has to be equal to the number of sources."
     ! isempty(desired) && @assert length(t) == length(desired) "Length of `desired` has to be equal to the number of sinks."
     # initialization
@@ -288,7 +290,7 @@ end
 Clean a `flow` if some irregularities occur due to the use of multiple sources and/or sinks.
 """
 function clean!(flow::AbstractMatrix{Int})
-    r,c = size(flow) # # rows and columns of flow
+    r,c = size(flow) # rows and columns of flow
     @assert r == c "Flow matrix has to be square"
 	flow .-= flow'
 	flow[flow .< 0] .= 0

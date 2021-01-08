@@ -30,7 +30,7 @@ Project by: Douwe De Vestele"""
 md"""
 ## Introduction
 
-A maximum flow problem is a widely known example of an optimization problem. The goal is to find the maximum possible flow in a network where the connections between the nodes (the arcs or edges) have a limited capacity. It is a very recognizable situation, for instance a railway or highway network that leads trains or cars to connected cities, or channels transporting water to linked reservoirs. In fact, the problem was first formulated by Harris and Ross in the context of the military evaluation of a railway network capacity and the effectiveness of taking out one or more rail lines in order to stop hostile transports [^1]. Furthermore many often occurring problems are related to maximum flow problems and can thus be solved if a solution to the corresponding maximum flow problem exists.
+A maximum flow problem is a widely known example of an optimization problem. The goal is to find the maximum possible flow in a network where the connections between the nodes (the arcs or edges) have a limited capacity. It is a very recognizable situation, for instance a railway or highway network that leads trains or cars to connected cities, or channels transporting water to linked reservoirs. In fact, the problem was first formulated by Harris and Ross in the context of the military evaluation of a railway network capacity and the effectiveness of taking out one or more rail lines in order to stop hostile transports [^1]. Furthermore, many recurring problems are related to maximum flow problems and can thus be solved if a solution to the corresponding maximum flow problem exists.
 
 It is clear that such a recognizable and applicable problem is studied thoroughly and multiple solution methods, algorithms and applications have been developed.
 In this notebook first some definitions and terminology of the maximum flow problem are explained. Further one of the first solving methods, the Ford-Fulkerson method, is studied, implemented and illustrated on a toy example. At last some real-life applications are shown.
@@ -137,7 +137,7 @@ The pseudocode of both algorithms is shown below and implemented in respectively
     * Repeat steps 2 - 3.
 5. If not, stop the algorithm.
 
-#### Breadth-first-search
+#### Breadth-first search
 1. Unlabel all nodes and initialize an empty queue and an empty parent array.
 2. Label the source and add it to the queue.
 3. As long as the sink is not labeled and the queue is not empty:
@@ -184,12 +184,12 @@ end
 # ╔═╡ ac2efd2e-4aec-11eb-2036-79f16f99e91f
 md"""
 ## Applications
-At last two real-life applications of the maximum flow problem are shown to prove it's practical abbilities.
+At last two real-life applications of the maximum flow problem are shown to prove its practical abilities.
 
 ### Feasible flow [^2]
-The first application is the most physical interpretable. The goal is to send a defined amount of flow from one or multiple sources to one or multiple sinks. If this is not possible given the capacitated network, the flow is not feasible. An extra constraint can be that it is known how much flow the sink(s) need(s) to receive. To illustrate this problem, following setting is used.
+The first application is the most physically interpretable. The goal is to send a defined amount of flow from one or multiple sources to one or multiple sinks. If this is not possible given the capacitated network, the flow is not feasible. An extra constraint can be the amount of flow the sink(s) need(s) to receive, in case this is known. To illustrate this problem, the following setting is used:
 
-Suppose it is the day of *De Ronde van Vlaanderen* (the Tour of Flanders), a famous road cycling race in the UCI World Tour. The finish is in Oudenaarde, a small city in the Flemish Ardens surrounded by challenging climbs. Of course a lot of cycling fans want to see their hero crossing the finish line first and they are taking the train from their home city to Oudenaarde. The following network represents a simplified railway map from the SNCB with some (mayor) cities in Flanders [^3]. The capacities are illustrative and represent the capacities of the trains riding between 2 cities on a normal day. 
+Suppose it is the day of *De Ronde van Vlaanderen* (the Tour of Flanders), a famous road cycling race in the UCI World Tour. The finish is in Oudenaarde, a small city in the Flemish Ardens surrounded by challenging climbs. Of course a lot of cycling fans want to see their hero crossing the finish line first and they are taking the train from their home city to Oudenaarde. The following network represents a simplified railway map from the SNCB with some (major) cities in Flanders [^3]. The capacities are illustrative and represent the capacities of the trains riding between 2 cities on a normal day.
 
 """
 
@@ -223,7 +223,7 @@ train_flow,train_mflow,tracker = augmenting_path(train_nw,[1,3,9,10],6,send = [6
 
 # ╔═╡ 211123c0-4fad-11eb-3077-79eedeb5352f
 md"
-Here an annoying side-effect of the use of multiple sources comes up. Normally there won't be any flow going to a source (this would be useless and inefficient) because it will be canceled by outgoing flow originating in the source. But because in the algorithm with multiple sources an extra node is added that serves as temporary source, the real sources are handled like normal nodes and thus can serve as a connecting node in a path. Here this is the case for a path from Brussels via Bruges to Oudenaarde. To make the flow more efficient, an auxiliary function `clean!` can be used to clean up the resulting flow.
+Here an annoying side-effect of the use of multiple sources comes up. Normally there won't be any flow going to a source (this would be useless and inefficient) because it will be canceled by outgoing flow originating in the source. But because in the algorithm with multiple sources an extra node is added to serve as the temporary source, the real sources are handled like normal nodes and thus can serve as a connecting node in a path. Here this is the case for a path from Brussels to Oudernaarde that passes through Bruges. To make the flow more efficient, an auxiliary function `clean!` can be used to clean up the resulting flow.
 "
 
 # ╔═╡ 92ed34d0-5010-11eb-050e-9d1c445ac620
@@ -254,7 +254,9 @@ isfeasible(train_flow,s=[1,3,9,10],t=6, send= [600,500,300,800])
 
 # ╔═╡ 08cb80d0-4f4e-11eb-2d93-d1d6812076b8
 md"
-Because it is a special day, the SNCB adds extra railway carriages on the lines going directly to Oudenaarde and on the most important line from Ghent to Oudenaarde, thus increasing these capacities. The improved network is shown below. 
+<!-- Maybe add a clarification here that the Brussels fans are the ones that can't reach their desination? -->
+
+Because it is a special day, the SNCB adds extra railway carriages on the lines going directly to Oudenaarde and on the most important line from Ghent to Oudenaarde, thus increasing these capacities. The improved network is shown below.
 "
 
 # ╔═╡ 4371eece-4f45-11eb-2374-7751be6d12df
@@ -326,7 +328,7 @@ The communication cost between the different modules is given in this matrix:
 \end{bmatrix}
 ```
 
-This problem can be translated to a network as follows. The matrix above is used as a network representing the flow between the module. Further the source ``s`` and sink ``t`` nodes are added, representing processor 1 and 2 respectively. From the source there is an arc with capacity ``\beta_i`` to each module. Moreover there is an arc from each module to the sink with capacity ``\alpha_i``. The resulting network with modules ``a``, ``b``, ``c`` and ``d`` and processors 1 and 2 is shown below.
+This problem can be translated to a network as follows. The matrix above is used as a network representing the flow between the modules. Further the source ``s`` and sink ``t`` nodes are added, representing processor 1 and 2 respectively. From the source there is an arc with capacity ``\beta_i`` to each module. Moreover there is an arc from each module to the sink with capacity ``\alpha_i``. The resulting network with modules ``a``, ``b``, ``c`` and ``d`` and processors 1 and 2 is shown below.
 "
 
 # ╔═╡ efd3baf2-4fa9-11eb-3ab5-016a3af98589
@@ -355,7 +357,7 @@ To solve the problem, first some extra concepts in graph theory are needed.
 !!! terminology "Minimum cut"
     A minimum cut is an s-t cut whose capacity is minimum among all the s-t cuts in a network.
 
-From these definitions it is clear that thanks to the specific construction of the network, the total computational cost of an assignment of modules to different processors is given by the capacity of an s-t cut and the problem is in fact a **min-cut problem**. This can be illustrated with following example cut. Let ``S = \{a,b\}`` and ``\bar{S} = \{c,d\}``. In the table above, it can be seen that the computational cost of running module ``a`` on processor 1 is equal to 6 and this is equal to the capacity of the upper right edge that is cut by the red line. This can be checked for each module. Further ``c`` and ``d`` have to communicate with ``b``, so two addtional costs of 6 and 2 respectively are added (note that double arcs are counted only once). The total cost of this cut is ``8+3+6+2+5+6 = 30``.
+From these definitions it is clear that thanks to the specific construction of the network, the total computational cost of an assignment of modules to different processors is given by the capacity of an s-t cut and the problem is in fact a **min-cut problem**. This can be illustrated with the following example cut. Let ``S = \{a,b\}`` and ``\bar{S} = \{c,d\}``. In the table above, it can be seen that the computational cost of running module ``a`` on processor 1 is equal to 6 and this is equal to the capacity of the upper right edge that is cut by the red line. This can be checked for each module. Further ``c`` and ``d`` have to communicate with ``b``, so two additional costs of 6 and 2 respectively are added (note that double arcs are counted only once). The total cost of this cut is ``8+3+6+2+5+6 = 30``.
 """
 
 # ╔═╡ 0d32c91e-502b-11eb-2ef4-97528999fb37
