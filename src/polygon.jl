@@ -2,10 +2,10 @@
 
 module polygon
 
-using Images, Colors, Plots, Random, ImageMagick
+using Images, Colors, Plots, Random
 import Base: in
 
-export triangleevolution
+export triangleevolution, Triangle, samesideofline, checktriangle, getboundaries, generatetriangle, colordiffsum, triangletournament, generatepopulation
 
 """
 A type Shape so the code can be made to work with e.g. rectangles as well. For now, only triangles are supported.
@@ -313,7 +313,7 @@ Generates a population of images filled with triangles.
 
 pop_size: Amount of individuals in the population
 number_triangles: Amount of triangles per individual
-img: Starting image on which the individuals are drawn. (e.g. a white rectangle = an array of white RGB values)
+img: The target image, this is an array of RGB values
 
 The individuals of this population consist of:
 - An array of triangles (remember, a triangle is simply 3 xy coordinates of points and a color, not yet an image)
@@ -366,7 +366,7 @@ end
 Mutates a single triangle, changing the position of its points and its color, while making sure this doesn't result in a stupid triangle, then returns it.
 m and n are the height and width of the target image.
 """
-function mutatetriangle(triangle::Triangle, m::Int, n::Int)
+function mutatetriangle(triangle::Triangle, mutation_intensity::Number, mutation_intensity_color::Number, m::Int, n::Int)
 
     badTriangle = true
     p1 = nothing
@@ -374,13 +374,13 @@ function mutatetriangle(triangle::Triangle, m::Int, n::Int)
     p3 = nothing
 
     while badTriangle
-        p1, p2, p3 = round.([triangle.p1, triangle.p2, triangle.p3] + (rand(3) .- 0.5)*(n/10) + (rand(3) .- 0.5)*(m/10)*im)
+        p1, p2, p3 = round.([triangle.p1, triangle.p2, triangle.p3] + (rand(3) .- 0.5)*(n*mutation_intensity) + (rand(3) .- 0.5)*(m*mutation_intensity)*im)
         # Position of all 3 points is changed, with the change in x and y value scaling with the width and height of the canvas respectively
         t = Triangle(p1, p2, p3, triangle.color)
         badTriangle = checktriangle(t, m, n)
     end
 
-    col = triangle.color + RGB((rand() - 0.5)/2, (rand() - 0.5)/2, (rand() - 0.5)/2)
+    col = triangle.color + RGB((rand() - 0.5)*mutation_intensity_color, (rand() - 0.5)*mutation_intensity_color, (rand() - 0.5)*mutation_intensity_color)
     col = parse(RGB{Float64}, string("#", hex(col))) # This looks a little weird but it just fixes any color with RGB values out of their bounds 
     # (by setting the value to the boundary it crossed) (the RGB type is hard to work with :( )
     return Triangle(p1, p2, p3, col)
@@ -388,7 +388,7 @@ function mutatetriangle(triangle::Triangle, m::Int, n::Int)
 end
 
 """
-    mutatepopulation(population::Array, pop_size::Int, mutation_freq::Number, number_triangles::Int, m::Int, n::Int, img::Array, canvas::Array)
+    mutatepopulation(population::Array, pop_size::Int, mutation_freq::Number, mutation_intensity::Number, mutation_intensity_color::Number, number_triangles::Int, m::Int, n::Int, img::Array, canvas::Array)
 
 Mutates an entire population. 
 
@@ -398,19 +398,23 @@ The mutated population is returned.
 
 Inputs:
 - population: An array of individuals. 
-And individual in its turn is an array of: 1) An array of Triangles 2) An image consisting of these triangles 3) The score of the individual.
+    And individual in its turn is an array of: 1) An array of Triangles 2) An image consisting of these triangles 3) The score of the individual.
 - pop_size: The amount of individuals in the population (length of population)
 - mutation_freq: The chance for a random triangle to get mutated
+- mutation_intensity: The intensity of a mutation regarding the change in position of the points of a triangle (as fraction of canvas size)
+- mutation_intensity_color: The intensity of a mutation regarding the change in color of a triangle (as fraction of maximum RGB-value)
 - number_triangles: The amount of triangles per individual (length of the first element of an individual)
 - m and n: Height and width of the target image
 - img: The target image (Array of RGB values)
 - canvas: A starting image on which the triangles are drawn, which is an array of RGB values.
 """
-function mutatepopulation(population::Array, pop_size::Int, mutation_freq::Number, number_triangles::Int, m::Int, n::Int, img::Array, canvas::Array)
+function mutatepopulation(population::Array, pop_size::Int, mutation_freq::Number, mutation_intensity::Number,
+    mutation_intensity_color::Number, number_triangles::Int, m::Int, n::Int, img::Array, canvas::Array)
+
     for i in 1:pop_size
         for j in 1:number_triangles
             if mutation_freq >= rand() # Mutation happens with a probability of the mtuation frequency
-                population[i][1][j] = mutatetriangle(population[i][1][j], m, n)
+                population[i][1][j] = mutatetriangle(population[i][1][j], mutation_intensity, mutation_intensity_color, m, n)
             end
         end
         population[i][2] = drawimage(population[i][1], canvas) # Update mutated individual's image
@@ -465,6 +469,8 @@ OPTIONAL
 - elitism_freq: The fraction of your population that gets to be part of the elite. The best individuals of your generation will become part of the elite and get a free pass to the next generation.
 - newblood_freq: The fraction of your population that gets replaced by new, random individuals every generation.
 - mutation_freq: The chance for a triangle (= "a gene") of an individual to get mutated every generation
+- mutation_intensity: The intensity of a mutation regarding the change in position of the points of a triangle (as fraction of canvas size)
+- mutation_intensity_color: The intensity of a mutation regarding the change in color of a triangle (as fraction of maximum RGB-value)
 - gifname: If you want to make a gif out of the evolutionary proces, enter a gifname like "amazinggif.gif"
 - fps: The FPS of your gif
 
@@ -477,13 +483,16 @@ OPTIONAL
 This is not returned, but immediately saved in the notebook folder as a gif if you have entered a gifname.
 
 """
-function triangleevolution(image::String = "notebook/examplefigures/TotoroTester.jpeg"; number_triangles::Int = 25, generations::Int = 50, pop_size::Int = 70, elitism_freq::Number = 0.10, newblood_freq::Number =  0.03, mutation_freq::Number = 0.07, gifname = nothing, fps::Int = 2)
+function triangleevolution(image::String = "notebook/examplefigures/TotoroTester.jpeg"; number_triangles::Int = 25,
+    generations::Int = 50, pop_size::Int = 70, elitism_freq::Number = 0.10, newblood_freq::Number =  0.03,
+    mutation_freq::Number = 0.07, mutation_intensity::Number = 0.1, mutation_intensity_color::Number = 0.5, gifname = nothing, fps::Int = 2)
     
     @assert number_triangles >= 1 "You must have a positive amount of triangles"
     @assert generations >= 1 "You must have a positive amount of generations"
     @assert pop_size >= 1 "You must have a positive population size"
     @assert fps >= 1 "You must have a positive fps"
     @assert elitism_freq >= 0 && elitism_freq <= 1 && newblood_freq >= 0 && newblood_freq <= 1 && mutation_freq >= 0 && mutation_freq <= 1 "All frequencies should be within [0, 1]"
+    @assert mutation_intensity >= 0 && mutation_intensity_color >= 0 "The intensity of mutations has to be 0 or positive (and recommended to be smaller than 1, but not necessarily)"
     
 
     makegif = !isnothing(gifname) # Only make the result into a gif if the user enters a name for it
@@ -535,7 +544,7 @@ function triangleevolution(image::String = "notebook/examplefigures/TotoroTester
         end
 
         # The children gain random mutations because of UV-radiation. Damn you Ozon hole!
-        childPopulation = mutatepopulation(childPopulation, pop_size, mutation_freq, number_triangles, m, n, img, canvas)
+        childPopulation = mutatepopulation(childPopulation, pop_size, mutation_freq, mutation_intensity, mutation_intensity_color, number_triangles, m, n, img, canvas)
         population0 = sort(childPopulation, by = x -> x[3]) # The children grow up and become the new population0. The cycle of life continues.
 
         print(i, " ", population0[1][3], "\n") # Print current generation and the score of the best individual.

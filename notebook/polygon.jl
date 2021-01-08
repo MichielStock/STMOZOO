@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.12.15
+# v0.12.18
 
 using Markdown
 using InteractiveUtils
@@ -96,13 +96,15 @@ begin
 	newblood_freq = 0.03 
 	# Fraction of population that gets replaced by new individuals (default 0.03)
 	mutation_freq = 0.07 # Frequency of mutations (default 0.07)
+	mutation_intensity = 0.1 # The maximum fraction of the canvas size your triangle points move at every mutation
+	mutation_intensity_color = 0.5 # The intensity of color change every mutation
 	gifname = "mycoolgif.gif"
 	# If you enter a gifname ("coolgif.gif"), it will save the process as a gif 		(default nothing)
 	fps = 2 # fps of said gif (default 2)
 end
 
 # ╔═╡ 81dfc1a4-503c-11eb-1cab-131124513e22
-mycustomizedtriangleimg = triangleevolution(mycoolimage, number_triangles = number_triangles, generations = generations, pop_size = pop_size, elitism_freq = elitism_freq, newblood_freq = 0.03, mutation_freq = 0.07, gifname = gifname, fps = fps)
+mycustomizedtriangleimg = triangleevolution(mycoolimage, number_triangles = number_triangles, generations = generations, pop_size = pop_size, elitism_freq = elitism_freq, newblood_freq = newblood_freq, mutation_freq = mutation_freq, mutation_intensity = mutation_intensity, mutation_intensity_color = mutation_intensity_color, gifname = gifname, fps = fps)
 
 # ╔═╡ bf112874-503c-11eb-027c-df10ccb762b6
 plot(mycustomizedtriangleimg[1][2])
