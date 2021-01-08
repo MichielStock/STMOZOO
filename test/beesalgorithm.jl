@@ -90,7 +90,7 @@
     end
 
     @testset "scouting_phase" begin
-
+        
         population = initialize_population(D, bounds_lower, bounds_upper, n)
         trial = ones(size(population)[1])
         objective= compute_objective(population,sphere)

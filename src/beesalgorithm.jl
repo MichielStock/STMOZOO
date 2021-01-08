@@ -519,6 +519,7 @@ function scouting_phase(population, bounds_lower::Vector, bounds_upper::Vector,
         population[scouting_array] = sol_new
         
         fitness[scouting_array] = new_fit[1]
+        objective = float(objective)
         objective[scouting_array] = new_obj[1]
         trials[scouting_array] = 0
     
