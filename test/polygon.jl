@@ -16,14 +16,6 @@
         point5 = 4 + 3im #right
         point6 = 4 + 4im #right
 
-        # points = [point1, point2, point3, point4, point5, point6]
-        # p = plot(-1:5, -1:5, label = false)
-        # plot!([real(line[1]), real(line[2])], [imag(line[1]), imag(line[2])], label = false)
-        # for i in 1:6
-        #     scatter!([real(points[i])], [imag(points[i])], label = "$i")
-        # end
-        # display(p)
-
         @test samesideofline(point1, point2, line) == true
         @test samesideofline(point1, point3, line) == true
         @test samesideofline(point1, point4, line) == false
@@ -59,12 +51,12 @@
         testpoint2[8] = 3.1 + 3.5im #yes
 
         for i in 1:4
-            @test (testpoint1[i] in T1) == false
-            @test (testpoint2[i] in T2) == false
+            @test !(testpoint1[i] in T1)
+            @test !(testpoint2[i] in T2)
         end
         for i in 5:8
-            @test (testpoint1[i] in T1) == true
-            @test (testpoint2[i] in T2) == true
+            @test (testpoint1[i] in T1)
+            @test (testpoint2[i] in T2)
         end 
     end
 

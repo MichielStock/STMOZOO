@@ -2,7 +2,7 @@
 
 module polygon
 
-using Images, Colors, Plots, Random
+using Images, Colors, Plots, Random, QuartzImageIO
 import Base: in
 
 export triangleevolution, Triangle, samesideofline, checktriangle, getboundaries, generatetriangle, colordiffsum, triangletournament, generatepopulation
@@ -15,7 +15,7 @@ abstract type Shape end
 """
     Triangle <: Shape
 
-Triangles are defined with the coordinates of their 3 points and a color.
+A structure to contain a triangle.
 
 Complex numbers are used to represent coordinates. The real part represents the x-value, and the imaginary part represents the y-value.
 """
@@ -250,7 +250,7 @@ Otherwise we get errors and boy do we hate errors.
 """
 function checktriangle(triangle::Triangle, m::Int, n::Int)
     # Rather than using the actual boundaries of the canvas, we use a slightly smaller rectangle for safety reasons
-    s = 10 # safety factor
+    s = 10 # safety factor: A 10 pixel safety boundary has been found to perform adequately
     x1, x2, x3 = real(triangle.p1), real(triangle.p2), real(triangle.p3)
     y1, y2, y3 = imag(triangle.p1), imag(triangle.p2), imag(triangle.p3)
 
@@ -275,7 +275,7 @@ function checktriangle(triangle::Triangle, m::Int, n::Int)
     dist1 = abs(triangle.p1 - midpoint)
     dist2 = abs(triangle.p2 - midpoint)
     dist3 = abs(triangle.p3 - midpoint)
-    isStretchyBoi = max(dist1, dist2, dist3) > 2*min(dist1, dist2, dist3) && return true
+    iselongated = max(dist1, dist2, dist3) > 2*min(dist1, dist2, dist3) && return true
     # An elongated triangle has a big difference in max distance from a point to the centroid to min distance from a point to the centroid (2 is a good threshhold)
 
     return false # Only gets to this return false if all the other returns true coniditions weren't met (and thus the triangle isnt stupid)
@@ -290,7 +290,7 @@ The functions also checks whether the random triangle is stupid, and if it is, g
 """
 function generatetriangle(m::Int, n::Int)
     badTriangle = true
-    t = nothing
+    currentTriangle = nothing
     while badTriangle
         center = complex(rand()*1.1*n - 0.05*n, rand()*1.1*m - 0.05*m) # Choose a random point somewhere in x ∈ [-0.05*n, 1.05*n] and y ∈ [-0.05*m, 1.05*m]
         # This will be the centre of the triangle
@@ -299,7 +299,7 @@ function generatetriangle(m::Int, n::Int)
         # Points are allowed to be outside of canvas as long as part of the triangle is in the canvas
         # Prevents white borders
         col = RGB(rand(), rand(), rand())
-        t = Triangle(points[1], points[2], points[3], col)
+        currentTriangle = Triangle(points[1], points[2], points[3], col)
         badTriangle = checktriangle(t, m, n)
     end
 
@@ -345,19 +345,13 @@ end
 Picks 2 random individuals from a population and returns the one with the best (= lowest) score.
 """
 function triangletournament(population0::Array, pop_size::Int)
-    contestant1 = population0[Int(ceil(rand()*pop_size))] #Choose a random image from the population, using ceil because 0 is not a valid index
-    contestant2 = population0[Int(ceil(rand()*pop_size))]
+    contestant1 = population0[Int(ceil(rand()*pop_size))] # Choose a random image from the population, using ceil because 0 is not a valid index
 
-    while contestant1 == contestant2 #If it happened to pick the same individual twice, change it until you have 2 unique individuals
-        contestant2 = population0[Int(ceil(rand()*pop_size))]
-    end
+    population0 = filter(x -> x != contestant1, population0) # Remove contestant1 from the pool
 
-    if contestant1[3] <= contestant2[3] # Lower score than contestant 2 means he's better
-        winner = contestant1
-    else
-        winner = contestant2
-    end
-    return winner
+    contestant2 = population0[Int(ceil(rand()*(pop_size - 1)))] # Population0 is 1 smaller now, so use pop_size - 1
+
+    return (contestant1[3] <= contestant2[3] ? contestant1 : contestant2) # A lower score is a better score
 end
 
 """
@@ -376,7 +370,7 @@ function mutatetriangle(triangle::Triangle, mutation_intensity::Number, mutation
     while badTriangle
         p1, p2, p3 = round.([triangle.p1, triangle.p2, triangle.p3] + (rand(3) .- 0.5)*(n*mutation_intensity) + (rand(3) .- 0.5)*(m*mutation_intensity)*im)
         # Position of all 3 points is changed, with the change in x and y value scaling with the width and height of the canvas respectively
-        t = Triangle(p1, p2, p3, triangle.color)
+        currentTriangle = Triangle(p1, p2, p3, triangle.color)
         badTriangle = checktriangle(t, m, n)
     end
 
@@ -443,10 +437,8 @@ function makechildpopulation(individual1::Array, individual2::Array, number_tria
         end
     end
 
-    child = [childTriangles, individual1[2], individual1[3]]
+    return [childTriangles, individual1[2], individual1[3]]
     # The image and score aren't updated yet but that's alright since it will happen in the next step of the algorithm
-
-    return child
 
 end
 

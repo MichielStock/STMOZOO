@@ -5,7 +5,7 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ 071d90a0-5022-11eb-14e4-4fa157ca26cd
-using STMOZOO.polygon, Images, Plots
+using STMOZOO.polygon, Images, Plots, ImageMagick
 
 # ╔═╡ 15c58bda-5022-11eb-14f6-a7bc04afeebc
 
