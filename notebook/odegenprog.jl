@@ -421,7 +421,7 @@ Tsoulos, I. G., & Lagaris, I. E. (2006). Solving differential equations with gen
 # ╟─9d599310-506e-11eb-3327-0954439a6b11
 # ╟─d67b6110-505e-11eb-1d9d-7f38302c0d44
 # ╟─3f3df2be-4b0b-11eb-3571-dba4fedcbc52
-# ╠═61b66940-4b0b-11eb-1e14-311fb485c4d2
+# ╟─61b66940-4b0b-11eb-1e14-311fb485c4d2
 # ╟─717e56a0-51f3-11eb-350b-8999bc6da559
 # ╟─a9fdd6e0-51f3-11eb-0826-4763a69cf9a5
 # ╟─1b97dee0-51f4-11eb-288c-d3a979a456de
