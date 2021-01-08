@@ -255,33 +255,74 @@ isfeasible(train_flow,s=[1,3,9,10],t=6, send= [600,500,300,800])
 # ╔═╡ 08cb80d0-4f4e-11eb-2d93-d1d6812076b8
 md"
 Apparently there are 200 fans from Brussels that can't reach their destination.
-But because it is a special day, the SNCB adds extra railway carriages on the lines going directly to Oudenaarde and on the most important line from Ghent to Oudenaarde, thus increasing these capacities. The improved network is shown below.
+But because it is a special day, the SNCB is willing to add extra railway carriages to improve the capacities of the lines.
+
+As an expert in maximum flow problems, you can advise the SNCB on which line they should allow a suggested number of extra passengers to make it possible that everyone can attend the finish.
 "
 
-# ╔═╡ 4371eece-4f45-11eb-2374-7751be6d12df
-train_nw_adapt = [0 800 0 0 0 0 1000 0 0 0; 0 0 800 400 0 0 0 0 0 0; 0 0 0 800 0 2000 0 0 0 0; 0 0 0 0 800 0 0 0 0 0; 0 0 0 0 0 2000 0 0 0 0; 0 0 0 0 0 0 0 0 0 0; 0 0 0 0 1000 0 0 400 0 0; 0 0 0 0 0 2000 0 0 0 0; 0 0 0 0 0 0 800 0 0 0; 0 0 0 0 0 0 1000 200 600 0];
+# ╔═╡ 6fdc9080-51d2-11eb-013f-abfd6d72ba2d
+md"""
+Add $(@bind extra NumberField(0:1000, default=100)) from $(@bind node_A html"<select><option value=1>Bruges</option><option value=2>Lichtervelde</option><option value=3>Kortrijk</option><option value=4>Deinze</option><option value=5>De Pinte</option><option value=6>Oudenaarde</option><option value=7>Ghent</option><option value=8>Zottegem</option><option value=9>Antwerp</option><option value=10>Brussels</option></select>") to $(@bind node_B html"<select><option value=1>Bruges</option><option value=2>Lichtervelde</option><option value=3>Kortrijk</option><option value=4>Deinze</option><option value=5>De Pinte</option><option value=6>Oudenaarde</option><option value=7>Ghent</option><option value=8>Zottegem</option><option value=9>Antwerp</option><option value=10>Brussels</option></select>").
+"""
+
+# ╔═╡ d2758df0-51d7-11eb-16ea-c1259ecb643e
+(@bind change Button("Try changes"))  
+
+# ╔═╡ 830b3e30-51d8-11eb-054b-6ba598d098ba
+(@bind revert Button("Undo changes"))
+
+# ╔═╡ 895559b0-51d8-11eb-0eea-4f062f228107
+(@bind restart Button("Restart"))
+
+# ╔═╡ 8d1dfa70-51d8-11eb-1860-133da534f773
+md"(Undo the changes will substract the capacity in the number box from the line between the two selected cities, restart will discard all the changes you've made and restart from zero.)"
+
+# ╔═╡ 09299d02-51d8-11eb-1a7f-e1e122105b05
+begin
+	restart
+	train_nw_adapt = copy(train_nw)
+end;
 
 # ╔═╡ a388a070-4f45-11eb-1484-0989c534c0c5
-graphplot(train_nw_adapt, x = x_loc_train, y = y_loc_train, names = nodelabs_trains, nodesize = 0.22, nodecolor = "lightblue", nodeshape = :rect, edgelabel = train_nw_adapt, arrows = true, curves = true, title = "Network with increased capacities")
+begin
+	change
+	revert
+	graphplot(train_nw_adapt, x = x_loc_train, y = y_loc_train, names = nodelabs_trains, nodesize = 0.22, nodecolor = "lightblue", nodeshape = :rect, edgelabel = train_nw_adapt, arrows = true, curves = true, title = "Adapted network with increased capacities")
+end
 
 # ╔═╡ 7e366620-4f7e-11eb-3ea8-cd394bc381b5
 md"
 And the solution to the problem is:
 "
 
-# ╔═╡ c197a250-4f45-11eb-15d7-9b0b2c3e3645
-train_flow_adapt,train_mflow_adapt = augmenting_path(train_nw_adapt,[1,3,9,10],6,send= [600,500,300,800]);
-
 # ╔═╡ d146ade0-4f45-11eb-3990-5fefde1996af
-graphplot(train_flow_adapt, x = x_loc_train, y = y_loc_train, names = nodelabs_trains, nodesize = 0.22, nodecolor = "lightblue", nodeshape = :rect, edgelabel = train_flow_adapt, arrows = true, curves = true, title = "Maximum flow = $train_mflow_adapt")
+begin
+	change
+	revert
+	restart
+	train_flow_adapt,train_mflow_adapt = augmenting_path(train_nw_adapt,[1,3,9,10],6,send= [600,500,300,800]);
+	clean!(train_flow_adapt)
+	graphplot(train_flow_adapt, x = x_loc_train, y = y_loc_train, names = nodelabs_trains, nodesize = 0.22, nodecolor = "lightblue", nodeshape = :rect, edgelabel = train_flow_adapt, arrows = true, curves = true, title = "Maximum flow = $train_mflow_adapt")
+end
 
 # ╔═╡ 84c50e10-4f65-11eb-2cc5-df589ae2048d
 isfeasible(train_flow_adapt,s = [1,3,9,10],t = 6,send = [600,500,300,800])
 
+# ╔═╡ ea074bd0-51d6-11eb-3bae-d7c05e869be5
+if isfeasible(train_flow_adapt,s = [1,3,9,10],t = 6,send = [600,500,300,800])
+	md"
+Good job! Your suggestions for the railway network proved useful! Now every cycling fan can see the finish!"
+else
+	md"
+Hmm, maybe you should try another adaptation to the network!
+	"
+end
+
+# ╔═╡ 362b54c0-51d7-11eb-1434-a5e34e89afed
+
+
 # ╔═╡ 3c232d30-4f48-11eb-254e-99f2c19894f0
 md"
-By increasing the network capacities, the SNCB made it possible that every cycling fan can see the finish! 
-
 At last it is possible that the organization of the Tour of Flanders limits the number of spectators that can attend the finish. If there is for instance only place for 2000 spectators in Oudenaarde, the network can be extended with a new sink node, receiving the maximum number of visitors allowed as the arc capacity from the original sink (note that inhabitants of Oudenaarde, or people who do not come by train are not counted). This is illustrated below.
 "
 
@@ -289,7 +330,10 @@ At last it is possible that the organization of the Tour of Flanders limits the 
 train_flow_limit,train_mflow_limit = augmenting_path(train_nw_adapt,[1,3,9,10],[6],send= [600,500,300,800],desired = [2000]);
 
 # ╔═╡ 94a88330-4f7d-11eb-3578-7148fb635b32
-graphplot(train_flow_limit, x = x_loc_train, y = y_loc_train, names = nodelabs_trains, nodesize = 0.22, nodecolor = "lightblue", nodeshape = :rect, edgelabel = train_flow_limit, arrows = true, curves = true, title = "Maximum flow = $train_mflow_limit")
+begin
+	clean!(train_flow_limit)
+	graphplot(train_flow_limit, x = x_loc_train, y = y_loc_train, names = nodelabs_trains, nodesize = 0.22, nodecolor = "lightblue", nodeshape = :rect, edgelabel = train_flow_limit, arrows = true, curves = true, title = "Maximum flow = $train_mflow_limit")
+end
 
 # ╔═╡ a1147c40-4f7e-11eb-15fa-b751ce27d0eb
 md"
@@ -417,6 +461,35 @@ md"""
 [^5]: L. R. Ford and D. R. Fulkerson, *Maximal Flow Through a Network*. Canadian Journal of Mathematics, vol. 8, pp. 399–404, 1956.
 """
 
+# ╔═╡ 8b33a180-51d6-11eb-3c53-3dbe26e87a64
+md"
+## Extra functions
+"
+
+# ╔═╡ b20c3012-51d1-11eb-1e1b-61dbdcacd512
+"""
+	function add_capacity!(nw::AbstractMatrix{Int},node_A::Int,node_B::Int,extra::Int)
+Add `extra` capacity on the railway line from `node_A` to `node_B` in the network `nw`.
+"""
+function add_capacity!(nw::AbstractMatrix{Int},node_A::Int,node_B::Int,extra::Int)
+	@assert node_A != node_B "You have to chose different nodes!"
+	@assert nw[node_A,node_B] + extra >= 0 "Now there is an impossible negative capacity. You should do something else!"
+	@assert nw[node_A,node_B] != 0 "You can't create extra lines, sorry!"
+	nw[node_A,node_B] += extra
+end
+
+# ╔═╡ 3f5291d0-51d2-11eb-23c5-9d148db01ce5
+begin
+	change
+	add_capacity!(train_nw_adapt,parse(Int,node_A),parse(Int,node_B),extra)
+end;
+
+# ╔═╡ 4957e3c2-51d6-11eb-05f1-bfa622cee664
+begin
+	revert
+	add_capacity!(train_nw_adapt,parse(Int,node_A),parse(Int,node_B),-extra)
+end;
+
 # ╔═╡ Cell order:
 # ╟─814488a0-3d37-11eb-3dc9-a97e67207e93
 # ╠═91553c30-3d37-11eb-2a33-2d6d4ee5e9b2
@@ -446,12 +519,20 @@ md"""
 # ╟─055c6830-4f42-11eb-3367-b701c612cbfa
 # ╠═0f5c4240-4f4e-11eb-0a5f-31c50912560b
 # ╟─08cb80d0-4f4e-11eb-2d93-d1d6812076b8
-# ╟─4371eece-4f45-11eb-2374-7751be6d12df
+# ╟─6fdc9080-51d2-11eb-013f-abfd6d72ba2d
+# ╟─d2758df0-51d7-11eb-16ea-c1259ecb643e
+# ╟─830b3e30-51d8-11eb-054b-6ba598d098ba
+# ╟─895559b0-51d8-11eb-0eea-4f062f228107
+# ╟─8d1dfa70-51d8-11eb-1860-133da534f773
+# ╟─3f5291d0-51d2-11eb-23c5-9d148db01ce5
+# ╟─4957e3c2-51d6-11eb-05f1-bfa622cee664
+# ╟─09299d02-51d8-11eb-1a7f-e1e122105b05
 # ╟─a388a070-4f45-11eb-1484-0989c534c0c5
 # ╟─7e366620-4f7e-11eb-3ea8-cd394bc381b5
-# ╠═c197a250-4f45-11eb-15d7-9b0b2c3e3645
 # ╟─d146ade0-4f45-11eb-3990-5fefde1996af
 # ╠═84c50e10-4f65-11eb-2cc5-df589ae2048d
+# ╟─ea074bd0-51d6-11eb-3bae-d7c05e869be5
+# ╟─362b54c0-51d7-11eb-1434-a5e34e89afed
 # ╟─3c232d30-4f48-11eb-254e-99f2c19894f0
 # ╠═583a8020-4f7c-11eb-3ab5-179f606feca0
 # ╟─94a88330-4f7d-11eb-3578-7148fb635b32
@@ -469,3 +550,5 @@ md"""
 # ╟─c21893ae-4fa9-11eb-0920-a187a80c97f9
 # ╟─076320e0-5043-11eb-3aa8-670cdd2b7e20
 # ╟─37063510-4168-11eb-0501-53062fc78345
+# ╟─8b33a180-51d6-11eb-3c53-3dbe26e87a64
+# ╟─b20c3012-51d1-11eb-1e1b-61dbdcacd512
