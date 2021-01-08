@@ -1,3 +1,4 @@
+ 
 # STMO-ZOO
 
 Welcome to the STMO zoo! This is your final assignment for the course Selected Topics in Mathematical Optimization. Your goal is to implement an optimization method in Julia and contribute this to this repository. To pass, you have to:
