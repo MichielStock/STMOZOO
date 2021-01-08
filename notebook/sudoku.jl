@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.12.18
+# v0.12.17
 
 using Markdown
 using InteractiveUtils
@@ -7,23 +7,24 @@ using InteractiveUtils
 # ╔═╡ 44194c10-3d62-11eb-2089-2b2813796028
 using STMOZOO.LocalSearch
 
-# ╔═╡ 0cdca6a0-519b-11eb-34e2-856b6f3f8c2c
-using Plots
-
 # ╔═╡ 9db0d300-3d63-11eb-31bb-b3a8acc6a1c9
 md""" 
 
 # Solving a Sudoku using Local Search
 
-Sudoku is a world wide popular Japanese puzzle. Although very challenging, Sudoku rules are quite simple: Place digits between 1-9 on a 9×9 grid such that
+Sudoku is a world wide popular Japanese puzzle. Although very challenging, Sudoku rules are quite simple: placing digits between 1-9 on a 9×9 grid such that
 each digit appears once in each row, column and each 3x3 sub-grid.
 
-Local search methods, opposed to brute force algorithm, move from state to state in the space of states by applying local changes, trying to get closer to the solution each time.
+Local search methods, opposed to brute force algorithm, move from state to state in the space of states by applying local changes, trying to get closer to the solution for each time.
 
 A naive local search algorithm starts from a complete random assignment, then attempts to find a better state by making an incremental change until it finds the solution or gets stuck in a local minimum.
 
 #### Get a Sudoku puzzle
 """
+
+# ╔═╡ 9ca452c4-5105-11eb-15b4-7b0e6caa8a7d
+# Would it better to put just one example to help to follow up?
+
 
 # ╔═╡ dec03be0-3d6a-11eb-003a-197ac59933dc
 md"""
@@ -39,14 +40,11 @@ sudoku_1
 # ╔═╡ 479a4660-3d6b-11eb-2453-399baa5b059f
 sudoku_2
 
-# ╔═╡ e6aaf8b0-519a-11eb-1e30-95a84c024224
-show_sudoku(sudoku_1)
-
 # ╔═╡ 58841be0-3d6b-11eb-3e22-b5465d1cf3a3
 md"""
 #### Get an initial state
 
-Randomly assign numbers from 1 to 9 to each missing value:
+Randomly assign numbers from 1 to 9 to each missing value
 
 """
 
@@ -71,7 +69,7 @@ cc1 = check_value(sudoku_full1, 1, 1)
 
 # ╔═╡ 8523fd2e-3d6d-11eb-30f2-cd1240c6f3d6
 md"""
-Now we can assign a different number, for example "5", to that position and evaluate if the cost increases or decreases. 
+Now we can assign a different number, for example "5", to that position and evaluate if the cost increase or decrease 
 """
 
 
@@ -135,13 +133,12 @@ cost2 = sudoku_cost(solution2)
 md"""
 Again, since the **cost is $cost2**, the obtained state is not the global minimum.
 
-The problem with these approaches is that they are strongly affected by the initial state, therefore, it is necessary to restart or iteratively change the initial state to avoid getting stuck in a local minimum. 
+The problem with these approaches is that they are strongly affected by the initial state, therefore, is necessary to restart or iteratively change the initial state to avoid getting stuck in a local minimum. 
 
 We can use the swapping approach. Start with a random assigment, then make swaps to reduce the cost of the solution, if the cost is not zero, start from another random assigment. 
 """
 
 # ╔═╡ 5c5fa760-3d76-11eb-074d-b57c5caed0ba
-#SUGGESTION: maybe move this to the src ?
 begin
 	solution3 =[]
 	min_cost = Inf
@@ -243,17 +240,16 @@ sudoku_cost(solution5)
 
 # ╔═╡ 1fe59f80-3dfb-11eb-08f2-b1e4a62e679f
 md"""
-This approach is far less effecient than the previous. It will need at least 10000 iterations to find the correct solution.
+This approach is far less effecient than the previous. It will need at least 10000 iterations to find the correct solution
 """
 
 # ╔═╡ Cell order:
 # ╠═44194c10-3d62-11eb-2089-2b2813796028
 # ╟─9db0d300-3d63-11eb-31bb-b3a8acc6a1c9
+# ╠═9ca452c4-5105-11eb-15b4-7b0e6caa8a7d
 # ╟─dec03be0-3d6a-11eb-003a-197ac59933dc
 # ╠═dd7c43d0-3d62-11eb-2f9c-69eb6819d094
 # ╠═479a4660-3d6b-11eb-2453-399baa5b059f
-# ╠═0cdca6a0-519b-11eb-34e2-856b6f3f8c2c
-# ╠═e6aaf8b0-519a-11eb-1e30-95a84c024224
 # ╟─58841be0-3d6b-11eb-3e22-b5465d1cf3a3
 # ╠═f2e96870-3d6b-11eb-1dee-61f5f48f8ba4
 # ╠═088135a0-3d6c-11eb-03a1-d5b500d99e92
@@ -283,7 +279,7 @@ This approach is far less effecient than the previous. It will need at least 100
 # ╠═3e56d182-3dee-11eb-07a9-d7baa09ebc45
 # ╟─506e5190-3dee-11eb-184e-4d36e8eb1c51
 # ╟─61de9850-3df2-11eb-1452-c79af84acab7
-# ╠═a932ed90-3dee-11eb-3c98-71279cf5e3bb
+# ╟─a932ed90-3dee-11eb-3c98-71279cf5e3bb
 # ╠═5c5853f0-3df0-11eb-1a78-274cceaf7711
 # ╠═633fe7f0-3df0-11eb-3f20-1d38fa05b17c
 # ╟─1fe59f80-3dfb-11eb-08f2-b1e4a62e679f
