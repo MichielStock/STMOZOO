@@ -2,14 +2,10 @@
 
 module polygon
 
-using Images, Colors, Plots, Random
+using Images, Colors, Plots, Random, ImageMagick
 import Base: in
 
-export triangleevolution, Triangle, drawtriangle, colordiffsum, samesideofline, checktriangle, getboundaries, generatetriangle, triangletournament, generatepopulation, Shape, drawimage, makechildpopulation, mutatetriangle, mutatepopulation
-# It was mentioned we should only export the functions useful for the user, but on the other hand I can only test the functions I export here
-# So currently I'm exporting everything (so I can test them) even though only triangleevolution is necessary for the user.
-# Any more elegant way to handle this?
-# You can type using STMOZOO.polygon to access your other functions
+export triangleevolution
 
 """
 A type Shape so the code can be made to work with e.g. rectangles as well. For now, only triangles are supported.
@@ -19,7 +15,9 @@ abstract type Shape end
 """
     Triangle <: Shape
 
-I define triangles with the coordinates of their 3 points and a color.
+Triangles are defined with the coordinates of their 3 points and a color.
+
+Complex numbers are used to represent coordinates. The real part represents the x-value, and the imaginary part represents the y-value.
 """
 struct Triangle <: Shape
     p1::ComplexF64 
@@ -31,8 +29,8 @@ end
 """
     samesideofline(point::Complex, trianglepoint::Complex, line::Tuple)
 
-Computes whether point and trianglepoint are on the same side of the line "line".
-x value of a point is represented with the real part of a complex number, y value by the imaginary part.
+Computes whether point and trianglepoint are on the same side of a line, defined as a tuple of 2 points.
+Returns true if the points are on the same side of a line and false if they are not.
 """
 function samesideofline(point::Complex, trianglepoint::Complex, line::Tuple)
     p1 = line[1]
@@ -71,7 +69,11 @@ end
 
 """
     in(point::Complex, triangle::Triangle)
-Computes whether your point is inside of your triangle
+
+Computes whether a point is inside of a triangle, returning either true or false.
+
+In order to do this, it checks whether the point is on the same side of a certain line of the triangle (defined by two of the triangle's points)
+as the remaining point of the triangle. If this is true for every side of the triangle, the point is inside of the triangle.
 """
 function in(point::Complex, triangle::Triangle)
     # Checks whether the point on a canvas is part of the triangle
@@ -87,7 +89,12 @@ in((x, y), shape::Shape) = in(complex(x, y), shape)
 """
     getboundaries(triangle::Triangle, m::Int, n::Int)
 
-Establishes the place of the box around a triangle 
+Returns the minimum and maximum x-values and y-values of a triangle. m and n are the height and width of the target image.
+
+The leftmost point of a triangle has the minimum x-value of the entire triangle, the rightmost point the maximum x-value,
+the topmost point has the lowest y-value (our image is defined as a matrix, so y-value increases going down) and the bottommost point has the highest y-value.
+If any of these values are outside of the canvas, return the limit it's breaching instead.
+Example: If the right most point of your triangle has an x-value of 530 but the canvas width is only 500, it will return 500 as maximum x-value.
 """
 function getboundaries(triangle::Triangle, m::Int, n::Int)
 
@@ -106,7 +113,8 @@ end
 """
     drawtriangle(triangle::Triangle, img::Array)
 
-An absolute unit of a function. It takes a triangle and an image as canvas and then colors the triangle on your image.
+Fills in all points of an image (an array of RGB points) wich are inside of the triangle with the color of the triangle, then returns this new image.
+
 This function uses some tricks to prevent going over every single pixel in the rectangle encapsulating your triangle.
 Rather than checking every pixel in a line, it searches for the left-most and right-most points of the triangle on a certain height,
 and then fills in all points between these 2 as "part of the triangle".
@@ -223,14 +231,16 @@ end
 """
     colordiffsum(img1::Array, img2::Array, m::Int, n::Int)
 
-The objective function of the algorithm. Computes the difference between 2 images by computing the difference in color for every pixel.
+The objective function of the algorithm. Computes the difference between 2 images by computing the difference in color for every pixel, then returns this value.
+m and n are the height and width of the target image.
 """
 colordiffsum(img1::Array, img2::Array) = sum(colordiff.(img1, img2))
 
 """
     checktriangle(triangle::Triangle, m::Int, n::Int)
 
-Checks a triangle to make sure we don't have any STUPID triangles.
+Returns whether a triangle is stupid (true or false). m and n are the height and width of the target image.
+
 A stupid triangle is a triangle which:
 - Is much too thin (a couple of pixels thin)
 - Has all 3 points outside of the canvas
@@ -274,15 +284,18 @@ end
 """
     generatetriangle(m::Int, n::Int)
 
-Generates a random triangle (a non-stupid one at that).
+Returns a random triangle. m and n are the height and width of the target image.
+
+The functions also checks whether the random triangle is stupid, and if it is, generates a different one.
 """
 function generatetriangle(m::Int, n::Int)
     badTriangle = true
     t = nothing
     while badTriangle
-        center = complex(rand()*1.1*n - 0.05*n, rand()*1.1*m - 0.05*m)
-        deviations = complex.(rand(3)*n*4/5 .- n*2/5, rand(3)*m*4/5 .- m*2/5)
-        points = Complex{Int}.(round.(center .+ deviations))
+        center = complex(rand()*1.1*n - 0.05*n, rand()*1.1*m - 0.05*m) # Choose a random point somewhere in x ∈ [-0.05*n, 1.05*n] and y ∈ [-0.05*m, 1.05*m]
+        # This will be the centre of the triangle
+        deviations = complex.(rand(3)*n*4/5 .- n*2/5, rand(3)*m*4/5 .- m*2/5) # Choose 3 random distances in x ∈ [-0.4*n, 0.4*n] and y ∈ [-0.4*m, 0.4*m]
+        points = Complex{Int}.(round.(center .+ deviations)) # The points of the triangle are a distance "deviations" away from the center
         # Points are allowed to be outside of canvas as long as part of the triangle is in the canvas
         # Prevents white borders
         col = RGB(rand(), rand(), rand())
@@ -296,7 +309,13 @@ end
 """
     generatepopulation(pop_size::Int, number_triangles::Int, img::Array)
 
-Generates an entire population. The individuals of this population consist of:
+Generates a population of images filled with triangles. 
+
+pop_size: Amount of individuals in the population
+number_triangles: Amount of triangles per individual
+img: Starting image on which the individuals are drawn. (e.g. a white rectangle = an array of white RGB values)
+
+The individuals of this population consist of:
 - An array of triangles (remember, a triangle is simply 3 xy coordinates of points and a color, not yet an image)
 - The image made from drawing all these triangles onto a white canvas (array of triangles converted to an image)
 - The score of the individual, which is too say how much its image differs from the target image.
@@ -323,7 +342,7 @@ end
 """
     triangletournament(population0::Array, pop_size::Int)
 
-Picks 2 random triangles from a population and returns the one with the best (= lowest) score.
+Picks 2 random individuals from a population and returns the one with the best (= lowest) score.
 """
 function triangletournament(population0::Array, pop_size::Int)
     contestant1 = population0[Int(ceil(rand()*pop_size))] #Choose a random image from the population, using ceil because 0 is not a valid index
@@ -344,7 +363,8 @@ end
 """
     mutatetriangle(triangle::Triangle, m::Int, n::Int)
 
-Mutates a single triangle, changing the position of its points and its color, while making sure this doesn't result in a stupid triangle.
+Mutates a single triangle, changing the position of its points and its color, while making sure this doesn't result in a stupid triangle, then returns it.
+m and n are the height and width of the target image.
 """
 function mutatetriangle(triangle::Triangle, m::Int, n::Int)
 
@@ -370,8 +390,21 @@ end
 """
     mutatepopulation(population::Array, pop_size::Int, mutation_freq::Number, number_triangles::Int, m::Int, n::Int, img::Array, canvas::Array)
 
-Mutates an entire population, going over every individual and randomly mutating some of their triangles.
+Mutates an entire population. 
+
+Goes over every individual and randomly mutates some of their triangles.
 Then, the new image based on the updated list of triangles is created and the score for this image is computed for every individual.
+The mutated population is returned.
+
+Inputs:
+- population: An array of individuals. 
+And individual in its turn is an array of: 1) An array of Triangles 2) An image consisting of these triangles 3) The score of the individual.
+- pop_size: The amount of individuals in the population (length of population)
+- mutation_freq: The chance for a random triangle to get mutated
+- number_triangles: The amount of triangles per individual (length of the first element of an individual)
+- m and n: Height and width of the target image
+- img: The target image (Array of RGB values)
+- canvas: A starting image on which the triangles are drawn, which is an array of RGB values.
 """
 function mutatepopulation(population::Array, pop_size::Int, mutation_freq::Number, number_triangles::Int, m::Int, n::Int, img::Array, canvas::Array)
     for i in 1:pop_size
@@ -388,23 +421,25 @@ function mutatepopulation(population::Array, pop_size::Int, mutation_freq::Numbe
 end
 
 """
-    makechildpopulation(population1::Array, population2::Array, number_triangles::Int)
+    makechildpopulation(individual1::Array, individual2::Array, number_triangles::Int)
 
-Takes 2 images and returns a new image with triangles randomly taken from both images.
-The order of the triangles is retained since it plays a big role in how the image looks.
+Takes 2 individuals and returns a new individual with triangles randomly taken from both images.
+
+The order of the triangles is retained.
 Only the triangle list is updated, not yet the image or score.
+The returned individual has a new list of triangles, but the image formed from these triangles and the score are one of the parents'.
 """
-function makechildpopulation(population1::Array, population2::Array, number_triangles::Int)
+function makechildpopulation(individual1::Array, individual2::Array, number_triangles::Int)
     childTriangles = Vector{Triangle}(undef, number_triangles)
     for i in 1:number_triangles
         if rand() > 0.5
-            childTriangles[i] = population1[1][i]
+            childTriangles[i] = individual1[1][i]
         else
-            childTriangles[i] = population2[1][i]
+            childTriangles[i] = individual2[1][i]
         end
     end
 
-    child = [childTriangles, population1[2], population1[3]]
+    child = [childTriangles, individual1[2], individual1[3]]
     # The image and score aren't updated yet but that's alright since it will happen in the next step of the algorithm
 
     return child
@@ -417,11 +452,11 @@ end
 
 An evolutionary algorithm with the goal to approximate a given image as well as possible with a bunch of triangles.
 If a name for a gif is given (e.g. gifname = "nicegif.gif"), it will also make a gif out of the best individual's image for every generation.
-There's a lot of parameters here to play around with, try out some crazy stuff!
+There's a lot of parameters here to play around with, try out some crazy stuff!'
+
 Inputs:
 
-REQUIRED
-- image: The name of your target image
+- image: The name of your target image (can be a png, a jpg, a jpeg,... I haven't tried any other formats but all raster-based images should work.)
 
 OPTIONAL
 - number_triangles: The amount of triangles the algorithm uses to try and recreate your image
@@ -432,9 +467,25 @@ OPTIONAL
 - mutation_freq: The chance for a triangle (= "a gene") of an individual to get mutated every generation
 - gifname: If you want to make a gif out of the evolutionary proces, enter a gifname like "amazinggif.gif"
 - fps: The FPS of your gif
+
+Output:
+
+- The population of the last generation, ordered by score.
+
+OPTIONAL
+- A gif consisting of the best individual of every generation. 
+This is not returned, but immediately saved in the notebook folder as a gif if you have entered a gifname.
+
 """
-function triangleevolution(image::String = "src/figures/TotoroTester.jpeg"; number_triangles::Int = 25, generations::Int = 50, pop_size::Int = 70, elitism_freq::Number = 0.10, newblood_freq::Number =  0.03, mutation_freq::Number = 0.07, gifname = nothing, fps = 2)
+function triangleevolution(image::String = "notebook/examplefigures/TotoroTester.jpeg"; number_triangles::Int = 25, generations::Int = 50, pop_size::Int = 70, elitism_freq::Number = 0.10, newblood_freq::Number =  0.03, mutation_freq::Number = 0.07, gifname = nothing, fps::Int = 2)
     
+    @assert number_triangles >= 1 "You must have a positive amount of triangles"
+    @assert generations >= 1 "You must have a positive amount of generations"
+    @assert pop_size >= 1 "You must have a positive population size"
+    @assert fps >= 1 "You must have a positive fps"
+    @assert elitism_freq >= 0 && elitism_freq <= 1 && newblood_freq >= 0 && newblood_freq <= 1 && mutation_freq >= 0 && mutation_freq <= 1 "All frequencies should be within [0, 1]"
+    
+
     makegif = !isnothing(gifname) # Only make the result into a gif if the user enters a name for it
 
     elite_size = Int(round(pop_size*elitism_freq)) # The elite of every generation (best individuals) will get a free pass to the next generation
