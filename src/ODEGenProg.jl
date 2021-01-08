@@ -1,27 +1,20 @@
 # Michael Van de Voorde
-# Example of a source code file implementing a module.
 
-
-# all your code is part of the module you are implementing
 module ODEGenProg
 
-# you have to import everything you need for your module to work
-# if you use a new package, don't forget to add it in the package manager
 using ExprRules, ExprOptimization, Random, Calculus, AbstractTrees, GraphRecipes
 
-export GraphRecipes, TreePlot, graphplot, graphplot!
-export AbstractTrees, AnnotationNode, Leaves, PostOrderDFS, PreOrderDFS, ShadowTree, StatelessBFS, Tree, TreeCharSet, TreeIterator, children, print_tree, treemap, treemap!
-export @dag, @dag_cse, @tree, @tree_with_call, LabelledTree, TreeView, make_dag, tikz_representation, walk_tree, walk_tree!
+
+#export @dag, @dag_cse, @tree, @tree_with_call, LabelledTree, TreeView, make_dag, tikz_representation, walk_tree, walk_tree!
 export @sexpr, AbstractVariable, BasicVariable, Calculus, SymbolParameter, Symbolic, SymbolicVariable, check_derivative, check_gradient, check_hessian, check_second_derivative, deparse, derivative, differentiate, hessian, integrate, jacobian, processExpr, second_derivative, simplify, symbolic_derivative_bessel_list, symbolic_derivatives_1arg
 export AbstractRNG, MersenneTwister, Random, RandomDevice, bitrand, rand!, randcycle, randcycle!, randexp, randexp!, randn!, randperm, randperm!, randstring, randsubseq, randsubseq!, shuffle, shuffle!
 export @grammar, CrossEntropy, CrossEntropys, ExprOptAlgorithm, ExprOptResult, ExprOptimization, ExprRules, ExpressionIterator, GeneticProgram, GeneticPrograms, Grammar, GrammaticalEvolution, GrammaticalEvolutions, MonteCarlo, MonteCarlos, NodeLoc, NodeRecycler, PIPE, PIPEs, PPT, PPTs, ProbabilisticExprRules, RuleNode, SymbolTable, child_types, contains_returntype, count_expressions, depth, get_executable, get_expr, interpret, iseval, isterminal, max_arity, mindepth, mindepth_map, nchildren, node_depth, nonterminals, optimize, recycle!, return_type, root_node_loc, sample
 export @grammar, ExprRules, ExpressionIterator, Grammar, NodeLoc, NodeRecycler, RuleNode, SymbolTable, child_types, contains_returntype, count_expressions, depth, get_executable, interpret, iseval, isterminal, max_arity, mindepth, mindepth_map, nchildren, node_depth, nonterminals, recycle!, return_type, root_node_loc, sample
 
-
-# export all functions that are relevant for the user
-export fitness_0, define_grammar_1D, define_grammar_2D, fitness_1, fitness_2, fitness_3, fitness_4, fitness_2D, plot_solution, plot_solution_2D
+export TreePlot, print_tree
+export plot_solution, plot_solution_2D
+export define_grammar_1D, define_grammar_2D, fitness_0, fitness_1, fitness_2, fitness_3, fitness_4, fitness_2D
 export crossover, mutate, permutate, genetic_program, fitness_basic, tournament_selection, truncation_selection
-#, ExprOptimization, GeneticProgram, optimize
 
 """
 	define_grammar_1D(empty)
@@ -29,7 +22,7 @@ export crossover, mutate, permutate, genetic_program, fitness_basic, tournament_
 	Returns the grammar used to create and evaluate expression trees for ODE solving in one variable x.
 """
 function define_grammar_1D()
-	grammar = @grammar begin
+	grammar = ExprRules.@grammar begin
         R = |(1:9) #shortway notation to add all integers to the grammar
         R = R + R
         R = R - R
@@ -71,10 +64,10 @@ end
 	
 Fitness function for the differential equation y'(x) - y(x) = 0, 
 with boundary condition y(0) = 1. The expected solution is y(x) = exp(x). It returns the fitness 
-for a given expression tree based on a given grammar by evaluating the expression tree over a specific interval of existence.
+for a given expression `tree` based on a given `grammar` by evaluating the expression tree over a specific interval of existence.
 Penalizes deviation from boundary conditions weighted by factor λ = 100. 
 """
-function fitness_0(tree::RuleNode, grammar=grammar)
+function fitness_0(tree::RuleNode, grammar::Grammar)
 	S = ExprRules.SymbolTable(grammar) #ExprRule package interpreter, should increase performance according to documentation
 	ex = ExprRules.get_executable(tree, grammar) #gets the expression from a given tree based on the grammar
     loss = 0.  #the goal is to minimize fitness 
@@ -99,14 +92,14 @@ function fitness_0(tree::RuleNode, grammar=grammar)
 end
 
 """
-    fitness_basic(tree::RuleNode)
+    fitness_0(tree::RuleNode)
 	
 Fitness function for the differential equation y'(x) - y(x) = 0, 
 with boundary condition y(1) = ℯ. The expected solution is y(x) = exp(x). It returns the fitness 
-for a given expression tree based on a given grammar by evaluating the expression tree over a specific interval of existence.
+for a given expression `tree` based on a given `grammar` by evaluating the expression tree over a specific interval of existence.
 Penalizes deviation from boundary conditions weighted by factor λ = 100.
 """
-function fitness_basic(tree::RuleNode)
+function fitness_0(tree::RuleNode)
 	grammar = define_grammar_1D()
 	S = ExprRules.SymbolTable(grammar) 
 	ex = ExprRules.get_executable(tree, grammar) 
@@ -129,11 +122,43 @@ function fitness_basic(tree::RuleNode)
 end
 
 """
+    fitness_1(tree::RuleNode)
+	
+Fitness function for the differential equation y'' - 100y = 0, 
+with boundary conditions y(0) = 0 and y'(0) = 10. The expected solution is y(x) = sin(10x). It returns the fitness 
+for a given expression `tree` based on a given `grammar` by evaluating the expression tree over a specific interval of existence.
+Penalizes deviation from boundary conditions weighted by factor λ = 100.
+"""
+function fitness_1(tree::RuleNode)
+	grammar = define_grammar_1D()
+    S = ExprRules.SymbolTable(grammar) 
+    ex = get_executable(tree, grammar)
+    loss = 0.
+	
+    for x = 0.1:0.1:1.0
+		S[:x] = x
+		loss += try ((Core.eval(S,differentiate(differentiate(ex))) + 100*Core.eval(S,ex)))^2
+		catch
+			return Inf
+		end
+    end
+	
+	S[:x] = 2*π
+	λ = 100.
+	loss += try λ*((((Core.eval(S,ex)-0))^2) + (((Core.eval(S,differentiate(ex))-10))^2)) 
+	catch
+		return Inf
+	end
+		
+	return loss
+end
+
+"""
     fitness_1(tree::RuleNode, grammar::Grammar)
 	
 Fitness function for the differential equation y'' - 100y = 0, 
 with boundary conditions y(0) = 0 and y'(0) = 10. The expected solution is y(x) = sin(10x). It returns the fitness 
-for a given expression tree based on a given grammar by evaluating the expression tree over a specific interval of existence.
+for a given expression `tree` based on a given `grammar` by evaluating the expression tree over a specific interval of existence.
 Penalizes deviation from boundary conditions weighted by factor λ = 100.
 """
 function fitness_1(tree::RuleNode, grammar::Grammar)
@@ -164,7 +189,7 @@ end
 	
 Fitness function for the differential equation y' - (1-ycos(x))/sin(x) = 0, 
 with boundary condition y(0.1) = 2.1/sin(0.1). The expected solution is y(x) = (x+2)/sin(x). It returns the fitness 
-for a given expression tree based on a given grammar by evaluating the expression tree over a specific interval of existence.
+for a given expression `tree` based on a given `grammar` by evaluating the expression tree over a specific interval of existence.
 Penalizes deviation from boundary conditions weighted by factor λ = 100.
 """
 function fitness_2(tree::RuleNode, grammar::Grammar)
@@ -194,7 +219,7 @@ end
 	
 Fitness function for the differential equation y' - (2x-y)/x = 0, 
 with boundary condition y(0) = 20.1. The expected solution is y(x) = x+2/x. It returns the fitness 
-for a given expression tree based on a given grammar by evaluating the expression tree over a specific interval of existence.
+for a given expression `tree` based on a given `grammar` by evaluating the expression tree over a specific interval of existence.
 Penalizes deviation from boundary conditions weighted by factor λ = 100.
 """
 function fitness_3(tree::RuleNode, grammar::Grammar)
@@ -224,7 +249,7 @@ end
 	
 Fitness function for the differential equation y'' - 6y' + 9y = 0, 
 with boundary conditions y(0) = 0 and y'(0) = 2. The expected solution is y(x) = 2x*exp(3x). It returns the fitness 
-for a given expression tree based on a given grammar by evaluating the expression tree over a specific interval of existence.
+for a given expression `tree` based on a given `grammar` by evaluating the expression tree over a specific interval of existence.
 Penalizes deviation from boundary conditions weighted by factor λ = 100.
 """
 function fitness_4(tree::RuleNode, grammar::Grammar)
@@ -258,15 +283,15 @@ end
 Fitness function for the differential equation 	(d/dx + d/dy)^2(f(x,y)) - 2f(x,y) = 0, 
 with boundary conditions (0, y) = 0, (1, y) = sin(1)cos(y), (x, 0) = sin(x), (x, 1) = sin(x)cos(1). 
 The exact solution is f(x, y) = sin(x)cos(y). 
-It returns the fitness for a given expression tree based 
-on a given grammar by evaluating the expression tree over a specific interval of existence.
+It returns the fitness for a given expression `tree` based 
+on a given `grammar` by evaluating the expression tree over a specific interval of existence.
 Penalizes deviation from boundary conditions weighted by factor λ = 100.
 """
 function fitness_2D(tree::RuleNode, grammar::Grammar)
     S_2D = ExprRules.SymbolTable(grammar) #ExprRule's interpreter, should increase performance according to documentation
     ex = get_executable(tree, grammar)
     loss = 0.
-	#domain
+	
     for x = 0.1:0.1:1.0
 		for y = 0.1:0.1:1.0
 			S_2D[:x] = x
@@ -277,7 +302,7 @@ function fitness_2D(tree::RuleNode, grammar::Grammar)
 			end
 		end
     end
-	#boundary conditions
+	
 	S_2D[:x] = 0.
 	λ = 10.
 	loss += try λ*(Core.eval(S_2D,ex)-0)^2 
@@ -309,7 +334,7 @@ end
 	crossover(p::Float64, a::RuleNode, b::RuleNode, max_depth::Int)
 Crossover genetic operator. Picks a random node from an expression tree `a`, then picks a random node 
 from an expression tree `b` that has the same type, then replaces the subtree. The crossover is constrained to 
-a maximum depth `max depth` so the size of expression trees doesn't get too large.
+a maximum depth `max_depth` so the size of expression trees doesn't get too large.
 """
 function crossover(p, a, b, max_depth)
 	grammar = define_grammar_1D()
@@ -377,7 +402,6 @@ parent is the fittest, given a vector `y` with fitnesses for the whole populatio
 out of `S` randomly chosen expression trees of the population.
 """
 function tournament_selection(y, S)
-	grammar = define_grammar_1D()
 	getparent() = begin
 	p = randperm(length(y))
 	p[argmin(y[p[1:S]])]
@@ -389,7 +413,7 @@ end
 """
 	truncation_selection(y::Vector{Float64}, T::Int)
 Truncation selection that chooses parents from among the
-best `T` expression trees in the population.
+best `T` expression trees in the population given a vector `y` with fitnesses.
 """
 function truncation_selection(y, T)
 	p = sortperm(y)
@@ -413,7 +437,7 @@ function genetic_program(f, population, k_max, S, C, M, max_depth)
 		children = [crossover(C, population[p[1]], population[p[2]], max_depth) for p in parents] #crossover step
 		population .= mutate.(children, M) #Ref(M) #mutation step
 		population = children
-		fittest = population[argmin(f.(population))] #finds the best solution 
+		fittest = population[argmin(f.(population))] #gets the best solution 
 		fittest_expr = get_executable(fittest, grammar) #gets the expression for the best solution
 		push!(sol_iter, fittest_expr)
 		push!(fit_iter, f(fittest))

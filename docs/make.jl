@@ -5,9 +5,9 @@ using STMOZOO.Example
 
 makedocs(sitename="STMO ZOO",
     format = Documenter.HTML(),
-    modules=[Example, ODEGenProg], # add your module
+    modules=[Example, ODEGenProg],
     pages=Any[
-        "Example" => "man/example.md",  # add the page to your documentation
+        "Example" => "man/example.md", 
         "ODEGenProg" => "man/odegenprog.md",
     ])
 

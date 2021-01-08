@@ -19,5 +19,4 @@ STMOZOO.ODEGenProg.permutate
 STMOZOO.ODEGenProg.tournament_selection
 STMOZOO.ODEGenProg.truncation_selection
 STMOZOO.ODEGenProg.genetic_program
-STMOZOO.ODEGenProg.fitness_basic
 ```
