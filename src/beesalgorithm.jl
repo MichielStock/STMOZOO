@@ -112,10 +112,10 @@ as ``1 + absolute(objective values)`` if f(x) < 0.
 The bigger the objective values the smaller the fitness values.
 
 Input
-- 'objective values': objective values 
+- 'objective_values': objective values 
 
 Output
-- 'fitness values': fitness values corresponding to the input values (objective values)
+- 'fitness_values': fitness values corresponding to the input values (objective values)
 
 ## Examples
 
@@ -252,9 +252,9 @@ Input
 - 'f': the function that you want to use for computing objective values
 
 Output
-- 'population new evolved': newly generated population of solutions
-- 'fitness new evolved': fitness values of the new population
-- 'objective new evolved': objective values of the new population
+- 'population_new_evolved': newly generated population of solutions
+- 'fitness_new_evolved': fitness values of the new population
+- 'objective_new_evolved': objective values of the new population
 - 'trial': updated trials of new solutions in the new population
     When original solution has failed to generate better solution, trial counter is increased by 1 unit
     When better solution has been found, the trial counter for this new solution is set to zero
@@ -348,9 +348,9 @@ Input
 - 'f': the function that you want to use for computing objective values
 
 Output
-- 'population new evolved': newly generated population of solutions
-- 'fitness new evolved': fitness values of the new population
-- 'objective new evolved': objective values of the new population
+- 'population_new_evolved': newly generated population of solutions
+- 'fitness_new_evolved': fitness values of the new population
+- 'objective_new_evolved': objective values of the new population
 - 'trial': updated trials of new solutions in the new population
     When original solution has failed to generate better solution, trial counter is increased by 1 unit
     When better solution has been found, the trial counter for this new solution is set to zero
@@ -446,9 +446,9 @@ Input
 - 'f': the function that you want to use for computing objective values
 
 Output
-- 'population new evolved': newly generated population of solutions
-- 'fitness new evolved': fitness values of the new population
-- 'objective new evolved': objective values of the new population
+- 'population_new_evolved': newly generated population of solutions
+- 'fitness_new_evolved': fitness values of the new population
+- 'objective_new_evolved': objective values of the new population
 - 'trial': updated trials of new solutions in the new population
     When original solution has failed to generate better solution, trial counter is increased by 1 unit
     When better solution has been found, the trial counter for this new solution is set to zero
@@ -519,6 +519,7 @@ function scouting_phase(population, bounds_lower::Vector, bounds_upper::Vector,
         population[scouting_array] = sol_new
         
         fitness[scouting_array] = new_fit[1]
+        objective = float(objective)
         objective[scouting_array] = new_obj[1]
         trials[scouting_array] = 0
     
@@ -547,9 +548,9 @@ Input
 
 
 Output
-- 'optimal solution': gives a vector of the size D with the optimal solution  
+- 'optimal_solution': gives a vector of the size D with the optimal solution  
 - 'populations': all populations that were computed during the ABC algorithm
-- 'best fitness tracker': a vector with for each iteration the best fitness value so far encountered. 
+- 'best_fitness_tracker': a vector with for each iteration the best fitness value so far encountered. 
 
 ## Examples
 
