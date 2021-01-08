@@ -9,12 +9,15 @@ Reduce dimensions of ATAC-seq dataset using UMAP.
 	
 	reduce_dims_atac(atac_df::DataFrame, Z::Array{Float64}, R::Array{Bool})
 	reduce_dims_atac(atac_df::DataFrame)	
+Input
+- `atac_df`: `DataFrame` with loci in rows and cells in columns 
+- `Z`: epigenetic aggregation matrix returned by `perform_nmf`
+- `R`: binary aggregation matrix returned by `perform_nmf`. 
 
-`Z` and `R` are used to aggregate sparse epigenetic signal and are obtained
-from `perform_nmf`. In case `Z` and `R` are not provided no aggregation is
-performed.
+In case `Z` and `R` are not provided, no aggregation of ATAC signal is performed.
 
-Returns a (2 x number of cells) array.
+Returns a (2 x number of cells) array which represents the data
+in a low-dimensional spaced inferred with UMAP.
 """
 function reduce_dims_atac(atac_df::DataFrame, Z::Array{Float64}, R::Array{Bool})
 	X_atac, _ = df_to_array(atac_df, "locus_name")
@@ -42,11 +45,25 @@ Perform non-negative matrix factorization(NMF) using both scRNA-seq and scATAC-s
 The function returns cell loadings, as well as modality-specific loadings. The choice of
 `k` can reflect the prior knowledge about the major sources of variability in both scRNA-seq
 and scATAC-seq data. Alternatively, the best value of `k` can be determined empirically.
-`n_iter` determines the number of iterations. `dropout_prob` helps prevent over-aggregation of
-the data. `alpha`, `lambda`, and `gamma` are regularization parameters.
 
-Note that input DataFrames must have `gene_name` and `locus_name` columns for scRNA-seq and
-scATAC-seq data, respectively.
+Input
+- `rna_df`: RNA-seq `DataFrame` with genes in rows and cells in columns. Must include a `gene_name` column
+- `atac_df`: ATAC-seq `DataFrame` with loci in rows and cells in columns. Must include a `locus_name` column
+- `k`: dimensionality of a shared low-dimensional representation of both input datasets
+- `dropout_prob`: higher probability reduces over-aggregation of ATAC-seq signal, must be between 0 and 1
+- `n_iter`: number of iterations for the algorithm
+- `alpha`: regularization parameter for gene loading matrix
+- `lambda`: regularization parameter for aggregation matrix Z
+- `gamma`: regularization parameter for cell loading matrix H
+- `verbose`: set to `true` for printing logs
+ 
+Output
+- Cell loading matrix `H`
+- Gene loading matrix
+- Locus loading matrix
+- ATAC aggregation matrix `Z`
+- Binary over-aggregation matrix `R`
+- History for the objective value
 """
 function perform_nmf(rna_df::DataFrame, atac_df::DataFrame, k::Int64;
 			dropout_prob = 0.25, n_iter = 500.0, alpha = 1.0, lambda = 100000.0,
@@ -64,11 +81,15 @@ function perform_nmf(rna_df::DataFrame, atac_df::DataFrame, k::Int64;
 	
 	n_rows_rna, n_cells = size(X_rna)
 	n_rows_atac, n_cells = size(X_atac)
-
-	H = rand(Uniform(), k, n_cells)	
+	
+	# Cell loading matrix
+	H = rand(Uniform(), k, n_cells)
+	
+	# ATAC signal aggregation matrices	
 	Z = rand(Uniform(), n_cells, n_cells)
 	R = rand(Bernoulli(dropout_prob), n_cells, n_cells)
-
+	
+	# Gene and locus loading matrices
 	W_rna = rand(Uniform(), n_rows_rna, k)
 	W_atac = rand(Uniform(), n_rows_atac, k)
 	
