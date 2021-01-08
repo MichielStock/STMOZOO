@@ -22,6 +22,9 @@ md"""### Genetic programming to solve differential equations"""
 # ╔═╡ bc79c4b0-4eeb-11eb-1347-2994621dd40c
 md""" This project is an attempt at solving differential equations analytically or approximating the solution by using genetic programming. The inspiration for the general approach and test cases comes mostly from two papers: Burgess (1999) and Tsoulos and Lagaris (2006)."""
 
+# ╔═╡ bfe95cd0-5208-11eb-0766-77f720b391ef
+md""" #### An introduction to genetic programming"""
+
 # ╔═╡ d110df2e-4ef5-11eb-18fe-491213fbaacd
 md""" Genetic programming is an evolutionary algorithm where genotypes are represented as trees instead of bit strings (as can be the case in classical genetic algorithms). Using trees that allow for a hierarchical structure is an elegant way to respresent for example functions. Representing functions is what we are after when we try to solve differential equations analytically. A general introduction to genetic programming can be found on wikipedia: https://en.wikipedia.org/wiki/Genetic_programming.
 """
@@ -81,6 +84,9 @@ To make it more concrete, the steps for the fitness evaluation of the population
 Each expression tree in the population is conceptualized as a solution (i.e. a function) to the differential equation we want to solve. This expression is plugged into the differential equation and is evaluated for `N` equidistant points in a defined interval. Since the differential equation is in standard form (a given expression that equals to 0) a mean squared error can be calculated for each point and summed to calculate the total fitness. For the example this would give $(f'(x) - f(x))^2$ for `N` different values of `x`. In the same way deviation from the boundary conditions can be penalized. For the example that would give: $λ*(f(0) - 1)^2$ (boundary conditions are
 weighted by factor $λ$ (default = 100) in accordance with Tsoulos and Lagaris (2006). It is thus to be noted that in this case the aim will be to minimize the fitness. 
 """
+
+# ╔═╡ a500c840-5208-11eb-17cf-096adc6f9f14
+md""" ##### How the story begins: A first example """
 
 # ╔═╡ ac7a2a00-505d-11eb-3a07-95b08b1fef2b
 md"""Below I show the general outline of the method for the ODE $f'(x) - f(x) = 0$. I start from a randomly generated population of expression trees."""
@@ -192,6 +198,9 @@ end
 
 # ╔═╡ 1b97dee0-51f4-11eb-288c-d3a979a456de
 md"""Mutation and crossover operators only work by reshuffling existing genetic variation: nodes (i.e. functions) that are already in the starting population. A better method might be to start from a semi-random population by garanteeing that at least all functions from the grammar are in the starting population or by allowing for 'migration' events that introduce new genetic variation (adding random new expression trees from the grammar to the population every generation)."""
+
+# ╔═╡ d1c72f40-5208-11eb-0842-c7a7f905291a
+md""" ##### A Mad Tea Party: Testing sane and insane ODEs """
 
 # ╔═╡ 33b7e230-4f02-11eb-0850-99bb90897832
 md""" For simple a ODE like the previous example, the runtime of the manual implementation seems sufficient but for harder problems I switched to the genetic program from the package ExprOptimization.jl with custom fitness functions."""
@@ -317,6 +326,9 @@ y_42s = plot_solution(results_4.expr, grammar, 0.1, 1.)
 plot!(x_41s,y_42s, label = "GP approximation", linestyle =:dash, linewidth = 3)
 end
 
+# ╔═╡ e96f3ed0-5208-11eb-1ab9-d1c9e7a38a9d
+md""" ##### Further Down the Rabbit Hole: Extension to higher dimensions """
+
 # ╔═╡ c153cc0e-4f04-11eb-01d5-21b2dc26612d
 md""" This methods works equally well for partial differential equations (in this case with 2 variables `x` and `y`). The principles are exactly the same as for the ODE case but the fitness functions are bit more elaborative."""
 
@@ -387,6 +399,7 @@ Tsoulos, I. G., & Lagaris, I. E. (2006). Solving differential equations with gen
 # ╠═0f9a6600-48a6-11eb-2b1f-59ab11633adc
 # ╟─0487a66e-4175-11eb-3839-79ff040436c4
 # ╟─bc79c4b0-4eeb-11eb-1347-2994621dd40c
+# ╟─bfe95cd0-5208-11eb-0766-77f720b391ef
 # ╟─d110df2e-4ef5-11eb-18fe-491213fbaacd
 # ╟─77a04130-4ef4-11eb-1b0e-6d8916bf8388
 # ╟─9659f610-3b2c-11eb-132c-cfe5fbcbb7c1
@@ -399,6 +412,7 @@ Tsoulos, I. G., & Lagaris, I. E. (2006). Solving differential equations with gen
 # ╟─f8a66d22-5059-11eb-041b-f1e31f7c2418
 # ╟─be2c55b0-4ef6-11eb-0bb0-b725aa483399
 # ╟─1aa00a80-4484-11eb-3d2f-8f4fdb6a4c61
+# ╟─a500c840-5208-11eb-17cf-096adc6f9f14
 # ╟─ac7a2a00-505d-11eb-3a07-95b08b1fef2b
 # ╠═517c7490-3b2d-11eb-2470-1f864bb57d95
 # ╟─ceb98f22-505d-11eb-32b7-fd601b0f8cf9
@@ -425,6 +439,7 @@ Tsoulos, I. G., & Lagaris, I. E. (2006). Solving differential equations with gen
 # ╟─717e56a0-51f3-11eb-350b-8999bc6da559
 # ╟─a9fdd6e0-51f3-11eb-0826-4763a69cf9a5
 # ╟─1b97dee0-51f4-11eb-288c-d3a979a456de
+# ╟─d1c72f40-5208-11eb-0842-c7a7f905291a
 # ╟─33b7e230-4f02-11eb-0850-99bb90897832
 # ╠═3ad61410-3cce-11eb-0e65-ebf59517000e
 # ╟─9c8a99b0-4f02-11eb-2eed-bf59946b8e12
@@ -449,6 +464,7 @@ Tsoulos, I. G., & Lagaris, I. E. (2006). Solving differential equations with gen
 # ╠═756cd920-44b1-11eb-0ad6-c95c100c57f6
 # ╟─1df79920-44b4-11eb-2ddf-a3f7081a4642
 # ╟─4a896620-44b5-11eb-03b0-d314fce42f9a
+# ╟─e96f3ed0-5208-11eb-1ab9-d1c9e7a38a9d
 # ╟─c153cc0e-4f04-11eb-01d5-21b2dc26612d
 # ╟─b6c97abe-4580-11eb-02e8-e1dfe421cbd5
 # ╟─e5b818f0-4580-11eb-279f-8b6b2b2e0fe6
