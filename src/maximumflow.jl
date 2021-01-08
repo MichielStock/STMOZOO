@@ -14,10 +14,8 @@ Calculate the residual network of a network from a maximum flow problem `mf_oc`
 and a network containing the current flow `mf_cur`, both implemented as 
 adjacency matrices.
 """
-function res_network(mf_oc::AbstractMatrix{Int}, mf_cur::AbstractMatrix{Int})
-    # Maybe it is a style choice on your part, but you can also do: r, c = size(mf_oc)
-    r = size(mf_oc, 1) # rows
-    c = size(mf_oc, 2) # columns
+function res_network(mf_oc::AbstractMatrix{Int}, mf_cur::AbstractMatrix{Int}) 
+    r, c = size(mf_oc)
     @assert r == c "Adjacency matrix has to be square."
     @assert size(mf_cur, 1) == size(mf_cur, 2) "Adjacency matrix has to be square."
     @assert r == size(mf_cur, 1) "Adjacency matrices need to have the same size."
@@ -53,7 +51,7 @@ function bfs(nw::AbstractMatrix{Int}, s::Int, t::Int)
         i = popfirst!(L) # select labeled node
         for j in findall(nw[i,:] .> 0) # there is still possible flow from node i to node j
         # if j is unlabeled, label it and save the predecessor
-            if !labeled[j] # remove space here?
+            if !labeled[j]
                 labeled[j] = true
                 pred[j] = i
                 push!(L, j)
@@ -273,15 +271,14 @@ true
 function isfeasible(flow::AbstractMatrix{Int}; s, t, send::Array{Int,1}=Int[], desired::Array{Int,1}=Int[])
     r,c = size(flow) # rows and columns of flow
     @assert r == c "Flow matrix has to be square"
-    # Maybe delete the space between the exclamation mark and isempty? Or make it consistent, cause line 52 had no space in between
-    ! isempty(send) && @assert length(s) == length(send) "Length of `send` has to be equal to the number of sources."
-    ! isempty(desired) && @assert length(t) == length(desired) "Length of `desired` has to be equal to the number of sinks."
+    !isempty(send) && @assert length(s) == length(send) "Length of `send` has to be equal to the number of sources."
+    !isempty(desired) && @assert length(t) == length(desired) "Length of `desired` has to be equal to the number of sinks."
     # initialization
     a,b = true,true
     # check if all is sent
-    ! isempty(send) && (a = all([sum(flow[j,:]) - sum(flow[:,j]) == send[i] for (i,j) in enumerate(s)]))
+    !isempty(send) && (a = all([sum(flow[j,:]) - sum(flow[:,j]) == send[i] for (i,j) in enumerate(s)]))
     # check if all is received
-    ! isempty(desired) && (b = all([sum(flow[:,j]) - sum(flow[j,:]) == desired[i] for (i,j) in enumerate(t)]))
+    !isempty(desired) && (b = all([sum(flow[:,j]) - sum(flow[j,:]) == desired[i] for (i,j) in enumerate(t)]))
     return a && b
 end
 
