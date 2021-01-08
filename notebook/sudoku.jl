@@ -33,9 +33,6 @@ advance and cannot be changed or moved. The number of
 givens does not determine the difficulty of the puzzle. In the matrix, the zeros represent missing values.
 """
 
-# ╔═╡ dd7c43d0-3d62-11eb-2f9c-69eb6819d094
-sudoku_1
-
 # ╔═╡ 78cb5512-51a4-11eb-321c-0baeb53b0325
 show_sudoku(sudoku_1)
 
@@ -48,7 +45,10 @@ Randomly assign numbers from 1 to 9 to each missing value
 """
 
 # ╔═╡ f2e96870-3d6b-11eb-1dee-61f5f48f8ba4
-sudoku_full1 = fill_in(sudoku_1)
+begin
+	sudoku_full1 = fill_in(sudoku_1);
+	show_sudoku(sudoku_full1)
+end
 
 # ╔═╡ 45f09890-3d6c-11eb-2653-b17cf5ebd7fd
 md"""
@@ -91,7 +91,10 @@ We can repeat multiple times the previous process using the function `sudoku_gre
 """
 
 # ╔═╡ 0f8aacb0-3d70-11eb-0be0-af7c2b65dc1b
-solution1, cost1 = sudoku_greedydesc(sudoku_full1, sudoku_1, 1000)
+begin
+	solution1, cost1 = sudoku_greedydesc(sudoku_full1, sudoku_1, 1000);
+	show_sudoku(solution1)
+end
 
 # ╔═╡ e6888ebe-3d71-11eb-1774-89ccc2f2a893
 md""" 
@@ -104,7 +107,15 @@ We can swap two random positions using `fliprow` function.
 """
 
 # ╔═╡ 07e5b4c0-3d73-11eb-0e06-d7907a930654
-sudoku_flip1, pos1, pos2 = fliprow(sudoku_full1, sudoku_1)
+begin	
+	sudoku_flip1, pos1, pos2 = fliprow(sudoku_full1, sudoku_1)
+	show_sudoku(sudoku_flip1)
+end
+
+# ╔═╡ e8807afe-51a5-11eb-0de8-6d05e7f9b122
+md"""
+Here positions $pos1 and $pos2 were swap
+"""
 
 # ╔═╡ 17aa4b10-3dea-11eb-10c8-e98295270098
 md"""
@@ -120,14 +131,17 @@ Similarly to what we did with `sudoku_greedydesc` function, we can repeat this p
 """
 
 # ╔═╡ 4c189700-3d75-11eb-06e2-878687d8edba
-solution2 = makefliprow(sudoku_full1, sudoku_1, 1000)
+begin
+	solution2 = makefliprow(sudoku_full1, sudoku_1, 1000)
+	show_sudoku(solution2)
+end
 
 # ╔═╡ 77ce2a40-3d75-11eb-3808-3df0aefaa6be
 cost2 = sudoku_cost(solution2)
 
 # ╔═╡ 89f9ce90-3d75-11eb-0e85-49bbafb27035
 md"""
-Again, since the **cost is $cost2**, the obtained state is not the global minimum.
+The **cost of this solution is $cost2**.
 
 The problem with these approaches is that they are strongly affected by the initial state, therefore, is necessary to restart or iteratively change the initial state to avoid getting stuck in a local minimum. 
 
@@ -157,7 +171,7 @@ begin
 end
 
 # ╔═╡ 0ed0cac0-3ded-11eb-2542-4f3c14ebbbe2
-solution3
+show_sudoku(solution3)
 
 # ╔═╡ 3bf138a0-3ded-11eb-09b6-bba39aa01e3b
 sudoku_cost(solution3)
@@ -192,7 +206,7 @@ begin
 end
 
 # ╔═╡ 37e557e0-3dee-11eb-2f5f-03a88ced69c3
-solution4
+show_sudoku(solution4)
 
 # ╔═╡ 3e56d182-3dee-11eb-07a9-d7baa09ebc45
 sudoku_cost(solution4)
@@ -229,7 +243,7 @@ begin
 end
 
 # ╔═╡ 5c5853f0-3df0-11eb-1a78-274cceaf7711
-solution5
+show_sudoku(solution5)
 
 # ╔═╡ 633fe7f0-3df0-11eb-3f20-1d38fa05b17c
 sudoku_cost(solution5)
@@ -244,7 +258,6 @@ This approach is far less effecient than the previous. It will need at least 100
 # ╠═6dbd6ff2-51a4-11eb-22c1-5d054a1547b4
 # ╟─9db0d300-3d63-11eb-31bb-b3a8acc6a1c9
 # ╟─dec03be0-3d6a-11eb-003a-197ac59933dc
-# ╠═dd7c43d0-3d62-11eb-2f9c-69eb6819d094
 # ╠═78cb5512-51a4-11eb-321c-0baeb53b0325
 # ╟─58841be0-3d6b-11eb-3e22-b5465d1cf3a3
 # ╠═f2e96870-3d6b-11eb-1dee-61f5f48f8ba4
@@ -258,7 +271,8 @@ This approach is far less effecient than the previous. It will need at least 100
 # ╟─4597cd5e-3d70-11eb-275a-bfe09278d486
 # ╠═0f8aacb0-3d70-11eb-0be0-af7c2b65dc1b
 # ╟─e6888ebe-3d71-11eb-1774-89ccc2f2a893
-# ╠═07e5b4c0-3d73-11eb-0e06-d7907a930654
+# ╟─07e5b4c0-3d73-11eb-0e06-d7907a930654
+# ╟─e8807afe-51a5-11eb-0de8-6d05e7f9b122
 # ╟─17aa4b10-3dea-11eb-10c8-e98295270098
 # ╠═4ad903f0-3dea-11eb-188b-cfd082eb0727
 # ╟─77b58ea0-3d74-11eb-057f-11a15bcab5b3
