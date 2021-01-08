@@ -229,7 +229,7 @@ plot!(x_t,y_t2, linestyle =:dash, label = "GP approximation", linewidth = 3)
 end
 
 # ╔═╡ 4daf91a0-4f03-11eb-050e-0f978842a720
-md""" The next ODE I try to solve is $y'' - 100y = 0$, with boundary conditions $y(0) = 0$ and $y'(0) = 10$ on the interval $[0,1]$. The expected solution is $f(x)= sin(10x)$."""
+md""" The next ODE I try to solve is  $y'' - 100y = 0$, with boundary conditions $y(0) = 0$ and $y'(0) = 10$ on the interval $[0,1]$. The expected solution is $f(x)= sin(10x)$."""
 
 # ╔═╡ 3cf8f410-3cce-11eb-277e-f5cf01627feb
 results_1 = optimize(g, grammar, :R, fitness_1)
@@ -248,7 +248,7 @@ plot!(x_11,y_12, label = "GP approximation", linestyle =:dash, linewidth = 3)
 end
 
 # ╔═╡ 07c74990-44c1-11eb-27f0-7b786b4380ae
-md""" The two previous functions should be exact analytical solutions most of the time. The following approximate solutions change a lot as the ODE's get more complex and they don't seem to be very reliable. It is likely that when you run the notebook the approximations are rather bad. This could be improved by increasing the population size (up to 2000 is used by  Tsoulos and Lagaris (2006) or by increasing the number of iterations (50 is rather on the low side, the average number of generations in  Tsoulos and Lagaris (2006) is about 500) but this makes it too computationally expensive for this notebook."""
+md""" The two previous functions should be exact analytical solutions most of the time. The following approximate solutions change a lot as the ODE's get more complex and they don't seem to be very reliable. It is likely that when you run the notebook the approximations are rather bad. This could be improved by increasing the population size (up to 2000 is used by  Tsoulos and Lagaris (2006) or by increasing the number of iterations (50 is rather on the low side, the average number of generations in  Tsoulos and Lagaris (2006) is about 500) but this makes it too computationally expensive for this notebook. Also the penalization factor `λ` for the boundary conditions is fixed at 100 (Tsoulos and Lagaris (2006)). This may be too stringent and probably needs some better tweaking."""
 
 # ╔═╡ d27262a0-4f03-11eb-053a-1d2ae1f4bbfe
 md""" The following ODE is $y' - (1 - y*cos(x)) / sin(x) = 0$, with boundary condition $y(0.1) = 2.1/sin(0.1)$ on the interval $[0,1]$. The expected solution is $y(x) = (x + 2)/sin(x)$."""

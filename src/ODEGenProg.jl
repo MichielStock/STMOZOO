@@ -2,16 +2,16 @@
 
 module ODEGenProg
 
-using ExprRules, ExprOptimization, Random, Calculus, AbstractTrees, GraphRecipes
+using ExprRules
+using ExprOptimization
+using Random
+using Calculus
+using AbstractTrees
+using GraphRecipes
 
-
-#export @dag, @dag_cse, @tree, @tree_with_call, LabelledTree, TreeView, make_dag, tikz_representation, walk_tree, walk_tree!
-export @sexpr, AbstractVariable, BasicVariable, Calculus, SymbolParameter, Symbolic, SymbolicVariable, check_derivative, check_gradient, check_hessian, check_second_derivative, deparse, derivative, differentiate, hessian, integrate, jacobian, processExpr, second_derivative, simplify, symbolic_derivative_bessel_list, symbolic_derivatives_1arg
-export AbstractRNG, MersenneTwister, Random, RandomDevice, bitrand, rand!, randcycle, randcycle!, randexp, randexp!, randn!, randperm, randperm!, randstring, randsubseq, randsubseq!, shuffle, shuffle!
-export @grammar, CrossEntropy, CrossEntropys, ExprOptAlgorithm, ExprOptResult, ExprOptimization, ExprRules, ExpressionIterator, GeneticProgram, GeneticPrograms, Grammar, GrammaticalEvolution, GrammaticalEvolutions, MonteCarlo, MonteCarlos, NodeLoc, NodeRecycler, PIPE, PIPEs, PPT, PPTs, ProbabilisticExprRules, RuleNode, SymbolTable, child_types, contains_returntype, count_expressions, depth, get_executable, get_expr, interpret, iseval, isterminal, max_arity, mindepth, mindepth_map, nchildren, node_depth, nonterminals, optimize, recycle!, return_type, root_node_loc, sample
-export @grammar, ExprRules, ExpressionIterator, Grammar, NodeLoc, NodeRecycler, RuleNode, SymbolTable, child_types, contains_returntype, count_expressions, depth, get_executable, interpret, iseval, isterminal, max_arity, mindepth, mindepth_map, nchildren, node_depth, nonterminals, recycle!, return_type, root_node_loc, sample
-
-export TreePlot, print_tree
+export ExprOptimization, GeneticProgram, GeneticPrograms, optimize
+export ExprRules, ExpressionIterator, @grammar, Grammar, NodeLoc, NodeRecycler, RuleNode, SymbolTable, child_types, contains_returntype, count_expressions, depth, get_executable, interpret, iseval, isterminal, max_arity, mindepth, mindepth_map, nchildren, node_depth, nonterminals, recycle!, return_type, root_node_loc, sample
+export TreePlot, print_tree, differentiate
 export plot_solution, plot_solution_2D
 export define_grammar_1D, define_grammar_2D, fitness_0, fitness_1, fitness_2, fitness_3, fitness_4, fitness_2D
 export crossover, mutate, permutate, genetic_program, fitness_basic, tournament_selection, truncation_selection
@@ -43,7 +43,7 @@ end
 	Returns the grammar used to create and evaluate expression trees for PDE solving in two variables x and y.
 """
 function define_grammar_2D()
-	grammar = @grammar begin
+	grammar = ExprRules.@grammar begin
         R = |(1:9) #shortway notation to add all integers to the grammar
         R = R + R
         R = R - R
@@ -132,7 +132,7 @@ Penalizes deviation from boundary conditions weighted by factor λ = 100.
 function fitness_1(tree::RuleNode)
 	grammar = define_grammar_1D()
     S = ExprRules.SymbolTable(grammar) 
-    ex = get_executable(tree, grammar)
+    ex = ExprRules.get_executable(tree, grammar)
     loss = 0.
 	
     for x = 0.1:0.1:1.0
@@ -163,7 +163,7 @@ Penalizes deviation from boundary conditions weighted by factor λ = 100.
 """
 function fitness_1(tree::RuleNode, grammar::Grammar)
     S = ExprRules.SymbolTable(grammar) 
-    ex = get_executable(tree, grammar)
+    ex = ExprRules.get_executable(tree, grammar)
     loss = 0.
 	
     for x = 0.0:0.1:1.0
@@ -194,7 +194,7 @@ Penalizes deviation from boundary conditions weighted by factor λ = 100.
 """
 function fitness_2(tree::RuleNode, grammar::Grammar)
     S = ExprRules.SymbolTable(grammar) #ExprRule's interpreter, should increase performance according to documentation
-    ex = get_executable(tree, grammar)
+    ex = ExprRules.get_executable(tree, grammar)
     loss = 0.
 	#domain
     for x = 0.1:0.1:1.0
@@ -224,7 +224,7 @@ Penalizes deviation from boundary conditions weighted by factor λ = 100.
 """
 function fitness_3(tree::RuleNode, grammar::Grammar)
     S = ExprRules.SymbolTable(grammar) #ExprRule's interpreter, should increase performance according to documentation
-    ex = get_executable(tree, grammar)
+    ex = ExprRules.get_executable(tree, grammar)
     loss = 0.
 	#domain
     for x = 0.1:0.1:1.0
@@ -254,7 +254,7 @@ Penalizes deviation from boundary conditions weighted by factor λ = 100.
 """
 function fitness_4(tree::RuleNode, grammar::Grammar)
     S = ExprRules.SymbolTable(grammar) 
-    ex = get_executable(tree, grammar)
+    ex = ExprRules.get_executable(tree, grammar)
     loss = 0.
 	for x = 0.1:2.:20.1
 		S[:x] = x
@@ -289,7 +289,7 @@ Penalizes deviation from boundary conditions weighted by factor λ = 100.
 """
 function fitness_2D(tree::RuleNode, grammar::Grammar)
     S_2D = ExprRules.SymbolTable(grammar) #ExprRule's interpreter, should increase performance according to documentation
-    ex = get_executable(tree, grammar)
+    ex = ExprRules.get_executable(tree, grammar)
     loss = 0.
 	
     for x = 0.1:0.1:1.0
@@ -334,7 +334,8 @@ end
 	crossover(p::Float64, a::RuleNode, b::RuleNode, max_depth::Int)
 Crossover genetic operator. Picks a random node from an expression tree `a`, then picks a random node 
 from an expression tree `b` that has the same type, then replaces the subtree. The crossover is constrained to 
-a maximum depth `max_depth` so the size of expression trees doesn't get too large.
+a maximum depth `max_depth` so the size of expression trees doesn't get too large. 
+Adapted from Kochenderfer, M. J., & Wheeler, T. A. (2019). 
 """
 function crossover(p, a, b, max_depth)
 	grammar = define_grammar_1D()
@@ -356,6 +357,7 @@ end
 	mutate(a::RuleNode, p::Float64)
 Mutation genetic operator. Picks a random node from an expression tree `a`, 
 then replaces the subtree with a random one.
+Adapted from Kochenderfer, M. J., & Wheeler, T. A. (2019). 
 """
 function mutate(a, p)
 	grammar = define_grammar_1D()
@@ -373,6 +375,7 @@ end
 	permutate(a::RuleNode, p::Float64)
 Permutation is a second form of genetic mutation for a given expression tree `a` with probability of mutation `p`. 
 The children of a randomly chosen node are randomly permuted.
+Adapted from Kochenderfer, M. J., & Wheeler, T. A. (2019). 
 """
 function permutate(a, p)
 	grammar = define_grammar_1D()
@@ -400,6 +403,7 @@ end
 Tournament selection with tournament size `S`, where each
 parent is the fittest, given a vector `y` with fitnesses for the whole population, 
 out of `S` randomly chosen expression trees of the population.
+Adapted from Kochenderfer, M. J., & Wheeler, T. A. (2019). 
 """
 function tournament_selection(y, S)
 	getparent() = begin
@@ -414,6 +418,7 @@ end
 	truncation_selection(y::Vector{Float64}, T::Int)
 Truncation selection that chooses parents from among the
 best `T` expression trees in the population given a vector `y` with fitnesses.
+Adapted from Kochenderfer, M. J., & Wheeler, T. A. (2019). 
 """
 function truncation_selection(y, T)
 	p = sortperm(y)
@@ -427,6 +432,7 @@ Runs genetic program for a starting population `population`, which is a vector o
 Calculates for each expression tree the fitness based on a fitness function `f`. Uses tournament selection that keeps 
 the best scoring expression tree out of `S` randomly chosen expression trees. Crossing over occurs with probability `C` and mutation with probability `M`. 
 Iterated for `k_max` generations.
+Adapted from Kochenderfer, M. J., & Wheeler, T. A. (2019). 
 """
 function genetic_program(f, population, k_max, S, C, M, max_depth)
 	grammar = define_grammar_1D()

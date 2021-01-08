@@ -41,8 +41,8 @@
     
     #I switched to using the build in GP from the ExprOptimization package with my custom fitness functions because its much faster to evaluate than a manual implementation. 
     #This test evalutates the fitness_test function for ODE f'(x) - f(x) = 0, with boundary condition f(0) = 1. The expected solution is f(x) = exp(x)
-    g = ExprOptimization.GeneticProgram(2000,100,5,0.3,0.3,0.4) 
-    results_gp = ExprOptimization.optimize(g, grammar_1D, :R, fitness_0)
+    g = GeneticProgram(2000,100,5,0.3,0.3,0.4) 
+    results_gp = optimize(g, grammar_1D, :R, fitness_0)
     @test results_gp.expr isa Expr
     @test results_gp.loss ≈ 0.
     
