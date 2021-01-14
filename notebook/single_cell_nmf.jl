@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.12.17
+# v0.12.4
 
 using Markdown
 using InteractiveUtils
@@ -70,6 +70,9 @@ begin
 	atac_file = "simulation_ATAC.csv"
 	labels_file = "labels.csv"
 end
+
+# ╔═╡ 51a21aa0-5686-11eb-2fb0-717fe4c07c31
+pwd()
 
 # ╔═╡ f638a082-3f9a-11eb-2bd6-f567e55363a2
 begin
@@ -208,6 +211,7 @@ Martínez C, Tarazona S (2020). MOSim: Multi-Omics Simulation (MOSim). R package
 # ╟─b3e57a5e-3f89-11eb-1122-17218be3ec4c
 # ╟─74322ba8-3f9a-11eb-2833-dbf876466683
 # ╠═766fa040-3f8a-11eb-0142-5b8439fe7110
+# ╠═51a21aa0-5686-11eb-2fb0-717fe4c07c31
 # ╠═f638a082-3f9a-11eb-2bd6-f567e55363a2
 # ╟─1204a49e-3f9d-11eb-06c5-f91c92257ffd
 # ╠═1e3593e0-3f9d-11eb-1c03-8b9ead1e7172

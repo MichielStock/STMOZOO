@@ -19,7 +19,7 @@ In case `Z` and `R` are not provided, no aggregation of ATAC signal is performed
 Returns a (2 x number of cells) array which represents the data
 in a low-dimensional spaced inferred with UMAP.
 """
-function reduce_dims_atac(atac_df::DataFrame, Z::Array{Float64}, R::Array{Bool})
+function reduce_dims_atac(atac_df, Z, R)
 	X_atac, _ = df_to_array(atac_df, "locus_name")
 
 	ZR = (Z .* R) ./ sum(Z .* R, dims = 1)
@@ -132,14 +132,14 @@ function update_W_rna(W_rna::Array{Float64}, X_rna::Array{Float64}, H::Array{Flo
 	return W_rna .* (X_rna * H') ./ (W_rna * H * H' .+ eps(Float64))
 end
 
-function update_W_atac(W_atac::Array{Float64}, X_atac::Array{Float64}, H::Array{Float64},
-			Z::Array{Float64}, R::Array{Bool})
+function update_W_atac(W_atac, X_atac, H,
+			Z, R)
 	return W_atac .* (X_atac * (Z .* R) * H') ./ (W_atac * H * H' .+ eps(Float64)) 
 end
 
-function update_H(W_rna::Array{Float64}, W_atac::Array{Float64}, X_rna::Array{Float64},
-			X_atac::Array{Float64}, H::Array{Float64}, Z::Array{Float64},
-			R::Array{Bool}, alpha::Float64, lambda::Float64, gamma::Float64)
+function update_H(W_rna, W_atac, X_rna,
+			X_atac, H, Z,
+			R, alpha, lambda, gamma)
 	numerator = alpha * W_rna' * X_rna .+ W_atac' * X_atac * (Z .* R)
 			.+ lambda * H * (Z + Z')
 	k = size(H)[1]
@@ -149,8 +149,8 @@ function update_H(W_rna::Array{Float64}, W_atac::Array{Float64}, X_rna::Array{Fl
 	return H .* numerator ./ (denominator .+ eps(Float64))	
 end
 
-function update_Z(W_atac::Array{Float64}, X_atac::Array{Float64}, H::Array{Float64},
-			Z::Array{Float64}, R::Array{Bool}, lambda::Float64)
+function update_Z(W_atac, X_atac, H,
+			Z, R, lambda)
 	numerator = (X_atac' * W_atac * H) .* R .+ lambda * H' * H 
 	denominator = X_atac' * X_atac * (Z .* R) .* R .+ lambda * Z
 		
