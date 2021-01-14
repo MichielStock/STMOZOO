@@ -230,6 +230,6 @@ Martínez C, Tarazona S (2020). MOSim: Multi-Omics Simulation (MOSim). R package
 # ╟─99c2caec-3fbd-11eb-24a6-17595dac79da
 # ╠═c86c10be-3fbd-11eb-2121-435d901c1f06
 # ╟─7422de64-3fd1-11eb-3a12-f3908e7c3eec
-# ╠═2c1a3a58-3fbe-11eb-325c-73d5e92f851d
+# ╟─2c1a3a58-3fbe-11eb-325c-73d5e92f851d
 # ╟─ca589470-3fbf-11eb-2099-a1834113d287
 # ╟─cf71609a-3f88-11eb-3173-0d3274ed03af

@@ -128,7 +128,7 @@ function df_to_array(df::DataFrame, feature_name)
 	return X, features
 end
 
-function update_W_rna(W_rna::Array{Float64}, X_rna::Array{Float64}, H::Array{Float64})
+function update_W_rna(W_rna, X_rna, H)
 	return W_rna .* (X_rna * H') ./ (W_rna * H * H' .+ eps(Float64))
 end
 
