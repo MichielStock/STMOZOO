@@ -26,6 +26,10 @@ docs/site/
 # committed for packages, but should be committed for applications that require a static
 # environment.
 Manifest.toml
+
+# IDE-specific files are usually not included into the repo
+.obsidian/*
+.vscode/*
 *.swp
 *.csv
 .DS_Store

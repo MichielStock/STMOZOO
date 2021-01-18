@@ -10,11 +10,11 @@ For the exam project, you pick a optimization related topic of your interest tha
 
 ## Getting started
 
-- [ ] pick a project (take a look at `project ideas.md` or discuss with Michiel)
-- [ ] [fork](https://docs.github.com/en/enterprise-server@2.20/github/getting-started-with-github/fork-a-repo) this repo
-- [ ] create a new branch with a short indicative name, e.g., `GeneticProgramming`. **Don't use spaces in the name!**
-- [ ] make a local clone of the repository 
-- [ ] open a [pull request](https://docs.github.com/en/free-pro-team@latest/desktop/contributing-and-collaborating-using-github-desktop/creating-an-issue-or-pull-request) to the **master** branch of this repo. This makes it clear you are starting the project!
+- [x] pick a project (take a look at `project ideas.md` or discuss with Michiel)
+- [x] [fork](https://docs.github.com/en/enterprise-server@2.20/github/getting-started-with-github/fork-a-repo) this repo
+- [x] create a new branch with a short indicative name, e.g., `GeneticProgramming`. **Don't use spaces in the name!**
+- [x] make a local clone of the repository 
+- [x] open a [pull request](https://docs.github.com/en/free-pro-team@latest/desktop/contributing-and-collaborating-using-github-desktop/creating-an-issue-or-pull-request) to the **master** branch of this repo. This makes it clear you are starting the project!
 
 ## Source code
 
@@ -24,16 +24,16 @@ Developing code can be done in any text editor, though we highly recommend [Visu
 
 Importantly, all your code should be in a [module](https://docs.julialang.org/en/v1/manual/modules/), where you export only the functions useful for the user.
 
-- [ ] In the `src` folder, add a new Julia file with your source code, for example `geneticprogramming.jl`. Don't use spaces or capitals in the file name.
-- [ ] Link your file in `STMOZOO.jl` using `include(filename)`,  running the code.
-- [ ] Create a module environment in your file for all your code. Use [camel case](https://en.wikipedia.org/wiki/Camel_case) for the name.
+- [x] In the `src` folder, add a new Julia file with your source code, for example `geneticprogramming.jl`. Don't use spaces or capitals in the file name.
+- [x] Link your file in `STMOZOO.jl` using `include(filename)`,  running the code.
+- [x] Create a module environment in your file for all your code. Use [camel case](https://en.wikipedia.org/wiki/Camel_case) for the name.
   - use `module GeneticProgramming begin ... end` to wrap your code;
   - import everything you need from external packages: `using LinearAlgebra: norm`;
   - export your functions using `export`
-- [ ] write awesome code!
-- [ ] take a look at your code regarding the [Julia style guide](https://docs.julialang.org/en/v1/manual/style-guide/)
-- [ ] check the [Julia performance tips](https://docs.julialang.org/en/v1/manual/performance-tips/)
-- [ ] document *every* function! Make sure that an external user can understand everything! Be liberal with comments in your code. Take a look at the [guidelines](https://docs.julialang.org/en/v1/manual/documentation/)
+- [x] write awesome code!
+- [x] take a look at your code regarding the [Julia style guide](https://docs.julialang.org/en/v1/manual/style-guide/)
+- [x] check the [Julia performance tips](https://docs.julialang.org/en/v1/manual/performance-tips/)
+- [x] document *every* function! Make sure that an external user can understand everything! Be liberal with comments in your code. Take a look at the [guidelines](https://docs.julialang.org/en/v1/manual/documentation/)
 
 ## Unit tests
 
@@ -46,10 +46,10 @@ Tests can be executed using the `@test` macro. You evaluate some functions and c
 It makes sense to group several tests, which can be done using `@testset "names of tests" begin ... end`.
 
 Your assignments:
-- [ ] add a source file to the `test/` folder, the same name as your source code file.
-- [ ] add an `include(...)` with the filename in `runtests.jl`
-- [ ] in your file, add a block `@testset "MyModule" begin ... end` with a series of sensible unit tests. Use subblocks of `@testset` if needed.
-- [ ] run your tests, in the package manager, type `test`. It will run all tests and generate a report.
+- [x] add a source file to the `test/` folder, the same name as your source code file.
+- [x] add an `include(...)` with the filename in `runtests.jl`
+- [x] in your file, add a block `@testset "MyModule" begin ... end` with a series of sensible unit tests. Use subblocks of `@testset` if needed.
+- [x] run your tests, in the package manager, type `test`. It will run all tests and generate a report.
 
 Travis will automatically run your unit tests online when you push to the origin repo.
 
@@ -57,11 +57,11 @@ Travis will automatically run your unit tests online when you push to the origin
 
 Hopefully, you have already documented all your functions, so this should be a breeze! We will generate a documentation page using the [Documenter](https://juliadocs.github.io/Documenter.jl/stable/man/guide/) package. Since we will not put the project in the package manager, we won't host the documentation, though we generate HTML pages anyway.
 
-- [ ] add markdown file to `docs/src/man` with the documentation.
-- [ ] write a general introduction explaining the rationale of your code.
-- [ ] use a `@docs` block to add your functions with their documentation.
-- [ ] update the `make.jl` file, linking your page.
-- [ ] run the `make.jl` file to generate the documentation, an HTML file, not added to the repo.
+- [x] add markdown file to `docs/src/man` with the documentation.
+- [x] write a general introduction explaining the rationale of your code.
+- [x] use a `@docs` block to add your functions with their documentation.
+- [x] update the `make.jl` file, linking your page.
+- [x] run the `make.jl` file to generate the documentation, an HTML file, not added to the repo.
 
 ## Notebook
 
