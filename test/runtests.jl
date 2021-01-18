@@ -1,4 +1,5 @@
 using Test
-#include("example.jl")
+
+include("example.jl")
+include("single_cell_nmf.jl")
 include("gen_prog_align.jl")
-# add here the file with your unit tests
