@@ -1,6 +1,7 @@
 using Test
 
+include("sudoku_local.jl")
 include("example.jl")
 include("EulerianPath.jl")
-
-# add here the file with your unit tests
+include("single_cell_nmf.jl")
+include("gen_prog_align.jl")

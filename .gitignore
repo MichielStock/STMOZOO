@@ -30,3 +30,6 @@ Manifest.toml
 # IDE-specific files are usually not included into the repo
 .obsidian/*
 .vscode/*
+*.swp
+*.csv
+.DS_Store
