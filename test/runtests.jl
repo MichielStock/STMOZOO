@@ -1,3 +1,7 @@
 using Test
+
 include("sudoku_local.jl")
-# add here the file with your unit tests
+include("example.jl")
+include("single_cell_nmf.jl")
+include("gen_prog_align.jl")
+
