@@ -2,6 +2,7 @@ using Documenter
 using STMOZOO
 using STMOZOO.LocalSearch
 using STMOZOO.Example
+using STMOZOO.polygon
 using STMOZOO.EulerianPath
 using STMOZOO.SingleCellNMF
 using STMOZOO.GenProgAlign
@@ -20,6 +21,7 @@ makedocs(sitename="STMO ZOO",
 	      "SingleCellNMF"=>"man/single_cell_nmf.md",
         "Sudoku_local" => "man/Sudoku_local.md",
         "EulerianPath" => "man/EulerianPath.md",
+        "polygon"=> "man/polygon.md",
     ])
 
 #=
