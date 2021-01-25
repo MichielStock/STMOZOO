@@ -20,4 +20,7 @@ export SingleCellNMF
 include("gen_prog_align.jl")
 export GenProgAlign
 
+include("raytracing.jl")
+export Raytracing
+
 end # module

@@ -2,6 +2,7 @@ using Documenter
 using STMOZOO
 using STMOZOO.LocalSearch
 using STMOZOO.Example
+using STMOZOO.Raytracing
 using STMOZOO.polygon
 using STMOZOO.EulerianPath
 using STMOZOO.SingleCellNMF
@@ -17,6 +18,7 @@ makedocs(sitename="STMO ZOO",
             LocalSearch,
             EulerianPath,
             MaximumFlow,
+            Raytracing,
         ], # add your module
     pages=Any[
         "Example"=> "man/example.md",  # add the page to your documentation
@@ -25,7 +27,8 @@ makedocs(sitename="STMO ZOO",
         "Sudoku_local" => "man/Sudoku_local.md",
         "EulerianPath" => "man/EulerianPath.md",
         "polygon"=> "man/polygon.md",
-      "MaximumFlow" => "man/maximumflow.md",
+        "MaximumFlow" => "man/maximumflow.md",
+        "Raytracing" => "man/raytracing.md"
     ])
 
 #=
