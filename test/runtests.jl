@@ -1,5 +1,9 @@
 using Test
 
+include("sudoku_local.jl")
 include("example.jl")
 include("maximumflow.jl")
-# add here the file with your unit tests
+include("polygon.jl")
+include("EulerianPath.jl")
+include("single_cell_nmf.jl")
+include("gen_prog_align.jl")
