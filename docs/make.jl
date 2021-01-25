@@ -8,10 +8,10 @@ using STMOZOO.EulerianPath
 using STMOZOO.SingleCellNMF
 using STMOZOO.GenProgAlign
 using STMOZOO.MaximumFlow
+using STMOZOO.ODEGenProg
 
 makedocs(sitename="STMO ZOO",
     format = Documenter.HTML(),
-
     modules=[Example,
             SingleCellNMF,
             GenProgAlign,
@@ -19,6 +19,7 @@ makedocs(sitename="STMO ZOO",
             EulerianPath,
             MaximumFlow,
             Raytracing,
+            ODEGenProg,
         ], # add your module
     pages=Any[
         "Example"=> "man/example.md",  # add the page to your documentation
@@ -28,7 +29,8 @@ makedocs(sitename="STMO ZOO",
         "EulerianPath" => "man/EulerianPath.md",
         "polygon"=> "man/polygon.md",
         "MaximumFlow" => "man/maximumflow.md",
-        "Raytracing" => "man/raytracing.md"
+        "Raytracing" => "man/raytracing.md",
+      "ODEGenProg" => "man/odegenprog.md",
     ])
 
 #=
