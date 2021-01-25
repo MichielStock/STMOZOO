@@ -2,6 +2,7 @@ using Test
 
 include("sudoku_local.jl")
 include("example.jl")
+include("maximumflow.jl")
 include("polygon.jl")
 include("EulerianPath.jl")
 include("single_cell_nmf.jl")
