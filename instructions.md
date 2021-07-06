@@ -77,17 +77,19 @@ Finally, you have to add a [Pluto](https://github.com/fonsp/Pluto.jl) notebook t
 
 Each of you will have to perform a code review of two other projects. You have the full day to do this, though it should not take too long. The aim is to **help** the other groups to make each other's project even better.
 
-- [ ] make a fork of the repo of the person you are reviewing;
+- [ ] clone the projects you have to review, so you can run them locally;
 - [ ] check the source code, is the documentation clear? Anything obvious that can be improved.
 - [ ] run the tests. Do they work? Anything that could be tested but is not done so?
 - [ ] Is the documentation clear? Do you find any typos? Could an example be added?
 - [ ] Take a look at the notebook. Any suggestions there to improve this?
 
-Big things can be addressed by opening an issue. Small fixes and suggestions to the other person's code can be done immediately and via a pull request.
+You can leave comments in the pull request page. If you have things you want to fix yourself you can also perform a pull request like I did in your code review. **Communicate to the person when you are finised.**
 
 Afterwards, you have a full day to:
 - [ ] merge the entire request and fix any issues you find meaningful.
 - [ ] fill in a small questionnaire on Ufora about your project and the projects you have reviewed.
+
+Please address all the comments you get as a common courtesy. This does not mean you have to implement all suggestions, but you do have to clarify on why you won't/can't do them.
 
 Afterward, I will approve all pull requests, finalizing the package.
 
