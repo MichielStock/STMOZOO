@@ -12,9 +12,13 @@ For the exam project, you pick a optimization related topic of your interest tha
 
 - [ ] pick a project (take a look at `project ideas.md` or discuss with Michiel)
 - [ ] [fork](https://docs.github.com/en/enterprise-server@2.20/github/getting-started-with-github/fork-a-repo) this repo
-- [ ] create a new branch with a short indicative name, e.g., `GeneticProgramming`. **Don't use spaces in the name!**
+- [ ] rename your repo using a short indicative name, e.g., `GeneticProgramming.jl`. Add `.jl` to indicate this is a Julia package. **Don't use spaces in the name!**
 - [ ] make a local clone of the repository 
-- [ ] open a [pull request](https://docs.github.com/en/free-pro-team@latest/desktop/contributing-and-collaborating-using-github-desktop/creating-an-issue-or-pull-request) to the **master** branch of this repo. This makes it clear you are starting the project!
+- [ ] add the repo with your project to the project sheet
+- [ ] update the `readme.md`
+  - [ ] add title
+  - [ ] add your names
+  - [ ] add a small abstract/examenple of what the code should do
 
 ## Source code
 
@@ -55,6 +59,8 @@ Travis will automatically run your unit tests online when you push to the origin
 
 ## Documentation
 
+> **This part is optional!** If you just provide a couple of examples how to use your code in the readme, it is fine. 
+
 Hopefully, you have already documented all your functions, so this should be a breeze! We will generate a documentation page using the [Documenter](https://juliadocs.github.io/Documenter.jl/stable/man/guide/) package. Since we will not put the project in the package manager, we won't host the documentation, though we generate HTML pages anyway.
 
 - [ ] add markdown file to `docs/src/man` with the documentation.
@@ -69,17 +75,17 @@ Finally, you have to add a [Pluto](https://github.com/fonsp/Pluto.jl) notebook t
 
 ## Code review
 
-Each of you will have to perform a code review of two other projects on **January 7**. You have the full day to do this, though it should not take too long. The aim is to **help** the other groups to make each other's project even better.
+Each of you will have to perform a code review of two other projects. You have the full day to do this, though it should not take too long. The aim is to **help** the other groups to make each other's project even better.
 
 - [ ] make a fork of the repo of the person you are reviewing;
 - [ ] check the source code, is the documentation clear? Anything obvious that can be improved.
 - [ ] run the tests. Do they work? Anything that could be tested but is not done so?
-- [ ] Is the documentation page clear? Do you find any typos? Could an example be added?
+- [ ] Is the documentation clear? Do you find any typos? Could an example be added?
 - [ ] Take a look at the notebook. Any suggestions there to improve this?
 
 Big things can be addressed by opening an issue. Small fixes and suggestions to the other person's code can be done immediately and via a pull request.
 
-on **January 8**, you have the full day to:
+Afterwards, you have a full day to:
 - [ ] merge the entire request and fix any issues you find meaningful.
 - [ ] fill in a small questionnaire on Ufora about your project and the projects you have reviewed.
 

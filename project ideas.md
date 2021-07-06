@@ -34,7 +34,7 @@ Solve a problem using a method from the course or a new one.
 - visalizing complex networks using quadratic optimization
 - ...
 
-## Theortic analysis
+## Theoretic analysis
 
 Experiment and learn. Show me something exciting about optimization.
 
