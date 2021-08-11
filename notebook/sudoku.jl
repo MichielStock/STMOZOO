@@ -184,7 +184,8 @@ Since it is not clear in the filled sudoku which positions are fixed, a separate
 
 # ╔═╡ 025fd6e8-20f9-11eb-3e7d-3519f3c4b58f
 with_terminal() do
-	show_sudoku(fixed(lvl2))
+	fixedlvl2 = fixed(lvl2)
+	show_sudoku(fixedlvl2)
 end
 
 # ╔═╡ 096eff98-20f9-11eb-1e61-99d5714895ba
