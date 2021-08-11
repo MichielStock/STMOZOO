@@ -5,10 +5,16 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ 5ad5c202-20f8-11eb-23f1-4f38b687c285
-using STMOZOO.Example
+using Pkg
 
 # ╔═╡ d2d007b8-20f8-11eb-0ddd-1181d4565a85
-using Plots
+Pkg.activate("Sudoku")
+
+# ╔═╡ 6ecc9370-3cc7-400b-a6d8-3fd704c40984
+Pkg.add("Sudoku")
+
+# ╔═╡ 13c11517-1774-4ba7-add1-b84051860488
+using Sudoku
 
 # ╔═╡ 45189a82-20fa-11eb-0423-05ce1b84639d
 using Zygote
@@ -31,6 +37,23 @@ Hence, solving
 
 $$\min_\mathbf{x}\, f(\mathbf{x})\,.$$
 """
+
+# ╔═╡ baef851b-d8ec-40b4-8faf-e94a2220cdd9
+Pkg.status()
+
+# ╔═╡ 7a25aac1-c7b2-4a94-81da-9325c30a0336
+lvl1 =  [4 9 2 8 1 7 3 6 5
+	8 1 3 5 6 4 7 9 0
+	6 7 5 9 2 3 4 8 1
+	9 5 4 0 8 1 2 3 7
+	2 0 1 3 0 9 6 0 4
+	7 3 6 2 4 0 8 1 9
+	5 2 9 7 3 6 1 4 8
+	0 4 8 1 5 2 9 7 6
+	1 6 7 4 9 8 5 2 0]
+
+# ╔═╡ eb18ffab-3c45-4bd6-af6a-1c7b422f14bc
+Sudoku.show_sudoku(lvl1)
 
 # ╔═╡ fb4aeb8c-20f7-11eb-0444-259de7b76883
 md"""
@@ -136,6 +159,11 @@ end
 # ╟─171fee18-20f6-11eb-37e5-2d04caea8c35
 # ╠═5ad5c202-20f8-11eb-23f1-4f38b687c285
 # ╠═d2d007b8-20f8-11eb-0ddd-1181d4565a85
+# ╠═baef851b-d8ec-40b4-8faf-e94a2220cdd9
+# ╠═6ecc9370-3cc7-400b-a6d8-3fd704c40984
+# ╠═13c11517-1774-4ba7-add1-b84051860488
+# ╠═7a25aac1-c7b2-4a94-81da-9325c30a0336
+# ╠═eb18ffab-3c45-4bd6-af6a-1c7b422f14bc
 # ╟─fb4aeb8c-20f7-11eb-0444-259de7b76883
 # ╟─52e87238-20f8-11eb-2ea0-27ee1208d3c3
 # ╠═e9a9d69e-20f8-11eb-0d9d-330ee5e9cf25
