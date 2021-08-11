@@ -5,7 +5,7 @@
 # all your code is part of the module you are implementing
 module SudokuSolver
     using Statistics
-    export show_sudoku, sudoku_solver, block, valid, fixed_values
+    export show_sudoku, sudoku_solver, block, fixed_values, nr_errors, fill_full, fixed_blocks, start_temp, decide
 
     """
         show_sudoku(sudoku)
@@ -484,6 +484,7 @@ module SudokuSolver
     	solved = 0
 	    cooling = 0.95
     	stuck = 0
+        restart = 0
     	show_sudoku(sudoku)
 	    fixed = fixed_values(sudoku)
     	T0, filled = start_temp(sudoku)
@@ -492,6 +493,8 @@ module SudokuSolver
 	    errors = nr_errors(filled)
     	iterations = 81 - sum(fixed)
 	    state = filled
+        best = filled
+        bestscore = 90
 	
     	if errors == 0
 	    	solved = 1
@@ -502,14 +505,20 @@ module SudokuSolver
 		    for i in 1:iterations
 			    newstate = swap(state, fixed, blocks, possible)
     			newerrors = nr_errors(newstate)
+
 	    		if newerrors == 0
 		    		solved = 1
 			    	break
     			end
+
 	    		diff = newerrors - errors
 		    	if diff <= 0
 			    	state = newstate
 				    errors = newerrors
+                    if errors < bestscore
+                        best = state
+                        bestscore = errors
+                    end
     			else
 	    			kept = decide(diff, T)
 		    		if kept
@@ -519,7 +528,7 @@ module SudokuSolver
 	    		end
 		    end
 		
-    		T = T * cooling
+    		T *= cooling
 	    	if errors == 0
 		    	solved = 1
 			    break
@@ -530,16 +539,18 @@ module SudokuSolver
 		    else
     			stuck = 0
 	    	end
-
-            limit = 20
-            if errors < 8
-                limit = 40 # check more combinations when closer to the solution
-            end
     
-            if stuck > limit
+            if stuck > 100 # When running too long:
+                restart +=1
                 println(errors)
-                T += T0/3
-    		end
+                if restart > 20 # Return to best solution
+                    state = best
+                    errors = bestscore
+                    restart = 0
+                else
+                    T += T0/3 # Or increase temperature
+                end
+            end
     	end
     
     	show_sudoku(state)
