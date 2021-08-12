@@ -31,28 +31,28 @@
         list = [5 9 1 4 5 9 5]
         row = [9 7 2 0 0 8 0 1 4]
 
-        @test freq_table(list) isa Dict
+        @test SudokuSolver.freq_table(list) isa Dict
         
-        @test length(freq_table(list)) == 4
-        @test length(freq_table(row)) == 7
+        @test length(SudokuSolver.freq_table(list)) == 4
+        @test length(SudokuSolver.freq_table(row)) == 7
 
-        @test freq_table(list)[9] ==2
-        @test freq_table(list)[5] ==3
-        @test freq_table(row)[7] ==1
-        @test freq_table(row)[0] ==3
+        @test SudokuSolver.freq_table(list)[9] ==2
+        @test SudokuSolver.freq_table(list)[5] ==3
+        @test SudokuSolver.freq_table(row)[7] ==1
+        @test SudokuSolver.freq_table(row)[0] ==3
     end
 
-    @testset "Duplicates" begin
+    @testset "SudokuSolver.duplicates" begin
         list = [5 9 1 4 5 9 5]
         row = [9 7 2 0 0 8 0 1 4]
 
-        @test duplicates(list) isa Bool
+        @test SudokuSolver.duplicates(list) isa Bool
         
-        @test duplicates(list) == true
-        @test duplicates(row) == false
+        @test SudokuSolver.duplicates(list) == true
+        @test SudokuSolver.duplicates(row) == false
     end
 
-    @testset "Valid" begin
+    @testset "SudokuSolver.valid" begin
         sudoku =  [7 4 1 5 9 0 3 8 2
     	    3 0 6 2 4 7 1 9 5
         	2 9 5 1 8 3 6 0 7
@@ -85,13 +85,13 @@
         	4 6 9 8 3 5 2 0 1
         	8 2 7 0 1 4 9 5 3]
 
-        @test valid(sudoku) isa Bool
+        @test SudokuSolver.valid(sudoku) isa Bool
         
-        @test valid(a) == false
-        @test valid(row) == false
-        @test valid(sudoku) == true
-        @test valid(notsudoku) == false
-        @test valid(dupsudoku) == false
+        @test SudokuSolver.valid('a') == false
+        @test SudokuSolver.valid(row) == false
+        @test SudokuSolver.valid(sudoku) == true
+        @test SudokuSolver.valid(notsudoku) == false
+        @test SudokuSolver.valid(dupsudoku) == false
     end
 
     @testset "Fixed Values" begin
@@ -117,7 +117,7 @@
 
         @test fixed_values(sudoku) isa Array
 
-        @test length(fixed_values(sudoku)) == 91
+        @test length(fixed_values(sudoku)) == 81
         
         @test fixed_values(sudoku) == fixed
     end
@@ -146,31 +146,31 @@
         @test nr_errors(sudoku) isa Int
         
         @test nr_errors(sudoku) == 10
-        @test nr_errors(sudoku) == 18
+        @test nr_errors(sudoku2) == 18
     end
 
     @testset "Missing Nr" begin
         block1 = [7 4 1 ; 3 0 6 ; 2 9 5]
         block2 = [0 0 8 ; 0 5 0 ; 4 0 0]
 
-        @test missing_nr(block1) isa Array
+        @test SudokuSolver.missing_nr(block1) isa Array
         
-        @test length(missing_nr(block1)) == 1
-        @test length(missing_nr(block2)) == 6
+        @test length(SudokuSolver.missing_nr(block1)) == 1
+        @test length(SudokuSolver.missing_nr(block2)) == 6
 
-        @test missing_nr(block1) == [8]
+        @test SudokuSolver.missing_nr(block1) == [8]
     end
 
-    @testset "Pick" begin
+    @testset "SudokuSolver.pick" begin
         list = [5, 9, 1, 4, 5, 9, 5]
 
-        @test pick(list) isa Tuple
-        @test pick(list)[1] isa Int
-        @test pick(list)[2] isa Array
+        @test SudokuSolver.pick(list) isa Tuple
+        @test SudokuSolver.pick(list)[1] isa Int
+        @test SudokuSolver.pick(list)[2] isa Array
 
         list = [5, 9, 1, 4, 5, 9, 5]
-        @test length(pick(list)[2]) == 6
-        @test length(pick(list)[2]) == 5
+        @test length(SudokuSolver.pick(list)[2]) == 6
+        @test length(SudokuSolver.pick(list)[2]) == 5
     end
 
 
@@ -178,14 +178,14 @@
         block1 = [7 4 1 ; 3 0 6 ; 2 9 5]
         block2 = [0 0 8 ; 0 5 0 ; 4 0 0]
 
-        @test fill_block(block1) isa array
+        @test SudokuSolver.fill_block(block1) isa Array
 
-        @test length(fill_block(block1)) == 9
-        @test length(fill_block(block2)) == 9
+        @test length(SudokuSolver.fill_block(block1)) == 9
+        @test length(SudokuSolver.fill_block(block2)) == 9
         
-        @test (0 in fill_block(block2)) == false
+        @test (0 in SudokuSolver.fill_block(block2)) == false
 
-        @test fill_block(block1) == [7 4 1 ; 3 8 6 ; 2 9 5]
+        @test SudokuSolver.fill_block(block1) == [7 4 1 ; 3 8 6 ; 2 9 5]
     end
 
     @testset "Fill Full" begin
@@ -249,24 +249,24 @@
 
         block1 = [7 4 1 ; 3 0 6 ; 2 9 5]
 
-        @test not_fixed(fixed) isa Array
+        @test SudokuSolver.not_fixed(fixed) isa Array
         
-        @test length(not_fixed(fixed)) == 18
-        @test length(not_fixed(sudoku1)) == 6
-        @test length(not_fixed(block1)) == 1
+        @test length(SudokuSolver.not_fixed(fixed)) == 18
+        @test length(SudokuSolver.not_fixed(sudoku1)) == 6
+        @test length(SudokuSolver.not_fixed(block1)) == 1
 
-        @test not_fixed(block1) == [5]
+        @test SudokuSolver.not_fixed(block1) == [5]
     end
 
     @testset "Block Nr Ind" begin
-        @test block_nr_ind(3) isa Tuple
-        @test block_nr_ind(3)[1] isa Int
-        @test block_nr_ind(3)[2] isa Int
+        @test SudokuSolver.block_nr_ind(3) isa Tuple
+        @test SudokuSolver.block_nr_ind(3)[1] isa Int
+        @test SudokuSolver.block_nr_ind(3)[2] isa Int
         
-        @test block_nr_ind(3) == (9, 3)
-        @test block_nr_ind(5) == (6, 6)
-        @test block_nr_ind(8) == (6, 9)
-        @test block_nr_ind(1) == (3, 3)
+        @test SudokuSolver.block_nr_ind(3) == (9, 3)
+        @test SudokuSolver.block_nr_ind(5) == (6, 6)
+        @test SudokuSolver.block_nr_ind(8) == (6, 9)
+        @test SudokuSolver.block_nr_ind(1) == (3, 3)
     end
 
     @testset "Fixed Blocks" begin
@@ -298,13 +298,13 @@
             1  1  1  1  1  1  1  0  1
             1  1  1  0  1  1  1  1  1]
 
-        @test possible_swap(fixed) isa Tuple
-        @test possible_swap(fixed)[1] isa Array
-        @test possible_swap(fixed)[2] isa Dict
+        @test SudokuSolver.possible_swap(fixed) isa Tuple
+        @test SudokuSolver.possible_swap(fixed)[1] isa Array
+        @test SudokuSolver.possible_swap(fixed)[2] isa Dict
         
-        @test length(possible_swap(fixed)[2]) == 3
+        @test length(SudokuSolver.possible_swap(fixed)[2]) == 3
 
-        @test possible_swap(fixed)[1] == [2; 5; 8]
+        @test SudokuSolver.possible_swap(fixed)[1] == [2; 5; 8]
     end
 
     @testset "Start Temp" begin
@@ -319,7 +319,7 @@
         	8 2 7 0 1 4 9 5 3]
 
         @test start_temp(sudoku) isa Tuple
-        @test start_temp(sudoku)[2] isa Number
+        @test start_temp(sudoku)[1] isa Number
         @test start_temp(sudoku)[2] isa Array
         
         @test length(start_temp(sudoku)[2]) == 81
