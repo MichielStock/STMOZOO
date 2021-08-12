@@ -1,8 +1,3 @@
-# Michiel Stock
-# Example of a source code file implementing a module.
-
-
-# all your code is part of the module you are implementing
 module SudokuSolver
     using Statistics
     export show_sudoku, sudoku_solver, block, fixed_values, nr_errors, fill_full, fixed_blocks, start_temp, decide
@@ -14,7 +9,7 @@ module SudokuSolver
 
     ## Examples
 
-    ```jldoctest
+    ```julia-repl
     julia> sudoku =  [7 4 1 5 9 0 3 8 2
 	    3 0 6 2 4 7 1 9 5
     	2 9 5 1 8 3 6 0 7
@@ -24,6 +19,7 @@ module SudokuSolver
     	5 0 3 9 7 2 4 6 8
     	4 6 9 8 3 5 2 0 1
     	8 2 7 0 1 4 9 5 3]
+
     julia> show_sudoku(sudoku)
     741|590|382
     306|247|195
@@ -61,7 +57,7 @@ module SudokuSolver
 
     ## Examples
 
-    ```jldoctest
+    ```julia-repl
     julia> sudoku =  [7 4 1 5 9 0 3 8 2
 	    3 0 6 2 4 7 1 9 5
     	2 9 5 1 8 3 6 0 7
@@ -71,6 +67,7 @@ module SudokuSolver
     	5 0 3 9 7 2 4 6 8
     	4 6 9 8 3 5 2 0 1
     	8 2 7 0 1 4 9 5 3]
+
     julia> block(1, 1, sudoku)
     3x3 Array{Int64,2}:
     741
@@ -105,8 +102,20 @@ module SudokuSolver
 
     ## Examples
 
-    ```jldoctest
-    julia> 
+    ```julia-repl
+    julia> row = [9 7 2 0 0 8 0 1 4]
+
+    julia> freq_table(row)
+    Dict{Any, Any}(
+    7 => 1
+    9 => 1
+    0 => 3
+    4 => 1
+    2 => 1
+    8 => 1
+    1 => 1
+    )
+
     ```
     """
     function freq_table(row)
@@ -128,8 +137,16 @@ module SudokuSolver
 
     ## Examples
 
-    ```jldoctest
-    julia> 
+    ```julia-repl
+    julia> row = [9 7 2 0 0 8 0 1 4]
+
+    julia> duplicates(row)
+    false
+
+    julia> row2 = [9 7 2 0 9 8 0 1 4]
+
+    julia> duplicates(row2)
+    true
     ```
     """
     function duplicates(row)
@@ -151,8 +168,22 @@ module SudokuSolver
 
     ## Examples
 
-    ```jldoctest
-    julia> 
+    ```julia-repl
+    julia> sudoku =  [7 4 1 5 9 0 3 8 2
+    3 0 6 2 4 7 1 9 5
+    2 9 5 1 8 3 6 0 7
+    9 7 2 0 0 8 0 1 4
+    0 0 4 0 5 0 8 0 0
+    1 5 0 4 0 0 7 3 6
+    5 0 3 9 7 2 4 6 8
+    4 6 9 8 3 5 2 0 1
+    8 2 7 0 1 4 9 5 3]
+
+    julia> valid(sudoku)
+    true
+
+    julia> valid(3)
+    false
     ```
     """
     function valid(sudoku)
@@ -192,8 +223,28 @@ module SudokuSolver
 
     ## Examples
 
-    ```jldoctest
-    julia> 
+    ```julia-repl
+    julia> sudoku =  [7 4 1 5 9 0 3 8 2
+	    3 0 6 2 4 7 1 9 5
+    	2 9 5 1 8 3 6 0 7
+    	9 7 2 0 0 8 0 1 4
+    	0 0 4 0 5 0 8 0 0
+    	1 5 0 4 0 0 7 3 6
+    	5 0 3 9 7 2 4 6 8
+    	4 6 9 8 3 5 2 0 1
+    	8 2 7 0 1 4 9 5 3]
+
+    julia> fixed_values(sudoku)
+    9×9 Array{Int64,2}:
+     1  1  1  1  1  0  1  1  1
+     1  0  1  1  1  1  1  1  1
+     1  1  1  1  1  1  1  0  1
+     1  1  1  0  0  1  0  1  1
+     0  0  1  0  1  0  1  0  0
+     1  1  0  1  0  0  1  1  1
+     1  0  1  1  1  1  1  1  1
+     1  1  1  1  1  1  1  0  1
+     1  1  1  0  1  1  1  1  1
     ```
     """
     function fixed_values(sudoku)
@@ -215,8 +266,19 @@ module SudokuSolver
 
     ## Examples
 
-    ```jldoctest
-    julia> 
+    ```julia-repl
+    julia> sudoku =  [7  4  1  5  9  6  3  8  2
+        3  8  6  2  4  7  1  9  5
+        2  9  5  1  8  3  6  4  7
+        9  7  2  6  3  8  2  1  4
+        3  6  4  1  5  7  8  5  9
+        1  5  8  4  2  9  7  3  6
+        5  1  3  9  7  2  4  6  8
+        4  6  9  8  3  5  2  7  1
+        8  2  7  6  1  4  9  5  3]
+    
+    julia> nr_errors(sudoku)
+    10
     ```
     """
     function nr_errors(sudoku)
@@ -235,8 +297,14 @@ module SudokuSolver
 
     ## Examples
 
-    ```jldoctest
-    julia> 
+    ```julia-repl
+    julia> block =  [7  4  1
+    3  0  6
+    2  9  5]
+
+    julia> missing_nr(block)
+    1-element Array{Any,1}:
+    8
     ```
     """
     function missing_nr(block)
@@ -257,8 +325,11 @@ module SudokuSolver
 
     ## Examples
 
-    ```jldoctest
-    julia> 
+    ```julia-repl
+    julia> list = [9, 7, 2, 0, 9, 8, 0, 1, 4]
+
+    julia> pick(list)
+    (2, [9, 7, 0, 9, 8, 0, 1, 4])
     ```
     """
     function pick(list)
@@ -274,8 +345,16 @@ module SudokuSolver
 
     ## Examples
 
-    ```jldoctest
-    julia>
+    ```julia-repl
+    julia> block =  [7  4  1
+    3  0  6
+    2  9  5]
+
+    julia> fill_block(block)
+    3×3 Array{Int64,2}:
+     7  4  1
+     3  8  6
+     2  9  5
     ```
     """
     function fill_block(block)
@@ -290,14 +369,34 @@ module SudokuSolver
     end
 
     """
-        fill_full(block)
+        fill_full(sudoku)
 
     Fills all empty spaces of a sudoku at random (numbers between 1 and 9). Numbers are not repeated within a block, but there are repeats in rows and columns.
 
     ## Examples
 
-    ```jldoctest
-    julia> 
+    ```julia-repl
+    julia> sudoku =  [7 4 1 5 9 0 3 8 2
+	    3 0 6 2 4 7 1 9 5
+    	2 9 5 1 8 3 6 0 7
+    	9 7 2 0 0 8 0 1 4
+    	0 0 4 0 5 0 8 0 0
+    	1 5 0 4 0 0 7 3 6
+    	5 0 3 9 7 2 4 6 8
+    	4 6 9 8 3 5 2 0 1
+    	8 2 7 0 1 4 9 5 3]
+    
+    julia> fill_full(sudoku)
+    9×9 Array{Int64,2}:
+     7  4  1  5  9  6  3  8  2
+     3  8  6  2  4  7  1  9  5
+     2  9  5  1  8  3  6  4  7
+     9  7  2  6  3  8  2  1  4
+     3  6  4  1  5  7  8  5  9
+     1  5  8  4  2  9  7  3  6
+     5  1  3  9  7  2  4  6  8
+     4  6  9  8  3  5  2  7  1
+     8  2  7  6  1  4  9  5  3
     ```
     """
     function fill_full(sudoku)
@@ -318,8 +417,37 @@ module SudokuSolver
 
     ## Examples
 
-    ```jldoctest
-    julia> 
+    ```julia-repl
+    julia> fixed = [ 1  1  1  1  1  0  1  1  1
+        1  0  1  1  1  1  1  1  1
+        1  1  1  1  1  1  1  0  1
+        1  1  1  0  0  1  0  1  1
+        0  0  1  0  1  0  1  0  0
+        1  1  0  1  0  0  1  1  1
+        1  0  1  1  1  1  1  1  1
+        1  1  1  1  1  1  1  0  1
+        1  1  1  0  1  1  1  1  1]
+
+    julia> not_fixed(fixed)
+    18-element Array{Any,1}:
+     5
+     11
+     14
+     16
+     24
+     31
+     32
+     36
+     40
+     42
+     46
+     50
+     51
+     58
+     66
+     68
+     71
+     77
     ```
     """
     function not_fixed(fixed)
@@ -339,8 +467,9 @@ module SudokuSolver
 
     ## Examples
 
-    ```jldoctest
-    julia> 
+    ```julia-repl
+    julia> block_nr_ind(3)
+    (9, 3)
     ```
     """
     function block_nr_ind(nr)
@@ -356,8 +485,22 @@ module SudokuSolver
 
     ## Examples
 
-    ```jldoctest
-    julia> 
+    ```julia-repl
+    julia> fixed = [ 1  1  1  1  1  0  1  1  1
+        1  0  1  1  1  1  1  1  1
+        1  1  1  1  1  1  1  0  1
+        1  1  1  0  0  1  0  1  1
+        0  0  1  0  1  0  1  0  0
+        1  1  0  1  0  0  1  1  1
+        1  0  1  1  1  1  1  1  1
+        1  1  1  1  1  1  1  0  1
+        1  1  1  0  1  1  1  1  1]
+
+    julia> fixed_blocks(fixed)
+    Any
+    2
+    5
+    8
     ```
     """
     function fixed_blocks(fixed)
@@ -375,12 +518,23 @@ module SudokuSolver
     """
         possible_swap(fixed)
 
-    Generates a dictionary of possible positions to swap. Keys are the block numbers used in fixed_blocks.
+    Generates a list of blocks with more than 2 non-fixed positions and a dictionary of possible positions to swap. Keys are the block numbers used in fixed_blocks.
 
     ## Examples
 
-    ```jldoctest
-    julia> 
+    ```julia-repl
+    julia> fixed = [ 1  1  1  1  1  0  1  1  1
+        1  0  1  1  1  1  1  1  1
+        1  1  1  1  1  1  1  0  1
+        1  1  1  0  0  1  0  1  1
+        0  0  1  0  1  0  1  0  0
+        1  1  0  1  0  0  1  1  1
+        1  0  1  1  1  1  1  1  1
+        1  1  1  1  1  1  1  0  1
+        1  1  1  0  1  1  1  1  1]
+
+    julia> possible_swap(fixed)
+    (Any[2, 5, 8], Dict{Any,Any}(2 => Any[2, 5, 9],5 => Any[1, 2, 4, 6, 8, 9],8 => Any[1, 5, 8]))
     ```
     """
     function possible_swap(fixed)
@@ -397,11 +551,6 @@ module SudokuSolver
         swap(sudoku, fixed, blocks, possible)
 
     Randomly swaps the values of 2 non-fixed positions within the same (random) block. Generates a new state.
-
-    ## Examples
-
-    ```jldoctest
-    julia> 
     ```
     """
     function swap(sudoku, fixed, blocks, possible)
@@ -419,14 +568,37 @@ module SudokuSolver
     end
 
     """
-        start_temp(filled, fixed, blocks, possible)
+        start_temp(sudoku)
 
     Chooses a starting temperature by taking the standard deviation of the errors of 50 starting states. Returns the best of these stating states as a starting point.
 
     ## Examples
 
-    ```jldoctest
-    julia> 
+    ```julia-repl
+    julia> sudoku =  [7 4 1 5 9 0 3 8 2
+	    3 0 6 2 4 7 1 9 5
+    	2 9 5 1 8 3 6 0 7
+    	9 7 2 0 0 8 0 1 4
+    	0 0 4 0 5 0 8 0 0
+    	1 5 0 4 0 0 7 3 6
+    	5 0 3 9 7 2 4 6 8
+    	4 6 9 8 3 5 2 0 1
+    	8 2 7 0 1 4 9 5 3]
+
+    julia> start_temp(sudoku)
+    (
+    3.0445
+    9×9 Array{Int64,2}:
+    9  5  1  2  7  3  8  4  3
+    3  8  4  1  5  8  2  7  6
+    6  7  2  6  4  9  5  1  9
+    1  3  9  7  6  8  4  2  5
+    2  8  4  3  1  5  9  6  7
+    5  6  7  4  9  2  1  3  8
+    4  9  3  7  5  8  6  5  2
+    8  2  6  6  3  4  7  9  1
+    7  1  5  9  2  1  3  8  4
+    )
     ```
     """
     function start_temp(sudoku)
@@ -449,13 +621,8 @@ module SudokuSolver
         decide(diff, T)
 
     Decides whether a new state is used or discarded. Diff is the difference in amount of errors between the new and old states.
-
-    ## Examples
-
-    ```jldoctest
-    julia> 
-    ```
     """
+
     function decide(diff, T)
     	chance = exp(-diff/T)
     	if rand() < chance
@@ -472,8 +639,40 @@ module SudokuSolver
 
     ## Examples
 
-    ```jldoctest
-    julia> 
+    ```julia-repl
+    julia> sudoku =  [7 4 1 5 9 0 3 8 2
+	    3 0 6 2 4 7 1 9 5
+    	2 9 5 1 8 3 6 0 7
+    	9 7 2 0 0 8 0 1 4
+    	0 0 4 0 5 0 8 0 0
+    	1 5 0 4 0 0 7 3 6
+    	5 0 3 9 7 2 4 6 8
+    	4 6 9 8 3 5 2 0 1
+    	8 2 7 0 1 4 9 5 3]
+
+    julia> sudoku_solver(sudoku)
+    741|590|382
+    306|247|195
+    295|183|607
+    -----------
+    972|008|014
+    004|050|800
+    150|400|736
+    -----------
+    503|972|468
+    469|835|201
+    827|014|953
+    741|596|382
+    386|247|195
+    295|183|647
+    -----------
+    972|368|514
+    634|751|829
+    158|429|736
+    -----------
+    513|972|468
+    469|835|271
+    827|614|953
     ```
     """
     function sudoku_solver(sudoku)
@@ -482,7 +681,7 @@ module SudokuSolver
         end
 
     	solved = 0
-	    cooling = 0.95
+	    cooling = 0.99
     	stuck = 0
         restart = 0
     	show_sudoku(sudoku)
@@ -540,15 +739,16 @@ module SudokuSolver
     			stuck = 0
 	    	end
     
-            if stuck > 100 # When running too long:
+            if stuck > 1000 # When running too long:
                 restart +=1
-                println(errors)
                 if restart > 20 # Return to best solution
                     state = best
                     errors = bestscore
                     restart = 0
+                    stuck = 0
                 else
                     T += T0/3 # Or increase temperature
+                    stuck = 0
                 end
             end
     	end

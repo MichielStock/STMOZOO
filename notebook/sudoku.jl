@@ -16,9 +16,6 @@ using Main.workspace2.SudokuSolver
 # ╔═╡ f9f5eff0-16f9-4167-bc93-a6321abfd4cf
 using PlutoUI
 
-# ╔═╡ 45189a82-20fa-11eb-0423-05ce1b84639d
-using Zygote
-
 # ╔═╡ 6ecc9370-3cc7-400b-a6d8-3fd704c40984
 include("C:/Users/Sarah/sudoku.jl/src/sudoku.jl")
 
@@ -160,18 +157,21 @@ Annealing is a method in matalwork, where the speed by which the metal cools is 
 
 Similarly, in simulated annealing, you start with a certain temperature. This temperature represents the chance that a step with a worse score (more errors) is accepted. A high temperature means a higher acceptance for mistakes. As the program runs, the temperature gets lower (cools down) and fewer errors are accepted. This means that the search is more global with higher temperatures, but becomes more local as the temperature decreases;
 
-### SA for sudokus
+## SA for sudokus
 
 SA works by comparing 2 different neighbouring states. For sudokus, these are randomly filled out grids, with 2 positions swapped in one of the states. To compare the states, the number of errors in rows and columns are counted. If there are less errors in the new state, it is accepted automatically. When the new state has more errors, it is accepted or rejected depending on the temperature.
 
+### Getting started
 As such, the first step was to fill the sudoku with random numbers.
 
 The filled sudoku looks as follows:
 """
 
+# ╔═╡ f40d46d6-c022-4ee5-aa06-99439e69f5f9
+filledlvl2 = fill_full(lvl2)
+
 # ╔═╡ fdd4e550-20f8-11eb-227b-25f36708484d
 with_terminal() do
-	filledlvl2 = fill_full(lvl2)
 	show_sudoku(filledlvl2)
 end
 
@@ -182,9 +182,11 @@ Notice that each block contains all numbers from 1 till 9. Because it would be c
 Since it is not clear in the filled sudoku which positions are fixed, a separate array is formed to keep track of these positions.
 """
 
+# ╔═╡ acb21fa7-64e8-4a6b-ad00-d64b33252cb0
+fixedlvl2 = fixed_values(lvl2)
+
 # ╔═╡ 025fd6e8-20f9-11eb-3e7d-3519f3c4b58f
 with_terminal() do
-	fixedlvl2 = fixed(lvl2)
 	show_sudoku(fixedlvl2)
 end
 
@@ -197,65 +199,207 @@ Since there are blocks with less than 2 non-fixed positions, we need to identify
 fixed_blocks(fixedlvl2)
 
 # ╔═╡ 1fffc82a-20f9-11eb-198c-c160d7dac87d
-f_quadr([2, 1])
+md"""
+For the lvl2 sudoku, there are 3 blocks where positions can be swapped. Blocks are numbered as follows:
+
+1 4 7
+
+2 5 8
+
+3 4 9
+
+
+Block 1 has no positions that can be swapped and will be solved in het filled sudoku.
+"""
 
 # ╔═╡ 26ab6ce2-20f9-11eb-1836-1756b290e5e3
 md"No more need to remember the formulla for the minimizer! Just use `solve_quadratic_system`!"
 
 # ╔═╡ 49832a8e-20f9-11eb-0841-19a40a12db18
-x_star = solve_quadratic_system(P, q, r)
+block(1, 1, lvl2)
+
+# ╔═╡ 9c369269-b5af-4fcf-955c-7609f55f43a6
+block(1, 1, filledlvl2)
 
 # ╔═╡ 55e0e274-20f9-11eb-36c0-753f228f7e9b
-begin
-	contourf(-20:0.1:20, -20:0.1:20, (x, y) -> f_quadr([x,y]), color=:speed)
-	scatter!([x_star[1]], [x_star[2]], label="minimizer")
-end
+md"""
+Comparing fixed positions in blocks 2 and 5 reveals a disadvantage of picking a random block: even though block 2 has fewer positions that can be switched, the block is still picked just as often. This results in a longer runtime.
+"""
+
+# ╔═╡ 2a520041-4a9e-458d-8d06-f67b51143aab
+block(4, 1, fixedlvl2) # block 2
+
+# ╔═╡ 6731c4f5-c6d3-4efc-a982-80cbe1ffd357
+block(4, 4, fixedlvl2) # block 5
 
 # ╔═╡ b1551758-20f9-11eb-3e8f-ff9a7127d7f8
 md"""
-## Approximating non-quadratic functions
-
-We can approximate non-quadratic functions by a quadratic function: The second order Taylor approximation $\hat{f}$ of a function $f$ at $\mathbf{x}$ is
-$$f(\mathbf{x}+\mathbf{v})\approx\hat{f}(\mathbf{x}+\mathbf{v}) = f(\mathbf{x}) + \nabla f(\mathbf{x})^\top \mathbf{v} + \frac{1}{2} \mathbf{v}^\top \nabla^2 f(\mathbf{x}) \mathbf{v}\,.$$
-
-Let us use this idea for the Rosenbrock function.
+### Calculating errors
+The following function is used to caculate the amount of errors in a given state.
 """
 
+# ╔═╡ 45189a82-20fa-11eb-0423-05ce1b84639d
+function nr_errors(sudoku)
+	errors = 0
+  	for i in 1:9
+    	errors += (9- length(freq_table(sudoku[i,:])))
+	    errors += (9- length(freq_table(sudoku[:,i])))
+   	end
+    return errors
+end
+
 # ╔═╡ 41d8f1dc-20fa-11eb-3586-a989427c1fd6
-f_nonquadr((x1, x2); a=1, b=5) = (a-x1)^2 + b * (x2 - x1^2)^2
+SudokuSolver.nr_errors(filledlvl2)
 
 # ╔═╡ 4ed4215e-20fa-11eb-11ee-f7741591163c
-x = [0.0, 0.0]
+md"""
+### Determining starting temperature
 
-# ╔═╡ 56af99ee-20fa-11eb-0240-69c675efb78c
-fx = f_nonquadr(x)
+A good starting temperature is calculated from the standard deviation of 50 starting states. Since 50 starting states need to be generated anyway, I opted to keep track of these starting states, and return the best one to start from. For easy sudokus like lvl1, this can already solve the sudoku.
+"""
 
 # ╔═╡ 6c5473b4-20fa-11eb-327b-51ac560530eb
-∇fx = f_nonquadr'(x)
+T0lvl1, bestlvl1 = start_temp(lvl1)
+
+# ╔═╡ d3b42073-d0de-43f3-8627-f9b350fa5167
+SudokuSolver.nr_errors(bestlvl1)
+
+# ╔═╡ 252903c4-8aa3-40aa-b9cd-8fbd00c13953
+md" For lvl2"
+
+# ╔═╡ 91a5cbbf-dd94-4786-b65b-6755c7f76804
+T0lvl2, bestlvl2 = start_temp(lvl2)
+
+# ╔═╡ 3639da42-6a95-4df9-b777-9cf68758a6b0
+SudokuSolver.nr_errors(bestlvl2)
+
+# ╔═╡ 1d3d599f-78c3-4d9f-ac2b-e9d81b086836
+md" For lvl3"
+
+# ╔═╡ 8b4ea346-9bed-4889-bc7e-e0795a212812
+T0lvl3, bestlvl3 = start_temp(lvl3)
+
+# ╔═╡ 134bf884-c7eb-4fb3-b993-71ae40133cd2
+SudokuSolver.nr_errors(bestlvl3)
 
 # ╔═╡ 7518c2c0-20fa-11eb-32c0-a9db2a91cbc5
-∇²fx = Zygote.hessian(f_nonquadr, x)
+md"""
+### Deciding if a worse state is kept
+Following function is the core of how SA works. If a state has more errors than the last, this dicides whether or not it is accepted. It is only dependent on the difference in errors (diff) and the current temperature.
+"""
 
 # ╔═╡ 34027942-20fb-11eb-261e-3b991ce4c9f8
-v = solve_quadratic_system(∇²fx, ∇fx, fx)
+function decide(diff, T)
+   	chance = exp(-diff/T)
+   	if rand() < chance
+    	return true
+   	end
+    return false
+end
 
 # ╔═╡ 3bbeb85c-20fc-11eb-04d0-fb12d8ace50a
-f̂(x′) = quadratic_function(∇²fx, ∇fx, fx)(x′ .- x)
+md"""
+### Actual solving
+
+The final function looks as follows.
+"""
 
 # ╔═╡ 8623ac1a-20fa-11eb-2d45-49cce0fdac86
-begin
-	plot_nonquadr = contourf(-2:0.01:2, -2:0.01:2, (x, y) -> f_nonquadr([x,y]), color=:speed, title="non-quadratic function")
-	scatter!(plot_nonquadr, [x[1]], [x[2]], label="x")
-	scatter!(plot_nonquadr, [x[1]+v[1]], [x[2]+v[2]], label="x + v")
+function sudoku_solver(sudoku)
+    if !valid(sudoku)
+        error("Input is not a valid sudoku")
+    end
+    
+	solved = 0
+	cooling = 0.99 # Determines the rate by which the temperature decreases.
+	stuck = 0
+    restart = 0
+	show_sudoku(sudoku)
+	fixed = fixed_values(sudoku)
+	T0, filled = start_temp(sudoku)
+    T = T0
+    blocks, possible = possible_swap(fixed)
+	errors = nr_errors(filled)
+	iterations = 81 - sum(fixed) # T0 and iterations are dependent on how many non-fixed values there are.
+	state = filled
+    best = filled # Keep track of best encountered result.
+    bestscore = 80
 	
-	plot_approx = contourf(-2:0.01:2, -2:0.01:2, (x, y) -> f̂([x,y]), color=:speed,
-		title="quadratic approximation")
-	scatter!(plot_approx, [x[1]], [x[2]], label="x")
-	scatter!(plot_approx, [x[1]+v[1]], [x[2]+v[2]], label="x + v")
+	if errors == 0
+		solved = 1
+	end
 	
-	plot(plot_nonquadr, plot_approx, layout=(2,1), size=(600, 800))
-	
+	while solved == 0
+		lastscore = errors
+		for i in 1:iterations # Temperature does not decrease for a certain number of iterations.
+			newstate = swap(state, fixed, blocks, possible) # Create a new neighbouring state.
+			newerrors = nr_errors(newstate)
+			if newerrors == 0
+				solved = 1
+				break
+			end
+			
+			diff = newerrors - errors
+			if diff <= 0 # Better score is always accepted.
+				state = newstate
+				errors = newerrors
+                if errors < bestscore # Remember best result.
+                    best = state
+                    bestscore = errors
+                end
+			else
+				kept = decide(diff, T) # SA at work.
+				if kept
+					state = newstate
+					errors = newerrors
+				end
+			end
+		end
+			
+		T *= cooling # Temperature decreases.
+		if errors == 0
+			solved = 1
+			break
+		end
+		
+		if errors >= lastscore
+			stuck += 1
+		else
+			stuck = 0
+		end
+        
+		if stuck > 1000 # When running too long:
+            restart +=1
+            if restart > 20 # Return to best solution (restart).
+                state = best
+                errors = bestscore
+                restart = 0
+            else
+                T += T0/3 # Or increase temperature.
+            end
+		end
+	end
+    
+	show_sudoku(state)
+	return state
 end
+
+# ╔═╡ 48de2108-1677-4277-a33b-a02650636a76
+md"""
+Over all, it takes a long time to run, depending on how many positions are fixed. SA seems to be quik to find good results, but finding the actual solution is more difficult. The restart seems to be really necessary. Due to the more global searching, sudokus with few errors are quickly found, but for the same reason, this good solution is also quickly discarded. The cooling rate needs to kept low in order not to miss the solution.
+"""
+
+# ╔═╡ 1c4bdb0f-52e8-4eca-a10d-85fee6fa3e1a
+with_terminal() do
+	SudokuSolver.sudoku_solver(lvl1)
+end
+
+# ╔═╡ 702e4676-c461-4588-bccb-b63e30d410e5
+with_terminal() do
+	SudokuSolver.sudoku_solver(lvl2)
+end
+
+# ╔═╡ bac46fbd-5c17-4418-b59d-136bac701b63
 
 
 # ╔═╡ Cell order:
@@ -278,22 +422,37 @@ end
 # ╠═9556bf81-9486-4b00-8f82-18febb29e22e
 # ╠═f307ed1d-28a8-4896-9931-f004e11cffd5
 # ╟─fb4aeb8c-20f7-11eb-0444-259de7b76883
+# ╠═f40d46d6-c022-4ee5-aa06-99439e69f5f9
 # ╠═fdd4e550-20f8-11eb-227b-25f36708484d
 # ╟─ca79bf63-af4d-46a3-9ef7-ce04c404fcfd
+# ╠═acb21fa7-64e8-4a6b-ad00-d64b33252cb0
 # ╠═025fd6e8-20f9-11eb-3e7d-3519f3c4b58f
 # ╟─096eff98-20f9-11eb-1e61-99d5714895ba
 # ╠═165509ca-20f9-11eb-107c-550cbba0f0e9
-# ╠═1fffc82a-20f9-11eb-198c-c160d7dac87d
+# ╟─1fffc82a-20f9-11eb-198c-c160d7dac87d
 # ╟─26ab6ce2-20f9-11eb-1836-1756b290e5e3
 # ╠═49832a8e-20f9-11eb-0841-19a40a12db18
-# ╠═55e0e274-20f9-11eb-36c0-753f228f7e9b
-# ╠═b1551758-20f9-11eb-3e8f-ff9a7127d7f8
-# ╠═41d8f1dc-20fa-11eb-3586-a989427c1fd6
+# ╠═9c369269-b5af-4fcf-955c-7609f55f43a6
+# ╟─55e0e274-20f9-11eb-36c0-753f228f7e9b
+# ╠═2a520041-4a9e-458d-8d06-f67b51143aab
+# ╠═6731c4f5-c6d3-4efc-a982-80cbe1ffd357
+# ╟─b1551758-20f9-11eb-3e8f-ff9a7127d7f8
 # ╠═45189a82-20fa-11eb-0423-05ce1b84639d
-# ╠═4ed4215e-20fa-11eb-11ee-f7741591163c
-# ╠═56af99ee-20fa-11eb-0240-69c675efb78c
+# ╠═41d8f1dc-20fa-11eb-3586-a989427c1fd6
+# ╟─4ed4215e-20fa-11eb-11ee-f7741591163c
 # ╠═6c5473b4-20fa-11eb-327b-51ac560530eb
-# ╠═7518c2c0-20fa-11eb-32c0-a9db2a91cbc5
+# ╠═d3b42073-d0de-43f3-8627-f9b350fa5167
+# ╟─252903c4-8aa3-40aa-b9cd-8fbd00c13953
+# ╠═91a5cbbf-dd94-4786-b65b-6755c7f76804
+# ╠═3639da42-6a95-4df9-b777-9cf68758a6b0
+# ╟─1d3d599f-78c3-4d9f-ac2b-e9d81b086836
+# ╠═8b4ea346-9bed-4889-bc7e-e0795a212812
+# ╠═134bf884-c7eb-4fb3-b993-71ae40133cd2
+# ╟─7518c2c0-20fa-11eb-32c0-a9db2a91cbc5
 # ╠═34027942-20fb-11eb-261e-3b991ce4c9f8
-# ╠═3bbeb85c-20fc-11eb-04d0-fb12d8ace50a
-# ╟─8623ac1a-20fa-11eb-2d45-49cce0fdac86
+# ╟─3bbeb85c-20fc-11eb-04d0-fb12d8ace50a
+# ╠═8623ac1a-20fa-11eb-2d45-49cce0fdac86
+# ╟─48de2108-1677-4277-a33b-a02650636a76
+# ╠═1c4bdb0f-52e8-4eca-a10d-85fee6fa3e1a
+# ╠═702e4676-c461-4588-bccb-b63e30d410e5
+# ╠═bac46fbd-5c17-4418-b59d-136bac701b63
