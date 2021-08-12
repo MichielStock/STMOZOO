@@ -1,4 +1,4 @@
 using Test
 
-include("example.jl")
+include("sudokutest.jl")
 # add here the file with your unit tests
