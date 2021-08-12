@@ -351,6 +351,5 @@
         @test length(sudoku_solver(sudoku)) == 81
         
         @test sudoku_solver(sudoku) == solution
-        @test_throws sudoku_solver(3)
     end
 end
