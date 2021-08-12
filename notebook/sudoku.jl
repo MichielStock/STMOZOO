@@ -323,7 +323,7 @@ function sudoku_solver(sudoku)
 	iterations = 81 - sum(fixed) # T0 and iterations are dependent on how many non-fixed values there are.
 	state = filled
     best = filled # Keep track of best encountered result.
-    bestscore = 80
+    bestscore = 90
 	
 	if errors == 0
 		solved = 1
@@ -374,8 +374,10 @@ function sudoku_solver(sudoku)
                 state = best
                 errors = bestscore
                 restart = 0
+				stuck = 0
             else
                 T += T0/3 # Or increase temperature.
+				stuck = 0
             end
 		end
 	end
@@ -386,7 +388,7 @@ end
 
 # ╔═╡ 48de2108-1677-4277-a33b-a02650636a76
 md"""
-Over all, it takes a long time to run, depending on how many positions are fixed. SA seems to be quik to find good results, but finding the actual solution is more difficult. The restart seems to be really necessary. Due to the more global searching, sudokus with few errors are quickly found, but for the same reason, this good solution is also quickly discarded. The cooling rate needs to kept low in order not to miss the solution.
+Over all, it takes a long time to run, depending on how many positions are fixed. SA seems to be quik to find good results, but finding the actual solution is more difficult. The restart seems to be really necessary to keep the program on track. Due to the more global searching, sudokus with few errors are quickly found, but for the same reason, this good solution is also quickly discarded. A solution with as few as 2 errors is found quikly, but the actual sulution is harder to find. The cooling rate needs to kept low in order not to miss the solution.
 """
 
 # ╔═╡ 1c4bdb0f-52e8-4eca-a10d-85fee6fa3e1a
@@ -399,8 +401,17 @@ with_terminal() do
 	SudokuSolver.sudoku_solver(lvl2)
 end
 
-# ╔═╡ bac46fbd-5c17-4418-b59d-136bac701b63
+# ╔═╡ 67fd3250-f165-4201-9426-7fe89825404d
+md"""
+## Conclusion
 
+SA is a quik way to solve simple sudokus, but is not a good fit for sudokus with fewer fixed values. Since SA does not keep track of which solutions have been tried already, it ends up trying more (identical) combinations than other algorithms use for sudoku solving. Better options would be a branch-and-bound method, or brute-force search with backtracking. Both keep track of arlready tried solutions and as such, dont try the same one over and over again. Given that SA does reach a low number of errors relatively quikly, perhaps a hybrid approach would work?
+"""
+
+# ╔═╡ bac46fbd-5c17-4418-b59d-136bac701b63
+with_terminal() do
+	SudokuSolver.sudoku_solver(lvl3)
+end
 
 # ╔═╡ Cell order:
 # ╟─171fee18-20f6-11eb-37e5-2d04caea8c35
@@ -455,4 +466,5 @@ end
 # ╟─48de2108-1677-4277-a33b-a02650636a76
 # ╠═1c4bdb0f-52e8-4eca-a10d-85fee6fa3e1a
 # ╠═702e4676-c461-4588-bccb-b63e30d410e5
+# ╠═67fd3250-f165-4201-9426-7fe89825404d
 # ╠═bac46fbd-5c17-4418-b59d-136bac701b63
