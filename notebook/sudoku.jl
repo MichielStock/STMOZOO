@@ -409,9 +409,9 @@ SA is a quik way to solve simple sudokus, but is not a good fit for sudokus with
 """
 
 # ╔═╡ bac46fbd-5c17-4418-b59d-136bac701b63
-with_terminal() do
-	SudokuSolver.sudoku_solver(lvl3)
-end
+# with_terminal() do
+# 	SudokuSolver.sudoku_solver(lvl3)
+# end
 
 # ╔═╡ Cell order:
 # ╟─171fee18-20f6-11eb-37e5-2d04caea8c35
@@ -466,5 +466,5 @@ end
 # ╟─48de2108-1677-4277-a33b-a02650636a76
 # ╠═1c4bdb0f-52e8-4eca-a10d-85fee6fa3e1a
 # ╠═702e4676-c461-4588-bccb-b63e30d410e5
-# ╠═67fd3250-f165-4201-9426-7fe89825404d
+# ╟─67fd3250-f165-4201-9426-7fe89825404d
 # ╠═bac46fbd-5c17-4418-b59d-136bac701b63

@@ -1,9 +1,3 @@
-# to run the tests, first open the package manager (`]` in REPL), 
-# activate the project if not done so and then enter `test`
-        # use ≈ (`\approx<TAB>`) to check approximate equality
-        # useful for rounding errors
-        # NOTE: does NOT work on ≈ 0!
-
 @testset "SudokuSolver" begin
     using STMOZOO.SudokuSolver 
 
