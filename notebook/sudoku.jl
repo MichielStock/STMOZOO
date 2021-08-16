@@ -1,23 +1,14 @@
 ### A Pluto.jl notebook ###
-# v0.14.7
+# v0.15.1
 
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ 5ad5c202-20f8-11eb-23f1-4f38b687c285
-import Pkg
-
-# ╔═╡ d2d007b8-20f8-11eb-0ddd-1181d4565a85
-Pkg.activate("./Sarah/sudoku.jl")
+# ╔═╡ dc645c7a-98c1-4922-afc6-502cb29a3ffa
+using Pkg; Pkg.activate("..")
 
 # ╔═╡ 13c11517-1774-4ba7-add1-b84051860488
-using Main.workspace2.SudokuSolver
-
-# ╔═╡ f9f5eff0-16f9-4167-bc93-a6321abfd4cf
-using PlutoUI
-
-# ╔═╡ 6ecc9370-3cc7-400b-a6d8-3fd704c40984
-include("C:/Users/Sarah/sudoku.jl/src/sudoku.jl")
+using STMOZOO.SudokuSolver, PlutoUI
 
 # ╔═╡ 171fee18-20f6-11eb-37e5-2d04caea8c35
 md"""
@@ -212,9 +203,6 @@ For the lvl2 sudoku, there are 3 blocks where positions can be swapped. Blocks a
 Block 1 has no positions that can be swapped and will be solved in het filled sudoku.
 """
 
-# ╔═╡ 26ab6ce2-20f9-11eb-1836-1756b290e5e3
-md"No more need to remember the formulla for the minimizer! Just use `solve_quadratic_system`!"
-
 # ╔═╡ 49832a8e-20f9-11eb-0841-19a40a12db18
 block(1, 1, lvl2)
 
@@ -235,15 +223,15 @@ block(4, 4, fixedlvl2) # block 5
 # ╔═╡ b1551758-20f9-11eb-3e8f-ff9a7127d7f8
 md"""
 ### Calculating errors
-The following function is used to caculate the amount of errors in a given state.
+The following function is used to caculate the number of errors in a given state.
 """
 
 # ╔═╡ 45189a82-20fa-11eb-0423-05ce1b84639d
 function nr_errors(sudoku)
 	errors = 0
   	for i in 1:9
-    	errors += (9- length(freq_table(sudoku[i,:])))
-	    errors += (9- length(freq_table(sudoku[:,i])))
+    	errors += (9 - length(freq_table(sudoku[i,:])))
+	    errors += (9 - length(freq_table(sudoku[:,i])))
    	end
     return errors
 end
@@ -415,11 +403,8 @@ SA is a quik way to solve simple sudokus, but is not a good fit for sudokus with
 
 # ╔═╡ Cell order:
 # ╟─171fee18-20f6-11eb-37e5-2d04caea8c35
-# ╠═5ad5c202-20f8-11eb-23f1-4f38b687c285
-# ╠═d2d007b8-20f8-11eb-0ddd-1181d4565a85
-# ╠═6ecc9370-3cc7-400b-a6d8-3fd704c40984
+# ╠═dc645c7a-98c1-4922-afc6-502cb29a3ffa
 # ╠═13c11517-1774-4ba7-add1-b84051860488
-# ╠═f9f5eff0-16f9-4167-bc93-a6321abfd4cf
 # ╟─38c3a299-b597-40aa-abbf-71afde17f26d
 # ╟─7a25aac1-c7b2-4a94-81da-9325c30a0336
 # ╟─ec046206-68a9-406d-a2ac-11ffdb2dee82
@@ -441,7 +426,6 @@ SA is a quik way to solve simple sudokus, but is not a good fit for sudokus with
 # ╟─096eff98-20f9-11eb-1e61-99d5714895ba
 # ╠═165509ca-20f9-11eb-107c-550cbba0f0e9
 # ╟─1fffc82a-20f9-11eb-198c-c160d7dac87d
-# ╟─26ab6ce2-20f9-11eb-1836-1756b290e5e3
 # ╠═49832a8e-20f9-11eb-0841-19a40a12db18
 # ╠═9c369269-b5af-4fcf-955c-7609f55f43a6
 # ╟─55e0e274-20f9-11eb-36c0-753f228f7e9b

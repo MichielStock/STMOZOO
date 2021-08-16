@@ -35,6 +35,7 @@ module SudokuSolver
     ```
     """
     function show_sudoku(sudoku)
+        # Michiel: show 0 as a '-' or '.'?
     	for i in 1:9
 	    	line = ""
 		    if i == 4 || i == 7
