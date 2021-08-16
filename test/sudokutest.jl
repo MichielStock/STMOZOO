@@ -340,10 +340,11 @@
             4  6  9  8  3  5  2  7  1
             8  2  7  6  1  4  9  5  3]
 
-        @test sudoku_solver(sudoku) isa Array
+        S = sudoku_solver(sudoku)
+        @test S isa Matrix
 
-        @test length(sudoku_solver(sudoku)) == 81
+        @test size(S) == (9, 9)
         
-        @test sudoku_solver(sudoku) == solution
+        @test S == solution
     end
 end
