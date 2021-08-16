@@ -76,7 +76,12 @@ module SudokuSolver
     ```
     """
     function block(row, column, sudoku)
-	    if row in [1 2 3]
+        # Michiel: adding the following checks gives errers, there is something wrong here!
+        #@assert 1 ≤ row ≤ 3 BoundsError()
+        #@assert 1 ≤ column ≤ 3 BoundsError()
+        # Michiel: you can do this much more concisely, e.g. `range(3(row-1)+1, 3row, step=1)`
+        # if you use `@view` you also don't take a copy of the block (more memory efficient)
+	    if row in [1, 2, 3]
     		block = sudoku[1:3, :]
     	elseif row in [4 5 6]
 	    	block = sudoku[4:6, :]
@@ -84,7 +89,7 @@ module SudokuSolver
 		    block = sudoku[7:9, :]
 	    end
         
-    	if column in [1 2 3]
+    	if column in [1, 2, 3]
 	    	block = block[:, 1:3]
     	elseif column in [4 5 6]
 	    	block = block[:, 4:6]
@@ -119,6 +124,7 @@ module SudokuSolver
     ```
     """
     function freq_table(row)
+        # Michiel: fine, but know that a bitarray would be *much* faster here
     	freqs = Dict()
 	    for value in row
 		    if haskey(freqs, value)
@@ -187,7 +193,7 @@ module SudokuSolver
     ```
     """
     function valid(sudoku)
-        if length(sudoku) != 81 # 9x9 array
+        if size(sudoku) != (9, 9) # 9x9 array
             return false
         end
     
@@ -219,7 +225,8 @@ module SudokuSolver
     """
         fixed_values(sudoku)
 
-    Returns an array indicating which values the sudoku started out whith (fixed values). Fixed positions are indicated with a 1, non-fixed values with a 0.
+    Returns an array indicating which values the sudoku started out whith (fixed values).
+    Fixed positions are indicated with a 1, non-fixed values with a 0.
 
     ## Examples
 
@@ -248,11 +255,12 @@ module SudokuSolver
     ```
     """
     function fixed_values(sudoku)
+        # michiel: why not sudoku .== 0 ? (or `!ismissing.(sudoku)` if you use a data type)
     	fixed = zero(sudoku)
 	    for i in 1:9
 		    for j in 1:9
 			    if sudoku[i, j] != 0
-				    fixed[i,j] = 1
+				    fixed[i, j] = 1
     			end
 	    	end
     	end
@@ -262,7 +270,8 @@ module SudokuSolver
     """
         nr_errors(sudoku)
 
-    Calculates the amount of errors (repeated values in a row or column) are in a sudoku. Assumes that blocks have no repeat values.
+    Calculates the number of errors (repeated values in a row or column) are in a sudoku.
+    Assumes that blocks have no repeat values.
 
     ## Examples
 
@@ -284,8 +293,8 @@ module SudokuSolver
     function nr_errors(sudoku)
 	    errors = 0
     	for i in 1:9
-	    	errors += (9- length(freq_table(sudoku[i,:])))
-		    errors += (9- length(freq_table(sudoku[:,i])))
+	    	errors += (9 - length(freq_table(sudoku[i,:])))
+		    errors += (9 - length(freq_table(sudoku[:,i])))
     	end
 	    return errors
     end
@@ -333,6 +342,7 @@ module SudokuSolver
     ```
     """
     function pick(list)
+        # Michiel: alternative: i = rand(1:length(list)); value = popat!(list, i)
 		value = rand(list)
     	deleteat!(list, findfirst(x -> x==value, list))
 	    return value, list
@@ -451,6 +461,7 @@ module SudokuSolver
     ```
     """
     function not_fixed(fixed)
+        # Michiel: findall(isequal(0), sudoku) / findall(ismissing, sudoku) 
     	nonfixed = []
 	    for (i, v) in enumerate(fixed)
 		    if v == 0
@@ -463,7 +474,8 @@ module SudokuSolver
     """
         block_nr_ind(nr)
 
-    Blocks are numbered from 1 to 9, from top to bottom and left to right. This function returns an index within that block. Row and column will be 3, 6 or 9.
+    Blocks are numbered from 1 to 9, from top to bottom and left to right.
+    This function returns an index within that block. Row and column will be 3, 6 or 9.
 
     ## Examples
 
@@ -473,8 +485,8 @@ module SudokuSolver
     ```
     """
     function block_nr_ind(nr)
-        row = (mod(nr-1, 3) +1) *3
-        column = (div(nr-1, 3) +1) *3
+        row = (mod(nr-1, 3) + 1) * 3
+        column = (div(nr-1, 3) + 1) * 3
         return row, column
     end
 
@@ -504,9 +516,10 @@ module SudokuSolver
     ```
     """
     function fixed_blocks(fixed)
-        blocks = []
+        blocks = Int[]
         for i in 1:9
             row, col = block_nr_ind(i)
+            # Michiel: you might make this faster using the function `count`
             nonfixed = not_fixed(block(row, col, fixed))
             if length(nonfixed) > 2
                 append!(blocks, i)
@@ -518,7 +531,8 @@ module SudokuSolver
     """
         possible_swap(fixed)
 
-    Generates a list of blocks with more than 2 non-fixed positions and a dictionary of possible positions to swap. Keys are the block numbers used in fixed_blocks.
+    Generates a list of blocks with more than two non-fixed positions and a dictionary of
+    possible positions to swap. Keys are the block numbers used in fixed_blocks.
 
     ## Examples
 
@@ -539,7 +553,7 @@ module SudokuSolver
     """
     function possible_swap(fixed)
         blocks = fixed_blocks(fixed)
-        possible = Dict()
+        possible = Dict{Int, Vector{Int}}()  #michiel: Type stability
         for i in blocks
             row, col = block_nr_ind(i)
             possible[i] = not_fixed(block(row, col, fixed))
@@ -550,10 +564,11 @@ module SudokuSolver
     """
         swap(sudoku, fixed, blocks, possible)
 
-    Randomly swaps the values of 2 non-fixed positions within the same (random) block. Generates a new state.
+    Randomly swaps the values of two non-fixed positions within the same (random) block. Generates a new state.
     ```
     """
     function swap(sudoku, fixed, blocks, possible)
+        # Michiel: fixed is not used here?
     	blocknr = rand(blocks) # random block where positions can be swapped
         row, col = block_nr_ind(blocknr)
         nrblock = block(row, col, sudoku)
@@ -570,7 +585,8 @@ module SudokuSolver
     """
         start_temp(sudoku)
 
-    Chooses a starting temperature by taking the standard deviation of the errors of 50 starting states. Returns the best of these stating states as a starting point.
+    Chooses a starting temperature by taking the standard deviation of the errors of 50 starting states.
+    Returns the best of these stating states as a starting point.
 
     ## Examples
 
@@ -622,20 +638,13 @@ module SudokuSolver
 
     Decides whether a new state is used or discarded. Diff is the difference in amount of errors between the new and old states.
     """
-
-    function decide(diff, T)
-    	chance = exp(-diff/T)
-    	if rand() < chance
-	    	return true
-    	end
-	    return false
-    end
+    decide(diff, T) = rand() < exp(-diff/T)
 
 
     """
         sudoku_solver(sudoku)
 
-    Solves a given sudoku using simulated annealing. Sudoku should be a 9x9 array, blanks are filled with zeros and rows, columns and blocks do not have duplicate values other than zero.
+    Solves a given sudoku using Simulated Annealing. Sudoku should be a 9x9 array, blanks are filled with zeros and rows, columns and blocks do not have duplicate values other than zero.
 
     ## Examples
 
@@ -679,7 +688,7 @@ module SudokuSolver
         if !valid(sudoku)
             error("Input is not a valid sudoku")
         end
-
+        # Michiel: please add the parameters as optional keyword arguments
     	solved = 0
 	    cooling = 0.99
     	stuck = 0
