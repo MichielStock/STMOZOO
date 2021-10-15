@@ -15,6 +15,7 @@ Explain an optimization method not covered in the course though an interactive n
 - Q-learning
 - link between [fractals and the Newton method](https://www.youtube.com/watch?v=-RdOwhmqP5s)
 - [MAP-elites](https://arxiv.org/abs/1504.04909)
+- [information-geometric opitmization algorithms](http://www.cmap.polytechnique.fr/~anne.auger/teaching-slides/05_DFO-IGO.pdf)
 - ...
 
 ## Tools 🔧
