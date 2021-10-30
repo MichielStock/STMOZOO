@@ -18,7 +18,7 @@ For the exam project, you pick a optimization related topic of your interest tha
 - [ ] update the `readme.md`
   - [ ] add title
   - [ ] add your names
-  - [ ] add a small abstract/examenple of what the code should do
+  - [ ] add a small abstract/example of what the code should do
 
 ## Source code
 
@@ -73,11 +73,13 @@ Hopefully, you have already documented all your functions, so this should be a b
 
 Finally, you have to add a [Pluto](https://github.com/fonsp/Pluto.jl) notebook to the `notebook` folder. Again use the same name you used for your source code. Depending on the nature of your project, this will be the most extensive task! Make full use of Pluto's interactivity to illustrate your code. In contrast to the documentation page, this is not the place to explain your functions but rather show what you can do with your software or explain a concept.
 
+Alternatively, you may use [Literate](https://fredrikekre.github.io/Literate.jl/v2/) to have script with text annotation to explain your code/package. Up to you what you feel most comfortable with.
+
 ## Code review
 
-Each of you will have to perform a code review of two other projects. You have the full day to do this, though it should not take too long. The aim is to **help** the other groups to make each other's project even better.
+Each of you will have to perform a code review of two other projects. You have till noon 13h of the exam date to do this, though it should not take too long. The aim is to **help** the other groups to make each other's project even better. 
 
-- [ ] make a fork of the repo of the person you are reviewing;
+- [ ] make a fork or local clone of the repo of the person you are reviewing;
 - [ ] check the source code, is the documentation clear? Anything obvious that can be improved.
 - [ ] run the tests. Do they work? Anything that could be tested but is not done so?
 - [ ] Is the documentation clear? Do you find any typos? Could an example be added?
@@ -85,10 +87,8 @@ Each of you will have to perform a code review of two other projects. You have t
 
 Big things can be addressed by opening an issue. Small fixes and suggestions to the other person's code can be done immediately and via a pull request.
 
-Afterwards, you have a full day to:
+Afterwards, you have the rest of the day to:
 - [ ] merge the entire request and fix any issues you find meaningful.
 - [ ] fill in a small questionnaire on Ufora about your project and the projects you have reviewed.
 
-Afterward, I will approve all pull requests, finalizing the package.
-
-> Two days are blocked for the code review because some of you are in different time zones. This does **not** mean you will need these days in full. You will need approximately reserve one hour for each day. For the remainder, you can do whatever you want.
+When your code is final, you can [tag](https://docs.github.com/en/desktop/contributing-and-collaborating-using-github-desktop/managing-commits/managing-tags) your latest commit and mention Michiel you are finished (mention `@michielstock`).
