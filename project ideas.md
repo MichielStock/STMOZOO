@@ -50,4 +50,5 @@ Experiment and learn. Reproduce the results of a paper (in simplified form). Sho
 - improving the convergence of evolutionary algorithms by varying the objective function
 - the optimization landscape of ANNs
 - comparision of optimizers for deep learning
+- Newton methods for lazy bums: is the diagonal sufficient?
 - ...
