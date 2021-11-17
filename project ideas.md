@@ -51,4 +51,5 @@ Experiment and learn. Reproduce the results of a paper (in simplified form). Sho
 - the optimization landscape of ANNs
 - comparision of optimizers for deep learning
 - Newton methods for lazy bums: is the diagonal sufficient?
+- [Maze solver using bacteria](https://www.technologyreview.com/2021/11/09/1039107/e-coli-maze-solving-biocomputer/?s=03) (simulation of an experiment)
 - ...
