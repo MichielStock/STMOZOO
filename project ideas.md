@@ -17,6 +17,7 @@ Explain an optimization method not covered in the course though an interactive n
 - [MAP-elites](https://arxiv.org/abs/1504.04909)
 - [information-geometric opitmization algorithms](http://www.cmap.polytechnique.fr/~anne.auger/teaching-slides/05_DFO-IGO.pdf)
 - the big deal with multi-objective optimization
+- Thompson sampling: optimal gambling 🎲
 - ...
 
 ## Tools 🔧
@@ -51,5 +52,6 @@ Experiment and learn. Reproduce the results of a paper (in simplified form). Sho
 - the optimization landscape of ANNs
 - comparision of optimizers for deep learning
 - Newton methods for lazy bums: is the diagonal sufficient?
+- utilitarian ethics: optimization for the Good Place?
 - [Maze solver using bacteria](https://www.technologyreview.com/2021/11/09/1039107/e-coli-maze-solving-biocomputer/?s=03) (simulation of an experiment)
 - ...
