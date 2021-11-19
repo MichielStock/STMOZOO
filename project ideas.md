@@ -26,7 +26,7 @@ Solve a problem using a method from the course or a new one.
 
 - time table scheduling
 - my own RNA folder!
-- color transfer using optimal transportation done right
+- ~~color transfer using optimal transportation done right~~
 - analytic solution of a ODE using genetic programming
 - graph matching using simulated annealing
 - optimal task for every person using the Hungarian algorithm
