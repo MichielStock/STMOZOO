@@ -1,4 +1,14 @@
-# STMO-ZOO
+# Fitting superformula shapes to images of diatoms, flowers ... using MAP-Elites.
+
+... "small abstract/example of what the code should do"
+
+By Shauny Van Hoye
+
+Master of Science in Bioscience Engineering: Cell and Gene Biotechnology at UGhent
+
+------------
+
+TO DO
 
 Welcome to the STMO zoo! This is your final assignment for the course Selected Topics in Mathematical Optimization. Your goal is to implement an optimization method in Julia and contribute this to this repository. To pass, you have to:
 
