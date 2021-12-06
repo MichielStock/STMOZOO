@@ -1,4 +1,8 @@
-# STMO-ZOO
+# Ant Colony Optimization
+
+Author: Natalie Thomas
+
+Abstract: This project will explain Any Colony Optimization: the motivation for this method, how it works, in which problem context(s) it is applied, usefulness/performance vs other methods, and of course, demonstrate a basic implementation.
 
 Welcome to the STMO zoo! This is your final assignment for the course Selected Topics in Mathematical Optimization. Your goal is to implement an optimization method in Julia and contribute this to this repository. To pass, you have to:
 
