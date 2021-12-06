@@ -54,4 +54,5 @@ Experiment and learn. Reproduce the results of a paper (in simplified form). Sho
 - Newton methods for lazy bums: is the diagonal sufficient?
 - utilitarian ethics: optimization for the Good Place?
 - [Maze solver using bacteria](https://www.technologyreview.com/2021/11/09/1039107/e-coli-maze-solving-biocomputer/?s=03) (simulation of an experiment)
+- [discovering natural laws](https://www.science.org/doi/abs/10.1126/science.1165893)
 - ...
