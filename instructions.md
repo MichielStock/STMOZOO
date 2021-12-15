@@ -1,6 +1,6 @@
 # Assignments
 
-Edition 2020-2021
+Edition 2021-2022
 
 This file gives a detailed overview of what you have to do for this project. 
 
@@ -22,6 +22,8 @@ For the exam project, you pick a optimization related topic of your interest tha
 
 ## Source code
 
+> **This part is optional!** Most of you will work in a Pluto notebook, so you don't have to add source code as well (it is hard to import in the notebook). Just put your functions tidily in an appendix at the bottom of a notebook. 
+
 Every project needs to have some source code, at least one function! You have to decide which parts belong in the source code (and can hence be readily loaded by other users) and which parts of your project will be in the notebook where people can see and interact with your code.
 
 Developing code can be done in any text editor, though we highly recommend [Visual Studio Code](https://code.visualstudio.com/), with Juno the environment for Julia. [Atom](https://atom.io/) is an alternative but is not supported anymore. When developing, you have to activate your project. Assuming that the location of the REPL is the project folder, open the Pkg manager (typing `]`) and type `activate .`. The dot indicated the current directory. If you use external packages in your project, for example, Zygote or LinearAlgebra, you have to add them using `add PACKAGE` in the package manager. This action will create a dependency and update the `Project.toml` file.
@@ -40,6 +42,8 @@ Importantly, all your code should be in a [module](https://docs.julialang.org/en
 - [ ] document *every* function! Make sure that an external user can understand everything! Be liberal with comments in your code. Take a look at the [guidelines](https://docs.julialang.org/en/v1/manual/documentation/)
 
 ## Unit tests
+
+> **This part is optional!** Again, you only need to provide a notebook. You are encouraged to add some unit tests in the notebook (make it a hidden cell). You can do this by importing `Test` and add an `@testset` as decribed below.
 
 Great, we have written some code. The question is, does it work? Likely you have experimented in the REPL. For a larger project, we would like to have guarantees that it works, though. Luckily, this is very easy in Julia, where we can readily use [Unit testing](https://docs.julialang.org/en/v1/stdlib/Test/).
 
@@ -71,6 +75,8 @@ Hopefully, you have already documented all your functions, so this should be a b
 
 ## Notebook
 
+> **This is the most important part!** Add all your functionality and explanation to the Pluto notebook so that it is stand-alone. Try to make sure that your initial examples are sufficiently small so it does not take too long to run the notebook.
+
 Finally, you have to add a [Pluto](https://github.com/fonsp/Pluto.jl) notebook to the `notebook` folder. Again use the same name you used for your source code. Depending on the nature of your project, this will be the most extensive task! Make full use of Pluto's interactivity to illustrate your code. In contrast to the documentation page, this is not the place to explain your functions but rather show what you can do with your software or explain a concept.
 
 Alternatively, you may use [Literate](https://fredrikekre.github.io/Literate.jl/v2/) to have script with text annotation to explain your code/package. Up to you what you feel most comfortable with.
@@ -80,10 +86,10 @@ Alternatively, you may use [Literate](https://fredrikekre.github.io/Literate.jl/
 Each of you will have to perform a code review of two other projects. You have till noon 13h of the exam date to do this, though it should not take too long. The aim is to **help** the other groups to make each other's project even better. 
 
 - [ ] make a fork or local clone of the repo of the person you are reviewing;
-- [ ] check the source code, is the documentation clear? Anything obvious that can be improved.
-- [ ] run the tests. Do they work? Anything that could be tested but is not done so?
+- [ ] (if relevant) check the source code, is the documentation clear? Anything obvious that can be improved.
+- [ ] (if relevant) run the tests. Do they work? Anything that could be tested but is not done so?
 - [ ] Is the documentation clear? Do you find any typos? Could an example be added?
-- [ ] Take a look at the notebook. Any suggestions there to improve this?
+- [ ] Take a good look at the notebook. Any suggestions there to improve this?
 
 Big things can be addressed by opening an issue. Small fixes and suggestions to the other person's code can be done immediately and via a pull request.
 
