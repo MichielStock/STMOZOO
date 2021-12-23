@@ -1,3 +1,5 @@
+# @Michiel the only file to check at the moment is ACO1222.jl in the Notebook directory 
+
 # Ant Colony Optimization
 
 Author: Natalie Thomas
