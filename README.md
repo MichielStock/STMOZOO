@@ -3,7 +3,7 @@
 
 ### Student name : Ju Hyung Lee
 
-![alt text](https://github.com/juhlee/ColorTransfer.jl/fig/choosing-color-scheme-368x246.png?raw=true)
+![alt text](https://github.com/juhlee/ColorTransfer.jl/figs/choosing-color-scheme-368x246.png?raw=true)
 
 Welcome to the color transfer repository in STMO zoo! This is categorized as a 'tool' section of the final project, in which I will make a number of different experiment on color transfer with a few functions.
 
