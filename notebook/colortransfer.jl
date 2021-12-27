@@ -29,10 +29,10 @@ In chapter 6, we learned the concept of **optimal transportation**, and saw that
 """
 
 # ╔═╡ 8cb3b1c5-a1f5-4b5b-8ce4-2c1a66f6e762
-download("https://github.com/MichielStock/STMO/blob/master/chapters/06.OptimalTransport/Figures/butterfly3.jpg?raw=true", "image1.jpg")
+download("https://github.com/juhlee/ColorTransfer.jl/blob/master/figs/christmas.jpg?raw=true", "image1.jpg")
 
 # ╔═╡ f46ad76d-2cd9-48c2-acfc-33188a2af405
-download("https://github.com/MichielStock/STMO/blob/master/chapters/06.OptimalTransport/Figures/butterfly2.jpg?raw=true", "image2.jpg")
+download("https://github.com/juhlee/ColorTransfer.jl/blob/master/figs/cityscape.jpg?raw=true", "image2.jpg")
 
 # ╔═╡ 784097e8-9795-44b8-912b-e009f4929942
 image1 = load("image1.jpg") # change to path local directory
@@ -115,7 +115,7 @@ colorscatter(colors2, title="figure 2"))
 Ccol = [colordiff(c1, c2) for c1 in colors1, c2 in colors2]
 
 # ╔═╡ f8e6fc0f-6731-4205-a622-b30387b068a1
-Pcolors = sinkhorn(Ccol, a_col, b_col; λ=1.0, ϵ=1e-4)
+Pcolors = sinkhorn(Ccol, a_col, b_col; λ=13.0, ϵ=1e-4)
 
 # ╔═╡ 2f6ebe5e-a3ff-4d79-83bc-4b9ab19e939c
 image1_transf = reshape(mapdistr(colors2, Pcolors), size(image1ss))
