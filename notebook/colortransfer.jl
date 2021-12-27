@@ -83,10 +83,10 @@ subsample(image, every=10) = image[1:every:size(image,1), 1:every:size(image,2)]
 
 
 # ╔═╡ 7c89cebe-0495-4f81-b175-3474579c8404
-image1ss = subsample(image1)
+image1ss = subsample(image1, 30)
 
 # ╔═╡ 16b51e7c-2604-4149-8b57-b569ae60bd31
-colors1 = vec(image1ss) * 1
+colors1 = vec(image1ss)
 
 # ╔═╡ c2f50353-2a6b-4296-81b4-b63154d36cac
 n_colors1 = length(colors1)
@@ -94,11 +94,14 @@ n_colors1 = length(colors1)
 # ╔═╡ e5b7dd1c-38aa-4a2e-b8c0-92fa0c455334
 a_col = ones(n_colors1) / n_colors1
 
+# ╔═╡ 14e9e2cb-4b92-4483-a1b5-1b442defef99
+println(colors1)
+
 # ╔═╡ a4388626-18b2-4d24-b80f-c6ed5f6eecc9
-image2ss = subsample(image2)
+image2ss = subsample(image2, 30)
 
 # ╔═╡ cf456507-a6c9-40d3-8e8a-10d012ee6a47
-colors2 = vec(image2ss) * 1
+colors2 = vec(image2ss)
 
 # ╔═╡ b732f1c9-9138-4ebc-8237-ac4fab644958
 n_colors2 = length(colors2)
@@ -111,29 +114,17 @@ plot(
 colorscatter(colors1, title="figure 1"),
 colorscatter(colors2, title="figure 2"))
 
+# ╔═╡ 52643d93-b7a7-4166-84cf-6d1e577dfad4
+colordiff(colors1[1], colors2[1])
+
 # ╔═╡ 99e5732e-7428-4cf2-8a72-0b04be0b9c96
-Ccol = [colordiff(c1, c2) for c1 in colors1, c2 in colors2]
+Ccol = [colordiff(c1,c2) for c1 in colors1, c2 in colors2]
 
 # ╔═╡ f8e6fc0f-6731-4205-a622-b30387b068a1
-Pcolors = sinkhorn(Ccol, a_col, b_col; λ=13.0, ϵ=1e-4)
+Pcolors = sinkhorn(Ccol, a_col, b_col; λ=1.0, ϵ=1e-8)
 
 # ╔═╡ 2f6ebe5e-a3ff-4d79-83bc-4b9ab19e939c
 image1_transf = reshape(mapdistr(colors2, Pcolors), size(image1ss))
-
-# ╔═╡ cc23d1c5-3961-48ff-b733-0e46be08dcf5
-image2_transf = reshape(mapdistr(colors1, Pcolors'), size(image2ss))
-
-# ╔═╡ 7e20c985-d0f5-4aad-99e8-765776e6c119
-begin
-	myblue = "#304da5"
-	mygreen = "#2a9d8f"
-	myyellow = "#e9c46a"
-	myorange = "#f4a261"
-	myred = "#e76f51"
-	myblack = "#50514F"
-
-	mycolors = [myblue, myred, mygreen, myorange, myyellow]
-end;
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1536,12 +1527,13 @@ version = "0.9.1+5"
 # ╠═c2f50353-2a6b-4296-81b4-b63154d36cac
 # ╠═b732f1c9-9138-4ebc-8237-ac4fab644958
 # ╠═cc56eb90-5679-4409-9e12-cac6bb5348d9
+# ╠═14e9e2cb-4b92-4483-a1b5-1b442defef99
+# ╠═52643d93-b7a7-4166-84cf-6d1e577dfad4
 # ╠═99e5732e-7428-4cf2-8a72-0b04be0b9c96
 # ╠═e5b7dd1c-38aa-4a2e-b8c0-92fa0c455334
 # ╠═3845deb2-521e-4591-887b-145283791eae
 # ╠═f8e6fc0f-6731-4205-a622-b30387b068a1
 # ╠═2f6ebe5e-a3ff-4d79-83bc-4b9ab19e939c
-# ╠═cc23d1c5-3961-48ff-b733-0e46be08dcf5
 # ╟─ddbab8c0-1440-4027-b1f4-0f083448a17e
 # ╠═18c87a62-b0e5-4e31-ad4f-d449e0f4536a
 # ╠═50e0b195-aa14-4ef0-8c5c-72c2fa10a5e7
@@ -1549,6 +1541,5 @@ version = "0.9.1+5"
 # ╠═8dd5a8a6-1052-4972-9935-cfc24e0300ae
 # ╠═ec53c559-044e-4287-8b44-1123fade583c
 # ╠═cd3815cc-06fa-435c-b09e-5b069b3937ac
-# ╠═7e20c985-d0f5-4aad-99e8-765776e6c119
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
