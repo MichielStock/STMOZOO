@@ -115,7 +115,7 @@ colorscatter(colors1, title="figure 1"),
 colorscatter(colors2, title="figure 2"))
 
 # ╔═╡ 52643d93-b7a7-4166-84cf-6d1e577dfad4
-colordiff(colors1[1], colors2[1])
+a = colordiff(colors1[1], colors2[1])
 
 # ╔═╡ 99e5732e-7428-4cf2-8a72-0b04be0b9c96
 Ccol = [colordiff(c1,c2) for c1 in colors1, c2 in colors2]
