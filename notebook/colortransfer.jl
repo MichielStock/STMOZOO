@@ -29,7 +29,7 @@ In chapter 6, we learned the concept of **optimal transportation**, and saw that
 """
 
 # ╔═╡ 8cb3b1c5-a1f5-4b5b-8ce4-2c1a66f6e762
-download("https://github.com/juhlee/ColorTransfer.jl/blob/master/figs/christmas.jpg?raw=true", "image1.jpg")
+download("https://github.com/juhlee/ColorTransfer.jl/blob/master/figs/sunset.jpg?raw=true", "image1.jpg")
 
 # ╔═╡ f46ad76d-2cd9-48c2-acfc-33188a2af405
 download("https://github.com/juhlee/ColorTransfer.jl/blob/master/figs/cityscape.jpg?raw=true", "image2.jpg")
@@ -39,7 +39,6 @@ image1 = load("image1.jpg") # change to path local directory
 
 # ╔═╡ 31ffeaeb-9316-4d57-a0bf-d21359aa78a3
 image2 = load("image2.jpg") # change to path local directory
-
 
 # ╔═╡ ddbab8c0-1440-4027-b1f4-0f083448a17e
 md"""
@@ -83,7 +82,7 @@ subsample(image, every=10) = image[1:every:size(image,1), 1:every:size(image,2)]
 
 
 # ╔═╡ 7c89cebe-0495-4f81-b175-3474579c8404
-image1ss = subsample(image1, 30)
+image1ss = subsample(image1, 5)
 
 # ╔═╡ 16b51e7c-2604-4149-8b57-b569ae60bd31
 colors1 = vec(image1ss)
@@ -98,7 +97,7 @@ a_col = ones(n_colors1) / n_colors1
 println(colors1)
 
 # ╔═╡ a4388626-18b2-4d24-b80f-c6ed5f6eecc9
-image2ss = subsample(image2, 30)
+image2ss = subsample(image2, 5)
 
 # ╔═╡ cf456507-a6c9-40d3-8e8a-10d012ee6a47
 colors2 = vec(image2ss)
@@ -125,6 +124,9 @@ Pcolors = sinkhorn(Ccol, a_col, b_col; λ=1.0, ϵ=1e-8)
 
 # ╔═╡ 2f6ebe5e-a3ff-4d79-83bc-4b9ab19e939c
 image1_transf = reshape(mapdistr(colors2, Pcolors), size(image1ss))
+
+# ╔═╡ 8a95421e-2245-45ff-a912-afa37781623a
+image2_transf = reshape(mapdistr(colors1, Pcolors'), size(image2ss))
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1534,6 +1536,7 @@ version = "0.9.1+5"
 # ╠═3845deb2-521e-4591-887b-145283791eae
 # ╠═f8e6fc0f-6731-4205-a622-b30387b068a1
 # ╠═2f6ebe5e-a3ff-4d79-83bc-4b9ab19e939c
+# ╠═8a95421e-2245-45ff-a912-afa37781623a
 # ╟─ddbab8c0-1440-4027-b1f4-0f083448a17e
 # ╠═18c87a62-b0e5-4e31-ad4f-d449e0f4536a
 # ╠═50e0b195-aa14-4ef0-8c5c-72c2fa10a5e7
