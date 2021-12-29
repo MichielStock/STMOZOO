@@ -28,16 +28,16 @@ In chapter 6, we learned the concept of **optimal transportation**, and saw that
 	Given the RGB representation of the pixels of two images (X1,X2) and a cost over the colors, transfer the color scheme of image 2 to image 1.
 """
 
-# ╔═╡ 8cb3b1c5-a1f5-4b5b-8ce4-2c1a66f6e762
-download("https://github.com/juhlee/ColorTransfer.jl/blob/master/figs/sunset.jpg?raw=true", "image1.jpg")
-
 # ╔═╡ f46ad76d-2cd9-48c2-acfc-33188a2af405
-download("https://github.com/juhlee/ColorTransfer.jl/blob/master/figs/cityscape.jpg?raw=true", "image2.jpg")
+download("https://github.com/juhlee/ColorTransfer.jl/blob/master/figs/cityscape.jpg?raw=true", "image1.jpg")
 
-# ╔═╡ 784097e8-9795-44b8-912b-e009f4929942
-image1 = load("image1.jpg") # change to path local directory
+# ╔═╡ 8cb3b1c5-a1f5-4b5b-8ce4-2c1a66f6e762
+download("https://github.com/juhlee/ColorTransfer.jl/blob/master/figs/sunset.jpg?raw=true", "image2.jpg")
 
 # ╔═╡ 31ffeaeb-9316-4d57-a0bf-d21359aa78a3
+image1 = load("image1.jpg") # change to path local directory
+
+# ╔═╡ 784097e8-9795-44b8-912b-e009f4929942
 image2 = load("image2.jpg") # change to path local directory
 
 # ╔═╡ ddbab8c0-1440-4027-b1f4-0f083448a17e
@@ -95,6 +95,12 @@ a_col = ones(n_colors1) / n_colors1
 
 # ╔═╡ 14e9e2cb-4b92-4483-a1b5-1b442defef99
 println(colors1)
+
+# ╔═╡ 006a287a-20f9-485b-9c35-ddb3f481a1f4
+permutedims(channelview(image1ss), (2,3,1))
+
+# ╔═╡ 37114245-61af-4ebc-92b6-d201355ccdec
+size(image1ss)
 
 # ╔═╡ a4388626-18b2-4d24-b80f-c6ed5f6eecc9
 image2ss = subsample(image2, 5)
@@ -1518,10 +1524,10 @@ version = "0.9.1+5"
 # ╟─c0cc29a4-66cf-11ec-251f-d7772ca48f43
 # ╠═03f007fe-ed84-4ee4-a806-5239843c0391
 # ╟─03ad0574-699b-4046-863e-611e1a058d82
-# ╠═8cb3b1c5-a1f5-4b5b-8ce4-2c1a66f6e762
 # ╠═f46ad76d-2cd9-48c2-acfc-33188a2af405
-# ╠═784097e8-9795-44b8-912b-e009f4929942
+# ╠═8cb3b1c5-a1f5-4b5b-8ce4-2c1a66f6e762
 # ╠═31ffeaeb-9316-4d57-a0bf-d21359aa78a3
+# ╠═784097e8-9795-44b8-912b-e009f4929942
 # ╠═7c89cebe-0495-4f81-b175-3474579c8404
 # ╠═a4388626-18b2-4d24-b80f-c6ed5f6eecc9
 # ╠═16b51e7c-2604-4149-8b57-b569ae60bd31
@@ -1537,6 +1543,8 @@ version = "0.9.1+5"
 # ╠═f8e6fc0f-6731-4205-a622-b30387b068a1
 # ╠═2f6ebe5e-a3ff-4d79-83bc-4b9ab19e939c
 # ╠═8a95421e-2245-45ff-a912-afa37781623a
+# ╠═006a287a-20f9-485b-9c35-ddb3f481a1f4
+# ╠═37114245-61af-4ebc-92b6-d201355ccdec
 # ╟─ddbab8c0-1440-4027-b1f4-0f083448a17e
 # ╠═18c87a62-b0e5-4e31-ad4f-d449e0f4536a
 # ╠═50e0b195-aa14-4ef0-8c5c-72c2fa10a5e7
