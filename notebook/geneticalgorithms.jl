@@ -5,7 +5,7 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ c80a0f15-2c37-4c40-a543-2e6c3fead1be
-using Images
+using Images, StatsBase
 
 # ╔═╡ 171fee18-20f6-11eb-37e5-2d04caea8c35
 md"""
@@ -24,8 +24,7 @@ load("./Figs/GA_Overview.png")
 # ╔═╡ d89c31c5-f2b3-4b52-8e47-580c62979687
 md"""
 
-During this project we will introduce the general concepts of GAs. We will build up a GA by introducing all its different parts. During this, the option will be given to alter the different parameters to see what effect they have. 
-
+During this project we will introduce the general concepts of GAs. We will build up a GA by introducing all its different parts. During this, the option will be given to alter the different parameters to see what effect they have.
 """
 
 # ╔═╡ b95fd05e-f139-47f4-ab69-79f5dd3cc279
@@ -51,8 +50,221 @@ Jordi
 md"""
 ## Selection
 
-Jietse
+During selection, the parent chromosomes are choosen with which later on the "breeding" will happen via the crossover operator. Different methods of selection are available. Important to note here is that an individual can be selected more than one time, otherwise the population would not change.
 """
+
+# ╔═╡ 953edf56-a957-4c61-8a89-9709dc6dfd65
+md"""
+
+### Roulette Wheel Selection
+
+As the name suggests, this way of selecting parents is based on turning a roulette wheel. The chance of selecting an individual is proportional to its fitness. The higher its fitness the bigger its pocket will be on the roulette wheel an thus the bigger its chance of being selected.
+
+The chance for an individual to be selected can be mathematically written as:
+
+```math 
+\begin{equation}
+	p_i = \frac{f_i}{\sum_{j=1}^{N} f_j}
+\end{equation}
+```
+
+Where:
+- pᵢ is the probability for choosing individual i
+- fᵢ is the fitness of individual i
+- N is the size of the population
+
+We implement this in code:
+"""
+
+# ╔═╡ 79eb48df-26de-4965-b078-9bb20313247a
+"""
+
+	roulette_wheel_selection(population_fitness)
+
+Input:
+
+	- population_fitness: A list where each element consists of the individual and its corresponding fitness
+
+Output:
+
+	- pool: A list with the selected individuals for the mating pool
+
+"""
+function roulette_wheel_selection(population_fitness)
+
+	# extract the individuals from the list
+	p = [pf[1] for pf in population_fitness]
+
+	# extract the weights from the list, which are its fitness proportions
+	f = [pf[2] for pf in population_fitness]
+	w = [fᵢ / sum(f) for fᵢ in f]
+	
+	# randomly choose the same number of individuals but with its chance of being
+	# choosen proportional to its fitness
+	pool = sample(p, Weights(w), n=length(population_fitness))
+
+	return pool
+	
+end
+
+# ╔═╡ 8623b228-c627-4f81-8f6f-6de074b8ec20
+md"""
+### Rank Selection
+
+In rank selection individuals are ranked based on their fitness. The individual with the worst fitness is given rank one, the individual with the best fitness is given rank N. In rank selection, the fitness values can even be negative, as it is their rank that counts and not their actual value. 
+The probability with which an individual can be selected can then be given by:
+
+```math 
+\begin{equation}
+	p_i = \frac{r_i}{N(N-1)}
+\end{equation}
+```
+
+Where:
+- pᵢ is the probability for choosing individual i
+- rᵢ is the rank of individual i
+- N the total number of ranks, which is equal to the number of individuals in the population
+
+We implement this in code:
+"""
+
+# ╔═╡ a6da65cb-817d-4637-b7a7-0830488696e0
+"""
+	rank_selection(population_fitness)
+
+Input:
+
+	- population_fitness: A list where each element consists of the individual and its corresponding fitness
+
+Output:
+
+	- pool: A list with the selected individuals for the mating pool
+"""
+function rank_selection(population_fitness)
+
+	# rename for readability
+	pf = population_fitness
+
+	# the number of ranks
+	N = length(population_fitness)
+
+	# initiate the lists containing the individuals 
+	# and their weights (selection probability)
+	p, w = [], []
+	for (rank, ind) in enumerate(sort(pf, by=pf->pf[2]))
+		push!(p, ind)
+		push!(w, (rank / N * (N - 1)))
+		
+	end
+
+	# select the mating pool based on their selection probabilities
+	pool = sample(p, Weights(w), n=N)
+
+	return pool
+end
+
+# ╔═╡ 84d49f43-8ac3-4e73-991c-a54bb9fe9b5f
+md"""
+### Steady State Selection
+
+During steady state selection a proportion of individuals with the highest fitness is choosen as mating pool. An equal proportion of individual with the lowest fitness values is removed from the population and replaced by the offspring of the mating pool.
+
+We can write the code as follows:
+
+"""
+
+# ╔═╡ 07e1c8b6-c3fd-4f5f-bbb0-fe6595813d55
+"""
+	steady_state_selection(population_fitness, Δ)
+
+Input:
+
+	- population_fitness: A list where each element consists of the individual and its corresponding fitness
+	- Δ: The proportion of fittest individual that need to be selected
+
+Output:
+
+	- pool: A list with the selected individuals for the mating pool
+"""
+function steady_state_selection(population_fitness, Δ)
+	@assert Δ <= 0.5, "Proportion of selected individuals has to be smaller than 0.5"
+
+	# sort the population based on fitness in descending order
+	sorted_population_fitness = sort(pf, by=pf->pf[2], rev=true)
+
+	# calculate the number of individuals that need to be selected
+	n_ind = trunc(Int, Δ * length(population_fitness))
+
+	# return the mating pool
+	pool = sorted_population_fitness[1:n_ind]
+	
+	return pool
+end
+
+# ╔═╡ 307af9a7-6b0c-44ad-a5b0-d9b0c18b5db4
+md"""
+### Tournament Selection
+
+Here selection happens by means of tournaments between randomly choosen individuals from the population. In the tournament, the individual with the biggest fitness is chosen with the biggest probability, the individual with the second highest probability has the second best probability to be chosen and so on. The probability with which the individual with the highest fitness is chosen, is a given value and can be written as
+
+```math 
+\begin{equation}
+	p_i = P * (1-P)^{i-1}
+\end{equation}
+```
+
+Where:
+- pᵢ is the selection probability for the i-th fittest individual in the tournament
+- P is the selection probability for the best individual in the tournament with 0 < P ≤ 1
+
+Each individual has the same chance to be chosen for a tournament. Selection continues until a mating pool with the same size as the population has been formed.
+
+We write the code as follows:
+"""
+
+# ╔═╡ 6cf8534b-2fa1-4762-9526-bd3c2da99843
+"""
+	tournament_selection(population_fitness, k, prob)
+
+Input:
+
+	- population_fitness: A list where each element consists of the individual and 
+						  its corresponding fitness
+	- k: The tournament size. The number of individuals selected for the 
+	     tournament
+	- prob: The probability with which the fittest individual in the tournament is
+		    selected
+
+Output:
+
+	- pool: A list with the selected individuals for the mating pool
+"""
+function tournament_selection(population_fitness, k, prob)
+	@assert prob 0 < prob <= 1, "prob has to be between 0 and 1 (1 included)"
+	
+	pool = []
+	while length(pool) < length(population_fitness)
+
+		# build the tournament by randomly selecting k individuals from the population
+		# each individual can only be selected once for a tournament
+		t = sample(population_fitness, n=k, replace=true)
+
+		# sort the tournament based on the fitness values
+		sorted_t = sort(t, by=t->t[2], rev=true)
+
+		# get all individuals
+		p = [pf[1] for pf in population_fitness]
+
+		# get their weights (selection probabilities)
+		w = [prob * (1-prob)^i for i in 0:k-1]
+
+		# add the choosen individual to the mating pool
+		push!(pool, sample(p, Weights(w)))
+	end
+
+	return pool
+	
+end
 
 # ╔═╡ 35ef4b6a-5ff7-4ca0-be54-9b281dfe6347
 md"""
@@ -87,17 +299,15 @@ md"""
 
 """
 
-# ╔═╡ b3554f54-ae62-489d-abc6-23dbff500965
-
-
-
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [compat]
 Images = "~0.25.0"
+StatsBase = "~0.33.14"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -893,15 +1103,22 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═c80a0f15-2c37-4c40-a543-2e6c3fead1be
 # ╟─171fee18-20f6-11eb-37e5-2d04caea8c35
 # ╟─98b278e9-5cc9-4e36-9d1a-75eb9f4158de
-# ╟─d89c31c5-f2b3-4b52-8e47-580c62979687
+# ╠═d89c31c5-f2b3-4b52-8e47-580c62979687
 # ╠═b95fd05e-f139-47f4-ab69-79f5dd3cc279
 # ╠═37b9fce9-e99c-424f-a614-8169b7edf0d6
 # ╠═ccb197ff-f322-4f14-acb5-ba64a343d234
-# ╠═c6155621-9a86-4747-b0ec-65e779670b57
+# ╟─c6155621-9a86-4747-b0ec-65e779670b57
+# ╟─953edf56-a957-4c61-8a89-9709dc6dfd65
+# ╟─79eb48df-26de-4965-b078-9bb20313247a
+# ╟─8623b228-c627-4f81-8f6f-6de074b8ec20
+# ╟─a6da65cb-817d-4637-b7a7-0830488696e0
+# ╟─84d49f43-8ac3-4e73-991c-a54bb9fe9b5f
+# ╟─07e1c8b6-c3fd-4f5f-bbb0-fe6595813d55
+# ╟─307af9a7-6b0c-44ad-a5b0-d9b0c18b5db4
+# ╟─6cf8534b-2fa1-4762-9526-bd3c2da99843
 # ╠═35ef4b6a-5ff7-4ca0-be54-9b281dfe6347
 # ╠═3a075aab-dbf8-4120-93bc-337991c65b40
 # ╠═9445dfa1-c276-43fd-81cc-752645e8bf43
 # ╠═e6981604-cb94-4073-9b60-5dcfa1c3ba16
-# ╠═b3554f54-ae62-489d-abc6-23dbff500965
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
