@@ -1,5 +1,3 @@
-module SuperEvolution
-
 # Shauny Van Hoye
 # Source code for the Super Evolution project (STMO)
 
@@ -76,5 +74,3 @@ end
 
 
 end
-
-end # module
