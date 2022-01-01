@@ -52,6 +52,13 @@ Angle 2:
 $(@bind ca2 Slider(1:90,default=75,show_value=true))
 """
 
+# ╔═╡ cccaf5fb-3c95-4ea9-b699-0cee2f12542e
+md"""
+
+The function takes x and y coordinates that are real number values. Therefore the representation of the individuals will be a tuple of the x and y coordinates. In principle are all techniques discussed here applicable to any function represented by chromosomes with real numbers. Bit string representations are also often used during in GAs, and most of what is discussed further can be applied to that, but not all, which is important to keep in mind.
+
+"""
+
 # ╔═╡ b95fd05e-f139-47f4-ab69-79f5dd3cc279
 md"""
 ## Initial population
@@ -302,7 +309,8 @@ Jordi
 md"""
 ## Mutation
 
-Jietse
+
+
 """
 
 # ╔═╡ 48a851ce-fd14-4516-a172-c720f24bf153
@@ -320,9 +328,6 @@ $(@bind ca NumberField(1:90,default=50))
 Angle 2: 
 $(@bind ca3 NumberField(1:90,default=75))
 """
-
-# ╔═╡ 1398bb07-1379-4834-b24f-efa9d4cf6732
-
 
 # ╔═╡ 9445dfa1-c276-43fd-81cc-752645e8bf43
 md"""
@@ -370,7 +375,9 @@ function plot_himmelblau(ca1=50, ca2=75, points=[])
 		st=:surface, 
 		c = cg, 
 		camera = (ca1,ca2), 
-		zlim = (0,200)
+		zlim = (0,200),
+		xlab = "x",
+		ylab = "y",
 	)
 	if length(points) != 0
 		x = [p[1] for p in points]
@@ -386,7 +393,7 @@ plot_himmelblau(ca1, ca2)
 
 # ╔═╡ 453b235b-bd4f-446f-b767-b71a197cc66c
 @gif for i in 1:100
-	points = [(i/2x, i/x) for x in 100:200]
+	points = [(-4*i/100, 2*i/100 + 1)]
 	plot_himmelblau(ca, ca3, points)
 end
 
@@ -1761,7 +1768,8 @@ version = "0.9.1+5"
 # ╟─98b278e9-5cc9-4e36-9d1a-75eb9f4158de
 # ╠═d89c31c5-f2b3-4b52-8e47-580c62979687
 # ╟─d73ee58d-536b-4d19-bb3a-cae8c3bcc4c8
-# ╠═ba845736-b141-484a-9b10-fc73ecf31db3
+# ╟─ba845736-b141-484a-9b10-fc73ecf31db3
+# ╟─cccaf5fb-3c95-4ea9-b699-0cee2f12542e
 # ╠═b95fd05e-f139-47f4-ab69-79f5dd3cc279
 # ╠═37b9fce9-e99c-424f-a614-8169b7edf0d6
 # ╠═ccb197ff-f322-4f14-acb5-ba64a343d234
@@ -1776,10 +1784,9 @@ version = "0.9.1+5"
 # ╟─6cf8534b-2fa1-4762-9526-bd3c2da99843
 # ╠═35ef4b6a-5ff7-4ca0-be54-9b281dfe6347
 # ╠═3a075aab-dbf8-4120-93bc-337991c65b40
-# ╠═48a851ce-fd14-4516-a172-c720f24bf153
+# ╟─48a851ce-fd14-4516-a172-c720f24bf153
 # ╠═453b235b-bd4f-446f-b767-b71a197cc66c
-# ╠═7dbb864c-b3d9-4cd1-8c48-9a61be67334f
-# ╠═1398bb07-1379-4834-b24f-efa9d4cf6732
+# ╟─7dbb864c-b3d9-4cd1-8c48-9a61be67334f
 # ╠═9445dfa1-c276-43fd-81cc-752645e8bf43
 # ╠═e6981604-cb94-4073-9b60-5dcfa1c3ba16
 # ╟─3ff092e2-7af2-4b4b-bd29-2b0310cae48f
