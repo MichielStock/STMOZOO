@@ -183,17 +183,6 @@ Ccol = [colordiff(c1,c2) for c1 in colors1, c2 in colors2]
 # ╔═╡ f8e6fc0f-6731-4205-a622-b30387b068a1
 Pcolors = sinkhorn(Ccol, a_col, b_col; λ=1.0, ϵ=1e-8)
 
-# ╔═╡ 0fdab4b8-5248-4985-9cbf-1b2ffe3a1134
-let
-	Ccol = zeros((length(colors1), length(colors2)))
-
-	for i in 1:length(colors1)
-		Ccol[i,:] = colordiff.(colors1[i], colors2)
-	end
-
-	Ccol
-end
-
 # ╔═╡ 9a720685-9a72-4d6c-9c17-88d013202aeb
 colordiff.(colors1[1], colors2)
 
@@ -1670,7 +1659,6 @@ version = "0.9.1+5"
 # ╠═c2f50353-2a6b-4296-81b4-b63154d36cac
 # ╠═b732f1c9-9138-4ebc-8237-ac4fab644958
 # ╠═99e5732e-7428-4cf2-8a72-0b04be0b9c96
-# ╠═0fdab4b8-5248-4985-9cbf-1b2ffe3a1134
 # ╠═9a720685-9a72-4d6c-9c17-88d013202aeb
 # ╠═e5b7dd1c-38aa-4a2e-b8c0-92fa0c455334
 # ╠═f8e6fc0f-6731-4205-a622-b30387b068a1
