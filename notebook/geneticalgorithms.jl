@@ -4,11 +4,18 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ c80a0f15-2c37-4c40-a543-2e6c3fead1be
-using Images, StatsBase, Plots, BenchmarkFunctions
+# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
+macro bind(def, element)
+    quote
+        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
+        el
+    end
+end
 
-# ╔═╡ 4142bec3-8d93-4ed3-9df4-525b917f361e
-import PyPlot
+# ╔═╡ c80a0f15-2c37-4c40-a543-2e6c3fead1be
+using Images, StatsBase, Plots, PlutoUI
 
 # ╔═╡ 171fee18-20f6-11eb-37e5-2d04caea8c35
 md"""
@@ -33,7 +40,16 @@ During this project we will introduce the general concepts of GAs. We will build
 	f(x,y) = (x^2 + y - 11)^2 + (x + y^2 - 7)^2
 \end{equation}
 ```
-A visualization of the plot from above shows the four minima (in black):
+A visualization of the function is given. Use the sliders to move the plot around.
+"""
+
+# ╔═╡ ba845736-b141-484a-9b10-fc73ecf31db3
+md"""
+Angle 1:
+$(@bind ca1 Slider(0:90,default=50,show_value=true))
+
+Angle 2:
+$(@bind ca2 Slider(1:90,default=75,show_value=true))
 """
 
 # ╔═╡ b95fd05e-f139-47f4-ab69-79f5dd3cc279
@@ -289,6 +305,25 @@ md"""
 Jietse
 """
 
+# ╔═╡ 48a851ce-fd14-4516-a172-c720f24bf153
+md"""
+## Visualization of Himmelblau
+The visualization of the different steps of the solution can be seen here, you might need to fiddle again with the angles to get a good viewing point. 
+We recommend looking at where your solution is converging to and using the first plot to set the values for both angles (they are the same angles in both plots).
+"""
+
+# ╔═╡ 7dbb864c-b3d9-4cd1-8c48-9a61be67334f
+md"""
+Angle 1:
+$(@bind ca NumberField(1:90,default=50))
+
+Angle 2: 
+$(@bind ca3 NumberField(1:90,default=75))
+"""
+
+# ╔═╡ 1398bb07-1379-4834-b24f-efa9d4cf6732
+
+
 # ╔═╡ 9445dfa1-c276-43fd-81cc-752645e8bf43
 md"""
 ## Implementation
@@ -313,7 +348,7 @@ md"""
 """
 
 # ╔═╡ b4a64a85-640d-4386-b7ad-87d87671aac9
-function plot_himmelblau() 
+function plot_himmelblau(ca1=50, ca2=75, points=[]) 
 	f(x,y) = (x^2 + y - 11)^2 + (x + y^2 - 7)^2
 	x=range(-4.6,stop=4.6,length=100)
 	y=range(-4.6,stop=4.6,length=100)
@@ -330,26 +365,43 @@ function plot_himmelblau()
 		:red, 
 		:brown
 	])
-	plot(x,y,f,st=:surface, c = cg, camera = (0,90), zlim = (0,200))
+	q = plot(
+		x,y,f,
+		st=:surface, 
+		c = cg, 
+		camera = (ca1,ca2), 
+		zlim = (0,200)
+	)
+	if length(points) != 0
+		x = [p[1] for p in points]
+		y = [p[2] for p in points]
+		z = [f(p[1], p[2]) for p in points]
+		plot!(q,x,y,z,seriestype=:scatter, legend=false, zlim = (0,200))
+	end
+	return q
 end
 
-# ╔═╡ 537af7f4-ef6b-41af-b4ec-77c0325fd5fe
-plot_himmelblau()
+# ╔═╡ d73ee58d-536b-4d19-bb3a-cae8c3bcc4c8
+plot_himmelblau(ca1, ca2)
+
+# ╔═╡ 453b235b-bd4f-446f-b767-b71a197cc66c
+@gif for i in 1:100
+	points = [(i/2x, i/x) for x in 100:200]
+	plot_himmelblau(ca, ca3, points)
+end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
-BenchmarkFunctions = "f6782734-9c9f-4136-a5cf-b2677328accc"
 Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-PyPlot = "d330b81b-6aea-500a-939a-2ce795aea3ee"
+PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [compat]
-BenchmarkFunctions = "~0.1.1"
 Images = "~0.25.0"
 Plots = "~1.25.4"
-PyPlot = "~2.10.0"
+PlutoUI = "~0.7.27"
 StatsBase = "~0.33.14"
 """
 
@@ -362,6 +414,12 @@ deps = ["LinearAlgebra"]
 git-tree-sha1 = "485ee0867925449198280d4af84bdb46a2a404d0"
 uuid = "621f4979-c628-5d54-868e-fcf4e3e8185c"
 version = "1.0.1"
+
+[[AbstractPlutoDingetjes]]
+deps = ["Pkg"]
+git-tree-sha1 = "8eaf9f1b4921132a4cff3f36a1d9ba923b14a481"
+uuid = "6e696c72-6542-2067-7265-42206c756150"
+version = "1.1.4"
 
 [[Adapt]]
 deps = ["LinearAlgebra"]
@@ -380,9 +438,9 @@ version = "0.2.0"
 
 [[ArrayInterface]]
 deps = ["Compat", "IfElse", "LinearAlgebra", "Requires", "SparseArrays", "Static"]
-git-tree-sha1 = "265b06e2b1f6a216e0e8f183d28e4d354eab3220"
+git-tree-sha1 = "1ee88c4c76caa995a885dc2f22a5d548dfbbc0ba"
 uuid = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
-version = "3.2.1"
+version = "3.2.2"
 
 [[Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
@@ -401,12 +459,6 @@ version = "0.4.4"
 
 [[Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
-
-[[BenchmarkFunctions]]
-deps = ["LaTeXStrings", "Plots", "Random", "Test"]
-git-tree-sha1 = "d29e2453db0342a7d010a991c21f5302e871b78a"
-uuid = "f6782734-9c9f-4136-a5cf-b2677328accc"
-version = "0.1.1"
 
 [[Bzip2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -439,9 +491,9 @@ version = "0.2.2"
 
 [[ChainRulesCore]]
 deps = ["Compat", "LinearAlgebra", "SparseArrays"]
-git-tree-sha1 = "4c26b4e9e91ca528ea212927326ece5918a04b47"
+git-tree-sha1 = "d711603452231bad418bd5e0c91f1abd650cba71"
 uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-version = "1.11.2"
+version = "1.11.3"
 
 [[ChangesOfVariables]]
 deps = ["ChainRulesCore", "LinearAlgebra", "Test"]
@@ -493,12 +545,6 @@ uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
 git-tree-sha1 = "52cb3ec90e8a8bea0e62e275ba577ad0f74821f7"
 uuid = "ed09eef8-17a6-5b46-8889-db040fac31e3"
 version = "0.3.2"
-
-[[Conda]]
-deps = ["Downloads", "JSON", "VersionParsing"]
-git-tree-sha1 = "6cdc8832ba11c7695f494c9d9a1c31e90959ce0f"
-uuid = "8f4d0f93-b110-5947-807f-2305c1781a2d"
-version = "1.6.0"
 
 [[Contour]]
 deps = ["StaticArrays"]
@@ -617,9 +663,9 @@ version = "3.3.10+0"
 
 [[FileIO]]
 deps = ["Pkg", "Requires", "UUIDs"]
-git-tree-sha1 = "2db648b6712831ecb333eae76dbfd1c156ca13bb"
+git-tree-sha1 = "67551df041955cc6ee2ed098718c8fcd7fc7aebe"
 uuid = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
-version = "1.11.2"
+version = "1.12.0"
 
 [[FixedPointNumbers]]
 deps = ["Statistics"]
@@ -722,6 +768,23 @@ git-tree-sha1 = "129acf094d168394e80ee1dc4bc06ec835e510a3"
 uuid = "2e76f6c2-a576-52d4-95c1-20adfe4de566"
 version = "2.8.1+1"
 
+[[Hyperscript]]
+deps = ["Test"]
+git-tree-sha1 = "8d511d5b81240fc8e6802386302675bdf47737b9"
+uuid = "47d2ed2b-36de-50cf-bf87-49c2cf4b8b91"
+version = "0.0.4"
+
+[[HypertextLiteral]]
+git-tree-sha1 = "2b078b5a615c6c0396c77810d92ee8c6f470d238"
+uuid = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
+version = "0.9.3"
+
+[[IOCapture]]
+deps = ["Logging", "Random"]
+git-tree-sha1 = "f7be53659ab06ddc986428d3a9dcc95f6fa6705a"
+uuid = "b5f81e59-6552-4d32-b1f0-c071b021bf89"
+version = "0.2.2"
+
 [[IfElse]]
 git-tree-sha1 = "debdd00ffef04665ccbb3e150747a77560e8fad1"
 uuid = "615f187c-cbe4-4ef1-ba3b-2fcf58d6d173"
@@ -770,16 +833,16 @@ uuid = "82e4d734-157c-48bb-816b-45c225c6df19"
 version = "0.5.9"
 
 [[ImageMagick]]
-deps = ["FileIO", "ImageCore", "ImageMagick_jll", "InteractiveUtils", "Libdl", "Pkg", "Random"]
-git-tree-sha1 = "5bc1cb62e0c5f1005868358db0692c994c3a13c6"
+deps = ["FileIO", "ImageCore", "ImageMagick_jll", "InteractiveUtils"]
+git-tree-sha1 = "ca8d917903e7a1126b6583a097c5cb7a0bedeac1"
 uuid = "6218d12a-5da1-5696-b52f-db25d2ecc6d1"
-version = "1.2.1"
+version = "1.2.2"
 
 [[ImageMagick_jll]]
-deps = ["Artifacts", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pkg", "Zlib_jll", "libpng_jll"]
-git-tree-sha1 = "ea2b6fd947cdfc43c6b8c15cff982533ec1f72cd"
+deps = ["JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pkg", "Zlib_jll", "libpng_jll"]
+git-tree-sha1 = "1c0a2295cca535fabaf2029062912591e9b61987"
 uuid = "c73af94c-d91f-53ed-93a7-00f77d67a9d7"
-version = "6.9.12+0"
+version = "6.9.10-12+3"
 
 [[ImageMetadata]]
 deps = ["AxisArrays", "ImageAxes", "ImageBase", "ImageCore"]
@@ -1220,6 +1283,12 @@ git-tree-sha1 = "71d65e9242935132e71c4fbf084451579491166a"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 version = "1.25.4"
 
+[[PlutoUI]]
+deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
+git-tree-sha1 = "fed057115644d04fba7f4d768faeeeff6ad11a60"
+uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+version = "0.7.27"
+
 [[Preferences]]
 deps = ["TOML"]
 git-tree-sha1 = "2cf929d64681236a2e074ffafb8d568733d2e6af"
@@ -1235,18 +1304,6 @@ deps = ["Distributed", "Printf"]
 git-tree-sha1 = "afadeba63d90ff223a6a48d2009434ecee2ec9e8"
 uuid = "92933f4c-e287-5a05-a399-4b506db050ca"
 version = "1.7.1"
-
-[[PyCall]]
-deps = ["Conda", "Dates", "Libdl", "LinearAlgebra", "MacroTools", "Serialization", "VersionParsing"]
-git-tree-sha1 = "71fd4022ecd0c6d20180e23ff1b3e05a143959c2"
-uuid = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
-version = "1.93.0"
-
-[[PyPlot]]
-deps = ["Colors", "LaTeXStrings", "PyCall", "Sockets", "Test", "VersionParsing"]
-git-tree-sha1 = "14c1b795b9d764e1784713941e787e1384268103"
-uuid = "d330b81b-6aea-500a-939a-2ce795aea3ee"
-version = "2.10.0"
 
 [[Qt5Base_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Fontconfig_jll", "Glib_jll", "JLLWrappers", "Libdl", "Libglvnd_jll", "OpenSSL_jll", "Pkg", "Xorg_libXext_jll", "Xorg_libxcb_jll", "Xorg_xcb_util_image_jll", "Xorg_xcb_util_keysyms_jll", "Xorg_xcb_util_renderutil_jll", "Xorg_xcb_util_wm_jll", "Zlib_jll", "xkbcommon_jll"]
@@ -1380,9 +1437,9 @@ version = "0.4.1"
 
 [[StaticArrays]]
 deps = ["LinearAlgebra", "Random", "Statistics"]
-git-tree-sha1 = "3c76dde64d03699e074ac02eb2e8ba8254d428da"
+git-tree-sha1 = "de9e88179b584ba9cf3cc5edbb7a41f26ce42cda"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "1.2.13"
+version = "1.3.0"
 
 [[Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
@@ -1437,9 +1494,9 @@ uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [[TiffImages]]
 deps = ["ColorTypes", "DataStructures", "DocStringExtensions", "FileIO", "FixedPointNumbers", "IndirectArrays", "Inflate", "OffsetArrays", "PkgVersion", "ProgressMeter", "UUIDs"]
-git-tree-sha1 = "c342ae2abf4902d65a0b0bf59b28506a6e17078a"
+git-tree-sha1 = "991d34bbff0d9125d93ba15887d6594e8e84b305"
 uuid = "731e570b-9d59-4bfa-96dc-6df516fadf69"
-version = "0.5.2"
+version = "0.5.3"
 
 [[TiledIteration]]
 deps = ["OffsetArrays"]
@@ -1480,11 +1537,6 @@ version = "0.4.1"
 git-tree-sha1 = "34db80951901073501137bdbc3d5a8e7bbd06670"
 uuid = "41fe7b60-77ed-43a1-b4f0-825fd5a5650d"
 version = "0.1.2"
-
-[[VersionParsing]]
-git-tree-sha1 = "e575cf85535c7c3292b4d89d89cc29e8c3098e47"
-uuid = "81def892-9a0e-5fdd-b105-ffc91e053289"
-version = "1.2.1"
 
 [[Wayland_jll]]
 deps = ["Artifacts", "Expat_jll", "JLLWrappers", "Libdl", "Libffi_jll", "Pkg", "XML2_jll"]
@@ -1705,16 +1757,16 @@ version = "0.9.1+5"
 
 # ╔═╡ Cell order:
 # ╠═c80a0f15-2c37-4c40-a543-2e6c3fead1be
-# ╠═4142bec3-8d93-4ed3-9df4-525b917f361e
 # ╟─171fee18-20f6-11eb-37e5-2d04caea8c35
 # ╟─98b278e9-5cc9-4e36-9d1a-75eb9f4158de
-# ╟─d89c31c5-f2b3-4b52-8e47-580c62979687
-# ╟─537af7f4-ef6b-41af-b4ec-77c0325fd5fe
+# ╠═d89c31c5-f2b3-4b52-8e47-580c62979687
+# ╟─d73ee58d-536b-4d19-bb3a-cae8c3bcc4c8
+# ╠═ba845736-b141-484a-9b10-fc73ecf31db3
 # ╠═b95fd05e-f139-47f4-ab69-79f5dd3cc279
 # ╠═37b9fce9-e99c-424f-a614-8169b7edf0d6
 # ╠═ccb197ff-f322-4f14-acb5-ba64a343d234
 # ╟─c6155621-9a86-4747-b0ec-65e779670b57
-# ╠═953edf56-a957-4c61-8a89-9709dc6dfd65
+# ╟─953edf56-a957-4c61-8a89-9709dc6dfd65
 # ╟─79eb48df-26de-4965-b078-9bb20313247a
 # ╟─8623b228-c627-4f81-8f6f-6de074b8ec20
 # ╟─a6da65cb-817d-4637-b7a7-0830488696e0
@@ -1724,6 +1776,10 @@ version = "0.9.1+5"
 # ╟─6cf8534b-2fa1-4762-9526-bd3c2da99843
 # ╠═35ef4b6a-5ff7-4ca0-be54-9b281dfe6347
 # ╠═3a075aab-dbf8-4120-93bc-337991c65b40
+# ╠═48a851ce-fd14-4516-a172-c720f24bf153
+# ╠═453b235b-bd4f-446f-b767-b71a197cc66c
+# ╠═7dbb864c-b3d9-4cd1-8c48-9a61be67334f
+# ╠═1398bb07-1379-4834-b24f-efa9d4cf6732
 # ╠═9445dfa1-c276-43fd-81cc-752645e8bf43
 # ╠═e6981604-cb94-4073-9b60-5dcfa1c3ba16
 # ╟─3ff092e2-7af2-4b4b-bd29-2b0310cae48f
