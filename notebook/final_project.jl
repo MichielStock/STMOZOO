@@ -8,6 +8,7 @@ using InteractiveUtils
 using Plots
 
 # ╔═╡ bbf47e7e-73ac-406f-95a6-323898ccef00
+#basic bellman ford algorithm
 function bellman_ford(graph, start_node)
 	a = 0
 	
@@ -40,7 +41,7 @@ function bellman_ford(graph, start_node)
 end
 
 # ╔═╡ ffec900c-55e1-40a1-8019-0a5136e53ba7
-#The improvement over the bellman ford algorithm is that instead of trying all vertices blindly, SPFA maintains a queue of candidate vertices and adds a vertex to the queue only if that vertex is relaxed. This process repeats until no more vertex can be relaxed.
+#The improvement over the bellman ford algorithm is that instead of trying all vertices blindly, SPFA maintains a queue of candidate vertices and adds a vertex to the queue only if that vertex is relaxed. This process repeats until no more vertex can be relaxed. 
 
 function Shortest_Path_Faster_Algorithm(graph, start_node)
 	a = 0
@@ -84,6 +85,7 @@ function Shortest_Path_Faster_Algorithm(graph, start_node)
 end
 
 # ╔═╡ 93f28f42-4f48-4445-9ab2-6ceda393de11
+#recursion part of depth first search
 function recursion_part(v, visited, rec_stack, pre)
 	visited[v] = true
 	rec_stack[v] = true
@@ -97,18 +99,17 @@ function recursion_part(v, visited, rec_stack, pre)
 	elseif rec_stack[n] == true
 		return true
 	end
-	#end
 	rec_stack[v] = false
 	return false
 end
 
 # ╔═╡ 15b7ec32-8524-40f9-ac8f-6ef401d51ea0
-#depth first search on pre graph
+#depth first search for detecting if a cycle is present
 function detect_cycle(pre)
 	visited = Dict{String, Bool}(v => false for v in keys(pre))
 	rec_stack = Dict{String, Bool}(v => false for v in keys(pre))
 
-	for v in keys(pre) ################################
+	for v in keys(pre)
 		if visited[v] == false
 			if recursion_part(v, visited, rec_stack, pre) == true
 				return true
@@ -120,6 +121,8 @@ end
 
 # ╔═╡ 3a66c410-2da2-4591-9683-79ee56c5ff9e
 #The improvement over the bellman ford algorithm is that instead of trying all vertices blindly, SPFA maintains a queue of candidate vertices and adds a vertex to the queue only if that vertex is relaxed. This process repeats until no more vertex can be relaxed.
+
+#with early termination, makes it faster than previous implementation
 
 function Shortest_Path_Faster_Algorithm_early_termination(graph, start_node)
 	a = 0
@@ -171,6 +174,7 @@ function Shortest_Path_Faster_Algorithm_early_termination(graph, start_node)
 end
 
 # ╔═╡ e041d702-c061-438c-928c-e323b388bdb4
+#trace function to find a negative circle
 function trace(pre, n)
 	S = []
     while !(n in S)
@@ -187,7 +191,7 @@ function trace(pre, n)
 end
 
 # ╔═╡ a1881b99-61e4-4d29-ab47-6dd4e35d541c
-#an example graph
+#a tiny example graph
 #keys are nodes
 #values are neighboring nodes and weights
 
@@ -275,6 +279,7 @@ a2, distance2, pre2, final_node2 = Shortest_Path_Faster_Algorithm(ttr_graph, "Ne
 #average: O(E)
 
 # ╔═╡ 2ada9368-05a6-4ee2-80fc-a802141151f8
+#find the negative cycle
 trace(pre2, final_node2)
 
 # ╔═╡ 421e3f34-4d3f-47b6-b103-98d4b20192f8
@@ -283,9 +288,6 @@ a4, dist4, pre4, final_node4 = Shortest_Path_Faster_Algorithm_early_termination(
 # ╔═╡ 8e4afe7c-9fa6-4534-ab83-97efd0eb2e29
 trace(pre4, final_node4)
 
-# ╔═╡ 68bd6aef-4cf9-4d25-a5fe-213119966339
-#numerical error
-
 # ╔═╡ adc4365c-cee6-419d-bbbf-d8fb6a253f67
 gif(ani, "tutorial_anim_fps30.gif", fps = 2)
 
@@ -293,7 +295,7 @@ gif(ani, "tutorial_anim_fps30.gif", fps = 2)
 #properly visualise negative cycles
 
 # ╔═╡ 3b955a9d-3f4a-4aa5-98ce-11807f0645ed
-#plot graph, width of line represents weight (needs to change)
+#plot graph
 function plot_graph(iteration, graph_nodes_coordinates, graph_edges, dist)
 	p = plot(title = iteration)
 
@@ -317,7 +319,7 @@ function plot_graph(iteration, graph_nodes_coordinates, graph_edges, dist)
 end
 
 # ╔═╡ c76aa110-57f9-11ec-3cde-8dc46e37ffdd
-#bellman ford with visualisation
+#bellman ford with visualisation, not very useful, learning about making visualisations might be handy for animating how negative cycles are found
 
 function bellman_ford_animated(graph, start_node, graph_nodes_coordinates, graph_edges)
 	a = 0
@@ -383,6 +385,7 @@ function bellman_ford_animated(graph, start_node, graph_nodes_coordinates, graph
 end
 
 # ╔═╡ 7bf91157-bbf7-4043-b24f-958e5f852387
+#visualise negative cycles in bellman ford algorithm
 #distance of n -> Inf in final check
 # https://www.youtube.com/watch?v=lyw4FaxrwHg 10:00
 
@@ -390,7 +393,7 @@ end
 #moore
 
 # ╔═╡ 6cab5216-24a5-401b-917c-b756d3a4e0fa
-#disconnected graph
+#disconnected graph!
 
 # ╔═╡ 1ec56f6d-90dc-4953-8b5a-6616cace8066
 #Floyd-Warshall not for directed graphs
@@ -419,6 +422,7 @@ function floyd_warshall(graph)
 end
 
 # ╔═╡ 4be23d79-eee2-42fb-8790-ed0cd4846d6f
+#doesn't work yet
 floyd_warshall(ttr_graph)
 
 # ╔═╡ 2cb2a271-a1af-45da-97e4-eb4c99c7a1be
@@ -1322,7 +1326,6 @@ version = "0.9.1+5"
 # ╠═2ada9368-05a6-4ee2-80fc-a802141151f8
 # ╠═421e3f34-4d3f-47b6-b103-98d4b20192f8
 # ╠═8e4afe7c-9fa6-4534-ab83-97efd0eb2e29
-# ╠═68bd6aef-4cf9-4d25-a5fe-213119966339
 # ╠═adc4365c-cee6-419d-bbbf-d8fb6a253f67
 # ╠═3b955a9d-3f4a-4aa5-98ce-11807f0645ed
 # ╠═7bf91157-bbf7-4043-b24f-958e5f852387
