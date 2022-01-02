@@ -83,28 +83,13 @@ function Shortest_Path_Faster_Algorithm(graph, start_node)
 	return a, distance, pre, final_node
 end
 
-# ╔═╡ e041d702-c061-438c-928c-e323b388bdb4
-function trace(pre, n)
-	S = []
-    while !(n in S)
-        push!(S, n)
-        n = pre[n]
-	end
-    cycle = [n]
-    while last(S) != n
-        push!(cycle, last(S))
-		deleteat!(S, findall(x -> x == last(S), S))
-	end
-    push!(cycle, n)
-    return cycle
-end
-
 # ╔═╡ 93f28f42-4f48-4445-9ab2-6ceda393de11
 function recursion_part(v, visited, rec_stack, pre)
 	visited[v] = true
 	rec_stack[v] = true
+	
+	#next line needs to be generalized #for n in pre[v]
 	n = pre[v]
-	#for n in pre[v]#(_, n) in graph[v] #############################
 	if visited[n] == false
 		if recursion_part(n, visited, rec_stack, pre) == true
 			return true
@@ -185,6 +170,22 @@ function Shortest_Path_Faster_Algorithm_early_termination(graph, start_node)
 	return a, distance, pre, final_node
 end
 
+# ╔═╡ e041d702-c061-438c-928c-e323b388bdb4
+function trace(pre, n)
+	S = []
+    while !(n in S)
+        push!(S, n)
+        n = pre[n]
+	end
+    cycle = [n]
+    while last(S) != n
+        push!(cycle, last(S))
+		deleteat!(S, findall(x -> x == last(S), S))
+	end
+    push!(cycle, n)
+    return cycle
+end
+
 # ╔═╡ a1881b99-61e4-4d29-ab47-6dd4e35d541c
 #an example graph
 #keys are nodes
@@ -193,7 +194,8 @@ end
 graph = Dict{String, Vector{Tuple{Float16, String}}}("a" => [(10, "b"), (5, "c")], "b" => [(10, "a"), (3, "c")], "c" => [(5, "a"), (3, "b")])
 
 # ╔═╡ 90f00636-f609-4cb7-824e-afc189f7b013
-#the ticket to ride graph, altered to have negative weights
+#the ticket to ride graph, altered to have a negative cycle
+#duluth => chicago = 6.651361758904873
 
 ttr_graph = Dict("Chicago" => [(-9, "Duluth"), (8.33630341615925, "Omaha"), (8.427006242662463, "Toronto"), (7.77193838450812, "Pittsburgh"), (4.122208769330801, "Saint Louis")], "Omaha" => [(16.958907444561092, "Helena"), (9.173562790412005, "Denver"), (2.5724723453698295, "Kansas City"), (6.703989886060554, "Duluth"), (8.33630341615925, "Chicago")], "Washington" => [(3.3238629287371855, "Pittsburgh"), (3.5598393617362576, "New York"), (3.502616612013469, "Raleigh")], "San Francisco" => [(7.772429977571004, "Portland"), (11.020582210307548, "Salt Lake City"), (5.628319410694537, "Los Angeles")], "Kansas City" => [(10.442216859614872, "Denver"), (4.665730931339962, "Oklahoma City"), (2.5724723453698295, "Omaha"), (4.459674790015858, "Saint Louis")], "Saint Louis" => [(4.122208769330801, "Chicago"), (10.301257633157055, "Pittsburgh"), (4.459674790015858, "Kansas City"), (4.148394464608018, "Nashville"), (4.41926434610606, "Little Rock")], "Miami" => [(10.668170826088692, "New Orleans"), (9.01159199318291, "Atlanta"), (7.017911224044257, "Charleston")], "Dallas" => [(9.752368529115898, "El Paso"), (3.3386818769205804, "Houston"), (2.791230138692293, "Oklahoma City"), (4.919057442971587, "Little Rock")], "El Paso" => [(11.955571131557361, "Los Angeles"), (5.811453875853011, "Phoenix"), (3.9166247637116998, "Santa Fe"), (11.32120576594185, "Houston"), (9.752368529115898, "Dallas"), (9.70189546877094, "Oklahoma City")], "Duluth" => [(19.911802796307814, "Helena"), (5.925817172426331, "Winnipeg"), (6.703989886060554, "Omaha"), (6.651361758904873, "Chicago"), (13.114207651345454, "Toronto"), (7.809025347441716, "Sault Ste. Marie")], "Sault Ste. Marie" => [(13.280608192721058, "Winnipeg"), (7.809025347441716, "Duluth"), (10.758803662987315, "Montreal"), (5.706988122304973, "Toronto")], "Las Vegas" => [(3.746782803410391, "Los Angeles"), (5.637945175863857, "Salt Lake City")], "Houston" => [(11.32120576594185, "El Paso"), (3.3386818769205804, "Dallas"), (5.399641442570204, "New Orleans")], "Portland" => [(2.1118128775488723, "Seattle"), (11.784854957802366, "Salt Lake City"), (7.772429977571004, "San Francisco")], "Santa Fe" => [(6.534869288423131, "Phoenix"), (4.162732827937639, "Denver"), (3.9166247637116998, "El Paso"), (8.423465177038857, "Oklahoma City")], "New Orleans" => [(5.399641442570204, "Houston"), (5.251294601035569, "Little Rock"), (6.70828469876545, "Atlanta"), (10.668170826088692, "Miami")], "Charleston" => [(3.2634160642574384, "Raleigh"), (4.55260311692471, "Atlanta"), (7.017911224044257, "Miami")], "Raleigh" => [(3.502616612013469, "Washington"), (4.83227102759629, "Pittsburgh"), (6.099275842819131, "Atlanta"), (8.144209998426817, "Nashville"), (3.2634160642574384, "Charleston")], "Vancouver" => [(1.8331030717922907, "Seattle"), (9.227156870741855, "Calgary")], "Helena" => [(15.22747966355316, "Winnipeg"), (4.89944570284048, "Calgary"), (10.343492662442204, "Seattle"), (5.827520539398859, "Salt Lake City"), (19.911802796307814, "Duluth"), (9.833289565446643, "Denver"), (16.958907444561092, "Omaha")], "Salt Lake City" => [(11.784854957802366, "Portland"), (11.020582210307548, "San Francisco"), (5.637945175863857, "Las Vegas"), (6.981802421079518, "Denver"), (5.827520539398859, "Helena")], "Phoenix" => [(6.196866607632182, "Los Angeles"), (5.811453875853011, "El Paso"), (6.534869288423131, "Santa Fe"), (9.480337892644433, "Denver")], "New York" => [(3.3502185200416275, "Boston"), (4.7813966713936615, "Montreal"), (6.011418225407591, "Pittsburgh"), (3.5598393617362576, "Washington")], "Little Rock" => [(4.41926434610606, "Saint Louis"), (5.277702051447833, "Oklahoma City"), (4.919057442971587, "Dallas"), (5.6940526333158035, "Nashville"), (5.251294601035569, "New Orleans")], "Calgary" => [(9.227156870741855, "Vancouver"), (16.93443509438875, "Winnipeg"), (4.89944570284048, "Helena"), (8.958280708358826, "Seattle")], "Pittsburgh" => [(7.77193838450812, "Chicago"), (3.289662001819938, "Toronto"), (6.011418225407591, "New York"), (3.3238629287371855, "Washington"), (4.83227102759629, "Raleigh"), (10.301257633157055, "Saint Louis"), (8.009747546870363, "Nashville")], "Toronto" => [(13.114207651345454, "Duluth"), (6.063785450464935, "Montreal"), (8.427006242662463, "Chicago"), (3.289662001819938, "Pittsburgh"), (5.706988122304973, "Sault Ste. Marie")], "Montreal" => [(10.758803662987315, "Sault Ste. Marie"), (4.042976620217085, "Boston"), (4.7813966713936615, "New York"), (6.063785450464935, "Toronto")], "Seattle" => [(1.8331030717922907, "Vancouver"), (2.1118128775488723, "Portland"), (10.343492662442204, "Helena"), (8.958280708358826, "Calgary")], "Winnipeg" => [(16.93443509438875, "Calgary"), (13.280608192721058, "Sault Ste. Marie"), (15.22747966355316, "Helena"), (5.925817172426331, "Duluth")], "Nashville" => [(4.148394464608018, "Saint Louis"), (5.6940526333158035, "Little Rock"), (3.392264545466067, "Atlanta"), (8.009747546870363, "Pittsburgh"), (8.144209998426817, "Raleigh")], "Denver" => [(9.480337892644433, "Phoenix"), (6.981802421079518, "Salt Lake City"), (9.833289565446643, "Helena"), (9.173562790412005, "Omaha"), (10.442216859614872, "Kansas City"), (4.162732827937639, "Santa Fe"), (8.600346350157364, "Oklahoma City")], "Atlanta" => [(6.70828469876545, "New Orleans"), (3.392264545466067, "Nashville"), (6.099275842819131, "Raleigh"), (4.55260311692471, "Charleston"), (9.01159199318291, "Miami")], "Boston" => [(4.042976620217085, "Montreal"), (3.3502185200416275, "New York")], "Los Angeles" => [(5.628319410694537, "San Francisco"), (3.746782803410391, "Las Vegas"), (6.196866607632182, "Phoenix"), (11.955571131557361, "El Paso")], "Oklahoma City" => [(8.423465177038857, "Santa Fe"), (8.600346350157364, "Denver"), (9.70189546877094, "El Paso"), (2.791230138692293, "Dallas"), (4.665730931339962, "Kansas City"), (5.277702051447833, "Little Rock")])
 
@@ -259,6 +261,8 @@ end
 _, ttr_graph_edges = plot_prep(ttr_graph)
 
 # ╔═╡ 49e2c723-50e8-4f1c-8c52-babe11c810f9
+#creates a visualisation of the bellman ford algorithm, takes 3 minutes for me
+
 #ani, a, dist = bellman_ford_animated(ttr_graph, "New York", ttr_graph_nodes_coordinates, ttr_graph_edges)
 
 # ╔═╡ 5ebea0f6-21d9-4b71-b088-09189020711e
@@ -382,29 +386,58 @@ end
 #distance of n -> Inf in final check
 # https://www.youtube.com/watch?v=lyw4FaxrwHg 10:00
 
-# ╔═╡ 309ce7fe-94f3-4575-8ee7-1a0f982beb7e
-#To check if the graph contains a negative-weight cycle, run Bellman–Ford once from each vertex.
-
 # ╔═╡ cc1024e7-18cd-4cd6-840d-c04940e5ad05
 #moore
 
 # ╔═╡ 6cab5216-24a5-401b-917c-b756d3a4e0fa
 #disconnected graph
 
-# ╔═╡ 6fab3d39-3d41-4e60-bb36-94addd018ae6
-#nice unit test
+# ╔═╡ 1ec56f6d-90dc-4953-8b5a-6616cace8066
+#Floyd-Warshall not for directed graphs
+function floyd_warshall(graph)
 
-# ╔═╡ b3abe6d6-115f-4ee8-8972-cbf6ae4d56c8
-#Floyd-Warshall
+	#initialize distance matrix
+	dist = fill(Inf, (length(graph), length(graph)))
+	for v in keys(graph)
+		dist[v, v] = 0
+		for (w, n) in graph[v]
+			dist[v, n] = w
+		end
+	end
+
+	#update distance matrix
+	for i in 1:length(graph)
+		for j in 1:length(graph)
+			for k in 1:length(graph)
+				if dist[j, k] > dist[j, i] + dist[i, k]
+					dist[j, k] = dist[j, i] + dist[i, k]
+				end
+			end
+		end
+	end
+	return dist
+end
+
+# ╔═╡ 4be23d79-eee2-42fb-8790-ed0cd4846d6f
+floyd_warshall(ttr_graph)
+
+# ╔═╡ 2cb2a271-a1af-45da-97e4-eb4c99c7a1be
+"
+let dist be a |V| × |V| array of minimum distances initialized to ∞ (infinity)
+for each edge (u, v) do
+    dist[u][v] ← w(u, v)  // The weight of the edge (u, v)
+for each vertex v do
+    dist[v][v] ← 0 					#necessary?
+for k from 1 to |V|
+    for i from 1 to |V|
+        for j from 1 to |V|
+            if dist[i][j] > dist[i][k] + dist[k][j] 
+                dist[i][j] ← dist[i][k] + dist[k][j]
+            end if
+"
 
 # ╔═╡ 4a882f33-4ef2-445e-8ce7-021da7076b2a
 #Yen's improvement
-
-# ╔═╡ 974ec3c7-9fa3-4d82-b4a7-61fffaafe395
-#https://en.wikipedia.org/wiki/Bellman%E2%80%93Ford_algorithm#Improvements
-
-# ╔═╡ 9472cd93-3650-42bc-8e34-4bcba328569e
-#https://juliagraphs.org/
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1273,10 +1306,10 @@ version = "0.9.1+5"
 # ╠═cc9ac24c-9089-401b-88d3-c02b2a9ce64e
 # ╠═bbf47e7e-73ac-406f-95a6-323898ccef00
 # ╠═ffec900c-55e1-40a1-8019-0a5136e53ba7
-# ╠═e041d702-c061-438c-928c-e323b388bdb4
 # ╠═3a66c410-2da2-4591-9683-79ee56c5ff9e
 # ╠═15b7ec32-8524-40f9-ac8f-6ef401d51ea0
 # ╠═93f28f42-4f48-4445-9ab2-6ceda393de11
+# ╠═e041d702-c061-438c-928c-e323b388bdb4
 # ╠═c76aa110-57f9-11ec-3cde-8dc46e37ffdd
 # ╠═a1881b99-61e4-4d29-ab47-6dd4e35d541c
 # ╠═90f00636-f609-4cb7-824e-afc189f7b013
@@ -1293,13 +1326,11 @@ version = "0.9.1+5"
 # ╠═adc4365c-cee6-419d-bbbf-d8fb6a253f67
 # ╠═3b955a9d-3f4a-4aa5-98ce-11807f0645ed
 # ╠═7bf91157-bbf7-4043-b24f-958e5f852387
-# ╠═309ce7fe-94f3-4575-8ee7-1a0f982beb7e
 # ╠═cc1024e7-18cd-4cd6-840d-c04940e5ad05
 # ╠═6cab5216-24a5-401b-917c-b756d3a4e0fa
-# ╠═6fab3d39-3d41-4e60-bb36-94addd018ae6
-# ╠═b3abe6d6-115f-4ee8-8972-cbf6ae4d56c8
+# ╠═1ec56f6d-90dc-4953-8b5a-6616cace8066
+# ╠═4be23d79-eee2-42fb-8790-ed0cd4846d6f
+# ╠═2cb2a271-a1af-45da-97e4-eb4c99c7a1be
 # ╠═4a882f33-4ef2-445e-8ce7-021da7076b2a
-# ╠═974ec3c7-9fa3-4d82-b4a7-61fffaafe395
-# ╠═9472cd93-3650-42bc-8e34-4bcba328569e
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
