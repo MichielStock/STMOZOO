@@ -1,12 +1,12 @@
 ### A Pluto.jl notebook ###
-# v0.17.1
+# v0.17.4
 
 using Markdown
 using InteractiveUtils
 
 # ╔═╡ 03f007fe-ed84-4ee4-a806-5239843c0391
 using Plots ,Images , Combinatorics , PlutoUI , Colors , ImageIO ,
-LinearAlgebra, Distributions, Random
+LinearAlgebra, Distributions, Random, DataStructures
 
 # ╔═╡ c0cc29a4-66cf-11ec-251f-d7772ca48f43
 md"""
@@ -34,32 +34,98 @@ download("https://github.com/juhlee/ColorTransfer.jl/blob/master/figs/cityscape.
 # ╔═╡ 8cb3b1c5-a1f5-4b5b-8ce4-2c1a66f6e762
 download("https://github.com/juhlee/ColorTransfer.jl/blob/master/figs/sunset.jpg?raw=true", "image2.jpg")
 
+# ╔═╡ 3a9db4da-22de-4b49-9630-efc997f2e3b0
+md"""
+### Sample images
+
+The two photos below are taken by myself, showing the cityscapes of Seoul in South Korea. 
+
+The first image was taken during daytime, while the second one was taken during sunset.
+
+What would the first image look like during sunset? could we achieve this through optimal transport?
+"""
+
 # ╔═╡ 31ffeaeb-9316-4d57-a0bf-d21359aa78a3
 image1 = load("image1.jpg") # change to path local directory
 
 # ╔═╡ 784097e8-9795-44b8-912b-e009f4929942
 image2 = load("image2.jpg") # change to path local directory
 
-# ╔═╡ 4814652b-ccec-4e30-9a0c-365cf6c4c038
-zeros(3, 3, 2)
+# ╔═╡ cd7367a8-91e1-4190-9cd5-5c923791c98e
+function img_to_array(image)
+	img_array = channelview(image)
+	img_array = permutedims(img_array, (2,3,1))
 
-# ╔═╡ 0e9cf7fd-f860-46ff-9e52-2fcf63327465
-Random.seed!(123)
+	return img_array
+end
 
-# ╔═╡ 67bea033-cd34-4398-b994-4b2d5a32fea0
-d = Normal(0, 1)
+# ╔═╡ 043c9635-8750-4816-95c3-df8f558526d4
+function array_as_list(img_array, channel)
+	img_array = img_array[:,:,channel]
 
-# ╔═╡ e3477e3b-dc32-4371-b97b-69689baa051b
-td = truncated(d, 0.0, Inf)
+	# height, weight and channel
+	h,w = size(img_array)
 
-# ╔═╡ 27c3163c-d7d5-48dd-a61a-2e54991008e7
-rand(td, 3, 3, 2)
+	list_pixels = Any[]
 
-# ╔═╡ 53e29dac-310a-4a35-a270-7543a654fca0
-ex = [0:8...] .- 4
+	for x in 1:h
+		for y in 1:w
+			color = img_array[x,y]
+			push!(list_pixels, [x,y,color])
+		end
+	end
 
-# ╔═╡ f84d75a1-ae1a-4c26-a030-4a53de365ba3
-RGB(rand(3)...)
+	return sort(list_pixels, by = x -> x[3])
+end
+
+# ╔═╡ 9c3bb58b-fc10-44e7-86ba-5b051ecf67e1
+function transport_colors(source, target, channel)
+	
+	list_source = img_as_list(source, channel)
+	hist_target = []
+end
+
+# ╔═╡ 16d814fb-77ac-4abf-976f-e801ec7747e5
+let
+	img2 = img_to_array(image2)[:,:,1]
+
+	img2_255 = Int.(round.(img2 * 255))
+
+	b = sort(collect(counter(img2_255)))
+end
+
+# ╔═╡ 06d112dc-1aa2-4532-9648-ff2164dfb621
+Int(round(1.33))
+
+# ╔═╡ 884ef830-afc8-4e6e-a3de-43fb1df3b908
+function rgb_to_lab_array(image)
+	"""
+	Convert loaded RGB image into Lab image,
+	and then convert it to Array{Float64, 3}} (L x a x b)
+
+	Arguments
+		- image = RGB image
+
+	Returns
+		- lab_array = converted image (L x a x b) in Array format
+	"""
+	
+	# Lab() comes from Color.jl package
+	#img_to_lab = Lab.(image)
+	img_to_array = channelview(image)
+
+	# channelview() converts into channel x height x weight
+	# convert it to height x weight x channel
+	lab_array_img = permutedims(img_to_array, (2,3,1))
+	
+	return lab_array_img
+end
+
+# ╔═╡ 6efd518c-4ff1-472f-af30-c9299a949eba
+img1lab = rgb_to_lab_array(image1)
+
+# ╔═╡ 8b38e492-8431-445e-a843-76e9a4880d7d
+permutedims(channelview(image1), (2,3,1))
 
 # ╔═╡ ddbab8c0-1440-4027-b1f4-0f083448a17e
 md"""
@@ -90,9 +156,6 @@ function sinkhorn(C::Matrix, a::Vector, b::Vector; λ=1.0, ϵ=1e-8)
 		return Diagonal(u) * M * Diagonal(v)
 	  end
 
-# ╔═╡ 8dd5a8a6-1052-4972-9935-cfc24e0300ae
-
-
 # ╔═╡ ec53c559-044e-4287-8b44-1123fade583c
 colorscatter(colors; kwargs...) = scatter(red.(colors), green.(colors), blue.(colors),
                         xlabel="red", ylabel="green", zlabel="blue", color=colors, label="")
@@ -110,17 +173,8 @@ colors1 = vec(image1ss)
 # ╔═╡ c2f50353-2a6b-4296-81b4-b63154d36cac
 n_colors1 = length(colors1)
 
-# ╔═╡ e5b7dd1c-38aa-4a2e-b8c0-92fa0c455334
-a_col = ones(n_colors1) / n_colors1
-
-# ╔═╡ 14e9e2cb-4b92-4483-a1b5-1b442defef99
-println(colors1)
-
-# ╔═╡ 006a287a-20f9-485b-9c35-ddb3f481a1f4
-permutedims(channelview(image1ss), (2,3,1))
-
-# ╔═╡ 37114245-61af-4ebc-92b6-d201355ccdec
-size(image1ss)
+# ╔═╡ 22c00284-ede2-46f0-9e5c-c31ce2e3546b
+image1ss
 
 # ╔═╡ a4388626-18b2-4d24-b80f-c6ed5f6eecc9
 image2ss = subsample(image2, 5)
@@ -131,16 +185,11 @@ colors2 = vec(image2ss)
 # ╔═╡ b732f1c9-9138-4ebc-8237-ac4fab644958
 n_colors2 = length(colors2)
 
-# ╔═╡ 3845deb2-521e-4591-887b-145283791eae
-b_col = ones(n_colors2) / n_colors2
-
-# ╔═╡ cc56eb90-5679-4409-9e12-cac6bb5348d9
-plot(
-colorscatter(colors1, title="figure 1"),
-colorscatter(colors2, title="figure 2"))
-
-# ╔═╡ 52643d93-b7a7-4166-84cf-6d1e577dfad4
-a = colordiff(colors1[1], colors2[1])
+# ╔═╡ e5b7dd1c-38aa-4a2e-b8c0-92fa0c455334
+begin
+	a_col = ones(n_colors1) / length(n_colors1)
+	b_col = ones(n_colors2) / length(n_colors2)
+end
 
 # ╔═╡ 99e5732e-7428-4cf2-8a72-0b04be0b9c96
 Ccol = [colordiff(c1,c2) for c1 in colors1, c2 in colors2]
@@ -154,11 +203,15 @@ image1_transf = reshape(mapdistr(colors2, Pcolors), size(image1ss))
 # ╔═╡ 8a95421e-2245-45ff-a912-afa37781623a
 image2_transf = reshape(mapdistr(colors1, Pcolors'), size(image2ss))
 
+# ╔═╡ 32d07dc6-44d9-460b-bc3a-4979154ab576
+image2ss
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 Colors = "5ae59095-9a9b-59fe-a467-6f913c188581"
 Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 ImageIO = "82e4d734-157c-48bb-816b-45c225c6df19"
 Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
@@ -170,6 +223,7 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 [compat]
 Colors = "~0.12.8"
 Combinatorics = "~1.0.2"
+DataStructures = "~0.18.11"
 Distributions = "~0.25.37"
 ImageIO = "~0.5.9"
 Images = "~0.25.0"
@@ -871,7 +925,7 @@ uuid = "38a345b3-de98-5d2b-a5d3-14cd9215e700"
 version = "2.36.0+0"
 
 [[LinearAlgebra]]
-deps = ["Libdl"]
+deps = ["Libdl", "libblastrampoline_jll"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [[LogExpFunctions]]
@@ -974,6 +1028,10 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "7937eda4681660b4d6aeeecc2f7e1c81c8ee4e2f"
 uuid = "e7412a2a-1a6e-54c0-be00-318e2571c051"
 version = "1.3.5+0"
+
+[[OpenBLAS_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
+uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
 
 [[OpenEXR]]
 deps = ["Colors", "FileIO", "OpenEXR_jll"]
@@ -1129,7 +1187,7 @@ deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
 uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [[Random]]
-deps = ["Serialization"]
+deps = ["SHA", "Serialization"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [[RangeArrays]]
@@ -1539,6 +1597,10 @@ git-tree-sha1 = "5982a94fcba20f02f42ace44b9894ee2b140fe47"
 uuid = "0ac62f75-1d6f-5e53-bd7c-93b484bb37c0"
 version = "0.15.1+0"
 
+[[libblastrampoline_jll]]
+deps = ["Artifacts", "Libdl", "OpenBLAS_jll"]
+uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
+
 [[libfdk_aac_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "daacc84a041563f965be61859a36e17c4e4fcd55"
@@ -1590,36 +1652,33 @@ version = "0.9.1+5"
 # ╟─03ad0574-699b-4046-863e-611e1a058d82
 # ╠═f46ad76d-2cd9-48c2-acfc-33188a2af405
 # ╠═8cb3b1c5-a1f5-4b5b-8ce4-2c1a66f6e762
+# ╟─3a9db4da-22de-4b49-9630-efc997f2e3b0
 # ╠═31ffeaeb-9316-4d57-a0bf-d21359aa78a3
 # ╠═784097e8-9795-44b8-912b-e009f4929942
+# ╠═cd7367a8-91e1-4190-9cd5-5c923791c98e
+# ╠═043c9635-8750-4816-95c3-df8f558526d4
+# ╠═9c3bb58b-fc10-44e7-86ba-5b051ecf67e1
+# ╠═16d814fb-77ac-4abf-976f-e801ec7747e5
+# ╠═06d112dc-1aa2-4532-9648-ff2164dfb621
 # ╠═7c89cebe-0495-4f81-b175-3474579c8404
 # ╠═a4388626-18b2-4d24-b80f-c6ed5f6eecc9
 # ╠═16b51e7c-2604-4149-8b57-b569ae60bd31
 # ╠═cf456507-a6c9-40d3-8e8a-10d012ee6a47
 # ╠═c2f50353-2a6b-4296-81b4-b63154d36cac
 # ╠═b732f1c9-9138-4ebc-8237-ac4fab644958
-# ╠═cc56eb90-5679-4409-9e12-cac6bb5348d9
-# ╠═14e9e2cb-4b92-4483-a1b5-1b442defef99
-# ╠═52643d93-b7a7-4166-84cf-6d1e577dfad4
 # ╠═99e5732e-7428-4cf2-8a72-0b04be0b9c96
 # ╠═e5b7dd1c-38aa-4a2e-b8c0-92fa0c455334
-# ╠═3845deb2-521e-4591-887b-145283791eae
 # ╠═f8e6fc0f-6731-4205-a622-b30387b068a1
 # ╠═2f6ebe5e-a3ff-4d79-83bc-4b9ab19e939c
+# ╠═22c00284-ede2-46f0-9e5c-c31ce2e3546b
 # ╠═8a95421e-2245-45ff-a912-afa37781623a
-# ╠═006a287a-20f9-485b-9c35-ddb3f481a1f4
-# ╠═37114245-61af-4ebc-92b6-d201355ccdec
-# ╠═4814652b-ccec-4e30-9a0c-365cf6c4c038
-# ╠═0e9cf7fd-f860-46ff-9e52-2fcf63327465
-# ╠═67bea033-cd34-4398-b994-4b2d5a32fea0
-# ╠═e3477e3b-dc32-4371-b97b-69689baa051b
-# ╠═27c3163c-d7d5-48dd-a61a-2e54991008e7
-# ╠═53e29dac-310a-4a35-a270-7543a654fca0
-# ╠═f84d75a1-ae1a-4c26-a030-4a53de365ba3
+# ╠═32d07dc6-44d9-460b-bc3a-4979154ab576
+# ╠═884ef830-afc8-4e6e-a3de-43fb1df3b908
+# ╠═6efd518c-4ff1-472f-af30-c9299a949eba
+# ╠═8b38e492-8431-445e-a843-76e9a4880d7d
 # ╟─ddbab8c0-1440-4027-b1f4-0f083448a17e
 # ╠═18c87a62-b0e5-4e31-ad4f-d449e0f4536a
 # ╠═22a77c67-a0ed-434a-9db4-993cdce0c93b
-# ╠═8dd5a8a6-1052-4972-9935-cfc24e0300ae
 # ╠═ec53c559-044e-4287-8b44-1123fade583c
 # ╠═cd3815cc-06fa-435c-b09e-5b069b3937ac
 # ╟─00000000-0000-0000-0000-000000000001
