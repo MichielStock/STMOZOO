@@ -15,7 +15,7 @@ macro bind(def, element)
 end
 
 # ╔═╡ c80a0f15-2c37-4c40-a543-2e6c3fead1be
-using Images, StatsBase, Plots, PlutoUI, Distributions
+using Images, StatsBase, Plots, PlutoUI, Distributions, Random
 
 # ╔═╡ 171fee18-20f6-11eb-37e5-2d04caea8c35
 md"""
@@ -59,24 +59,156 @@ The function takes x and y coordinates that have real number values. Therefore t
 
 """
 
-# ╔═╡ b95fd05e-f139-47f4-ab69-79f5dd3cc279
+# ╔═╡ 8212a676-3167-438a-944d-5eeae72d54d8
 md"""
 ## Initial population
-Jordi
+
+The first step in creating a genetic algorithm is defining the initial population. Each individual in the population contains a set of variables, descibed as genes. These genes together form a chromosome, which can be seen as the solution. Usually binary values are used to represent the genes. 
+
 """
+
+# ╔═╡ 9365760a-10e5-48a4-ae77-b3f1a686f8e3
+load("./Figs/Init_Pop.png")
+
+# ╔═╡ a8cd1caa-feb2-442f-ba8f-27619bfbff84
+md"""
+
+A few things have to be taken into account, when designing the initial population:
+
+	- The population size: A smaller population has a higher change for a premature convergence, while a large population asks more computing time.
+	
+	- The diversity: A low diverstity will also cause a premature convergence
+
+
+Overall, there are two primary methods to initialize a population in a GA: 
+	
+	- Random Initialization: Populate the initial population with completely random  solutions.
+
+	- Heuristic initialization: Populate the initial population using a known heuristic for the problem. Da ge al een semi-oplossing hebt
+
+The code to initialize goes as folows:
+"""
+
+# ╔═╡ eba0c158-54d3-4f56-8b1a-5d3ddba001db
+"""
+	random_init_pop(pop_size, genome_size, interval)
+
+Inputs:
+
+	- pop_size: The desired size of the population
+	- genome_size: The desired size of the genome
+	- interval: An interval to define the range of the generated float numbers
+
+Output:
+
+	- pop: A random initial population
+"""
+function random_init_pop(pop_size, genome_size, interval) 
+
+	pop = []
+	for _ in 1:pop_size # making a population with size pop_size
+	genome = []
+		for _ in 1:genome_size # making individuals of size genome_size
+			# generate random float numbers within the interval
+			gene = rand(Uniform(interval[1], interval[2]))
+			push!(genome, gene)
+		end
+	push!(pop, genome)
+	end
+	return pop
+	
+end
+
+# ╔═╡ 41dd8e8d-0f4c-407e-90c5-6f450fe318fe
+population = random_init_pop(100, 2, [-4,4])
 
 # ╔═╡ 37b9fce9-e99c-424f-a614-8169b7edf0d6
 md"""
 ## Fitness
-Jordi
+
+As we want to improve our population over time, it is of absolute importance to select  individuals that have a high fitness level. To determine the fitness level of an individual, we have to implement a fitness function. This function takes a candidate solution to the problem as input and produces a value as output that indicates how “fit” our how “good” the solution is. 
+
+Due to the fact that the fitness value has to be calculated after each generation, the fitness function should not only correlate closely with the designer's goal, but it also should be computationally efficient. If the fitness function becomes the bottleneck of the algorithm, then the overall efficiency of the genetic algorithm will be greatly reduced.
+
+The fitness function used as example here is based on the himmelblau's optimization function:
+			
+$$f(x, y) = (x^2 + y − 11)^2 + (x + y^2 − 7)^2$$
+
+The x and y values respectively were the first
+and second gene in the chromosome of the individual.
+
+As we want to calculate the minima of the Himmelblau function, we take the negative of the function as its fitness value.
+
 """
+
+# ╔═╡ f4969be8-815e-43bc-adaf-a6e1eeec1226
+"""
+	fitness(population, fitness_function)
+	
+Inputs:
+	
+	- population: The population you are working with 
+
+Output: 
+
+	- population_fitness: A calculated fitness score for each individual in 
+						  the population based on the fitness function
+	
+
+"""
+function fitness(population, fitness_function)
+
+	population_fitness = []
+	for ind in population 
+		x = ind[1]
+		y = ind[2]
+		fitness = -fitness_function(x,y)
+
+		push!(population_fitness,[[ind[1], ind[2]], fitness])
+	end
+
+
+	return population_fitness
+end
 
 # ╔═╡ ccb197ff-f322-4f14-acb5-ba64a343d234
 md"""
 ## Termination criteria
 
-Jordi 
+Eventually the run of the algorithm will have to come to an end. Herefore certain conditions have to be determined that halt the algoritm when these criteria are reached. It has been observed that initially, the GA progresses very fast with better solutions coming in every few iterations, but this tends to saturate in the later stages where the improvements are very small. We usually want a termination condition such that our solution is close to the optimal, at the end of the run.
+
+Usually, we keep one of the following termination conditions:
+
+	- When there has been no improvement in the population for X iterations.
+
+	- When we reach an absolute number of generations.
+
+	- When the objective function value has reached a certain pre-defined value.
+
+The code goes as follows:
 """
+
+# ╔═╡ 2bcdbbf0-2473-40d9-8c85-cec3b6ca4b31
+"""
+	check_term(population_fitness, σ, nmax)
+
+Inputs:
+
+	- population_fitness: The fitness scores per individual determinded by 
+						  the fitness function
+	- σ: Treshold for the standard deviation
+	- nmax: The number of generations the maximal fitness has not changed
+
+Output: 
+
+	- bool: Depending on the fact that the criteria were met or not
+
+"""
+function check_term(population_fitness, σ, nmax) 
+	
+	return std([x[2] for x in population_fitness]) < σ && nmax >= 5
+
+end
 
 # ╔═╡ c6155621-9a86-4747-b0ec-65e779670b57
 md"""
@@ -115,7 +247,8 @@ We implement this in code:
 
 Input:
 
-	- population_fitness: A list where each element consists of the individual and its corresponding fitness
+	- population_fitness: A list where each element consists of the individual 
+						  and its corresponding fitness
 
 Output:
 
@@ -130,10 +263,10 @@ function roulette_wheel_selection(population_fitness)
 	# extract the weights from the list, which are its fitness proportions
 	f = [pf[2] for pf in population_fitness]
 	w = [fᵢ / sum(f) for fᵢ in f]
-	
+
 	# randomly choose the same number of individuals but with its chance of being
 	# choosen proportional to its fitness
-	pool = sample(p, Weights(w), n=length(population_fitness))
+	pool = sample(p, Weights(w), length(population_fitness))
 
 	return pool
 	
@@ -166,7 +299,8 @@ We implement this in code:
 
 Input:
 
-	- population_fitness: A list where each element consists of the individual and its corresponding fitness
+	- population_fitness: A list where each element consists of the individual 
+						  and its corresponding fitness
 
 Output:
 
@@ -182,15 +316,14 @@ function rank_selection(population_fitness)
 
 	# initiate the lists containing the individuals 
 	# and their weights (selection probability)
-	p, w = [], []
+	p, w = [], Float64[]
 	for (rank, ind) in enumerate(sort(pf, by=pf->pf[2]))
-		push!(p, ind)
-		push!(w, (rank / N * (N - 1)))
-		
+		push!(p, ind[1])
+		push!(w, (rank / (N * (N - 1))))
 	end
 
 	# select the mating pool based on their selection probabilities
-	pool = sample(p, Weights(w), n=N)
+	pool = sample(p, Weights(w), N)
 
 	return pool
 end
@@ -211,16 +344,20 @@ We can write the code as follows:
 
 Input:
 
-	- population_fitness: A list where each element consists of the individual and its corresponding fitness
-	- Δ: The proportion of fittest individual that need to be selected
+	- population_fitness: A list where each element consists of the individual 
+						  and its corresponding fitness
+	- Δ: The proportion of fittest individuals that need to be selected
 
 Output:
 
 	- pool: A list with the selected individuals for the mating pool
 """
 function steady_state_selection(population_fitness, Δ)
-	@assert Δ <= 0.5, "Proportion of selected individuals has to be smaller than 0.5"
+	@assert(Δ <= 0.5, "Proportion of selected individuals has to be smaller than 0.5")
 
+	# rename for readability
+	pf = population_fitness
+	
 	# sort the population based on fitness in descending order
 	sorted_population_fitness = sort(pf, by=pf->pf[2], rev=true)
 
@@ -228,7 +365,7 @@ function steady_state_selection(population_fitness, Δ)
 	n_ind = trunc(Int, Δ * length(population_fitness))
 
 	# return the mating pool
-	pool = sorted_population_fitness[1:n_ind]
+	pool = [spf[1] for spf in sorted_population_fitness[1:n_ind]]
 	
 	return pool
 end
@@ -272,14 +409,16 @@ Output:
 	- pool: A list with the selected individuals for the mating pool
 """
 function tournament_selection(population_fitness, k, prob)
-	@assert prob 0 < prob <= 1, "prob has to be between 0 and 1 (1 included)"
+	@assert(0 < prob <= 1, "prob has to be between 0 and 1 (1 included)")
+	
+	@assert(k <= length(population_fitness), "the tournament has to be smaller then the population size!")
 	
 	pool = []
 	while length(pool) < length(population_fitness)
 
 		# build the tournament by randomly selecting k individuals from the population
 		# each individual can only be selected once for a tournament
-		t = sample(population_fitness, n=k, replace=true)
+		t = sample(population_fitness, k, replace=true)
 
 		# sort the tournament based on the fitness values
 		sorted_t = sort(t, by=t->t[2], rev=true)
@@ -298,12 +437,84 @@ function tournament_selection(population_fitness, k, prob)
 	
 end
 
-# ╔═╡ 35ef4b6a-5ff7-4ca0-be54-9b281dfe6347
+# ╔═╡ 5096d7c0-0189-4c89-9ec0-13e7aac9aa8a
 md"""
 ## Crossover
 
-Jordi
+The most significant way to stochastically generate new solutions from an existing population is by the recombination (crossover) of parental chromosomes. 
+
+There exist a few different types of crossover:
+
+	- Single Point Crossover : A crossover point on the parent organism string is selected. All data beyond that point in the organism string is swapped between the two parent organisms. Strings are characterized by Positional Bias.
+
+	- Two-Point Crossover : This is a specific case of a N-point Crossover technique. Two random points are chosen on the individual chromosomes (strings) and the genetic material is exchanged at these points.
+
+	- Uniform Crossover : Each gene (bit) is selected randomly from one of the corresponding genes of the parent chromosomes. Tossing of a coin can be seen as an example technique.
+
+For this example we introduce the "Single Point Crossover" 
 """
+
+# ╔═╡ 0be0a442-8c9f-4035-b926-998f0c63ade7
+load("./Figs/Crossover.png")
+
+# ╔═╡ 9c2f897a-663e-4408-8364-1582ef6cba9c
+md"""
+This method of recombination is implemented by introducing two equatations:
+
+$$C_1 = \alpha P_1 + (1 − \alpha)P_2$$
+
+$$C_2 = (1 − \alpha)P_1 + \alpha P_2$$
+
+with P1
+and P2 the gene of parent one and parent two respectively, C1 and C2 child one and child two respectively and α the factor by which the parental genes are divided. This technique is also called whole arithmetic crossover and goes as follows:
+
+	- The mating pool is shuffled to make random parings of parents
+	- Divide genome of parents over the offspring with a factor α
+	- Two children are created out of two parents
+	- The two parents are two individuals adjacent in the mating pool list
+	- The whole population is replaced by the offspring
+"""
+
+# ╔═╡ 1e7552ac-9c46-479d-b26e-5d776e3cc5af
+"""
+	crossover(pool, α)
+
+Inputs:
+
+	- pool: The mating pool that is selected for further breeding
+	- α: the crossover rate: A float between 0 and 1 to determine the part of 
+		 					 the genome that is going to be crossed
+
+Output: 
+
+	- offspring: Next generation of individuals (population) that replaces 
+				 the previous population
+"""
+function crossover(pool, α)
+	@assert(0<α<1, "crossover rate has to be between 0 and 1")
+	
+	# shuffle the mating pool 
+	shuffle(pool)
+	
+	# create offspring
+	offspring = [] 	
+
+	# go over the mating pool
+	for i in 1:2:length(pool)
+		child1 = []
+		child2 = []
+		for (j, gene) in enumerate(pool[i])
+			# divide the genome of the parents over the children with a factor α
+			push!(child1, (α * gene + (1-α) * pool[i + 1][j]))
+			push!(child2, (α * pool[i + 1][j] + (1 - α) * gene))
+		end
+		push!(offspring, child1)
+		push!(offspring, child2)
+	end
+
+	return offspring
+	
+end
 
 # ╔═╡ 3a075aab-dbf8-4120-93bc-337991c65b40
 md"""
@@ -320,13 +531,13 @@ We code this as follows:
 
 Input
 
-	- offspring: list of individuals after crossover
-	- pm: mutation rate, the proportion of genes that need to be mutated
-	- generation: the generation the algorithm is currently in
+	- offspring: List of individuals after crossover
+	- pm: Mutation rate, the proportion of genes that need to be mutated
+	- generation: The generation the algorithm is currently in
 
 Output
 
-	- offspring: list of individuals with mutated genes
+	- offspring: List of individuals with mutated genes
 """
 function mutation(offspring, pm, generation)
 
@@ -362,37 +573,48 @@ function mutation(offspring, pm, generation)
 	
 end
 
+# ╔═╡ 6a60527b-0f46-4bf0-bd6f-91e509737a32
+md"""
+## The complete algorithm
+
+After seeing the different parts of the algorithm, we can now put it all together to begin seeking the minima of Himmelblau's function:
+
+"""
+
+# ╔═╡ 97af696e-d076-40b3-a5d5-ec363350d7b7
+md"""
+
+To better understand the influences of the different parameters, you can change them here. Take a look to see the effect of changing for instance the population size or the mutation rate.
+
+"""
+
+# ╔═╡ 6ba87a23-5114-4126-b6a2-0981992d8a46
+md"""
+Population size:
+$(@bind pop_size Slider(0:250,default=100,show_value=true))
+
+Standard deviation σ for the termination criteria:
+$(@bind σ NumberField(0:0.00000001:1,default=0.001))
+
+The crossover rate α determines the proportion of dividing the parent genes during crossover:
+$(@bind α Slider(0:0.01:1,default=0.5,show_value=true))
+
+The mutation rate: proportion of the genes that need to undergo mutation each generation:
+$(@bind pm Slider(0:0.01:1,default=0.10,show_value=true))
+"""
+
 # ╔═╡ 48a851ce-fd14-4516-a172-c720f24bf153
 md"""
-## Visualization of Himmelblau
+We will visualize the different generations in order to get a better understanding of the inner workings of the algorithm.
 The visualization of the different steps of the solution can be seen here, you might need to fiddle again with the angles to get a good viewing point. 
-We recommend looking at where your solution is converging to and using the first plot to set the values for both angles (they are the same angles in both plots).
+We recommend looking at where your solution is converging to and using the first plot to set the values for both angles (they are the same angles in both plots). 
+Moreover, to control the speed of the animation, you can alter the frames per second and the number of generations shown. Together these two will also decide how long it will run.
 """
 
-# ╔═╡ 7dbb864c-b3d9-4cd1-8c48-9a61be67334f
-md"""
-Angle 1:
-$(@bind ca3 NumberField(1:90,default=50))
-
-Angle 2: 
-$(@bind ca4 NumberField(1:90,default=75))
-"""
-
-# ╔═╡ 9445dfa1-c276-43fd-81cc-752645e8bf43
-md"""
-## Implementation
-
-samen
-
-graph coloring with genetic algorithm
-"""
-
-# ╔═╡ e6981604-cb94-4073-9b60-5dcfa1c3ba16
+# ╔═╡ 34360486-0f98-46bf-bdb6-550164e3b051
 md"""
 
-## References
-
-1. O. H. Babatunde, L. Armstrong, J. Leng, and D. Diepeveen. A genetic algorithm-based feature selection. International Journal of Electronics Communication and Computer Engineering, 2014.
+On the animation, we clearly see how the algorithm works. The initial population is drawn to one of the minima while also exploring other directions. In the beginning all points are randomly distributed, which is normal behaviour. After some generations, the points begin to huddle together forming a more uniform front. Then they start to migrate towards one of the minima in the plot. The later generations are finetuning of the solutions and making all solutions in the population as identical as possible (depending on the σ value given to the algorithm). 
 
 """
 
@@ -432,7 +654,7 @@ function plot_himmelblau(ca1, ca2, points=[])
 		x = [p[1] for p in points]
 		y = [p[2] for p in points]
 		z = [f(p[1], p[2]) for p in points]
-		plot!(q,x,y,z,seriestype=:scatter, legend=false, zlim = (0,200))
+		plot!(q,x,y,z,seriestype=:scatter, legend=false, zlim = (0,200), c=:white)
 	end
 	return q
 end
@@ -440,10 +662,105 @@ end
 # ╔═╡ d73ee58d-536b-4d19-bb3a-cae8c3bcc4c8
 plot_himmelblau(ca1, ca2)
 
+# ╔═╡ 46862350-c094-4489-83a2-ea4b670a16c0
+f_himmelblau(x,y) = (x^2 + y - 11)^2 + (x + y^2 - 7)^2
+
+# ╔═╡ 2daddc2a-bc0e-4e8e-adde-f99660c9ac10
+population_fitness = fitness(population, f_himmelblau)
+
+# ╔═╡ 3bc3a212-fe9f-4416-9b95-9d061d50a08d
+pool_roulette = roulette_wheel_selection(population_fitness)
+
+# ╔═╡ 23000c68-7864-409f-b5fe-b43b9a2164c3
+pool_rank = rank_selection(population_fitness)
+
+# ╔═╡ fa31ea0c-b3dd-4145-bb35-3698308371a7
+offspring = crossover(pool_rank, 0.5)
+
+# ╔═╡ 93634846-dc90-4021-bf4c-de1b13f476cc
+offspring_mutated = mutation(offspring, 0.9, 1)
+
+# ╔═╡ ba2820c1-649f-4551-98d8-ce113e309b22
+pool_steady_state = steady_state_selection(population_fitness, 0.4)
+
+# ╔═╡ 4408b037-e336-4382-8468-28d1746c23d3
+pool_tournament = tournament_selection(population_fitness,50,0.9)
+
+# ╔═╡ fc0a7329-5d93-4519-ace0-626aa376fc1b
+"""
+	minima_himmelblau(pop_size, σ, α, pm)
+
+Input:
+
+	- pop_size: The population size
+	- σ: The standarddeviation used to determine the termination criteria
+	- α: The crossover rate
+	- pm: The mutation rate
+
+Output:
+
+	- generations: A list with the population in every generation
+"""
+function minima_himmelblau(pop_size, σ, α, pm)
+	generation, generation_max = 0, 0
+	population = random_init_pop(pop_size, 2, [-4,4])
+	f_pop = fitness(population, f_himmelblau)
+	max_fitness = maximum([x[2] for x in f_pop])
+
+	generations = []
+	
+	while !check_term(f_pop, σ, generation_max) && generation < 1000000
+
+		if maximum([x[2] for x in f_pop]) > max_fitness
+			max_fitness = maximum([x[2] for x in f_pop])
+			generation_max = 0
+		else
+			generation_max += 1
+		end
+
+		mate_pool = rank_selection(f_pop)
+
+		offspring = crossover(mate_pool, α)
+
+		population = mutation(offspring, pm, generation)
+
+		push!(generations, population)
+
+		f_pop = fitness(population, f_himmelblau)
+
+		generation += 1
+		
+	end
+	
+	return generations
+end
+
+# ╔═╡ 5aed7665-1131-4715-90ca-dca12c038a68
+generations = minima_himmelblau(pop_size, σ, α, pm)
+
+# ╔═╡ 7dbb864c-b3d9-4cd1-8c48-9a61be67334f
+md"""
+
+Number of generations to show:
+$(@bind G NumberField(0:length(generations),default=50))
+
+Frames per second:
+$(@bind FPS NumberField(1:50, default=5))
+
+Angle 1:
+$(@bind ca3 NumberField(1:90,default=50))
+
+Angle 2:
+$(@bind ca4 NumberField(1:90,default=75))
+"""
+
 # ╔═╡ 453b235b-bd4f-446f-b767-b71a197cc66c
-@gif for i in 1:100
-	points = [(0, 3*i/x + 1) for x in 100:200]
-	plot_himmelblau(ca3, ca4, points)
+begin
+	anim = @animate for (i,s) in enumerate(generations[1:G])
+		plot_himmelblau(ca3, ca4, s)
+		plot!(title="Generation: $i")
+	end
+	gif(anim, fps=FPS)
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -453,6 +770,7 @@ Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [compat]
@@ -1866,34 +2184,55 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╠═c80a0f15-2c37-4c40-a543-2e6c3fead1be
+# ╟─c80a0f15-2c37-4c40-a543-2e6c3fead1be
 # ╟─171fee18-20f6-11eb-37e5-2d04caea8c35
 # ╟─98b278e9-5cc9-4e36-9d1a-75eb9f4158de
 # ╟─d89c31c5-f2b3-4b52-8e47-580c62979687
 # ╟─d73ee58d-536b-4d19-bb3a-cae8c3bcc4c8
 # ╟─ba845736-b141-484a-9b10-fc73ecf31db3
 # ╟─cccaf5fb-3c95-4ea9-b699-0cee2f12542e
-# ╠═b95fd05e-f139-47f4-ab69-79f5dd3cc279
-# ╠═37b9fce9-e99c-424f-a614-8169b7edf0d6
-# ╠═ccb197ff-f322-4f14-acb5-ba64a343d234
+# ╟─8212a676-3167-438a-944d-5eeae72d54d8
+# ╟─9365760a-10e5-48a4-ae77-b3f1a686f8e3
+# ╟─a8cd1caa-feb2-442f-ba8f-27619bfbff84
+# ╟─eba0c158-54d3-4f56-8b1a-5d3ddba001db
+# ╠═41dd8e8d-0f4c-407e-90c5-6f450fe318fe
+# ╟─37b9fce9-e99c-424f-a614-8169b7edf0d6
+# ╟─f4969be8-815e-43bc-adaf-a6e1eeec1226
+# ╠═2daddc2a-bc0e-4e8e-adde-f99660c9ac10
+# ╟─ccb197ff-f322-4f14-acb5-ba64a343d234
+# ╟─2bcdbbf0-2473-40d9-8c85-cec3b6ca4b31
 # ╟─c6155621-9a86-4747-b0ec-65e779670b57
 # ╟─953edf56-a957-4c61-8a89-9709dc6dfd65
 # ╟─79eb48df-26de-4965-b078-9bb20313247a
+# ╠═3bc3a212-fe9f-4416-9b95-9d061d50a08d
 # ╟─8623b228-c627-4f81-8f6f-6de074b8ec20
 # ╟─a6da65cb-817d-4637-b7a7-0830488696e0
+# ╠═23000c68-7864-409f-b5fe-b43b9a2164c3
 # ╟─84d49f43-8ac3-4e73-991c-a54bb9fe9b5f
-# ╠═07e1c8b6-c3fd-4f5f-bbb0-fe6595813d55
+# ╟─07e1c8b6-c3fd-4f5f-bbb0-fe6595813d55
+# ╠═ba2820c1-649f-4551-98d8-ce113e309b22
 # ╟─307af9a7-6b0c-44ad-a5b0-d9b0c18b5db4
 # ╟─6cf8534b-2fa1-4762-9526-bd3c2da99843
-# ╠═35ef4b6a-5ff7-4ca0-be54-9b281dfe6347
+# ╠═4408b037-e336-4382-8468-28d1746c23d3
+# ╟─5096d7c0-0189-4c89-9ec0-13e7aac9aa8a
+# ╟─0be0a442-8c9f-4035-b926-998f0c63ade7
+# ╟─9c2f897a-663e-4408-8364-1582ef6cba9c
+# ╟─1e7552ac-9c46-479d-b26e-5d776e3cc5af
+# ╠═fa31ea0c-b3dd-4145-bb35-3698308371a7
 # ╟─3a075aab-dbf8-4120-93bc-337991c65b40
 # ╟─1b6763ba-ae24-4f63-b7e8-545364ddab89
+# ╠═93634846-dc90-4021-bf4c-de1b13f476cc
+# ╟─6a60527b-0f46-4bf0-bd6f-91e509737a32
+# ╟─fc0a7329-5d93-4519-ace0-626aa376fc1b
+# ╟─97af696e-d076-40b3-a5d5-ec363350d7b7
+# ╟─6ba87a23-5114-4126-b6a2-0981992d8a46
 # ╟─48a851ce-fd14-4516-a172-c720f24bf153
 # ╟─453b235b-bd4f-446f-b767-b71a197cc66c
 # ╟─7dbb864c-b3d9-4cd1-8c48-9a61be67334f
-# ╠═9445dfa1-c276-43fd-81cc-752645e8bf43
-# ╠═e6981604-cb94-4073-9b60-5dcfa1c3ba16
+# ╟─34360486-0f98-46bf-bdb6-550164e3b051
 # ╟─3ff092e2-7af2-4b4b-bd29-2b0310cae48f
-# ╠═b4a64a85-640d-4386-b7ad-87d87671aac9
+# ╟─b4a64a85-640d-4386-b7ad-87d87671aac9
+# ╟─46862350-c094-4489-83a2-ea4b670a16c0
+# ╠═5aed7665-1131-4715-90ca-dca12c038a68
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
