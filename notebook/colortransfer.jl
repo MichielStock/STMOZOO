@@ -1,12 +1,12 @@
 ### A Pluto.jl notebook ###
-# v0.17.1
+# v0.17.4
 
 using Markdown
 using InteractiveUtils
 
 # ╔═╡ 03f007fe-ed84-4ee4-a806-5239843c0391
 using Plots ,Images , Combinatorics , PlutoUI , Colors , ImageIO ,
-LinearAlgebra, Distributions, Random, DataStructures, ImageSegmentation, Clustering
+LinearAlgebra, Distributions, Random, DataStructures, ImageSegmentation, Clustering, ImageShow
 
 # ╔═╡ c0cc29a4-66cf-11ec-251f-d7772ca48f43
 md"""
@@ -51,26 +51,27 @@ image1 = load("image1.jpg") # change to path local directory
 # ╔═╡ 784097e8-9795-44b8-912b-e009f4929942
 image2 = load("image2.jpg") # change to path local directory
 
-# ╔═╡ 31d8f8cc-2f4a-4ce9-9f5e-c4b67b96bd35
-img1 = Lab.(image1)
-
-# ╔═╡ 1ef90069-2a6c-49e2-b3d9-5aa563f50455
-img2 = Lab.(image2)
-
 # ╔═╡ 5eccd26e-dbaa-41e8-9181-2afa2cf86fe3
 md"""
 ### Downsampling images
+
+- Images had to be reduced down to 100x150
+- Unless: OutOfMemoryError() when determining the cost of transport
 """
 
 # ╔═╡ 7c89cebe-0495-4f81-b175-3474579c8404
-img1down = imresize(image1, (300, 450))
+img1down = imresize(image1, (80,120))
 
 # ╔═╡ a4388626-18b2-4d24-b80f-c6ed5f6eecc9
-img2down = imresize(image2, (300, 450))
+img2down = imresize(image2, (80, 120))
 
 # ╔═╡ 30480b9b-97e2-4122-82ab-29af271ca557
 md"""
-### Clustering the pixels (Segmentation)
+### Clustering the pixels (Segmentation?)
+
+- Used ImageSegmentation.jl package, unseeded\_region\_growing() algorithm since it was the only algorithm that worked against RGB photos.
+  
+- Not yet sure how to leverage the clustering step...
 """
 
 # ╔═╡ 466fa0a8-583d-43f3-b2d2-72aee6a998c0
@@ -85,26 +86,14 @@ begin
 	img2seg = map(i -> segment_mean(seg2, i), labels_map(seg2))
 end
 
-# ╔═╡ 3be5ba4d-9f0f-49de-97e5-f11c72eb4fc0
-
-
 # ╔═╡ 16b51e7c-2604-4149-8b57-b569ae60bd31
 colors1 = vec(img1seg)
-
-# ╔═╡ 6af4ca1c-ca97-4d70-add0-919cf73eec4c
-unique(colors1)
 
 # ╔═╡ 2551067d-5f13-4430-b4ef-b412da9047ac
 length(unique(colors1))
 
 # ╔═╡ cf456507-a6c9-40d3-8e8a-10d012ee6a47
 colors2 = vec(img2seg)
-
-# ╔═╡ 7e0bb91c-1e84-4169-ae73-7491720b06e4
-unique(colors2)
-
-# ╔═╡ 7241091a-9206-4ac6-b585-13a7d92e3d1a
-length(unique(colors2))
 
 # ╔═╡ c2f50353-2a6b-4296-81b4-b63154d36cac
 n_colors1 = length(colors1)
@@ -118,13 +107,46 @@ length(unique(colors1))
 # ╔═╡ 99e5732e-7428-4cf2-8a72-0b04be0b9c96
 Ccol = [colordiff(c1,c2) for c1 in colors1, c2 in colors2]
 
-# ╔═╡ 0d216bd8-bd88-40dd-bdce-6ae4582e411b
-colordiff(colorant"red", colorant"red")
-
 # ╔═╡ e5b7dd1c-38aa-4a2e-b8c0-92fa0c455334
 begin
 	a_col = ones(n_colors1) ./ n_colors1
 	b_col = ones(n_colors2) ./ n_colors2
+end
+
+# ╔═╡ 4fe21532-bf4a-452f-b078-cdbddc028cd6
+md"""
+## Current status
+
+- Same workflow from the course used to transfer colors.
+- The buildings seem like gleaming with sunset colors, but the clouds aren't in the sunset mood.
+
+- Clustering the pixels did not seem to improve? the result?
+- Things I need to understand:
+- How to take the pixel location into account? transfer image in segmented manner..?
+- How to enable color transfer in higher dimensions? 80x120 is too small
+"""
+
+# ╔═╡ f5318bde-d55e-44a7-b8f4-fe19f583f2ce
+imresize(img1seg, (300, 450))
+
+# ╔═╡ 3be5ba4d-9f0f-49de-97e5-f11c72eb4fc0
+function nearest_color(c1, c2)
+	"""
+	Given two sets of unique color vectors,
+	make a dictionary of the closest color.
+	"""
+
+	unique_c1 = unique(c1)
+	unique_c2 = unique(c2)
+
+	result = Dict()
+
+	for c1 in unique_c1
+		nearest = minimum(colordiff.(c1, unique_c2))
+		result[c1] = nearest
+	end
+
+	return result
 end
 
 # ╔═╡ ddbab8c0-1440-4027-b1f4-0f083448a17e
@@ -157,13 +179,16 @@ function sinkhorn(C::Matrix, a::Vector, b::Vector; λ=1.0, ϵ=1e-8)
 	  end
 
 # ╔═╡ f8e6fc0f-6731-4205-a622-b30387b068a1
-Pcolors = sinkhorn(Ccol, a_col, b_col; λ=1.0, ϵ=1e-8)
+Pcolors = sinkhorn(Ccol, a_col, b_col; λ=10.0, ϵ=1e-8)
+
+# ╔═╡ 903b7fab-89b8-4b28-a5ca-06fbefa03b2c
+mapdistr(vec(img2down), Pcolors')
 
 # ╔═╡ 2f6ebe5e-a3ff-4d79-83bc-4b9ab19e939c
-image1_transf = reshape(mapdistr(colors2, Pcolors), size(image1ss))
+image1_transf = reshape(mapdistr(colors2, Pcolors), size(img1down))
 
-# ╔═╡ 8a95421e-2245-45ff-a912-afa37781623a
-image2_transf = reshape(mapdistr(colors1, Pcolors'), size(image2ss))
+# ╔═╡ 9c6342ae-a3e4-4c36-aef7-84496477a205
+imresize(image1_transf, (300, 450))
 
 # ╔═╡ ec53c559-044e-4287-8b44-1123fade583c
 colorscatter(colors; kwargs...) = 
@@ -180,6 +205,159 @@ plot(
 	colorscatter(colors2, title="Sunset")
 )
 
+# ╔═╡ 06dcae7f-ac73-4023-a22e-450700d0b705
+# struct to store the Lab color values
+# and center position of each cluster
+mutable struct Cluster
+    l
+    a
+    b
+    y
+    x
+end
+
+# ╔═╡ d1c8214f-278f-4d25-91b4-2e24b1f59b26
+function slic(img, K, M, iterations=10, connectivity=false)
+    
+	img_lab = Lab.(img)
+    image_height, image_width = size_spatial(img)
+	
+    S = round(Int, (sqrt((image_height * image_width) / K)))
+    clusters = Cluster[] # The properties of each cluster
+    labels = fill(-1, image_height, image_width) # Label of each pixel
+    distance = fill(Inf, image_height, image_width) # Distance matrix of each pixel to belonging cluster
+    pixel_count = Integer[] # Pixel counts of each cluster
+
+    # Initialize each cluster and its fields
+    for x = div(S, 2):S:image_width
+        for y = div(S, 2):S:image_height
+            push!(clusters, Cluster(img_lab[y, x].l,
+                                   img_lab[y, x].a,
+                                   img_lab[y, x].b,
+                                   y,
+                                   x))
+            push!(pixel_count, 0)
+        end
+    end
+
+    # Move the center of each cluster to the local lowgest gradient position
+    function get_gradient(y, x)
+        if x + 1 > image_width x = image_width - 2 end
+        if y + 1 > image_height y = image_height - 2 end
+
+        return img_lab[y + 1, x + 1].l - img_lab[y, x].l + 
+               img_lab[y + 1, x + 1].a - img_lab[y, x].a + 
+               img_lab[y + 1, x + 1].b - img_lab[y, x].b
+    end
+	
+    for i = 1:length(clusters)
+        # Get current gradient of this center
+        current_gradient = get_gradient(clusters[i].y, clusters[i].x)
+
+        for dh = -1:1
+            for dw = -1:1
+                _y = clusters[i].y + dh
+                _x = clusters[i].x + dw
+                new_gradient = get_gradient(_y, _x)
+                if new_gradient < current_gradient
+                    clusters[i].l = img_lab[_y, _x].l
+                    clusters[i].a = img_lab[_y, _x].a
+                    clusters[i].b = img_lab[_y, _x].b
+                    clusters[i].y = _y
+                    clusters[i].x = _x
+
+                    current_gradient = new_gradient
+                end
+            end
+        end
+    end
+
+    # SLIC superpixle calculation
+    function cluster_pixels()
+        for i = 1:length(clusters)
+            for x = (clusters[i].x - 2 * S):(clusters[i].x + 2 * S)
+                if x <= 0 || x > image_width continue end
+
+                for y = (clusters[i].y - 2 * S):(clusters[i].y + 2 * S)
+                    if y <= 0 || y > image_height continue end
+
+                    L = img_lab[y, x].l
+                    A = img_lab[y, x].a
+                    B = img_lab[y, x].b
+                    Dc = sqrt((L - clusters[i].l)^2 + 
+                              (A - clusters[i].a)^2 +
+                              (B - clusters[i].b)^2)
+                    Ds = sqrt((y - clusters[i].y)^2 +
+                              (x - clusters[i].x)^2)
+                    D = sqrt((Dc / M)^2 + (Ds / S)^2)
+
+                    if D < distance[y, x]
+                        distance[y, x] = D
+                        labels[y, x] = i
+                    end
+                end
+            end
+        end
+    end
+	
+    function update_cluster_position()
+        # Clear the position value and pixel counts of each cluster 
+        for i = 1:length(clusters)
+           clusters[i].y = clusters[i].x = pixel_count[i] = 0 
+        end
+
+        # Compute the new position of new cluster center
+        for x in 1:image_width
+            for y in 1:image_height
+                label_index = labels[y, x]
+                if label_index == -1 continue end
+
+                clusters[label_index].y += y
+                clusters[label_index].x += x
+                pixel_count[label_index] += 1
+            end
+        end
+
+        # Assign the new position to each cluster
+        for i = 1:length(clusters)
+            new_y = div(clusters[i].y, pixel_count[i])
+            new_x = div(clusters[i].x, pixel_count[i])
+            clusters[i].l = img_lab[new_y, new_x].l
+            clusters[i].a = img_lab[new_y, new_x].a
+            clusters[i].b = img_lab[new_y, new_x].b
+            clusters[i].y = new_y
+            clusters[i].x = new_x
+        end
+    end
+	
+    @time for i = 1:iterations
+        println("SLIC iteration $(i) ...")
+        cluster_pixels()
+        update_cluster_position()
+    end
+
+    print(size(labels))
+    print(size(clusters))
+    print(labels[1, 1])
+
+    # Create output image
+    # The color of each cluster is as same as its center
+    # except the center
+	
+    out_image = copy(img_lab)
+    for x = 1:image_width
+        for y = 1:image_height
+            out_image[y, x, :] .= Lab(clusters[labels[y, x]].l,
+                                   clusters[labels[y, x]].a,
+                                   clusters[labels[y, x]].b)
+        end
+    end
+    out_image = RGB.(out_image)
+
+    # Return processed result
+    return out_image
+end
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
@@ -190,6 +368,7 @@ DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 ImageIO = "82e4d734-157c-48bb-816b-45c225c6df19"
 ImageSegmentation = "80713f31-8817-5129-9cf8-209ff8fb23e1"
+ImageShow = "4e3cecfd-b093-5904-9786-8bbb286a6a31"
 Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
@@ -204,6 +383,7 @@ DataStructures = "~0.18.11"
 Distributions = "~0.25.37"
 ImageIO = "~0.5.9"
 ImageSegmentation = "~1.7.0"
+ImageShow = "~0.3.3"
 Images = "~0.25.0"
 Plots = "~1.25.3"
 PlutoUI = "~0.7.27"
@@ -903,7 +1083,7 @@ uuid = "38a345b3-de98-5d2b-a5d3-14cd9215e700"
 version = "2.36.0+0"
 
 [[LinearAlgebra]]
-deps = ["Libdl"]
+deps = ["Libdl", "libblastrampoline_jll"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [[LogExpFunctions]]
@@ -1006,6 +1186,10 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "7937eda4681660b4d6aeeecc2f7e1c81c8ee4e2f"
 uuid = "e7412a2a-1a6e-54c0-be00-318e2571c051"
 version = "1.3.5+0"
+
+[[OpenBLAS_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
+uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
 
 [[OpenEXR]]
 deps = ["Colors", "FileIO", "OpenEXR_jll"]
@@ -1161,7 +1345,7 @@ deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
 uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [[Random]]
-deps = ["Serialization"]
+deps = ["SHA", "Serialization"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [[RangeArrays]]
@@ -1571,6 +1755,10 @@ git-tree-sha1 = "5982a94fcba20f02f42ace44b9894ee2b140fe47"
 uuid = "0ac62f75-1d6f-5e53-bd7c-93b484bb37c0"
 version = "0.15.1+0"
 
+[[libblastrampoline_jll]]
+deps = ["Artifacts", "Libdl", "OpenBLAS_jll"]
+uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
+
 [[libfdk_aac_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "daacc84a041563f965be61859a36e17c4e4fcd55"
@@ -1625,34 +1813,33 @@ version = "0.9.1+5"
 # ╟─3a9db4da-22de-4b49-9630-efc997f2e3b0
 # ╠═31ffeaeb-9316-4d57-a0bf-d21359aa78a3
 # ╠═784097e8-9795-44b8-912b-e009f4929942
-# ╠═31d8f8cc-2f4a-4ce9-9f5e-c4b67b96bd35
-# ╠═1ef90069-2a6c-49e2-b3d9-5aa563f50455
 # ╟─5eccd26e-dbaa-41e8-9181-2afa2cf86fe3
 # ╠═7c89cebe-0495-4f81-b175-3474579c8404
 # ╠═a4388626-18b2-4d24-b80f-c6ed5f6eecc9
 # ╟─30480b9b-97e2-4122-82ab-29af271ca557
 # ╠═466fa0a8-583d-43f3-b2d2-72aee6a998c0
 # ╠═60279b7d-ca2a-418e-8f8f-c12c78823eff
-# ╠═3be5ba4d-9f0f-49de-97e5-f11c72eb4fc0
 # ╠═16b51e7c-2604-4149-8b57-b569ae60bd31
-# ╠═6af4ca1c-ca97-4d70-add0-919cf73eec4c
 # ╠═2551067d-5f13-4430-b4ef-b412da9047ac
 # ╠═cf456507-a6c9-40d3-8e8a-10d012ee6a47
-# ╠═7e0bb91c-1e84-4169-ae73-7491720b06e4
-# ╠═7241091a-9206-4ac6-b585-13a7d92e3d1a
 # ╠═c2f50353-2a6b-4296-81b4-b63154d36cac
 # ╠═b732f1c9-9138-4ebc-8237-ac4fab644958
 # ╠═3737a155-a1e5-4d71-9d35-7662effca221
 # ╠═c11d7fed-d2f7-4f3d-8f04-03faf86d3cd8
 # ╠═99e5732e-7428-4cf2-8a72-0b04be0b9c96
-# ╠═0d216bd8-bd88-40dd-bdce-6ae4582e411b
 # ╠═e5b7dd1c-38aa-4a2e-b8c0-92fa0c455334
 # ╠═f8e6fc0f-6731-4205-a622-b30387b068a1
+# ╠═903b7fab-89b8-4b28-a5ca-06fbefa03b2c
 # ╠═2f6ebe5e-a3ff-4d79-83bc-4b9ab19e939c
-# ╠═8a95421e-2245-45ff-a912-afa37781623a
+# ╟─4fe21532-bf4a-452f-b078-cdbddc028cd6
+# ╠═9c6342ae-a3e4-4c36-aef7-84496477a205
+# ╠═f5318bde-d55e-44a7-b8f4-fe19f583f2ce
+# ╟─3be5ba4d-9f0f-49de-97e5-f11c72eb4fc0
 # ╟─ddbab8c0-1440-4027-b1f4-0f083448a17e
 # ╠═18c87a62-b0e5-4e31-ad4f-d449e0f4536a
 # ╠═22a77c67-a0ed-434a-9db4-993cdce0c93b
 # ╠═ec53c559-044e-4287-8b44-1123fade583c
+# ╠═06dcae7f-ac73-4023-a22e-450700d0b705
+# ╠═d1c8214f-278f-4d25-91b4-2e24b1f59b26
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
