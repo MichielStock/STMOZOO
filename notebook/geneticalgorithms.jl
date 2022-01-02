@@ -15,7 +15,7 @@ macro bind(def, element)
 end
 
 # ╔═╡ c80a0f15-2c37-4c40-a543-2e6c3fead1be
-using Images, StatsBase, Plots, PlutoUI
+using Images, StatsBase, Plots, PlutoUI, Distributions
 
 # ╔═╡ 171fee18-20f6-11eb-37e5-2d04caea8c35
 md"""
@@ -25,7 +25,7 @@ By Jordi Verbruggen & Jietse Verweirder
 
 ## Introduction
 
-Genetic algorithms (GAs) are described as optimization algorithms that make use of concepts of biological evolution, such as natural selection and survival of the fittest, to evolve a population to an optimal solution. The population is a string representation of possible solutions, called chromosomes, to the problem in question. The algorithm will then apply evolutionary operators such as mutation, recombination and selection over several generations to converge the population to the best possible solution. A fitness function is used to determine which solution is the most optimal in the population, determining the objective function quality of the solution. Every generation, better solutions are created until the termination criteria are met or until a certain amount of generations has been run. The GA is terminated and the optimal solution should have been found. Although not guaranteed, most solutions will be of sufficient high quality. A schematic overview is shown below.
+Genetic algorithms (GAs) are described as optimization algorithms that make use of concepts of biological evolution, such as natural selection and survival of the fittest, to evolve a population to an optimal solution. The population is a representation of possible solutions, called chromosomes, to the problem in question. Each chromosome in their turn is comprised of genes, which are the actual number values of the solution. The algorithm will then apply evolutionary operators such as mutation, recombination and selection over several generations to converge the population to the best possible solution. A fitness function is used to determine which solution is the most optimal in the population, determining the objective function quality of the solution. Every generation, better solutions are created until the termination criteria are met or until a certain amount of generations has been run. The GA is terminated and the optimal solution should have been found. Although not guaranteed, most solutions will be of sufficient high quality. A schematic overview is shown below.
 """
 
 # ╔═╡ 98b278e9-5cc9-4e36-9d1a-75eb9f4158de
@@ -55,7 +55,7 @@ $(@bind ca2 Slider(1:90,default=75,show_value=true))
 # ╔═╡ cccaf5fb-3c95-4ea9-b699-0cee2f12542e
 md"""
 
-The function takes x and y coordinates that are real number values. Therefore the representation of the individuals will be a tuple of the x and y coordinates. In principle are all techniques discussed here applicable to any function represented by chromosomes with real numbers. Bit string representations are also often used during in GAs, and most of what is discussed further can be applied to that, but not all, which is important to keep in mind.
+The function takes x and y coordinates that have real number values. Therefore the representation of the individuals will be a tuple of the x and y coordinates. In principle are all techniques discussed here applicable to any function represented by chromosomes with real numbers. Bit string representations are also often used during in GAs, and most of what is discussed further can be applied to that, but not all, which is important to keep in mind. To illustrate the implementation with bitstrings, figures of this process have been added.
 
 """
 
@@ -309,9 +309,58 @@ Jordi
 md"""
 ## Mutation
 
+During mutation small changes to the genes of the chromosomes are made. By doing this, genetic diversity is maintained within the population. When not applying mutation, the genetic diversity would go down with each generation of the algorithm. The applied changes can not be to large, otherwise a perfectly good solution would be changed completely, destroying the work that already had been put in. To ensure the changes are not to big a creep mutational operator can be used. Hereby only a small amount is added or substracted from the gene value, often a Gaussian deviate. Also important is the fact that after a lot of generations, the change is getting smaller so that the solution can be finetuned. The mutation rate gives the proportion of genes that need to be mutated. When applying mutation to a bitstring, a flip of one bit can be applied to introduce the change. 
 
-
+We code this as follows:
 """
+
+# ╔═╡ 1b6763ba-ae24-4f63-b7e8-545364ddab89
+"""
+	mutation(offspring, pm, generation)
+
+Input
+
+	- offspring: list of individuals after crossover
+	- pm: mutation rate, the proportion of genes that need to be mutated
+	- generation: the generation the algorithm is currently in
+
+Output
+
+	- offspring: list of individuals with mutated genes
+"""
+function mutation(offspring, pm, generation)
+
+	# initiate a Gaussian distribution
+	gd = truncated(Normal(0.0, 1/(generation + 1)), 0.0, Inf)
+
+	# the number of chromosomes in the population
+	n_ind = length(offspring)
+
+	# the number of genes in each chromosome
+	n_genes = length(offspring[1])
+
+	# based on the mutation rate, calculate exact number of genes that should mutate
+	nmut = trunc(Int, n_ind * n_genes * pm)
+
+	# keep track of what genes are already mutated and of the number of mutated genes
+	used, mutated = [], 0
+
+	# go on as long as there are still genes that need to be mutated
+	while mutated < nmut
+		ind = rand(1:n_ind)				# choose a random individual (index)
+		g = rand(1:n_genes)				# choose a random gene (index)
+		if !((ind,g) in used)			# when not mutated yet, mutate the gene
+			gene = offspring[ind][g] 	# select the gene (value)
+			gene += rand(gd)			# add random Gaussian deviate to the gene
+			offspring[ind][g] = gene 	# change the gene
+			push!(used, (ind,g))		# keep track of mutated genes
+			mutated += 1 				# keep track of number of mutated genes
+		end
+	end
+
+	return offspring
+	
+end
 
 # ╔═╡ 48a851ce-fd14-4516-a172-c720f24bf153
 md"""
@@ -323,10 +372,10 @@ We recommend looking at where your solution is converging to and using the first
 # ╔═╡ 7dbb864c-b3d9-4cd1-8c48-9a61be67334f
 md"""
 Angle 1:
-$(@bind ca NumberField(1:90,default=50))
+$(@bind ca3 NumberField(1:90,default=50))
 
 Angle 2: 
-$(@bind ca3 NumberField(1:90,default=75))
+$(@bind ca4 NumberField(1:90,default=75))
 """
 
 # ╔═╡ 9445dfa1-c276-43fd-81cc-752645e8bf43
@@ -353,7 +402,7 @@ md"""
 """
 
 # ╔═╡ b4a64a85-640d-4386-b7ad-87d87671aac9
-function plot_himmelblau(ca1=50, ca2=75, points=[]) 
+function plot_himmelblau(ca1, ca2, points=[]) 
 	f(x,y) = (x^2 + y - 11)^2 + (x + y^2 - 7)^2
 	x=range(-4.6,stop=4.6,length=100)
 	y=range(-4.6,stop=4.6,length=100)
@@ -393,19 +442,21 @@ plot_himmelblau(ca1, ca2)
 
 # ╔═╡ 453b235b-bd4f-446f-b767-b71a197cc66c
 @gif for i in 1:100
-	points = [(-4*i/100, 2*i/100 + 1)]
-	plot_himmelblau(ca, ca3, points)
+	points = [(0, 3*i/x + 1) for x in 100:200]
+	plot_himmelblau(ca3, ca4, points)
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [compat]
+Distributions = "~0.25.37"
 Images = "~0.25.0"
 Plots = "~1.25.4"
 PlutoUI = "~0.7.27"
@@ -594,6 +645,12 @@ uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 deps = ["Mmap"]
 uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 
+[[DensityInterface]]
+deps = ["InverseFunctions", "Test"]
+git-tree-sha1 = "80c3e8639e3353e5d2912fb3a1916b8455e2494b"
+uuid = "b429d917-457f-4dbc-8f4c-0cc954292b1d"
+version = "0.4.0"
+
 [[Distances]]
 deps = ["LinearAlgebra", "SparseArrays", "Statistics", "StatsAPI"]
 git-tree-sha1 = "3258d0659f812acde79e8a74b11f17ac06d0ca04"
@@ -603,6 +660,12 @@ version = "0.10.7"
 [[Distributed]]
 deps = ["Random", "Serialization", "Sockets"]
 uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
+
+[[Distributions]]
+deps = ["ChainRulesCore", "DensityInterface", "FillArrays", "LinearAlgebra", "PDMats", "Printf", "QuadGK", "Random", "SparseArrays", "SpecialFunctions", "Statistics", "StatsBase", "StatsFuns", "Test"]
+git-tree-sha1 = "6a8dc9f82e5ce28279b6e3e2cea9421154f5bd0d"
+uuid = "31c24e10-a181-5473-b8eb-7969acd0382f"
+version = "0.25.37"
 
 [[DocStringExtensions]]
 deps = ["LibGit2"]
@@ -673,6 +736,12 @@ deps = ["Pkg", "Requires", "UUIDs"]
 git-tree-sha1 = "67551df041955cc6ee2ed098718c8fcd7fc7aebe"
 uuid = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
 version = "1.12.0"
+
+[[FillArrays]]
+deps = ["LinearAlgebra", "Random", "SparseArrays", "Statistics"]
+git-tree-sha1 = "8756f9935b7ccc9064c6eef0bff0ad643df733a3"
+uuid = "1a297f60-69ca-5386-bcde-b61e274b549b"
+version = "0.12.7"
 
 [[FixedPointNumbers]]
 deps = ["Statistics"]
@@ -1232,6 +1301,12 @@ git-tree-sha1 = "b2a7af664e098055a7529ad1a900ded962bca488"
 uuid = "2f80f16e-611a-54ab-bc61-aa92de5b98fc"
 version = "8.44.0+0"
 
+[[PDMats]]
+deps = ["LinearAlgebra", "SparseArrays", "SuiteSparse"]
+git-tree-sha1 = "ee26b350276c51697c9c2d88a072b339f9f03d73"
+uuid = "90014a1f-27ba-587c-ab20-58faa44d9150"
+version = "0.11.5"
+
 [[PNGFiles]]
 deps = ["Base64", "CEnum", "ImageCore", "IndirectArrays", "OffsetArrays", "libpng_jll"]
 git-tree-sha1 = "6d105d40e30b635cfed9d52ec29cf456e27d38f8"
@@ -1318,6 +1393,12 @@ git-tree-sha1 = "ad368663a5e20dbb8d6dc2fddeefe4dae0781ae8"
 uuid = "ea2cea3b-5b76-57ae-a6ef-0a8af62496e1"
 version = "5.15.3+0"
 
+[[QuadGK]]
+deps = ["DataStructures", "LinearAlgebra"]
+git-tree-sha1 = "78aadffb3efd2155af139781b8a8df1ef279ea39"
+uuid = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
+version = "2.4.2"
+
 [[Quaternions]]
 deps = ["DualNumbers", "LinearAlgebra"]
 git-tree-sha1 = "adf644ef95a5e26c8774890a509a55b7791a139f"
@@ -1370,6 +1451,18 @@ deps = ["UUIDs"]
 git-tree-sha1 = "8f82019e525f4d5c669692772a6f4b0a58b06a6a"
 uuid = "ae029012-a4dd-5104-9daa-d747884805df"
 version = "1.2.0"
+
+[[Rmath]]
+deps = ["Random", "Rmath_jll"]
+git-tree-sha1 = "bf3188feca147ce108c76ad82c2792c57abe7b1f"
+uuid = "79098fc4-a85e-5d69-aa6a-4863f24498fa"
+version = "0.7.0"
+
+[[Rmath_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "68db32dff12bb6127bac73c209881191bf0efbb7"
+uuid = "f50d1b31-88e8-58de-be2c-1cc44531875f"
+version = "0.3.0+0"
 
 [[Rotations]]
 deps = ["LinearAlgebra", "Quaternions", "Random", "StaticArrays", "Statistics"]
@@ -1463,11 +1556,21 @@ git-tree-sha1 = "51383f2d367eb3b444c961d485c565e4c0cf4ba0"
 uuid = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 version = "0.33.14"
 
+[[StatsFuns]]
+deps = ["ChainRulesCore", "InverseFunctions", "IrrationalConstants", "LogExpFunctions", "Reexport", "Rmath", "SpecialFunctions"]
+git-tree-sha1 = "bedb3e17cc1d94ce0e6e66d3afa47157978ba404"
+uuid = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
+version = "0.9.14"
+
 [[StructArrays]]
 deps = ["Adapt", "DataAPI", "StaticArrays", "Tables"]
 git-tree-sha1 = "2ce41e0d042c60ecd131e9fb7154a3bfadbf50d3"
 uuid = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 version = "0.6.3"
+
+[[SuiteSparse]]
+deps = ["Libdl", "LinearAlgebra", "Serialization", "SparseArrays"]
+uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
 
 [[TOML]]
 deps = ["Dates"]
@@ -1766,7 +1869,7 @@ version = "0.9.1+5"
 # ╠═c80a0f15-2c37-4c40-a543-2e6c3fead1be
 # ╟─171fee18-20f6-11eb-37e5-2d04caea8c35
 # ╟─98b278e9-5cc9-4e36-9d1a-75eb9f4158de
-# ╠═d89c31c5-f2b3-4b52-8e47-580c62979687
+# ╟─d89c31c5-f2b3-4b52-8e47-580c62979687
 # ╟─d73ee58d-536b-4d19-bb3a-cae8c3bcc4c8
 # ╟─ba845736-b141-484a-9b10-fc73ecf31db3
 # ╟─cccaf5fb-3c95-4ea9-b699-0cee2f12542e
@@ -1779,13 +1882,14 @@ version = "0.9.1+5"
 # ╟─8623b228-c627-4f81-8f6f-6de074b8ec20
 # ╟─a6da65cb-817d-4637-b7a7-0830488696e0
 # ╟─84d49f43-8ac3-4e73-991c-a54bb9fe9b5f
-# ╟─07e1c8b6-c3fd-4f5f-bbb0-fe6595813d55
+# ╠═07e1c8b6-c3fd-4f5f-bbb0-fe6595813d55
 # ╟─307af9a7-6b0c-44ad-a5b0-d9b0c18b5db4
 # ╟─6cf8534b-2fa1-4762-9526-bd3c2da99843
 # ╠═35ef4b6a-5ff7-4ca0-be54-9b281dfe6347
-# ╠═3a075aab-dbf8-4120-93bc-337991c65b40
+# ╟─3a075aab-dbf8-4120-93bc-337991c65b40
+# ╟─1b6763ba-ae24-4f63-b7e8-545364ddab89
 # ╟─48a851ce-fd14-4516-a172-c720f24bf153
-# ╠═453b235b-bd4f-446f-b767-b71a197cc66c
+# ╟─453b235b-bd4f-446f-b767-b71a197cc66c
 # ╟─7dbb864c-b3d9-4cd1-8c48-9a61be67334f
 # ╠═9445dfa1-c276-43fd-81cc-752645e8bf43
 # ╠═e6981604-cb94-4073-9b60-5dcfa1c3ba16
