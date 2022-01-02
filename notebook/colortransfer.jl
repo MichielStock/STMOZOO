@@ -6,7 +6,7 @@ using InteractiveUtils
 
 # ╔═╡ 03f007fe-ed84-4ee4-a806-5239843c0391
 using Plots ,Images , Combinatorics , PlutoUI , Colors , ImageIO ,
-LinearAlgebra, Distributions, Random, LocalFilters
+LinearAlgebra, Distributions, Random, DataStructures
 
 # ╔═╡ c0cc29a4-66cf-11ec-251f-d7772ca48f43
 md"""
@@ -51,16 +51,20 @@ image1 = load("image1.jpg") # change to path local directory
 # ╔═╡ 784097e8-9795-44b8-912b-e009f4929942
 image2 = load("image2.jpg") # change to path local directory
 
-# ╔═╡ 043c9635-8750-4816-95c3-df8f558526d4
-function img_as_list(image, channel)
+# ╔═╡ cd7367a8-91e1-4190-9cd5-5c923791c98e
+function img_to_array(image)
 	img_array = channelview(image)
 	img_array = permutedims(img_array, (2,3,1))
+
+	return img_array
+end
+
+# ╔═╡ 043c9635-8750-4816-95c3-df8f558526d4
+function array_as_list(img_array, channel)
 	img_array = img_array[:,:,channel]
 
 	# height, weight and channel
 	h,w = size(img_array)
-
-	list_pixels = [[x,y,img_array[x,y]] for y in 1:w, x in 1:h]
 
 	list_pixels = Any[]
 
@@ -71,17 +75,27 @@ function img_as_list(image, channel)
 		end
 	end
 
-	
 	return sort(list_pixels, by = x -> x[3])
 end
 
 # ╔═╡ 9c3bb58b-fc10-44e7-86ba-5b051ecf67e1
-
-
-# ╔═╡ 06fb0b7e-1f2e-4573-83fc-b8f2a9d4d554
-let
-	img = img_as_list(image1, 1)
+function transport_colors(source, target, channel)
+	
+	list_source = img_as_list(source, channel)
+	hist_target = []
 end
+
+# ╔═╡ 16d814fb-77ac-4abf-976f-e801ec7747e5
+let
+	img2 = img_to_array(image2)[:,:,1]
+
+	img2_255 = Int.(round.(img2 * 255))
+
+	b = sort(collect(counter(img2_255)))
+end
+
+# ╔═╡ 06d112dc-1aa2-4532-9648-ff2164dfb621
+Int(round(1.33))
 
 # ╔═╡ 884ef830-afc8-4e6e-a3de-43fb1df3b908
 function rgb_to_lab_array(image)
@@ -197,11 +211,11 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 Colors = "5ae59095-9a9b-59fe-a467-6f913c188581"
 Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 ImageIO = "82e4d734-157c-48bb-816b-45c225c6df19"
 Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
-LocalFilters = "085fde7c-5f94-55e4-8448-8bbb5db6dde9"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -209,10 +223,10 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 [compat]
 Colors = "~0.12.8"
 Combinatorics = "~1.0.2"
+DataStructures = "~0.18.11"
 Distributions = "~0.25.37"
 ImageIO = "~0.5.9"
 Images = "~0.25.0"
-LocalFilters = "~1.1.0"
 Plots = "~1.25.3"
 PlutoUI = "~0.7.27"
 """
@@ -913,11 +927,6 @@ version = "2.36.0+0"
 [[LinearAlgebra]]
 deps = ["Libdl", "libblastrampoline_jll"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
-
-[[LocalFilters]]
-git-tree-sha1 = "d88218d203120730329f98630180d9f2813020b0"
-uuid = "085fde7c-5f94-55e4-8448-8bbb5db6dde9"
-version = "1.1.0"
 
 [[LogExpFunctions]]
 deps = ["ChainRulesCore", "ChangesOfVariables", "DocStringExtensions", "InverseFunctions", "IrrationalConstants", "LinearAlgebra"]
@@ -1646,9 +1655,11 @@ version = "0.9.1+5"
 # ╟─3a9db4da-22de-4b49-9630-efc997f2e3b0
 # ╠═31ffeaeb-9316-4d57-a0bf-d21359aa78a3
 # ╠═784097e8-9795-44b8-912b-e009f4929942
+# ╠═cd7367a8-91e1-4190-9cd5-5c923791c98e
 # ╠═043c9635-8750-4816-95c3-df8f558526d4
 # ╠═9c3bb58b-fc10-44e7-86ba-5b051ecf67e1
-# ╠═06fb0b7e-1f2e-4573-83fc-b8f2a9d4d554
+# ╠═16d814fb-77ac-4abf-976f-e801ec7747e5
+# ╠═06d112dc-1aa2-4532-9648-ff2164dfb621
 # ╠═7c89cebe-0495-4f81-b175-3474579c8404
 # ╠═a4388626-18b2-4d24-b80f-c6ed5f6eecc9
 # ╠═16b51e7c-2604-4149-8b57-b569ae60bd31
