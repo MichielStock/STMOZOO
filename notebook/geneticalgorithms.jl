@@ -702,15 +702,27 @@ Output:
 	- generations: A list with the population in every generation
 """
 function minima_himmelblau(pop_size, σ, α, pm)
+
+	# counters
 	generation, generation_max = 0, 0
+
+	# the initial population
 	population = random_init_pop(pop_size, 2, [-4,4])
+
+	# population with its fitness values
 	f_pop = fitness(population, f_himmelblau)
+
+	# the maximal fitness value
 	max_fitness = maximum([x[2] for x in f_pop])
 
+	# keep track of each population in each generation
 	generations = []
-	
+
+	# keep going untill termination criteria are true or
+	# until 1 milion generations
 	while !check_term(f_pop, σ, generation_max) && generation < 1000000
 
+		# keep track of the number of generations the maximal fitness does not change
 		if maximum([x[2] for x in f_pop]) > max_fitness
 			max_fitness = maximum([x[2] for x in f_pop])
 			generation_max = 0
@@ -718,16 +730,22 @@ function minima_himmelblau(pop_size, σ, α, pm)
 			generation_max += 1
 		end
 
+		# selection
 		mate_pool = rank_selection(f_pop)
 
+		# crossover
 		offspring = crossover(mate_pool, α)
 
+		# mutation
 		population = mutation(offspring, pm, generation)
 
+		# track each population in each generation
 		push!(generations, population)
 
+		# fitness of new population
 		f_pop = fitness(population, f_himmelblau)
 
+		# track the number of generations
 		generation += 1
 		
 	end
