@@ -1,11 +1,11 @@
 ### A Pluto.jl notebook ###
-# v0.17.3
+# v0.17.1
 
 using Markdown
 using InteractiveUtils
 
 # ╔═╡ 0150a3e2-f98e-4412-9e96-1a2db5a9421e
-using Combinatorics, Plots, Statistics, Distributions, MLDatasets
+using Combinatorics, Plots, Statistics, Distributions, MLDatasets, LinearAlgebra
 
 # ╔═╡ 936344da-213a-11ec-3e68-05f0f85cf2f3
 md"""
@@ -31,7 +31,7 @@ md"""
 RSO is a new weight update algorithm for training deep neural networks which explores the region around the initialization point by sampling weight changes to minimize the objective function. The idea is based on the assumption that the initial set of weights is already close to the final solution, as deep neural networks are heavily over-parametrized. Unlike traditional backpropagation in training deep neural networks that involves estimation of gradient at a given point, RSO is a gradient-free method. The formal expression of the RSO update rule is as following:
 
 $$wᵢ₊₁=\Bigg\{ \begin{align*}
-&wᵢ,\qquad \qquad f(x, wᵢ)<=f(s,wᵢ+\Delta wᵢ)\\
+&wᵢ,\qquad \qquad f(x, wᵢ)\le f(s,wᵢ+\Delta wᵢ)\\
 &wᵢ+\Delta wᵢ,\quad f(x, wᵢ)>f(s,wᵢ+\Delta wᵢ)
 \end{align*}$$
 , where $\Delta wᵢ$ is the weight change hypothesis.
@@ -100,6 +100,39 @@ function RSO(X,L,C,W)
 	
 	return W
 end
+
+# ╔═╡ 8c0ab91a-675a-4d73-bb95-8166fe115912
+x = 20rand(50) .- 10 |> sort!
+
+# ╔═╡ 9965db1d-7898-4b6b-abc6-c4c7aaf90316
+y = exp.(x/5) .* sin.(x) .+ 0.3rand(length(x))
+
+# ╔═╡ 8c600597-be45-4c5e-9f29-ac2495cb5f88
+two_layer_nn((W1, W2), σ=tanh) = x -> map(xi->W2 ⋅ σ.(W1 * xi), x)
+
+# ╔═╡ e734c419-1752-40bb-bd8a-197d924184a3
+W1 = randn(10,1) # 10 hidden layers
+
+# ╔═╡ dafea85f-2ec0-45a6-96dc-eadd39ce6253
+W2 = randn(10) # 10 hidden layers
+
+# ╔═╡ 69662d0f-29b8-43dc-bbb6-dccc3e3bb951
+f = two_layer_nn((W1, W2))  # neural network with the given inputs
+
+# ╔═╡ 410da533-49b8-4d31-84c2-a2d7d8acea57
+begin
+	scatter(x,y, xlab="x", ylab="y", label="data")
+	plot!(f, x, label="model")
+end
+
+# ╔═╡ 45c32c59-b635-4422-bc01-5d81e10d5450
+f(1)
+
+# ╔═╡ 749cb480-1f98-4003-b7d9-925ee6d50633
+loss((W1,W2)) = sum(abs2, two_layer_nn((W1, W2))(x) .- y)  # mse for model with given parameters
+
+# ╔═╡ 2163a8a8-1ce6-453b-a6fc-3b05f5b0613b
+loss((W1, W2))
 
 # ╔═╡ 64e7be40-cd0b-40c4-b476-51c6a66d40e1
 md"""
@@ -228,6 +261,7 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
@@ -1300,6 +1334,16 @@ version = "0.9.1+5"
 # ╟─8cd1b08a-644e-4cdb-87ab-6f7270a29681
 # ╟─198f91c6-46dc-46dc-a013-c3064a7348cd
 # ╠═703ef56f-1045-4572-ae2a-170a48945e84
+# ╠═8c0ab91a-675a-4d73-bb95-8166fe115912
+# ╠═9965db1d-7898-4b6b-abc6-c4c7aaf90316
+# ╠═410da533-49b8-4d31-84c2-a2d7d8acea57
+# ╠═8c600597-be45-4c5e-9f29-ac2495cb5f88
+# ╠═e734c419-1752-40bb-bd8a-197d924184a3
+# ╠═dafea85f-2ec0-45a6-96dc-eadd39ce6253
+# ╠═69662d0f-29b8-43dc-bbb6-dccc3e3bb951
+# ╠═45c32c59-b635-4422-bc01-5d81e10d5450
+# ╠═749cb480-1f98-4003-b7d9-925ee6d50633
+# ╠═2163a8a8-1ce6-453b-a6fc-3b05f5b0613b
 # ╟─64e7be40-cd0b-40c4-b476-51c6a66d40e1
 # ╟─be803662-aa08-4ee3-a400-bbc18b7d060f
 # ╟─2d9598de-dfd6-46c7-bf4f-c2f48134e558
@@ -1318,6 +1362,6 @@ version = "0.9.1+5"
 # ╠═18e490a3-5823-4862-ae86-07546f556eab
 # ╠═137dc6ec-72c5-4858-a18a-9fb433899805
 # ╟─fde5a843-5767-4fc7-a381-eb2ecc1fe801
-# ╠═e3e29321-c698-407b-9f59-ec1ac30c5f87
+# ╟─e3e29321-c698-407b-9f59-ec1ac30c5f87
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
