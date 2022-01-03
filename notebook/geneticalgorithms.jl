@@ -91,33 +91,25 @@ The code to initialize goes as folows:
 
 # ╔═╡ eba0c158-54d3-4f56-8b1a-5d3ddba001db
 """
-	random_init_pop(pop_size, genome_size, interval)
+	random_init_pop(ps, gs, i)
 
 Inputs:
 
-	- pop_size: The desired size of the population
-	- genome_size: The desired size of the genome
-	- interval: An interval to define the range of the generated float numbers
+	- ps: Population Size: The desired size of the population
+	- gs: Genome Size: The desired size of the genome
+	- i: An interval to define the range of the generated float numbers
 
 Output:
 
 	- pop: A random initial population
 """
-function random_init_pop(pop_size, genome_size, interval) 
+function random_init_pop(ps, gs, i) 
 
-	pop = []
-	for _ in 1:pop_size # making a population with size pop_size
-	genome = []
-		for _ in 1:genome_size # making individuals of size genome_size
-			# generate random float numbers within the interval
-			gene = rand(Uniform(interval[1], interval[2]))
-			push!(genome, gene)
-		end
-	push!(pop, genome)
-	end
+	pop = [[rand(Uniform(i[1], i[2])) for _ in 1:gs] for _ in 1:ps]
+
 	return pop
 	
-end
+end;
 
 # ╔═╡ 41dd8e8d-0f4c-407e-90c5-6f450fe318fe
 population = random_init_pop(100, 2, [-4,4])
@@ -143,33 +135,44 @@ As we want to calculate the minima of the Himmelblau function, we take the negat
 
 # ╔═╡ f4969be8-815e-43bc-adaf-a6e1eeec1226
 """
-	fitness(population, fitness_function)
+	fitness(p, ff, extremeties)
 	
 Inputs:
 	
-	- population: The population you are working with 
+	- p: The population you are working with
+	- ff: The fitness function
+	- extremeties: Indicate if you want to calculate the minima of maxima of the 
+				   function. Options: "minima" or "maxima"
 
 Output: 
 
-	- population_fitness: A calculated fitness score for each individual in 
+	- pf: A calculated fitness score for each individual in 
 						  the population based on the fitness function
 	
 
 """
-function fitness(population, fitness_function)
+function fitness(p, ff, extremeties)
+	@assert(extremeties == "minima" || extremeties == "maxima", "extremeties has to be one of the following values: 'minima' or 'maxima' (without quotation marks)")
 
-	population_fitness = []
-	for ind in population 
-		x = ind[1]
-		y = ind[2]
-		fitness = -fitness_function(x,y)
-
-		push!(population_fitness,[[ind[1], ind[2]], fitness])
+	d = length(p[1])
+	@assert(d == 1 || d == 2, "function has to be 2d or 3d")
+	
+	if d == 2
+		if extremeties == "minima"
+			pf = [[[ind[1], ind[2]], -ff(ind[1], ind[2])] for ind in p]
+		else
+			pf = [[[ind[1], ind[2]], -ff(ind[1],ind[2])] for ind in p]
+		end
+	else
+		if extremeties == "minima"
+			pf = [[[ind[1]], -ff(ind[1]v)] for ind in p]
+		else
+			pf = [[[ind[1]], -ff(ind[1])] for ind in p]
+		end
 	end
 
-
-	return population_fitness
-end
+	return pf
+end;
 
 # ╔═╡ ccb197ff-f322-4f14-acb5-ba64a343d234
 md"""
@@ -190,12 +193,12 @@ The code goes as follows:
 
 # ╔═╡ 2bcdbbf0-2473-40d9-8c85-cec3b6ca4b31
 """
-	check_term(population_fitness, σ, nmax)
+	check_term(pf, σ, nmax)
 
 Inputs:
 
-	- population_fitness: The fitness scores per individual determinded by 
-						  the fitness function
+	- pf: Population_fitness: The fitness scores per individual determinded by 
+						  	  the fitness function
 	- σ: Treshold for the standard deviation
 	- nmax: The number of generations the maximal fitness has not changed
 
@@ -204,11 +207,11 @@ Output:
 	- bool: Depending on the fact that the criteria were met or not
 
 """
-function check_term(population_fitness, σ, nmax) 
+function check_term(pf, σ, nmax) 
 	
-	return std([x[2] for x in population_fitness]) < σ && nmax >= 5
+	return std([x[2] for x in pf]) < σ && nmax >= 5
 
-end
+end;
 
 # ╔═╡ c6155621-9a86-4747-b0ec-65e779670b57
 md"""
@@ -261,8 +264,8 @@ function roulette_wheel_selection(population_fitness)
 	p = [pf[1] for pf in population_fitness]
 
 	# extract the weights from the list, which are its fitness proportions
-	f = [pf[2] for pf in population_fitness]
-	w = [fᵢ / sum(f) for fᵢ in f]
+	fitness = [pf[2] for pf in population_fitness]
+	w = [fᵢ / sum(fitness) for fᵢ in fitness]
 
 	# randomly choose the same number of individuals but with its chance of being
 	# choosen proportional to its fitness
@@ -270,7 +273,7 @@ function roulette_wheel_selection(population_fitness)
 
 	return pool
 	
-end
+end;
 
 # ╔═╡ 8623b228-c627-4f81-8f6f-6de074b8ec20
 md"""
@@ -281,52 +284,17 @@ The probability with which an individual can be selected can then be given by:
 
 ```math 
 \begin{equation}
-	p_i = \frac{r_i}{N(N-1)}
+	p_i = \frac{r_i}{n(n-1)}
 \end{equation}
 ```
 
 Where:
 - pᵢ is the probability for choosing individual i
 - rᵢ is the rank of individual i
-- N the total number of ranks, which is equal to the number of individuals in the population
+- n the total number of ranks, which is equal to the number of individuals in the population
 
 We implement this in code:
 """
-
-# ╔═╡ a6da65cb-817d-4637-b7a7-0830488696e0
-"""
-	rank_selection(population_fitness)
-
-Input:
-
-	- population_fitness: A list where each element consists of the individual 
-						  and its corresponding fitness
-
-Output:
-
-	- pool: A list with the selected individuals for the mating pool
-"""
-function rank_selection(population_fitness)
-
-	# rename for readability
-	pf = population_fitness
-
-	# the number of ranks
-	N = length(population_fitness)
-
-	# initiate the lists containing the individuals 
-	# and their weights (selection probability)
-	p, w = [], Float64[]
-	for (rank, ind) in enumerate(sort(pf, by=pf->pf[2]))
-		push!(p, ind[1])
-		push!(w, (rank / (N * (N - 1))))
-	end
-
-	# select the mating pool based on their selection probabilities
-	pool = sample(p, Weights(w), N)
-
-	return pool
-end
 
 # ╔═╡ 84d49f43-8ac3-4e73-991c-a54bb9fe9b5f
 md"""
@@ -340,35 +308,32 @@ We can write the code as follows:
 
 # ╔═╡ 07e1c8b6-c3fd-4f5f-bbb0-fe6595813d55
 """
-	steady_state_selection(population_fitness, Δ)
+	steady_state_selection(pf, Δ)
 
 Input:
 
-	- population_fitness: A list where each element consists of the individual 
-						  and its corresponding fitness
+	- pf: Population Fitness: A list where each element consists of the individual 
+						  	  and its corresponding fitness
 	- Δ: The proportion of fittest individuals that need to be selected
 
 Output:
 
 	- pool: A list with the selected individuals for the mating pool
 """
-function steady_state_selection(population_fitness, Δ)
+function steady_state_selection(pf, Δ)
 	@assert(Δ <= 0.5, "Proportion of selected individuals has to be smaller than 0.5")
-
-	# rename for readability
-	pf = population_fitness
 	
 	# sort the population based on fitness in descending order
 	sorted_population_fitness = sort(pf, by=pf->pf[2], rev=true)
 
 	# calculate the number of individuals that need to be selected
-	n_ind = trunc(Int, Δ * length(population_fitness))
+	n_ind = trunc(Int, Δ * length(pf))
 
 	# return the mating pool
 	pool = [spf[1] for spf in sorted_population_fitness[1:n_ind]]
 	
 	return pool
-end
+end;
 
 # ╔═╡ 307af9a7-6b0c-44ad-a5b0-d9b0c18b5db4
 md"""
@@ -413,7 +378,7 @@ function tournament_selection(population_fitness, k, prob)
 	
 	@assert(k <= length(population_fitness), "the tournament has to be smaller then the population size!")
 	
-	pool = []
+	pool = Array{Float64}[]
 	while length(pool) < length(population_fitness)
 
 		# build the tournament by randomly selecting k individuals from the population
@@ -435,7 +400,7 @@ function tournament_selection(population_fitness, k, prob)
 
 	return pool
 	
-end
+end;
 
 # ╔═╡ 5096d7c0-0189-4c89-9ec0-13e7aac9aa8a
 md"""
@@ -497,7 +462,7 @@ function crossover(pool, α)
 	shuffle(pool)
 	
 	# create offspring
-	offspring = [] 	
+	offspring = Array{Float64}[] 	
 
 	# go over the mating pool
 	for i in 1:2:length(pool)
@@ -514,7 +479,7 @@ function crossover(pool, α)
 
 	return offspring
 	
-end
+end;
 
 # ╔═╡ 3a075aab-dbf8-4120-93bc-337991c65b40
 md"""
@@ -554,7 +519,7 @@ function mutation(offspring, pm, generation)
 	nmut = trunc(Int, n_ind * n_genes * pm)
 
 	# keep track of what genes are already mutated and of the number of mutated genes
-	used, mutated = [], 0
+	used, mutated = Tuple{Int, Int}[], 0
 
 	# go on as long as there are still genes that need to be mutated
 	while mutated < nmut
@@ -571,7 +536,7 @@ function mutation(offspring, pm, generation)
 
 	return offspring
 	
-end
+end;
 
 # ╔═╡ 6a60527b-0f46-4bf0-bd6f-91e509737a32
 md"""
@@ -666,29 +631,46 @@ plot_himmelblau(ca1, ca2)
 f_himmelblau(x,y) = (x^2 + y - 11)^2 + (x + y^2 - 7)^2
 
 # ╔═╡ 2daddc2a-bc0e-4e8e-adde-f99660c9ac10
-population_fitness = fitness(population, f_himmelblau)
+population_fitness = fitness(population, f_himmelblau, "minima")
 
 # ╔═╡ 3bc3a212-fe9f-4416-9b95-9d061d50a08d
 pool_roulette = roulette_wheel_selection(population_fitness)
 
-# ╔═╡ 23000c68-7864-409f-b5fe-b43b9a2164c3
-pool_rank = rank_selection(population_fitness)
+# ╔═╡ a6da65cb-817d-4637-b7a7-0830488696e0
+"""
+	rank_selection(pf)
 
-# ╔═╡ fa31ea0c-b3dd-4145-bb35-3698308371a7
-offspring = crossover(pool_rank, 0.5)
+Input:
 
-# ╔═╡ 93634846-dc90-4021-bf4c-de1b13f476cc
-offspring_mutated = mutation(offspring, 0.9, 1)
+	- pf: Population Fitness: A list where each element consists of the individual 
+						  	  and its corresponding fitness
 
-# ╔═╡ ba2820c1-649f-4551-98d8-ce113e309b22
-pool_steady_state = steady_state_selection(population_fitness, 0.4)
+Output:
 
-# ╔═╡ 4408b037-e336-4382-8468-28d1746c23d3
-pool_tournament = tournament_selection(population_fitness,50,0.9)
+	- pool: A list with the selected individuals for the mating pool
+"""
+function rank_selection(pf)
+
+	# the number of ranks
+	n = length(population_fitness)
+
+	# initiate the lists containing the individuals 
+	# and their weights (selection probability)
+	p, w = Array{Float64}[], Float64[]
+	for (rank, ind) in enumerate(sort(pf, by=pf->pf[2]))
+		push!(p, ind[1])
+		push!(w, (rank / (n * (n - 1))))
+	end
+
+	# select the mating pool based on their selection probabilities
+	pool = sample(p, Weights(w), n)
+
+	return pool
+end;
 
 # ╔═╡ fc0a7329-5d93-4519-ace0-626aa376fc1b
 """
-	minima_himmelblau(pop_size, σ, α, pm)
+	minima_himmelblau(pop_size, σ, α, pm, ff)
 
 Input:
 
@@ -696,12 +678,13 @@ Input:
 	- σ: The standarddeviation used to determine the termination criteria
 	- α: The crossover rate
 	- pm: The mutation rate
+	- ff: Fitness Function
 
 Output:
 
 	- generations: A list with the population in every generation
 """
-function minima_himmelblau(pop_size, σ, α, pm)
+function minima_himmelblau(pop_size, σ, α, pm, ff)
 
 	# counters
 	generation, generation_max = 0, 0
@@ -710,13 +693,13 @@ function minima_himmelblau(pop_size, σ, α, pm)
 	population = random_init_pop(pop_size, 2, [-4,4])
 
 	# population with its fitness values
-	f_pop = fitness(population, f_himmelblau)
+	f_pop = fitness(population, ff, "minima")
 
 	# the maximal fitness value
 	max_fitness = maximum([x[2] for x in f_pop])
 
 	# keep track of each population in each generation
-	generations = []
+	generations = Array{Array{Float64}}[]
 
 	# keep going untill termination criteria are true or
 	# until 1 milion generations
@@ -743,7 +726,7 @@ function minima_himmelblau(pop_size, σ, α, pm)
 		push!(generations, population)
 
 		# fitness of new population
-		f_pop = fitness(population, f_himmelblau)
+		f_pop = fitness(population, ff, "minima")
 
 		# track the number of generations
 		generation += 1
@@ -751,10 +734,25 @@ function minima_himmelblau(pop_size, σ, α, pm)
 	end
 	
 	return generations
-end
+end;
+
+# ╔═╡ 23000c68-7864-409f-b5fe-b43b9a2164c3
+pool_rank = rank_selection(population_fitness)
+
+# ╔═╡ fa31ea0c-b3dd-4145-bb35-3698308371a7
+offspring = crossover(pool_rank, 0.5)
+
+# ╔═╡ 93634846-dc90-4021-bf4c-de1b13f476cc
+offspring_mutated = mutation(offspring, 0.9, 1)
+
+# ╔═╡ ba2820c1-649f-4551-98d8-ce113e309b22
+pool_steady_state = steady_state_selection(population_fitness, 0.4)
+
+# ╔═╡ 4408b037-e336-4382-8468-28d1746c23d3
+pool_tournament = tournament_selection(population_fitness,50,0.9)
 
 # ╔═╡ 5aed7665-1131-4715-90ca-dca12c038a68
-generations = minima_himmelblau(pop_size, σ, α, pm)
+generations = minima_himmelblau(pop_size, σ, α, pm, f_himmelblau)
 
 # ╔═╡ 7dbb864c-b3d9-4cd1-8c48-9a61be67334f
 md"""
@@ -2212,36 +2210,36 @@ version = "0.9.1+5"
 # ╟─8212a676-3167-438a-944d-5eeae72d54d8
 # ╟─9365760a-10e5-48a4-ae77-b3f1a686f8e3
 # ╟─a8cd1caa-feb2-442f-ba8f-27619bfbff84
-# ╟─eba0c158-54d3-4f56-8b1a-5d3ddba001db
+# ╠═eba0c158-54d3-4f56-8b1a-5d3ddba001db
 # ╠═41dd8e8d-0f4c-407e-90c5-6f450fe318fe
 # ╟─37b9fce9-e99c-424f-a614-8169b7edf0d6
-# ╟─f4969be8-815e-43bc-adaf-a6e1eeec1226
+# ╠═f4969be8-815e-43bc-adaf-a6e1eeec1226
 # ╠═2daddc2a-bc0e-4e8e-adde-f99660c9ac10
 # ╟─ccb197ff-f322-4f14-acb5-ba64a343d234
-# ╟─2bcdbbf0-2473-40d9-8c85-cec3b6ca4b31
+# ╠═2bcdbbf0-2473-40d9-8c85-cec3b6ca4b31
 # ╟─c6155621-9a86-4747-b0ec-65e779670b57
 # ╟─953edf56-a957-4c61-8a89-9709dc6dfd65
-# ╟─79eb48df-26de-4965-b078-9bb20313247a
+# ╠═79eb48df-26de-4965-b078-9bb20313247a
 # ╠═3bc3a212-fe9f-4416-9b95-9d061d50a08d
 # ╟─8623b228-c627-4f81-8f6f-6de074b8ec20
-# ╟─a6da65cb-817d-4637-b7a7-0830488696e0
+# ╠═a6da65cb-817d-4637-b7a7-0830488696e0
 # ╠═23000c68-7864-409f-b5fe-b43b9a2164c3
 # ╟─84d49f43-8ac3-4e73-991c-a54bb9fe9b5f
-# ╟─07e1c8b6-c3fd-4f5f-bbb0-fe6595813d55
+# ╠═07e1c8b6-c3fd-4f5f-bbb0-fe6595813d55
 # ╠═ba2820c1-649f-4551-98d8-ce113e309b22
 # ╟─307af9a7-6b0c-44ad-a5b0-d9b0c18b5db4
-# ╟─6cf8534b-2fa1-4762-9526-bd3c2da99843
+# ╠═6cf8534b-2fa1-4762-9526-bd3c2da99843
 # ╠═4408b037-e336-4382-8468-28d1746c23d3
 # ╟─5096d7c0-0189-4c89-9ec0-13e7aac9aa8a
 # ╟─0be0a442-8c9f-4035-b926-998f0c63ade7
 # ╟─9c2f897a-663e-4408-8364-1582ef6cba9c
-# ╟─1e7552ac-9c46-479d-b26e-5d776e3cc5af
+# ╠═1e7552ac-9c46-479d-b26e-5d776e3cc5af
 # ╠═fa31ea0c-b3dd-4145-bb35-3698308371a7
 # ╟─3a075aab-dbf8-4120-93bc-337991c65b40
-# ╟─1b6763ba-ae24-4f63-b7e8-545364ddab89
+# ╠═1b6763ba-ae24-4f63-b7e8-545364ddab89
 # ╠═93634846-dc90-4021-bf4c-de1b13f476cc
 # ╟─6a60527b-0f46-4bf0-bd6f-91e509737a32
-# ╟─fc0a7329-5d93-4519-ace0-626aa376fc1b
+# ╠═fc0a7329-5d93-4519-ace0-626aa376fc1b
 # ╟─97af696e-d076-40b3-a5d5-ec363350d7b7
 # ╟─6ba87a23-5114-4126-b6a2-0981992d8a46
 # ╟─48a851ce-fd14-4516-a172-c720f24bf153
