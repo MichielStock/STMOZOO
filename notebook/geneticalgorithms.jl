@@ -75,16 +75,16 @@ md"""
 
 A few things have to be taken into account, when designing the initial population:
 
-	- The population size: A smaller population has a higher change for a premature convergence, while a large population asks more computing time.
+- The population size: A smaller population has a higher change for a premature convergence, while a large population asks more computing time.
 	
-	- The diversity: A low diverstity will also cause a premature convergence
+- The diversity: A low diverstity will also cause a premature convergence
 
 
 Overall, there are two primary methods to initialize a population in a GA: 
 	
-	- Random Initialization: Populate the initial population with completely random  solutions.
+- Random Initialization: Populate the initial population with completely random  solutions.
 
-	- Heuristic initialization: Populate the initial population using a known heuristic for the problem. Da ge al een semi-oplossing hebt
+- Heuristic initialization: Populate the initial population using a known heuristic for the problem. The population exists of solutions that are already a great step closer to the exact solution
 
 The code to initialize goes as folows:
 """
@@ -179,11 +179,11 @@ Eventually the run of the algorithm will have to come to an end. Herefore certai
 
 Usually, we keep one of the following termination conditions:
 
-	- When there has been no improvement in the population for X iterations.
+- When there has been no improvement in the population for X iterations.
 
-	- When we reach an absolute number of generations.
+- When we reach an absolute number of generations.
 
-	- When the objective function value has reached a certain pre-defined value.
+- When the objective function value has reached a certain pre-defined value.
 
 The code goes as follows:
 """
@@ -445,11 +445,11 @@ The most significant way to stochastically generate new solutions from an existi
 
 There exist a few different types of crossover:
 
-	- Single Point Crossover : A crossover point on the parent organism string is selected. All data beyond that point in the organism string is swapped between the two parent organisms. Strings are characterized by Positional Bias.
+- Single Point Crossover : A crossover point on the parent organism string is selected. All data beyond that point in the organism string is swapped between the two parent organisms. Strings are characterized by Positional Bias.
 
-	- Two-Point Crossover : This is a specific case of a N-point Crossover technique. Two random points are chosen on the individual chromosomes (strings) and the genetic material is exchanged at these points.
+- Two-Point Crossover : This is a specific case of a N-point Crossover technique. Two random points are chosen on the individual chromosomes (strings) and the genetic material is exchanged at these points.
 
-	- Uniform Crossover : Each gene (bit) is selected randomly from one of the corresponding genes of the parent chromosomes. Tossing of a coin can be seen as an example technique.
+- Uniform Crossover : Each gene (bit) is selected randomly from one of the corresponding genes of the parent chromosomes. Tossing of a coin can be seen as an example technique.
 
 For this example we introduce the "Single Point Crossover" 
 """
@@ -468,11 +468,11 @@ $$C_2 = (1 − \alpha)P_1 + \alpha P_2$$
 with P1
 and P2 the gene of parent one and parent two respectively, C1 and C2 child one and child two respectively and α the factor by which the parental genes are divided. This technique is also called whole arithmetic crossover and goes as follows:
 
-	- The mating pool is shuffled to make random parings of parents
-	- Divide genome of parents over the offspring with a factor α
-	- Two children are created out of two parents
-	- The two parents are two individuals adjacent in the mating pool list
-	- The whole population is replaced by the offspring
+- The mating pool is shuffled to make random parings of parents
+- Divide genome of parents over the offspring with a factor α
+- Two children are created out of two parents
+- The two parents are two individuals adjacent in the mating pool list
+- The whole population is replaced by the offspring
 """
 
 # ╔═╡ 1e7552ac-9c46-479d-b26e-5d776e3cc5af
