@@ -134,6 +134,11 @@ loss((W1,W2)) = sum(abs2, two_layer_nn((W1, W2))(x) .- y)  # mse for model with 
 # ╔═╡ 2163a8a8-1ce6-453b-a6fc-3b05f5b0613b
 loss((W1, W2))
 
+# ╔═╡ f4d0c224-96ea-4029-b7bb-12f53460ed09
+function rso(Ws, loss)
+	# you can start from here
+end
+
 # ╔═╡ 64e7be40-cd0b-40c4-b476-51c6a66d40e1
 md"""
 Consider the Indiana Jones problem:
@@ -1344,6 +1349,7 @@ version = "0.9.1+5"
 # ╠═45c32c59-b635-4422-bc01-5d81e10d5450
 # ╠═749cb480-1f98-4003-b7d9-925ee6d50633
 # ╠═2163a8a8-1ce6-453b-a6fc-3b05f5b0613b
+# ╠═f4d0c224-96ea-4029-b7bb-12f53460ed09
 # ╟─64e7be40-cd0b-40c4-b476-51c6a66d40e1
 # ╟─be803662-aa08-4ee3-a400-bbc18b7d060f
 # ╟─2d9598de-dfd6-46c7-bf4f-c2f48134e558
