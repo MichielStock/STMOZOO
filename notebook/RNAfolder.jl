@@ -19,6 +19,9 @@ This pluto notebook contains the code for a simple RNA secondary structure predi
 # ╔═╡ 6482fcd3-23de-49bb-ae0a-b7db42305890
 RNA = "GGGAAAUCC"
 
+# ╔═╡ 3ea557f6-a3bd-4d73-99ef-10fc69024fca
+n = length(RNA)
+
 # ╔═╡ b266622e-db86-4690-8328-d17e1b5a6db0
 function basepair(i, j, RNA)
 	bp = 0
@@ -52,8 +55,14 @@ function basepair(i, j, RNA)
 	return bp
 end
 
+# ╔═╡ a5a82275-729e-487e-86c7-4323cdabd392
+RNA[1], RNA[9]
+
 # ╔═╡ 7a9b23c1-30cd-4516-bc47-259302d944fc
-basepair(1, 2, RNA)
+basepair(1, 9, RNA)
+
+# ╔═╡ 7cb6998f-eb0a-42da-bfd1-bc7370955b70
+RNA[1], RNA[3]
 
 # ╔═╡ a624100b-59e7-483e-affd-d0b5391dd475
 basepair(1, 3, RNA)
@@ -81,8 +90,11 @@ S = calculate_S(RNA)
 # ╔═╡ Cell order:
 # ╟─4b3e86ea-6973-11ec-014f-9f2708ba86cf
 # ╠═6482fcd3-23de-49bb-ae0a-b7db42305890
+# ╠═3ea557f6-a3bd-4d73-99ef-10fc69024fca
 # ╠═b266622e-db86-4690-8328-d17e1b5a6db0
+# ╠═a5a82275-729e-487e-86c7-4323cdabd392
 # ╠═7a9b23c1-30cd-4516-bc47-259302d944fc
+# ╠═7cb6998f-eb0a-42da-bfd1-bc7370955b70
 # ╠═a624100b-59e7-483e-affd-d0b5391dd475
 # ╠═dc573955-b679-4fdc-aeba-7001ea8f7a4c
 # ╠═0a20eddd-24f7-43c6-a0f3-6c1c138fb90a
