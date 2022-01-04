@@ -91,28 +91,35 @@ The code to initialize goes as folows:
 
 # ╔═╡ eba0c158-54d3-4f56-8b1a-5d3ddba001db
 """
-	random_init_pop(ps, gs, i)
+	random_init_pop(ps, gs, i_x, i_y)
 
 Inputs:
 
 	- ps: Population Size: The desired size of the population
-	- gs: Genome Size: The desired size of the genome
-	- i: An interval to define the range of the generated float numbers
+	- gs: Genome Size: The desired size of the genome. Options: 1 or 2 (integers)
+	- i_x: Interval to define the range of the generated float numbers on the x-axis
+	- i_y: Interval to define the range of the generated float numbers on the y-axis
 
 Output:
 
 	- pop: A random initial population
 """
-function random_init_pop(ps, gs, i) 
+function random_init_pop(ps, gs, i_x, i_y)
 
-	pop = [[rand(Uniform(i[1], i[2])) for _ in 1:gs] for _ in 1:ps]
-
+	if gs == 2
+		pop = [
+			[rand(Uniform(i_x[1], i_x[2])),rand(Uniform(i_y[1],i_y[2]))] for _ in 1:ps
+		]
+	else
+		pop = [[rand(Uniform(i_x[1], i_x[2]))] for _ in 1:ps]
+	end
+	
 	return pop
 	
 end;
 
 # ╔═╡ 41dd8e8d-0f4c-407e-90c5-6f450fe318fe
-population = random_init_pop(100, 2, [-4,4])
+population = random_init_pop(100, 2, [-4,4], [-4,4])
 
 # ╔═╡ 37b9fce9-e99c-424f-a614-8169b7edf0d6
 md"""
@@ -161,13 +168,13 @@ function fitness(p, ff, extremeties)
 		if extremeties == "minima"
 			pf = [[[ind[1], ind[2]], -ff(ind[1], ind[2])] for ind in p]
 		else
-			pf = [[[ind[1], ind[2]], -ff(ind[1],ind[2])] for ind in p]
+			pf = [[[ind[1], ind[2]], ff(ind[1],ind[2])] for ind in p]
 		end
 	else
 		if extremeties == "minima"
-			pf = [[[ind[1]], -ff(ind[1]v)] for ind in p]
-		else
 			pf = [[[ind[1]], -ff(ind[1])] for ind in p]
+		else
+			pf = [[[ind[1]], ff(ind[1])] for ind in p]
 		end
 	end
 
@@ -556,16 +563,16 @@ To better understand the influences of the different parameters, you can change 
 # ╔═╡ 6ba87a23-5114-4126-b6a2-0981992d8a46
 md"""
 Population size:
-$(@bind pop_size Slider(0:250,default=100,show_value=true))
+$(@bind pop_size_h Slider(0:250,default=100,show_value=true))
 
 Standard deviation σ for the termination criteria:
-$(@bind σ NumberField(0:0.00000001:1,default=0.001))
+$(@bind σₕ NumberField(0:0.00000001:1,default=0.001))
 
 The crossover rate α determines the proportion of dividing the parent genes during crossover:
-$(@bind α Slider(0:0.01:1,default=0.5,show_value=true))
+$(@bind αₕ Slider(0:0.01:1,default=0.5,show_value=true))
 
 The mutation rate: proportion of the genes that need to undergo mutation each generation:
-$(@bind pm Slider(0:0.01:1,default=0.10,show_value=true))
+$(@bind pmₕ Slider(0:0.01:1,default=0.10,show_value=true))
 """
 
 # ╔═╡ 48a851ce-fd14-4516-a172-c720f24bf153
@@ -583,13 +590,60 @@ On the animation, we clearly see how the algorithm works. The initial population
 
 """
 
+# ╔═╡ 22c1df68-673f-4791-a705-0b45a42da211
+md"""
+## Custom functions
+
+To enable people to enter their own functions, we rewrite the algorithm more generally. Here you can again play with the different parameters but also give in your custom function. The functions can be 2D or 3D, which needs to be indicated by the genome size. A genome size of 1 resembles a 2D function (one variable) and a genome size of 2 resembles a 3D function (two variables).
+
+"""
+
+# ╔═╡ 5af46f82-c323-4472-aa68-76d253eb35b9
+md"""
+Population size:
+$(@bind pop_size_c Slider(0:250,default=100,show_value=true))
+
+Genome size:
+$(@bind gs Select([1, 2]))
+
+Interval to search in:
+
+X-axis:
+From
+$(@bind i_lower_x NumberField(-1000000:1000000, default=-1))
+To
+$(@bind i_upper_x NumberField(-1000000:1000000, default=1))
+
+Y-axis (for functions in 3D):
+From
+$(@bind i_lower_y NumberField(-1000000:1000000, default=-1))
+To
+$(@bind i_upper_y NumberField(-1000000:1000000, default=1))
+
+Which extremeties are you looking for:
+$(@bind extr Select(["minima", "maxima"]))
+
+Standard deviation σ for the termination criteria:
+$(@bind σ_custom NumberField(0:0.00000001:1,default=0.001))
+
+The crossover rate α determines the proportion of dividing the parent genes during crossover:
+$(@bind α_custom Slider(0:0.01:1,default=0.5,show_value=true))
+
+The mutation rate: proportion of the genes that need to undergo mutation each generation:
+$(@bind pm_custom Slider(0:0.01:1,default=0.10,show_value=true))
+"""
+
+# ╔═╡ cc6edd6d-0328-4692-834d-aa5258076d21
+# write your function here: f(x) = ... if genome size = 1 or f(x,y) = ... if genome size = 2 then save to execute the algorithm
+f(x) = x^2
+
 # ╔═╡ 3ff092e2-7af2-4b4b-bd29-2b0310cae48f
 md"""
 ## Appendices
 """
 
 # ╔═╡ b4a64a85-640d-4386-b7ad-87d87671aac9
-function plot_himmelblau(ca1, ca2, points=[]) 
+function plot_himmelblau(ca1, ca2, points=Array{Float64}[]) 
 	f(x,y) = (x^2 + y - 11)^2 + (x + y^2 - 7)^2
 	x=range(-4.6,stop=4.6,length=100)
 	y=range(-4.6,stop=4.6,length=100)
@@ -626,6 +680,58 @@ end
 
 # ╔═╡ d73ee58d-536b-4d19-bb3a-cae8c3bcc4c8
 plot_himmelblau(ca1, ca2)
+
+# ╔═╡ 1cef7433-e0a8-4ec7-a7a7-e7bd24efa20f
+function plot_3d(ca1, ca2, f, i_lower_x, i_upper_x, i_lower_y, i_upper_y, points=Array{Float64}[])
+	x=range(i_lower_x,stop=i_upper_x,length=100)
+	y=range(i_lower_y,stop=i_upper_y,length=100)
+	cg = cgrad([
+		:black,
+		:lightblue, 
+		:blue, 
+		:darkblue, 
+		:lightgreen,
+		:green,
+		:darkgreen,
+		:yellow, 
+		:orange, 
+		:red, 
+		:brown
+	])
+	q = plot(
+		x,y,f,
+		st=:surface, 
+		c = cg, 
+		camera = (ca1,ca2), 
+		zlim = (f(i_lower_x,i_lower_y), f(i_upper_x, i_upper_y)),
+		xlab = "x",
+		ylab = "y",
+	)
+	if length(points) != 0
+		x = [p[1] for p in points]
+		y = [p[2] for p in points]
+		z = [f(p[1], p[2]) for p in points]
+		plot!(q,x,y,z,seriestype=:scatter, legend=false, zlim=(f(i_lower_x,i_lower_y), f(i_upper_x, i_upper_y)), c=:white)
+	end
+	return q
+end
+
+# ╔═╡ c4838943-8a9d-46f9-88d5-6df92b66c8d4
+function plot_2d(i_lower_x, i_upper_x, f, points=Array{Float64}[])
+	x = range(i_lower_x, i_upper_x, length=100)
+	r = plot(
+		x,f,
+		c = :black,
+		xlab = "x",
+		ylab = "y",
+	)
+	if length(points) != 0
+		x = [p[1] for p in points]
+		y = [f(p[1]) for p in points]
+		plot!(r,x,y,seriestype=:scatter, legend=false, c=:white)
+	end
+	return r
+end
 
 # ╔═╡ 46862350-c094-4489-83a2-ea4b670a16c0
 f_himmelblau(x,y) = (x^2 + y - 11)^2 + (x + y^2 - 7)^2
@@ -690,7 +796,7 @@ function minima_himmelblau(pop_size, σ, α, pm, ff)
 	generation, generation_max = 0, 0
 
 	# the initial population
-	population = random_init_pop(pop_size, 2, [-4,4])
+	population = random_init_pop(pop_size, 2, [-4,4], [-4,4])
 
 	# population with its fitness values
 	f_pop = fitness(population, ff, "minima")
@@ -700,6 +806,7 @@ function minima_himmelblau(pop_size, σ, α, pm, ff)
 
 	# keep track of each population in each generation
 	generations = Array{Array{Float64}}[]
+	push!(generations, population)
 
 	# keep going untill termination criteria are true or
 	# until 1 milion generations
@@ -736,6 +843,80 @@ function minima_himmelblau(pop_size, σ, α, pm, ff)
 	return generations
 end;
 
+# ╔═╡ c75e7eb2-ea7c-4448-ad5b-54955ee5cd8c
+"""
+	genetic_algorithm(pop_size, gs, i_x, i_y, extremeties, σ, α, pm, ff)
+
+Input:
+
+	- pop_size: The population size
+	- gs: Genome Size: Indicates wheter the function is 2d or 3d
+	- i_x: Interval: Interval in which the extrema need to be searched on the x-axis
+	- i_y: Interval: Interval in which the extrema need to be searched on the y-axis
+	- extremeties: Wheter the minima or maxima need to be searched: Options: "minima" 
+				   or "maxima"
+	- σ: The standarddeviation used to determine the termination criteria
+	- α: The crossover rate
+	- pm: The mutation rate
+	- ff: Fitness Function
+
+Output:
+
+	- generations: A list with the population in every generation
+"""
+function genetic_algorithm(pop_size, gs, i_x, i_y, extremeties, σ, α, pm, ff)
+
+	# counters
+	generation, generation_max = 0, 0
+
+	# the initial population
+	population = random_init_pop(pop_size, gs, i_x, i_y)
+
+	# population with its fitness values
+	f_pop = fitness(population, ff, extremeties)
+
+	# the maximal fitness value
+	max_fitness = maximum([x[2] for x in f_pop])
+
+	# keep track of each population in each generation
+	generations = Array{Array{Float64}}[]
+	push!(generations, population)
+
+	# keep going untill termination criteria are true or
+	# until 1 milion generations
+	while !check_term(f_pop, σ, generation_max) && generation < 1000000
+
+		# keep track of the number of generations the maximal fitness does not change
+		if maximum([x[2] for x in f_pop]) > max_fitness
+			max_fitness = maximum([x[2] for x in f_pop])
+			generation_max = 0
+		else
+			generation_max += 1
+		end
+
+		# selection
+		mate_pool = rank_selection(f_pop)
+
+		# crossover
+		offspring = crossover(mate_pool, α)
+
+		# mutation
+		population = mutation(offspring, pm, generation)
+
+		# track each population in each generation
+		push!(generations, population)
+
+		# fitness of new population
+		f_pop = fitness(population, ff, extremeties)
+
+		# track the number of generations
+		generation += 1
+		
+	end
+	
+	return generations
+end;
+
 # ╔═╡ 23000c68-7864-409f-b5fe-b43b9a2164c3
 pool_rank = rank_selection(population_fitness)
 
@@ -752,16 +933,16 @@ pool_steady_state = steady_state_selection(population_fitness, 0.4)
 pool_tournament = tournament_selection(population_fitness,50,0.9)
 
 # ╔═╡ 5aed7665-1131-4715-90ca-dca12c038a68
-generations = minima_himmelblau(pop_size, σ, α, pm, f_himmelblau)
+generations_himmelblau = minima_himmelblau(pop_size_h, σₕ, αₕ, pmₕ, f_himmelblau)
 
 # ╔═╡ 7dbb864c-b3d9-4cd1-8c48-9a61be67334f
 md"""
 
 Number of generations to show:
-$(@bind G NumberField(0:length(generations),default=50))
+$(@bind g NumberField(1:length(generations_himmelblau),default=50))
 
 Frames per second:
-$(@bind FPS NumberField(1:50, default=5))
+$(@bind fps NumberField(1:50, default=5))
 
 Angle 1:
 $(@bind ca3 NumberField(1:90,default=50))
@@ -772,11 +953,44 @@ $(@bind ca4 NumberField(1:90,default=75))
 
 # ╔═╡ 453b235b-bd4f-446f-b767-b71a197cc66c
 begin
-	anim = @animate for (i,s) in enumerate(generations[1:G])
+	anim = @animate for (i,s) in enumerate(generations_himmelblau[1:g])
 		plot_himmelblau(ca3, ca4, s)
 		plot!(title="Generation: $i")
 	end
-	gif(anim, fps=FPS)
+	gif(anim, fps=fps)
+end
+
+# ╔═╡ 5f1b386d-daf0-46ca-a90a-89c954eb2d11
+generations_custom = genetic_algorithm(pop_size_c, gs, [i_lower_x,i_upper_x], [i_lower_y,i_upper_y], extr, σ_custom, α_custom, pm_custom, f)
+
+# ╔═╡ 26f2bdca-e7bc-4e80-86ca-d4dc29d71aa0
+md"""
+
+Number of generations to show:
+$(@bind ge NumberField(1:length(generations_custom),default=1))
+
+Frames per second:
+$(@bind frps NumberField(1:50, default=5))
+
+Only relevant for 3D functions:
+
+Angle 1:
+$(@bind ca5 NumberField(1:90,default=50))
+Angle 2:
+$(@bind ca6 NumberField(1:90,default=75))
+"""
+
+# ╔═╡ 19b91d8e-d03d-4b76-8358-5a4b1e90604d
+begin
+	anima = @animate for (i,s) in enumerate(generations_custom[1:ge])
+		if gs == 2
+			plot_3d(ca5,ca6,f,i_lower_x,i_upper_x,i_lower_y,i_upper_y,s)
+		else
+			plot_2d(i_lower_x,i_upper_x,f,s)
+		end
+		plot!(title="Generation: $i")
+	end
+	gif(anima, fps=frps)
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -2200,7 +2414,7 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╟─c80a0f15-2c37-4c40-a543-2e6c3fead1be
+# ╠═c80a0f15-2c37-4c40-a543-2e6c3fead1be
 # ╟─171fee18-20f6-11eb-37e5-2d04caea8c35
 # ╟─98b278e9-5cc9-4e36-9d1a-75eb9f4158de
 # ╟─d89c31c5-f2b3-4b52-8e47-580c62979687
@@ -2246,9 +2460,18 @@ version = "0.9.1+5"
 # ╟─453b235b-bd4f-446f-b767-b71a197cc66c
 # ╟─7dbb864c-b3d9-4cd1-8c48-9a61be67334f
 # ╟─34360486-0f98-46bf-bdb6-550164e3b051
+# ╟─22c1df68-673f-4791-a705-0b45a42da211
+# ╠═c75e7eb2-ea7c-4448-ad5b-54955ee5cd8c
+# ╟─5af46f82-c323-4472-aa68-76d253eb35b9
+# ╠═cc6edd6d-0328-4692-834d-aa5258076d21
+# ╟─19b91d8e-d03d-4b76-8358-5a4b1e90604d
+# ╟─26f2bdca-e7bc-4e80-86ca-d4dc29d71aa0
 # ╟─3ff092e2-7af2-4b4b-bd29-2b0310cae48f
 # ╟─b4a64a85-640d-4386-b7ad-87d87671aac9
+# ╟─1cef7433-e0a8-4ec7-a7a7-e7bd24efa20f
+# ╟─c4838943-8a9d-46f9-88d5-6df92b66c8d4
 # ╟─46862350-c094-4489-83a2-ea4b670a16c0
-# ╠═5aed7665-1131-4715-90ca-dca12c038a68
+# ╟─5aed7665-1131-4715-90ca-dca12c038a68
+# ╟─5f1b386d-daf0-46ca-a90a-89c954eb2d11
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
