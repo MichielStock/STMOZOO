@@ -57,6 +57,7 @@ md"""
 
 The function takes x and y coordinates that have real number values. Therefore the representation of the individuals will be a tuple of the x and y coordinates. In principle are all techniques discussed here applicable to any function represented by chromosomes with real numbers. Bit string representations are also often used during in GAs, and most of what is discussed further can be applied to that, but not all, which is important to keep in mind. To illustrate the implementation with bitstrings, figures of this process have been added.
 
+In a last part of the notebook functionality has been added where custom objectives can be found via a genetic algorithm. Here you can write your function and by setting up some parameters, the extremeties of the objective can be found. Important to mention here is that the functions have to be 2D or 3D
 """
 
 # ╔═╡ 8212a676-3167-438a-944d-5eeae72d54d8
