@@ -18,6 +18,7 @@ Explain an optimization method not covered in the course though an interactive n
 - [information-geometric opitmization algorithms](http://www.cmap.polytechnique.fr/~anne.auger/teaching-slides/05_DFO-IGO.pdf)
 - the big deal with multi-objective optimization
 - Thompson sampling: optimal gambling 🎲
+- Christofides' algorithm for solving the TSP 
 - ...
 
 ## Tools 🔧
