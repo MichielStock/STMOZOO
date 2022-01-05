@@ -28,6 +28,22 @@ In chapter 6, we learned the concept of **optimal transportation**, and saw that
 	Given the RGB representation of the pixels of two images (X1,X2) and a cost over the colors, transfer the color scheme of image 2 to image 1.
 """
 
+# ╔═╡ 5765172c-287a-4632-86db-a4fa91e651f8
+md"""
+### Experimental setup
+
+- Represent image as size u x v in RGB color space
+- Apply k-means clustering to quantize image down to m colors
+- = Produce m color centroids x1 ... xm (R3)
+- We can count how many pixels were assigned to each centroid and normalizing by u*v gives us a color histogram a < delta(m)
+- Repeat the same process with a second image (y1 ... yn (R3)), b < delta(n)
+  
+- Next, apply any of the proposed method with cost matrix cij = d(xi, yj)
+- For each color centroid xi, we apply a barycentric projection to obtain a new color centroid
+- xi_ = argmin ( sum ( tij * d(x,y) ) )
+- 
+"""
+
 # ╔═╡ f46ad76d-2cd9-48c2-acfc-33188a2af405
 download("https://github.com/juhlee/ColorTransfer.jl/blob/master/figs/cityscape.jpg?raw=true", "image1.jpg")
 
@@ -1808,6 +1824,7 @@ version = "0.9.1+5"
 # ╟─c0cc29a4-66cf-11ec-251f-d7772ca48f43
 # ╠═03f007fe-ed84-4ee4-a806-5239843c0391
 # ╟─03ad0574-699b-4046-863e-611e1a058d82
+# ╟─5765172c-287a-4632-86db-a4fa91e651f8
 # ╠═f46ad76d-2cd9-48c2-acfc-33188a2af405
 # ╠═8cb3b1c5-a1f5-4b5b-8ce4-2c1a66f6e762
 # ╟─3a9db4da-22de-4b49-9630-efc997f2e3b0
