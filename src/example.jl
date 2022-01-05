@@ -17,7 +17,7 @@ export solve_quadratic_system, quadratic_function
 
 Find the minimizer of a canonical quadratic system:
 
-``f(x) = 0.5xᵀ  P  x + x ⋅ q + r``
+``f(x) = 0.5xᵀ  P  x + x ⋅ q + r`` 
 
 with `P` a positive scalar or a positive-definite n x n matrix and `q` a scalar or
 a n x n vector. The intercept `r` can optionally be given but does not influence

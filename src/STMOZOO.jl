@@ -5,4 +5,8 @@ module STMOZOO
 include("example.jl")
 export Example
 
+include("beesalgorithm.jl")
+export BeesAlgorithm
+
 end # module
+
