@@ -2,7 +2,7 @@ module Data
 
 export points_class_1, points_class_2
 
-function points_class_1(offset)
+function moon_class_1(offset = 0.0)
     x = [
         -2.717835893494339 - offset,
         -2.0025756608302556 - offset,
@@ -307,11 +307,10 @@ function points_class_1(offset)
         -0.7882243058017496,
         -0.9895456553950488
     ]
-
-    return x, y
+    return vcat(transpose.((x, y))...)
 end
 
-function points_class_2(offset)
+function moon_class_2(offset = 0.0)
     x = [
         1.2605697631874289 + offset,
         0.4428841761287988 + offset,
@@ -616,8 +615,13 @@ function points_class_2(offset)
         -3.0090552847647456,
         0.2317409067300455
     ]
+    return vcat(transpose.((x, y))...)
+end
 
-    return x, y
+function get_moons()
+    moons = hcat(moon_class_1(), moon_class_2())
+    labels = [repeat([1], 150); repeat([-1], 150)]
+    return moons, labels
 end
 
 end
