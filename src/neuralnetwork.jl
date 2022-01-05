@@ -7,21 +7,21 @@ using Flux: onehotbatch, onecold
 using Flux.Data: DataLoader
 using Flux.Losses: logitcrossentropy
 using MLDatasets
+using Plots
 
-export get_example_data, get_nmist_data, get_loss_and_accuracy, train
+export get_moon_data, get_nmist_data, get_loss_and_accuracy, train
 
 # WIP
 # 2D classification task
 # 2 layer ReLU, 500 hidden units
 # cross-entropy loss training for two different arrangements of the training points
 
-function get_example_data(args)
-	x_train, y_train = Data.get_moons()
-	x_test, y_test = Data.get_moons()
+function get_moon_data(args)
+	x_train, y_train = Data.get_moons(300, offset = 1.0)
+	x_test, y_test = Data.get_moons_from_publication()
 
-	y_train, y_test = onehotbatch(y_train, [-1, 1]), onehotbatch(y_test, [-1, 1])
-
-	println("example data dimensions", size(x_train), size(y_train))
+	x_train = transpose(x_train)
+	y_train, y_test = onehotbatch(y_train, 0:1), onehotbatch(y_test, [-1, 1])
 
 	# create data loaders
 	train_loader = DataLoader((x_train, y_train), batchsize = args.batchsize, shuffle = true)
@@ -72,15 +72,20 @@ function neural_network()
 end
 
 Base.@kwdef mutable struct Args
-	learning_rate::Float64 = 3e-2
+	learning_rate::Float64 = 1e-2
     batchsize::Int = 50
-    epochs::Int = 10
+    epochs::Int = 50
 end
 
 function train(args...)
 	args = Args(args...)
 
-	train_loader, test_loader = get_example_data(args) # get_nmist_data(args) # 
+	train_loader, test_loader = get_moon_data(args) # get_nmist_data(args)
+
+	# plot train and test data sets
+	scatter(train_loader.data[1][1,:], train_loader.data[1][2,:], show = true)
+	# scatter(test_loader.data[1][1,:], test_loader.data[1][2,:], show = true)
+	# plot(p_train, p_test, layout = (1, 2), show = true)
 
 	model = neural_network()
 	params = Flux.params(model)

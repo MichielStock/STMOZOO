@@ -1,6 +1,10 @@
 module Data
 
-export points_class_1, points_class_2
+using Plots
+using ScikitLearn
+@sk_import datasets: make_moons
+
+export get_moons, get_moons_from_publication
 
 function moon_class_1(offset = 0.0)
     x = [
@@ -618,10 +622,60 @@ function moon_class_2(offset = 0.0)
     return vcat(transpose.((x, y))...)
 end
 
-function get_moons()
+function get_moons_from_publication()
     moons = hcat(moon_class_1(), moon_class_2())
     labels = [repeat([1], 150); repeat([-1], 150)]
     return moons, labels
+end
+
+function get_moons(n; noise = 0.1, offset = 0.0, rotation = 90)
+    X, y = make_moons(n_samples = n, noise = noise, random_state = 0)
+    p1 = scatter(X[:,1], X[:,2], c = y, title = "generated state")
+
+    if rotation != 0.0
+        θ = deg2rad(rotation)
+        R = [cos(θ) -sin(θ); sin(θ) cos(θ)]
+        X *= R
+        p2 = scatter(X[:,1], X[:,2], c = y, title = "rotated state")
+    end
+    
+    if offset != 0.0
+        if rotation != 0.0
+            # after rotation: apply offset to x-axis
+            X = apply_moon_offset(X, y, offset, "x")
+        else
+            # no rotation: apply offset to y-axis
+            X = apply_moon_offset(X, y, offset, "y")
+        end
+    end
+    p3 = scatter(X[:,1], X[:,2], c = y, title = "offsetted state")
+    
+    display(plot(p1, p2, p3, layout = (1, 3)))
+    return X, y
+end
+
+function apply_moon_offset(X, y, offset, direction = "x")
+    @assert direction in ["x", "y"] "Error: direction must be either x or y"
+    # use offset as total offset, thus devide by number of labels; assume 2 labels
+    offset /= 2
+    # l = length(y)    # length
+    # b = Int(l / 2)   # boundary
+
+    direction == "x" ? direction = 1 : direction = 2
+
+    first_moon = true
+    for label in unique(y)
+        l_ids = findall(l -> l == label, y)
+        for id in l_ids
+            first_moon ? X[id:1:id, direction] .-= offset : X[id:1:id, direction] .+= offset
+        end
+        first_moon = false
+    end
+
+    # X[:1:b, direction] .+= offset
+    # X[(b + 1):1:l, direction] .-= offset
+
+    return X
 end
 
 end
