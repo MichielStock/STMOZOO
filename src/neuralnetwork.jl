@@ -1,14 +1,15 @@
 module NeuralNetwork
 
 include("data.jl")
+include("plotutils.jl")
 
 using Flux
 using Flux: onehotbatch, onecold
 using Flux.Data: DataLoader
 using Flux.Losses: logitcrossentropy
-using MLDatasets
 using Plots
 using PlotlyJS
+using MLDatasets
 
 export get_moon_data, get_nmist_data, get_loss_and_accuracy, train
 
@@ -17,7 +18,7 @@ function get_moon_data(args)
 	x_test, y_test = Data.get_moons_from_publication()
 
 	x_train = transpose(x_train)
-	y_train, y_test = onehotbatch(y_train, 0:1), onehotbatch(y_test, [-1, 1])
+	y_train, y_test = onehotbatch(y_train, 0:1), onehotbatch(y_test, 0:1)
 
 	# create data loaders
 	train_loader = DataLoader((x_train, y_train), batchsize = args.batchsize, shuffle = true)
@@ -45,7 +46,7 @@ function get_nmist_data(args)
 	return train_loader, test_loader
 end
 
-function get_loss_and_accuracy(data_loader, model)
+function get_loss_and_accuracy(data_loader::Flux.Data.DataLoader, model)
 	accuracy = 0
 	loss = 0.0f0
 	num = 0
@@ -76,7 +77,7 @@ end
 Base.@kwdef mutable struct Args
 	learning_rate::Float64 = 1e-2
     batchsize::Int = 50
-    epochs::Int = 10
+    epochs::Int = 100
 end
 
 function train(args...)
@@ -85,8 +86,14 @@ function train(args...)
 	train_loader, test_loader = get_moon_data(args) # get_nmist_data(args)
 
 	# plot train and test data sets
-	p_train = Plots.scatter(train_loader.data[1][1,:], train_loader.data[1][2,:], c = map(x -> x == true ? 1 : 0, train_loader.data[2][1,:]))
-	p_test = Plots.scatter(test_loader.data[1][1,:], test_loader.data[1][2,:], c = map(x -> x == true ? 1 : 0, test_loader.data[2][1,:]))
+	p_train = Plots.scatter(
+		train_loader.data[1][1,:], train_loader.data[1][2,:],
+		 c = PlotUtils.map_bool_to_color(train_loader.data[2][1,:], "blue", "red")
+	)
+	p_test = Plots.scatter(
+		test_loader.data[1][1,:], test_loader.data[1][2,:],
+		c = PlotUtils.map_bool_to_color(test_loader.data[2][1,:], "blue", "red")
+	)
 	display(Plots.plot(p_train, p_test, layout = (1, 2)))
 
 	model = neural_network()
@@ -101,14 +108,14 @@ function train(args...)
 			Flux.Optimise.update!(optimizer, params, grads)
 		end
 
-		# Report on train and test
+		# evaluate train and test loss and accuracy 
 		train_loss, train_accuracy = get_loss_and_accuracy(train_loader, model)
 		test_loss, test_accuracy = get_loss_and_accuracy(test_loader, model)
 		println("Epoch $epoch")
 		println("  train loss = $train_loss, train accuracy = $train_accuracy")
 		println("  test loss = $test_loss, test accuracy = $test_accuracy")
 
-		# early exit if accuracy is over 90%
+		# early exit if accuracy is over threshold
 		acc_thres = 0.90
 		if test_accuracy > acc_thres
 			@info "Stopped after $epoch epochs because test accuracy threshold of $(acc_thres * 100)% was exceeded."
@@ -144,13 +151,41 @@ function plot_decision_boundary(loader, model)
 	gr_pred = reshape(gr_pred[1,:], (n, n))
 
 	# map classes (Boolean) to integers to be used as colors
-	cols = map(el -> el == true ? "#FF0000" : "#0000FF", loader.data[2][1,:])
-	col_scale = [[-10, "blue"], [-2, "grey"], [0, "white"], [2, "white"], [10, "red"]]
+	cols = PlotUtils.map_bool_to_color(loader.data[2][1,:], "#FF0000", "#0000FF")
+	opacity = 0.90
 
 	PlotlyJS.plot([
-		PlotlyJS.scatter(x = loader.data[1][1,:], y = loader.data[1][2,:], mode = "markers", marker = attr(color = cols, line_width = 1)),
-		PlotlyJS.contour(x = r_x, y = r_y, z = gr_pred, colorscale = col_scale)
-	])
+		# data points
+		PlotlyJS.scatter(
+			x = loader.data[1][1,:], y = loader.data[1][2,:], 
+			mode = "markers", marker = attr(color = cols, line_width = 1)
+		),
+		# actual contours
+		PlotlyJS.contour(
+			x = r_x, y = r_y, z = gr_pred, 
+			contours_coloring = "heatmap", colorscale = PlotUtils.get_custom_rdbu_scale(opacity), 
+			opacity = opacity
+		),
+		# highlight decision boundary line
+		PlotlyJS.contour(
+			x = r_x, y = r_y, z = gr_pred, 
+			contours_start = 0, contours_end = 0, contours_size = 0,
+			contours_coloring = "lines", colorscale = [[0, "black"], [1, "black"]], 
+			showscale = false, line = attr(width = 3)
+		)],
+		Layout(
+			width = 500, height = 500, autosize = true,
+			xaxis_showgrid = false, yaxis_showgrid = false,
+			xaxis_range = [x_min, x_max], yaxis_range = [y_min, y_max],
+			xaxis = attr(zeroline = true, zerolinewidth = 1, zerolinecolor = "black", automargin = true),
+			yaxis = attr(zeroline = true, zerolinewidth = 1, zerolinecolor = "black", automargin = true),
+			margin = attr(l = 50, r = 50, b = 50, t = 50, pad = 0),
+			plot_bgcolor = "rgba(0, 0, 0, 0)"
+		),
+		config = PlotConfig(
+			scrollZoom = false
+		)
+	)
 end
 
 end

@@ -624,7 +624,7 @@ end
 
 function get_moons_from_publication()
     moons = hcat(moon_class_1(), moon_class_2())
-    labels = [repeat([1], 150); repeat([-1], 150)]
+    labels = [repeat([0], 150); repeat([1], 150)]
     return moons, labels
 end
 
