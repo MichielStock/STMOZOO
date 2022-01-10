@@ -15,17 +15,20 @@ macro bind(def, element)
 end
 
 # ╔═╡ 03f007fe-ed84-4ee4-a806-5239843c0391
-using Plots ,Images , Combinatorics , PlutoUI , Colors , FileIO, ImageIO ,
-LinearAlgebra, Distributions, Random, DataStructures, ImageSegmentation, Clustering, ImageShow
+using Plots ,Images , Combinatorics , PlutoUI , Colors, ImageIO ,
+LinearAlgebra, Distributions, Random, DataStructures ,Clustering, ImageShow
 
-# ╔═╡ c0cc29a4-66cf-11ec-251f-d7772ca48f43
+# ╔═╡ c3c61b29-ddc7-4638-9350-8ce945326d27
 md"""
 # Final Project:
 
 ## Color transfer using optimal transportation done right
 
-Student name: Ju Hyung Lee
+##### Student name: Ju Hyung Lee
 """
+
+# ╔═╡ adf59de3-bc73-4d4c-9293-47a2f8569ee5
+imresize(load("../figs/3klmmh.jpg"), (578, 333))
 
 # ╔═╡ 03ad0574-699b-4046-863e-611e1a058d82
 md"""
@@ -36,6 +39,8 @@ In chapter 6, we learned the concept of **optimal transportation**, and saw that
 ##### Color transfer problem
 
 	Given the RGB representation of the pixels of two images (X1,X2) and a cost over the colors, transfer the color scheme of image 2 to image 1.
+
+ In this project, we will see a more proper pipeline of color transfer.
 """
 
 # ╔═╡ 3a9db4da-22de-4b49-9630-efc997f2e3b0
@@ -54,22 +59,63 @@ What would the first image look like during sunset?
 Could we achieve this through optimal transport?
 """
 
-# ╔═╡ 64e10645-3212-4f9a-b220-0363eb088866
+# ╔═╡ 69c0bee8-3947-4928-856d-454e5d693492
 md"""
-##### (Or, use image of your preference!)
+#### Or, use images of your own preference!
 
-You can try different images of your own preference!
+To make things convenient, I have made a file upload box below.
 
-Remember:
-- image1 = source file to transfer the color scheme
-- image2 = target file to receive a new color scheme
+You can load different images that you would like to try out!
+"""
+
+# ╔═╡ 4118339f-b3a1-4d89-8bbc-54fae475ae4c
+md"""
+##### Select image 1 (source image)
+By default, cityscape.jpg
 """
 
 # ╔═╡ e0931c2c-15e8-438d-bae4-c961e68d90ec
 @bind image1file FilePicker([MIME("image/*")])
 
+# ╔═╡ 9e2bb61a-098a-4edd-aa87-3a3484595f4d
+md"""
+##### Select image 2 (target image)
+By default, sunset.jpg
+"""
+
 # ╔═╡ 3743764b-d8d3-471d-8398-e296aad2d567
 @bind image2file FilePicker([MIME("image/*")])
+
+# ╔═╡ ad83b6f3-98fa-4568-ae23-43ab9813a9fd
+md"""
+### Converting images into arrays
+- height x width x channel
+"""
+
+# ╔═╡ 2319e25f-aae4-44aa-a548-b9994641ae4f
+md"""
+### Clustering the images using K-means clustering
+"""
+
+# ╔═╡ d6a2da79-f62e-472e-9a92-5e3c30b03cc6
+function updateImg(imgData, kmeansResult, img)
+
+    splitedImg = splitImg(imgData, kmeansResult)
+    splitedImgMatrix = dataFrame2Matrix(splitedImg)
+
+    r = reshape(splitedImgMatrix[:, 1], size(img))
+    g = reshape(splitedImgMatrix[:, 2], size(img))
+    b = reshape(splitedImgMatrix[:, 3], size(img))
+
+    original = rand(RGB, size(img)[1], size(img)[2])
+
+    for row in 1:size(img)[1]
+        for col in 1:size(img)[2]
+            original[row, col] = RGB(r[row, col], g[row, col], b[row, col])
+        end
+    end
+    return original
+end
 
 # ╔═╡ 30480b9b-97e2-4122-82ab-29af271ca557
 md"""
@@ -79,33 +125,6 @@ md"""
   
 - Not yet sure how to leverage the clustering step...
 """
-
-# ╔═╡ 466fa0a8-583d-43f3-b2d2-72aee6a998c0
-begin
-	seg1 = unseeded_region_growing(img1down, 0.05)
-	img1seg = map(i -> segment_mean(seg1, i), labels_map(seg1))
-end
-
-# ╔═╡ 60279b7d-ca2a-418e-8f8f-c12c78823eff
-begin
-	seg2 = unseeded_region_growing(img2down, 0.05)
-	img2seg = map(i -> segment_mean(seg2, i), labels_map(seg2))
-end
-
-# ╔═╡ 16b51e7c-2604-4149-8b57-b569ae60bd31
-colors1 = vec(img1seg)
-
-# ╔═╡ 2551067d-5f13-4430-b4ef-b412da9047ac
-length(unique(colors1))
-
-# ╔═╡ cf456507-a6c9-40d3-8e8a-10d012ee6a47
-colors2 = vec(img2seg)
-
-# ╔═╡ c2f50353-2a6b-4296-81b4-b63154d36cac
-n_colors1 = length(colors1)
-
-# ╔═╡ b732f1c9-9138-4ebc-8237-ac4fab644958
-n_colors2 = length(colors2)
 
 # ╔═╡ c11d7fed-d2f7-4f3d-8f04-03faf86d3cd8
 length(unique(colors1))
@@ -183,6 +202,13 @@ end
 # load_image() is a custom-defined function to load the selected image.
 image1 = load_image(image1file)
 
+# ╔═╡ de8c46df-9d6f-411c-a67c-39e8f3552882
+begin
+	r1 = convert(Array{Float64}, vec(red.(image1)))
+	g1 = convert(Array{Float64}, vec(green.(image1)))
+	b1 = convert(Array{Float64}, vec(blue.(image1)))
+end
+
 # ╔═╡ f321ac99-d7fe-40ed-9498-b56588a03270
 image2 = load_image(image2file)
 
@@ -214,11 +240,20 @@ begin
 	img2_array = image_to_array(image2)
 end
 
+# ╔═╡ 4b5c4670-da48-4526-9ff5-42a62542e598
+h,w,c = size(img1_array)
+
+# ╔═╡ 86756815-22d1-4442-8e1a-02e3a0eb66b3
+img1_reshape = reshape(img1_array, (c, h*w))
+
 # ╔═╡ 5ca3a960-fc93-45dd-9752-66255ccf220d
-R = kmeans(img1_array[:,:,1], 20)
+R = kmeans(img1_reshape, 200)
+
+# ╔═╡ 7fe275f1-0092-41ac-850d-4a6edcef5abd
+R.centers
 
 # ╔═╡ 8d171cbf-a934-4823-bd38-08d123da3571
-assignments(R)
+R
 
 # ╔═╡ cb69c08b-5f38-4998-8dcb-946678697f22
 counts(R)
@@ -282,9 +317,7 @@ Colors = "5ae59095-9a9b-59fe-a467-6f913c188581"
 Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
-FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
 ImageIO = "82e4d734-157c-48bb-816b-45c225c6df19"
-ImageSegmentation = "80713f31-8817-5129-9cf8-209ff8fb23e1"
 ImageShow = "4e3cecfd-b093-5904-9786-8bbb286a6a31"
 Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -298,13 +331,11 @@ Colors = "~0.12.8"
 Combinatorics = "~1.0.2"
 DataStructures = "~0.18.11"
 Distributions = "~0.25.37"
-FileIO = "~1.12.0"
-ImageIO = "~0.5.9"
-ImageSegmentation = "~1.7.0"
+ImageIO = "~0.6.0"
 ImageShow = "~0.3.3"
-Images = "~0.25.0"
-Plots = "~1.25.3"
-PlutoUI = "~0.7.27"
+Images = "~0.25.1"
+Plots = "~1.25.4"
+PlutoUI = "~0.7.29"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -325,9 +356,9 @@ version = "1.1.4"
 
 [[Adapt]]
 deps = ["LinearAlgebra"]
-git-tree-sha1 = "84918055d15b3114ede17ac6a7182f68870c16f7"
+git-tree-sha1 = "af92965fb30777147966f58acb05da51c5616b5f"
 uuid = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
-version = "3.3.1"
+version = "3.3.3"
 
 [[ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
@@ -340,9 +371,9 @@ version = "0.2.0"
 
 [[ArrayInterface]]
 deps = ["Compat", "IfElse", "LinearAlgebra", "Requires", "SparseArrays", "Static"]
-git-tree-sha1 = "265b06e2b1f6a216e0e8f183d28e4d354eab3220"
+git-tree-sha1 = "1ee88c4c76caa995a885dc2f22a5d548dfbbc0ba"
 uuid = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
-version = "3.2.1"
+version = "3.2.2"
 
 [[Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
@@ -393,9 +424,9 @@ version = "0.2.2"
 
 [[ChainRulesCore]]
 deps = ["Compat", "LinearAlgebra", "SparseArrays"]
-git-tree-sha1 = "4c26b4e9e91ca528ea212927326ece5918a04b47"
+git-tree-sha1 = "926870acb6cbcf029396f2f2de030282b6bc1941"
 uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-version = "1.11.2"
+version = "1.11.4"
 
 [[ChangesOfVariables]]
 deps = ["ChainRulesCore", "LinearAlgebra", "Test"]
@@ -630,9 +661,9 @@ version = "3.3.5+1"
 
 [[GR]]
 deps = ["Base64", "DelimitedFiles", "GR_jll", "HTTP", "JSON", "Libdl", "LinearAlgebra", "Pkg", "Printf", "Random", "Serialization", "Sockets", "Test", "UUIDs"]
-git-tree-sha1 = "30f2b340c2fff8410d89bfcdc9c0a6dd661ac5f7"
+git-tree-sha1 = "b9a93bcdf34618031891ee56aad94cfff0843753"
 uuid = "28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71"
-version = "0.62.1"
+version = "0.63.0"
 
 [[GR_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Cairo_jll", "FFMPEG_jll", "Fontconfig_jll", "GLFW_jll", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pixman_jll", "Pkg", "Qt5Base_jll", "Zlib_jll", "libpng_jll"]
@@ -671,10 +702,10 @@ uuid = "3b182d85-2403-5c21-9c21-1e1f0cc25472"
 version = "1.3.14+0"
 
 [[Graphs]]
-deps = ["ArnoldiMethod", "DataStructures", "Distributed", "Inflate", "LinearAlgebra", "Random", "SharedArrays", "SimpleTraits", "SparseArrays", "Statistics"]
-git-tree-sha1 = "92243c07e786ea3458532e199eb3feee0e7e08eb"
+deps = ["ArnoldiMethod", "Compat", "DataStructures", "Distributed", "Inflate", "LinearAlgebra", "Random", "SharedArrays", "SimpleTraits", "SparseArrays", "Statistics"]
+git-tree-sha1 = "d727758173afef0af878b29ac364a0eca299fc6b"
 uuid = "86223c79-3864-5bf0-83f7-82e725a168b6"
-version = "1.4.1"
+version = "1.5.1"
 
 [[Grisu]]
 git-tree-sha1 = "53bb909d1151e57e2484c3d1b53e19552b887fb2"
@@ -752,10 +783,10 @@ uuid = "6a3955dd-da59-5b1f-98d4-e7296123deb5"
 version = "0.7.1"
 
 [[ImageIO]]
-deps = ["FileIO", "Netpbm", "OpenEXR", "PNGFiles", "TiffImages", "UUIDs"]
-git-tree-sha1 = "a2951c93684551467265e0e32b577914f69532be"
+deps = ["FileIO", "Netpbm", "OpenEXR", "PNGFiles", "QOI", "Sixel", "TiffImages", "UUIDs"]
+git-tree-sha1 = "816fc866edd8307a6e79a575e6585bfab8cef27f"
 uuid = "82e4d734-157c-48bb-816b-45c225c6df19"
-version = "0.5.9"
+version = "0.6.0"
 
 [[ImageMagick]]
 deps = ["FileIO", "ImageCore", "ImageMagick_jll", "InteractiveUtils", "Libdl", "Pkg", "Random"]
@@ -807,9 +838,9 @@ version = "0.9.3"
 
 [[Images]]
 deps = ["Base64", "FileIO", "Graphics", "ImageAxes", "ImageBase", "ImageContrastAdjustment", "ImageCore", "ImageDistances", "ImageFiltering", "ImageIO", "ImageMagick", "ImageMetadata", "ImageMorphology", "ImageQualityIndexes", "ImageSegmentation", "ImageShow", "ImageTransformations", "IndirectArrays", "IntegralArrays", "Random", "Reexport", "SparseArrays", "StaticArrays", "Statistics", "StatsBase", "TiledIteration"]
-git-tree-sha1 = "35dc1cd115c57ad705c7db9f6ef5cc14412e8f00"
+git-tree-sha1 = "11d268adba1869067620659e7cdf07f5e54b6c76"
 uuid = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
-version = "0.25.0"
+version = "0.25.1"
 
 [[Imath_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1168,9 +1199,9 @@ version = "0.3.12"
 
 [[PaddedViews]]
 deps = ["OffsetArrays"]
-git-tree-sha1 = "646eed6f6a5d8df6708f15ea7e02a7a2c4fe4800"
+git-tree-sha1 = "03a7a85b76381a3d04c7a1656039197e70eda03d"
 uuid = "5432bcbf-9aad-5242-b902-cca2824c8663"
-version = "0.5.10"
+version = "0.5.11"
 
 [[Parameters]]
 deps = ["OrderedCollections", "UnPack"]
@@ -1214,15 +1245,15 @@ version = "1.1.2"
 
 [[Plots]]
 deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "GeometryBasics", "JSON", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "PlotThemes", "PlotUtils", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "UUIDs", "UnicodeFun", "Unzip"]
-git-tree-sha1 = "7eda8e2a61e35b7f553172ef3d9eaa5e4e76d92e"
+git-tree-sha1 = "71d65e9242935132e71c4fbf084451579491166a"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-version = "1.25.3"
+version = "1.25.4"
 
 [[PlutoUI]]
 deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
-git-tree-sha1 = "fed057115644d04fba7f4d768faeeeff6ad11a60"
+git-tree-sha1 = "7711172ace7c40dc8449b7aed9d2d6f1cf56a5bd"
 uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
-version = "0.7.27"
+version = "0.7.29"
 
 [[Preferences]]
 deps = ["TOML"]
@@ -1239,6 +1270,12 @@ deps = ["Distributed", "Printf"]
 git-tree-sha1 = "afadeba63d90ff223a6a48d2009434ecee2ec9e8"
 uuid = "92933f4c-e287-5a05-a399-4b506db050ca"
 version = "1.7.1"
+
+[[QOI]]
+deps = ["ColorTypes", "FileIO", "FixedPointNumbers"]
+git-tree-sha1 = "18e8f4d1426e965c7b532ddd260599e1510d26ce"
+uuid = "4b34888f-f399-49d4-9bb3-47ed5cae4e65"
+version = "1.0.0"
 
 [[Qt5Base_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Fontconfig_jll", "Glib_jll", "JLLWrappers", "Libdl", "Libglvnd_jll", "OpenSSL_jll", "Pkg", "Xorg_libXext_jll", "Xorg_libxcb_jll", "Xorg_xcb_util_image_jll", "Xorg_xcb_util_keysyms_jll", "Xorg_xcb_util_renderutil_jll", "Xorg_xcb_util_wm_jll", "Zlib_jll", "xkbcommon_jll"]
@@ -1357,6 +1394,12 @@ git-tree-sha1 = "a6f404cc44d3d3b28c793ec0eb59af709d827e4e"
 uuid = "47aef6b3-ad0c-573a-a1e2-d07658019622"
 version = "1.2.1"
 
+[[Sixel]]
+deps = ["Dates", "FileIO", "ImageCore", "IndirectArrays", "OffsetArrays", "REPL", "libsixel_jll"]
+git-tree-sha1 = "8fb59825be681d451c246a795117f317ecbcaa28"
+uuid = "45858cf5-a6b0-47a3-bbea-62219f50df47"
+version = "0.1.2"
+
 [[Sockets]]
 uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
 
@@ -1390,9 +1433,9 @@ version = "0.4.1"
 
 [[StaticArrays]]
 deps = ["LinearAlgebra", "Random", "Statistics"]
-git-tree-sha1 = "3c76dde64d03699e074ac02eb2e8ba8254d428da"
+git-tree-sha1 = "88a559da57529581472320892576a486fa2377b9"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "1.2.13"
+version = "1.3.1"
 
 [[Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
@@ -1405,9 +1448,9 @@ version = "1.2.0"
 
 [[StatsBase]]
 deps = ["DataAPI", "DataStructures", "LinearAlgebra", "LogExpFunctions", "Missings", "Printf", "Random", "SortingAlgorithms", "SparseArrays", "Statistics", "StatsAPI"]
-git-tree-sha1 = "2bb0cb32026a66037360606510fca5984ccc6b75"
+git-tree-sha1 = "51383f2d367eb3b444c961d485c565e4c0cf4ba0"
 uuid = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
-version = "0.33.13"
+version = "0.33.14"
 
 [[StatsFuns]]
 deps = ["ChainRulesCore", "InverseFunctions", "IrrationalConstants", "LogExpFunctions", "Reexport", "Rmath", "SpecialFunctions"]
@@ -1457,9 +1500,9 @@ uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [[TiffImages]]
 deps = ["ColorTypes", "DataStructures", "DocStringExtensions", "FileIO", "FixedPointNumbers", "IndirectArrays", "Inflate", "OffsetArrays", "PkgVersion", "ProgressMeter", "UUIDs"]
-git-tree-sha1 = "c342ae2abf4902d65a0b0bf59b28506a6e17078a"
+git-tree-sha1 = "991d34bbff0d9125d93ba15887d6594e8e84b305"
 uuid = "731e570b-9d59-4bfa-96dc-6df516fadf69"
-version = "0.5.2"
+version = "0.5.3"
 
 [[TiledIteration]]
 deps = ["OffsetArrays"]
@@ -1689,6 +1732,12 @@ git-tree-sha1 = "94d180a6d2b5e55e447e2d27a29ed04fe79eb30c"
 uuid = "b53b4c65-9356-5827-b1ea-8c7a1a84506f"
 version = "1.6.38+0"
 
+[[libsixel_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "78736dab31ae7a53540a6b752efc61f77b304c5b"
+uuid = "075b6546-f08a-558a-be8f-8157d0f608a5"
+version = "1.8.6+1"
+
 [[libvorbis_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Ogg_jll", "Pkg"]
 git-tree-sha1 = "c45f4e40e7aafe9d086379e5578947ec8b95a8fb"
@@ -1723,27 +1772,30 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╟─c0cc29a4-66cf-11ec-251f-d7772ca48f43
+# ╟─c3c61b29-ddc7-4638-9350-8ce945326d27
+# ╟─adf59de3-bc73-4d4c-9293-47a2f8569ee5
 # ╠═03f007fe-ed84-4ee4-a806-5239843c0391
 # ╟─03ad0574-699b-4046-863e-611e1a058d82
 # ╟─3a9db4da-22de-4b49-9630-efc997f2e3b0
-# ╟─64e10645-3212-4f9a-b220-0363eb088866
-# ╠═e0931c2c-15e8-438d-bae4-c961e68d90ec
-# ╠═3743764b-d8d3-471d-8398-e296aad2d567
+# ╟─69c0bee8-3947-4928-856d-454e5d693492
+# ╟─4118339f-b3a1-4d89-8bbc-54fae475ae4c
+# ╟─e0931c2c-15e8-438d-bae4-c961e68d90ec
+# ╟─9e2bb61a-098a-4edd-aa87-3a3484595f4d
+# ╟─3743764b-d8d3-471d-8398-e296aad2d567
 # ╠═45264041-09d3-412c-a2ff-50c4bdc29039
 # ╠═f321ac99-d7fe-40ed-9498-b56588a03270
+# ╟─ad83b6f3-98fa-4568-ae23-43ab9813a9fd
 # ╠═d3755b9c-6682-4907-ad1f-510a117eae5e
+# ╟─2319e25f-aae4-44aa-a548-b9994641ae4f
+# ╠═4b5c4670-da48-4526-9ff5-42a62542e598
+# ╠═86756815-22d1-4442-8e1a-02e3a0eb66b3
 # ╠═5ca3a960-fc93-45dd-9752-66255ccf220d
+# ╠═7fe275f1-0092-41ac-850d-4a6edcef5abd
 # ╠═8d171cbf-a934-4823-bd38-08d123da3571
 # ╠═cb69c08b-5f38-4998-8dcb-946678697f22
+# ╠═d6a2da79-f62e-472e-9a92-5e3c30b03cc6
+# ╟─de8c46df-9d6f-411c-a67c-39e8f3552882
 # ╟─30480b9b-97e2-4122-82ab-29af271ca557
-# ╠═466fa0a8-583d-43f3-b2d2-72aee6a998c0
-# ╠═60279b7d-ca2a-418e-8f8f-c12c78823eff
-# ╠═16b51e7c-2604-4149-8b57-b569ae60bd31
-# ╠═2551067d-5f13-4430-b4ef-b412da9047ac
-# ╠═cf456507-a6c9-40d3-8e8a-10d012ee6a47
-# ╠═c2f50353-2a6b-4296-81b4-b63154d36cac
-# ╠═b732f1c9-9138-4ebc-8237-ac4fab644958
 # ╠═3737a155-a1e5-4d71-9d35-7662effca221
 # ╠═c11d7fed-d2f7-4f3d-8f04-03faf86d3cd8
 # ╠═99e5732e-7428-4cf2-8a72-0b04be0b9c96
