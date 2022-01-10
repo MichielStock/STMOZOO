@@ -4,8 +4,18 @@
 using Markdown
 using InteractiveUtils
 
+# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
+macro bind(def, element)
+    quote
+        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
+        el
+    end
+end
+
 # ╔═╡ 03f007fe-ed84-4ee4-a806-5239843c0391
-using Plots ,Images , Combinatorics , PlutoUI , Colors , ImageIO ,
+using Plots ,Images , Combinatorics , PlutoUI , Colors , FileIO, ImageIO ,
 LinearAlgebra, Distributions, Random, DataStructures, ImageSegmentation, Clustering, ImageShow
 
 # ╔═╡ c0cc29a4-66cf-11ec-251f-d7772ca48f43
@@ -28,58 +38,38 @@ In chapter 6, we learned the concept of **optimal transportation**, and saw that
 	Given the RGB representation of the pixels of two images (X1,X2) and a cost over the colors, transfer the color scheme of image 2 to image 1.
 """
 
-# ╔═╡ 5765172c-287a-4632-86db-a4fa91e651f8
-md"""
-### Experimental setup
-
-- Represent image as size u x v in RGB color space
-- Apply k-means clustering to quantize image down to m colors
-- = Produce m color centroids x1 ... xm (R3)
-- We can count how many pixels were assigned to each centroid and normalizing by u*v gives us a color histogram a < delta(m)
-- Repeat the same process with a second image (y1 ... yn (R3)), b < delta(n)
-  
-- Next, apply any of the proposed method with cost matrix cij = d(xi, yj)
-- For each color centroid xi, we apply a barycentric projection to obtain a new color centroid
-- xi_ = argmin ( sum ( tij * d(x,y) ) )
-- 
-"""
-
-# ╔═╡ f46ad76d-2cd9-48c2-acfc-33188a2af405
-download("https://github.com/juhlee/ColorTransfer.jl/blob/master/figs/cityscape.jpg?raw=true", "image1.jpg")
-
-# ╔═╡ 8cb3b1c5-a1f5-4b5b-8ce4-2c1a66f6e762
-download("https://github.com/juhlee/ColorTransfer.jl/blob/master/figs/sunset.jpg?raw=true", "image2.jpg")
-
 # ╔═╡ 3a9db4da-22de-4b49-9630-efc997f2e3b0
 md"""
 ### Sample images
 
-The two photos below are taken by myself, showing the cityscapes of Seoul in South Korea. 
+By default, you will see two photos in the figs/ folder in this project.
 
-The first image was taken during daytime, while the second one was taken during sunset.
+The two photos below are taken by myself, showing the cityscapes of Seoul in South Korea:
 
-What would the first image look like during sunset? could we achieve this through optimal transport?
+- The first image was taken during daytime
+- The second one was taken during sunset.
+
+What would the first image look like during sunset? 
+
+Could we achieve this through optimal transport?
 """
 
-# ╔═╡ 31ffeaeb-9316-4d57-a0bf-d21359aa78a3
-image1 = load("image1.jpg") # change to path local directory
-
-# ╔═╡ 784097e8-9795-44b8-912b-e009f4929942
-image2 = load("image2.jpg") # change to path local directory
-
-# ╔═╡ 5eccd26e-dbaa-41e8-9181-2afa2cf86fe3
+# ╔═╡ 64e10645-3212-4f9a-b220-0363eb088866
 md"""
-### Downsampling images
+##### (Or, use image of your preference!)
 
-- Images had to be reduced down to 100x150
-- Unless: OutOfMemoryError() when determining the cost of transport
+You can try different images of your own preference!
+
+Remember:
+- image1 = source file to transfer the color scheme
+- image2 = target file to receive a new color scheme
 """
 
-# ╔═╡ 7c89cebe-0495-4f81-b175-3474579c8404
-img1down = imresize(image1, (80,120))
+# ╔═╡ e0931c2c-15e8-438d-bae4-c961e68d90ec
+@bind image1file FilePicker([MIME("image/*")])
 
-# ╔═╡ a4388626-18b2-4d24-b80f-c6ed5f6eecc9
-img2down = imresize(image2, (80, 120))
+# ╔═╡ 3743764b-d8d3-471d-8398-e296aad2d567
+@bind image2file FilePicker([MIME("image/*")])
 
 # ╔═╡ 30480b9b-97e2-4122-82ab-29af271ca557
 md"""
@@ -170,6 +160,69 @@ md"""
 ## SRC
 """
 
+# ╔═╡ 8131f7cf-7027-4168-b41e-e75a4001a2a5
+function load_image(x)
+	"""
+	A function to load an image file selected from PlutoUI.FilePicker()
+
+	Input
+		- x = selected image file from FilePicker()
+	Returns
+		- loaded_file = loaded image from the selected image file path
+	"""
+	
+	# Get the filepath
+	filename = dirname(@__DIR__) * "/figs/" * x["name"]
+	# Load the image from the filepath
+	loaded_file = load(filename)
+
+	return loaded_file
+end
+
+# ╔═╡ 45264041-09d3-412c-a2ff-50c4bdc29039
+# load_image() is a custom-defined function to load the selected image.
+image1 = load_image(image1file)
+
+# ╔═╡ f321ac99-d7fe-40ed-9498-b56588a03270
+image2 = load_image(image2file)
+
+# ╔═╡ d347ae0a-d085-45d4-8e3e-ac9e94d3b401
+function image_to_array(image)
+	"""
+	Convert a loaded image into a 3D array of size (Height x Width x Channel)
+	RGB, so 3 channels!
+
+	Input
+		- image = loaded image
+	Returns
+		- img_array = image converted into array
+	"""
+
+	# Colors.jl package, channelview converts image into array
+	img_array = channelview(image)
+
+	# But conversion is done in channels x width x height.
+	# Do it the right way
+	img_array = permutedims(img_array, (2,3,1))
+
+	return img_array
+end
+
+# ╔═╡ d3755b9c-6682-4907-ad1f-510a117eae5e
+begin
+	img1_array = image_to_array(image1)
+	img2_array = image_to_array(image2)
+end
+
+# ╔═╡ 5ca3a960-fc93-45dd-9752-66255ccf220d
+R = kmeans(img1_array[:,:,1], 20)
+
+# ╔═╡ 8d171cbf-a934-4823-bd38-08d123da3571
+assignments(R)
+
+# ╔═╡ cb69c08b-5f38-4998-8dcb-946678697f22
+counts(R)
+
 # ╔═╡ 18c87a62-b0e5-4e31-ad4f-d449e0f4536a
 """
 Maps one distribution to the other
@@ -221,159 +274,6 @@ plot(
 	colorscatter(colors2, title="Sunset")
 )
 
-# ╔═╡ 06dcae7f-ac73-4023-a22e-450700d0b705
-# struct to store the Lab color values
-# and center position of each cluster
-mutable struct Cluster
-    l
-    a
-    b
-    y
-    x
-end
-
-# ╔═╡ d1c8214f-278f-4d25-91b4-2e24b1f59b26
-function slic(img, K, M, iterations=10, connectivity=false)
-    
-	img_lab = Lab.(img)
-    image_height, image_width = size_spatial(img)
-	
-    S = round(Int, (sqrt((image_height * image_width) / K)))
-    clusters = Cluster[] # The properties of each cluster
-    labels = fill(-1, image_height, image_width) # Label of each pixel
-    distance = fill(Inf, image_height, image_width) # Distance matrix of each pixel to belonging cluster
-    pixel_count = Integer[] # Pixel counts of each cluster
-
-    # Initialize each cluster and its fields
-    for x = div(S, 2):S:image_width
-        for y = div(S, 2):S:image_height
-            push!(clusters, Cluster(img_lab[y, x].l,
-                                   img_lab[y, x].a,
-                                   img_lab[y, x].b,
-                                   y,
-                                   x))
-            push!(pixel_count, 0)
-        end
-    end
-
-    # Move the center of each cluster to the local lowgest gradient position
-    function get_gradient(y, x)
-        if x + 1 > image_width x = image_width - 2 end
-        if y + 1 > image_height y = image_height - 2 end
-
-        return img_lab[y + 1, x + 1].l - img_lab[y, x].l + 
-               img_lab[y + 1, x + 1].a - img_lab[y, x].a + 
-               img_lab[y + 1, x + 1].b - img_lab[y, x].b
-    end
-	
-    for i = 1:length(clusters)
-        # Get current gradient of this center
-        current_gradient = get_gradient(clusters[i].y, clusters[i].x)
-
-        for dh = -1:1
-            for dw = -1:1
-                _y = clusters[i].y + dh
-                _x = clusters[i].x + dw
-                new_gradient = get_gradient(_y, _x)
-                if new_gradient < current_gradient
-                    clusters[i].l = img_lab[_y, _x].l
-                    clusters[i].a = img_lab[_y, _x].a
-                    clusters[i].b = img_lab[_y, _x].b
-                    clusters[i].y = _y
-                    clusters[i].x = _x
-
-                    current_gradient = new_gradient
-                end
-            end
-        end
-    end
-
-    # SLIC superpixle calculation
-    function cluster_pixels()
-        for i = 1:length(clusters)
-            for x = (clusters[i].x - 2 * S):(clusters[i].x + 2 * S)
-                if x <= 0 || x > image_width continue end
-
-                for y = (clusters[i].y - 2 * S):(clusters[i].y + 2 * S)
-                    if y <= 0 || y > image_height continue end
-
-                    L = img_lab[y, x].l
-                    A = img_lab[y, x].a
-                    B = img_lab[y, x].b
-                    Dc = sqrt((L - clusters[i].l)^2 + 
-                              (A - clusters[i].a)^2 +
-                              (B - clusters[i].b)^2)
-                    Ds = sqrt((y - clusters[i].y)^2 +
-                              (x - clusters[i].x)^2)
-                    D = sqrt((Dc / M)^2 + (Ds / S)^2)
-
-                    if D < distance[y, x]
-                        distance[y, x] = D
-                        labels[y, x] = i
-                    end
-                end
-            end
-        end
-    end
-	
-    function update_cluster_position()
-        # Clear the position value and pixel counts of each cluster 
-        for i = 1:length(clusters)
-           clusters[i].y = clusters[i].x = pixel_count[i] = 0 
-        end
-
-        # Compute the new position of new cluster center
-        for x in 1:image_width
-            for y in 1:image_height
-                label_index = labels[y, x]
-                if label_index == -1 continue end
-
-                clusters[label_index].y += y
-                clusters[label_index].x += x
-                pixel_count[label_index] += 1
-            end
-        end
-
-        # Assign the new position to each cluster
-        for i = 1:length(clusters)
-            new_y = div(clusters[i].y, pixel_count[i])
-            new_x = div(clusters[i].x, pixel_count[i])
-            clusters[i].l = img_lab[new_y, new_x].l
-            clusters[i].a = img_lab[new_y, new_x].a
-            clusters[i].b = img_lab[new_y, new_x].b
-            clusters[i].y = new_y
-            clusters[i].x = new_x
-        end
-    end
-	
-    @time for i = 1:iterations
-        println("SLIC iteration $(i) ...")
-        cluster_pixels()
-        update_cluster_position()
-    end
-
-    print(size(labels))
-    print(size(clusters))
-    print(labels[1, 1])
-
-    # Create output image
-    # The color of each cluster is as same as its center
-    # except the center
-	
-    out_image = copy(img_lab)
-    for x = 1:image_width
-        for y = 1:image_height
-            out_image[y, x, :] .= Lab(clusters[labels[y, x]].l,
-                                   clusters[labels[y, x]].a,
-                                   clusters[labels[y, x]].b)
-        end
-    end
-    out_image = RGB.(out_image)
-
-    # Return processed result
-    return out_image
-end
-
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
@@ -382,6 +282,7 @@ Colors = "5ae59095-9a9b-59fe-a467-6f913c188581"
 Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
 ImageIO = "82e4d734-157c-48bb-816b-45c225c6df19"
 ImageSegmentation = "80713f31-8817-5129-9cf8-209ff8fb23e1"
 ImageShow = "4e3cecfd-b093-5904-9786-8bbb286a6a31"
@@ -397,6 +298,7 @@ Colors = "~0.12.8"
 Combinatorics = "~1.0.2"
 DataStructures = "~0.18.11"
 Distributions = "~0.25.37"
+FileIO = "~1.12.0"
 ImageIO = "~0.5.9"
 ImageSegmentation = "~1.7.0"
 ImageShow = "~0.3.3"
@@ -680,9 +582,9 @@ version = "3.3.10+0"
 
 [[FileIO]]
 deps = ["Pkg", "Requires", "UUIDs"]
-git-tree-sha1 = "2db648b6712831ecb333eae76dbfd1c156ca13bb"
+git-tree-sha1 = "67551df041955cc6ee2ed098718c8fcd7fc7aebe"
 uuid = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
-version = "1.11.2"
+version = "1.12.0"
 
 [[FillArrays]]
 deps = ["LinearAlgebra", "Random", "SparseArrays", "Statistics"]
@@ -1199,9 +1101,9 @@ version = "1.10.8"
 
 [[Ogg_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "7937eda4681660b4d6aeeecc2f7e1c81c8ee4e2f"
+git-tree-sha1 = "887579a3eb005446d514ab7aeac5d1d027658b8f"
 uuid = "e7412a2a-1a6e-54c0-be00-318e2571c051"
-version = "1.3.5+0"
+version = "1.3.5+1"
 
 [[OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
@@ -1824,15 +1726,16 @@ version = "0.9.1+5"
 # ╟─c0cc29a4-66cf-11ec-251f-d7772ca48f43
 # ╠═03f007fe-ed84-4ee4-a806-5239843c0391
 # ╟─03ad0574-699b-4046-863e-611e1a058d82
-# ╟─5765172c-287a-4632-86db-a4fa91e651f8
-# ╠═f46ad76d-2cd9-48c2-acfc-33188a2af405
-# ╠═8cb3b1c5-a1f5-4b5b-8ce4-2c1a66f6e762
 # ╟─3a9db4da-22de-4b49-9630-efc997f2e3b0
-# ╠═31ffeaeb-9316-4d57-a0bf-d21359aa78a3
-# ╠═784097e8-9795-44b8-912b-e009f4929942
-# ╟─5eccd26e-dbaa-41e8-9181-2afa2cf86fe3
-# ╠═7c89cebe-0495-4f81-b175-3474579c8404
-# ╠═a4388626-18b2-4d24-b80f-c6ed5f6eecc9
+# ╟─64e10645-3212-4f9a-b220-0363eb088866
+# ╠═e0931c2c-15e8-438d-bae4-c961e68d90ec
+# ╠═3743764b-d8d3-471d-8398-e296aad2d567
+# ╠═45264041-09d3-412c-a2ff-50c4bdc29039
+# ╠═f321ac99-d7fe-40ed-9498-b56588a03270
+# ╠═d3755b9c-6682-4907-ad1f-510a117eae5e
+# ╠═5ca3a960-fc93-45dd-9752-66255ccf220d
+# ╠═8d171cbf-a934-4823-bd38-08d123da3571
+# ╠═cb69c08b-5f38-4998-8dcb-946678697f22
 # ╟─30480b9b-97e2-4122-82ab-29af271ca557
 # ╠═466fa0a8-583d-43f3-b2d2-72aee6a998c0
 # ╠═60279b7d-ca2a-418e-8f8f-c12c78823eff
@@ -1853,10 +1756,10 @@ version = "0.9.1+5"
 # ╠═f5318bde-d55e-44a7-b8f4-fe19f583f2ce
 # ╟─3be5ba4d-9f0f-49de-97e5-f11c72eb4fc0
 # ╟─ddbab8c0-1440-4027-b1f4-0f083448a17e
+# ╠═8131f7cf-7027-4168-b41e-e75a4001a2a5
+# ╠═d347ae0a-d085-45d4-8e3e-ac9e94d3b401
 # ╠═18c87a62-b0e5-4e31-ad4f-d449e0f4536a
 # ╠═22a77c67-a0ed-434a-9db4-993cdce0c93b
 # ╠═ec53c559-044e-4287-8b44-1123fade583c
-# ╠═06dcae7f-ac73-4023-a22e-450700d0b705
-# ╠═d1c8214f-278f-4d25-91b4-2e24b1f59b26
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
