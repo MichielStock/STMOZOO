@@ -45,7 +45,7 @@ In chapter 6, we learned the concept of **optimal transportation**, and saw that
 
 # ╔═╡ 3a9db4da-22de-4b49-9630-efc997f2e3b0
 md"""
-### Sample images
+## Sample images
 
 By default, you will see two photos in the figs/ folder in this project.
 
@@ -61,17 +61,22 @@ Could we achieve this through optimal transport?
 
 # ╔═╡ 69c0bee8-3947-4928-856d-454e5d693492
 md"""
-#### Or, use images of your own preference!
+### Or, use images of your own preference!
 
 To make things convenient, I have made a file upload box below.
 
 You can load different images that you would like to try out!
 """
 
+# ╔═╡ dc7c112b-7213-4746-b86e-8cbbb8130a01
+md"""
+---
+"""
+
 # ╔═╡ 4118339f-b3a1-4d89-8bbc-54fae475ae4c
 md"""
-##### Select image 1 (source image)
-By default, select figs/cityscape.jpg
+#### Select image 1 (source image)
+By default, the image figs/cityscape.jpg is used!
 """
 
 # ╔═╡ e0931c2c-15e8-438d-bae4-c961e68d90ec
@@ -79,47 +84,66 @@ By default, select figs/cityscape.jpg
 
 # ╔═╡ 9e2bb61a-098a-4edd-aa87-3a3484595f4d
 md"""
-##### Select image 2 (target image)
-By default, select figs/sunset.jpg
+#### Select image 2 (target image)
+By default, the image figs/sunset.jpg is used!
 """
 
 # ╔═╡ 3743764b-d8d3-471d-8398-e296aad2d567
 @bind image2file FilePicker([MIME("image/*")])
 
+# ╔═╡ 16ce4192-f580-46ba-80da-ac44cb13ba3b
+md"""
+---
+"""
+
+# ╔═╡ 1afa5d13-cf22-44fb-8493-22d94b744329
+typeof(image2file) == Dict{Any, Any}
+
 # ╔═╡ ad83b6f3-98fa-4568-ae23-43ab9813a9fd
 md"""
-### Converting images into arrays
-- height x width x channel
+## 1. Converting images into arrays
+
+- Firstly, we will represent the images in the form of array (height x width x channel)
 """
 
 # ╔═╡ 2319e25f-aae4-44aa-a548-b9994641ae4f
 md"""
-### Clustering the images using K-means clustering
+## 2. Clustering the images using K-means clustering
 """
 
-# ╔═╡ 00dda518-43f4-42c1-ad54-d4719e7eca28
+# ╔═╡ 2ace44bb-085e-4979-b2d7-c21272df21d6
 md"""
-According to the n_cluster value, the compression in the colors will be different
+### Images after clustering
+
+After K-means clustering, the colors in the image look more compressed.
+
+Yet, the dimensions (number of pixels) are the same.
+
+We will transfer the color schemes of the clustered colors
 """
 
 # ╔═╡ 3582f1c8-a5ee-4c38-86a3-56bca198471f
-@bind n_cluster Slider(1:1:100; default=40, show_value=true)
+@bind n_cluster Slider(1:1:50; default=30, show_value=true)
 
-# ╔═╡ 4fe21532-bf4a-452f-b078-cdbddc028cd6
+# ╔═╡ 00dda518-43f4-42c1-ad54-d4719e7eca28
 md"""
-## Current status
-
-- Same workflow from the course used to transfer colors.
-- The buildings seem like gleaming with sunset colors, but the clouds aren't in the sunset mood.
-
-- Clustering the pixels did not seem to improve? the result?
-- Things I need to understand:
-- How to take the pixel location into account? transfer image in segmented manner..?
-- How to enable color transfer in higher dimensions? 80x120 is too small
+Depending on the n_cluster value, the compression in the colors will be different
 """
 
-# ╔═╡ f5318bde-d55e-44a7-b8f4-fe19f583f2ce
-imresize(img1seg, (300, 450))
+# ╔═╡ ec4795e5-7c10-4b93-95a4-0a6890fc0386
+md"""
+---
+"""
+
+# ╔═╡ 5d13c0fb-b1ca-46e5-ad09-181ff8d869b1
+md"""
+---
+"""
+
+# ╔═╡ 28fbebcb-2e14-4e35-8a36-097d88cc4052
+md"""
+## Optimal transport of the clustered colors 
+"""
 
 # ╔═╡ 3be5ba4d-9f0f-49de-97e5-f11c72eb4fc0
 function nearest_color(c1, c2)
@@ -166,18 +190,22 @@ function load_image(x)
 end
 
 # ╔═╡ 45264041-09d3-412c-a2ff-50c4bdc29039
-# load_image() is a custom-defined function to load the selected image.
-image1 = load_image(image1file)
-
-# ╔═╡ de8c46df-9d6f-411c-a67c-39e8f3552882
-begin
-	r1 = convert(Array{Float64}, vec(red.(image1)))
-	g1 = convert(Array{Float64}, vec(green.(image1)))
-	b1 = convert(Array{Float64}, vec(blue.(image1)))
+# if a custom image is selected from the FilePicker above, load that image
+if typeof(image1file) == Dict{Any, Any}
+	image1 = load_image(image1file)
+else
+	# Else, we will use cityscape photo as default!
+	image1 = load("../figs/cityscape.jpg")
 end
 
 # ╔═╡ f321ac99-d7fe-40ed-9498-b56588a03270
-image2 = load_image(image2file)
+# if a custom image is selected from the FilePicker above, load that image
+if typeof(image2file) == Dict{Any, Any}
+	image2 = load_image(image2file)
+else
+	# Else, we use sunset photography as default!
+	image2 = load("../figs/sunset.jpg")
+end
 
 # ╔═╡ d347ae0a-d085-45d4-8e3e-ac9e94d3b401
 function image_to_array(image)
@@ -210,7 +238,7 @@ end
 # ╔═╡ 94f775f3-c480-4b71-a50d-49e530a6bc55
 function reassign_closest(original, centroids)
 	original_flat = vec(original)
-	reassigned = zeros(length(original_flat))
+	reassigned = copy(original_flat)
 
 	for i in 1:length(original_flat)
 		closest = argmin(abs.(original_flat[i] .- centroids))
@@ -218,6 +246,22 @@ function reassign_closest(original, centroids)
 	end
 
 	return reassigned
+end
+
+# ╔═╡ cf902585-cd7c-4d45-9360-8d1e509fffe8
+function reassign_closest2(original, assignments, centers)
+
+	or = vec(original[:,:,1])
+	og = vec(original[:,:,2])
+	ob = vec(original[:,:,3])
+
+	reassigned = vcat(or, og, ob)
+
+	for i in 1:length(reassigned)
+		reassigned[i] = centers[assignments[i]]
+	end
+
+	return reshape(reassigned, size(original))
 end
 
 # ╔═╡ 393c44d3-f39e-4a07-9553-b02b56ff9dd4
@@ -237,22 +281,74 @@ function kmean_clust(img_array, clusters)
 	# Reshape the array in channel x (width * height)
 	img_reshape = reshape(img_array, (c, h * w))
 
-	# Run k-means clustering
-	clust_result = kmeans(img_reshape, clusters)
-	centroids = clust_result.centers
+	# Division of channels
+	r = img_reshape[1, :]
+	g = img_reshape[2, :]
+	b = img_reshape[3, :]
 
+	# Run k-means clustering
+	rclust = kmeans(r', clusters)
+	gclust = kmeans(g', clusters)
+	bclust = kmeans(b', clusters)
+
+	#summarize
+	centroids = vcat(rclust.centers, gclust.centers, bclust.centers)
+	counts = vcat(rclust.counts, gclust.counts, bclust.counts)
+	assignments = vcat(rclust.assignments, 
+					   (gclust.assignments .+ length(rclust.centers)), 
+					   (bclust.assignments .+ length(rclust.centers) * 2))
+	
 	# Reassign values to original image array with clustered values
 	img_clust = reassign_closest(img_array, centroids)
 	img_clust = reshape(img_clust, (h,w,c))
 
-	return centroids, img_clust
+	return centroids, counts, img_clust, assignments
+end
+
+# ╔═╡ 390ef29b-e81b-47f5-ac61-cf61f29614af
+function kmean_clust2(img_array, clusters)
+	"""
+	Run clustering on the image array
+
+	Input
+		- img_array = array of an image
+		- clusters 	= number of clusters to set for k-means clustering
+ 	Returns
+		- centroids = center points of k-means cluster
+		- img_clust = array of an image, after clustering.
+	"""
+	# height x width x channel
+	h,w,c = size(img_array)
+	# Reshape the array in channel x (width * height)
+	img_reshape = reshape(img_array, (c, h * w))
+
+	clustR = kmeans(img_reshape, clusters)
+
+	#summarize
+	centroids = clustR.centers
+	counts = clustR.counts
+	
+	# Reassign values to original image array with clustered values
+	img_clust = reassign_closest(img_array, centroids)
+	img_clust = reshape(img_clust, (h,w,c))
+
+	return centroids, counts, img_clust
 end
 
 # ╔═╡ 41ce3af7-89bc-49b5-9ab7-4b80810603d1
 begin
-	centers1, img1_clust=  kmean_clust(img1_array, n_cluster)
-	centers2, img2_clust = kmean_clust(img2_array, n_cluster)
+	centers1, counts1, img1_clust = kmean_clust2(img1_array, n_cluster)
+	centers2, counts2, img2_clust = kmean_clust2(img2_array, n_cluster)
 end
+
+# ╔═╡ f0887a24-1174-4b19-abe3-1492903d2307
+centers1
+
+# ╔═╡ 79b5e85c-83df-43a1-81a1-da4409ba4311
+counts1
+
+# ╔═╡ 41c30f3d-dbf1-40ec-8877-2ae8f3477370
+length(counts1)
 
 # ╔═╡ ba5a453d-8c27-4f7c-8ee2-f91736a3872d
 colorview(RGB, permutedims(img1_clust, (3,1,2)))
@@ -260,25 +356,103 @@ colorview(RGB, permutedims(img1_clust, (3,1,2)))
 # ╔═╡ 9575083d-50b8-466a-b8c5-b6207e0bcba0
 colorview(RGB, permutedims(img2_clust, (3,1,2)))
 
-# ╔═╡ 26e85f16-443d-4c61-a65b-edb62c080632
-centers1, new
-
 # ╔═╡ c269a523-7151-4df4-8fa8-65cbff233b21
 begin
-	centers1vec = vec(centers1)
-	centers2vec = vec(centers2)
+	centers1vec = vec(centers1')
+	centers2vec = vec(centers2')
 
-	n_centers1 = length(centers1vec)
-	n_centers2 = length(centers2vec)
-
-	cost_matrix = [(c1 - c2)^2 for c1 in centers1vec, c2 in centers2vec]
+	n_centers1 = length(centers1)
+	n_centers2 = length(centers2)
 end
+
+# ╔═╡ 236aa68c-48f3-47d1-a0fe-ec8190298836
+centers1vec
+
+# ╔═╡ e6ec5d4f-f398-44fc-82bb-434b29861f72
+vec(centers1')
+
+# ╔═╡ 22b10e80-3c83-4a7f-8f4e-b7bb2fe8bc31
+centers1
+
+# ╔═╡ 15867d4f-8af6-4a52-b6ae-da68ef757e69
+centers1[:,1].^2
+
+# ╔═╡ 58d7ad4e-64ed-4cb5-a014-74867fbd3f33
+centers2
+
+# ╔═╡ 6a99a349-64ee-40e5-b231-9df7d6e43a5a
+begin
+	cost_matrix = zeros(length(counts1), length(counts2))
+
+	for i in 1:length(counts1)
+		for j in 1:length(counts2)
+			rgb1 = centers1[:,i]
+			rgb2 = centers2[:,j]
+
+			dist = √(sum((rgb1 .- rgb2).^2))
+
+			cost_matrix[i,j] = dist
+		end
+	end
+end
+
+# ╔═╡ 9e17dba7-1ad1-4f59-8d04-3ca67f89c73c
+cost_matrix
 
 # ╔═╡ e5b7dd1c-38aa-4a2e-b8c0-92fa0c455334
 begin
-	a_col = ones(n_centers1) ./ n_centers1
-	b_col = ones(n_centers2) ./ n_centers2
+	h1, w1, _ = size(img1_array)
+	h2, w2, _ = size(img2_array)
+	
+	a_col = counts1 / (h1 * w1)
+	b_col = counts2 / (h2 * w2)
 end
+
+# ╔═╡ e0e4d357-c8b0-4f7f-a03c-17dcaaff270a
+[1,3,2,4] .+ 10 * 2
+
+# ╔═╡ 5edd5bdf-9ffa-4230-986f-4179a677db36
+or = rand(1,5)
+
+# ╔═╡ 19e1d43f-ebf8-4871-b496-7cc74e256279
+a = kmeans(or, 3)
+
+# ╔═╡ 1c445cd6-09f2-4db0-9a75-5c4d356f6545
+b = kmeans(rand(1,5), 3)
+
+# ╔═╡ ef5e008b-8c6e-4fb2-b7fb-eb9cb1454c79
+c = kmeans(rand(1,5), 3)
+
+# ╔═╡ a6f13c7e-10c7-4246-8bd1-f537f8403c6a
+vcat(a.assignments, b.assignments)
+
+# ╔═╡ 1b90a9af-2674-41cb-9f80-0c5827394e52
+or
+
+# ╔═╡ 0712982f-0a5a-4ed9-ada5-9a27aa4ccc4e
+or2 = copy(or)
+
+# ╔═╡ 371c352b-fd32-4079-a2e3-2d8157d31d90
+for i in 1:length(or)
+	rea = a.centers[a.assignments[i]]
+
+	or2[i] = rea
+end
+
+# ╔═╡ bad5e598-b7f7-4401-8900-10f6a6a0a484
+or2
+
+# ╔═╡ 858ee09a-208e-4c86-861e-58165df8f6a6
+a.centers
+
+# ╔═╡ 0351dd90-2dda-4d34-a383-71da526eac4c
+a.centers
+
+# ╔═╡ cd7fb897-8206-485e-be2c-8497c96570b0
+vcat(a.counts, b.counts)
+
+# ╔═╡ 61a4e40c-fd9f-4dd7-9be1-304a63b50a1c
+vcat(a.centers, b.centers, c.centers)
 
 # ╔═╡ 18c87a62-b0e5-4e31-ad4f-d449e0f4536a
 """
@@ -305,28 +479,31 @@ function sinkhorn(C::Matrix, a::Vector, b::Vector; λ=1.0, ϵ=1e-8)
 	  end
 
 # ╔═╡ f8e6fc0f-6731-4205-a622-b30387b068a1
-Pcolors = sinkhorn(cost_matrix, a_col, b_col; λ=10.0, ϵ=1e-8)
+Pcolors = sinkhorn(cost_matrix, a_col, b_col; λ=10.0, ϵ=1e-13)
 
-# ╔═╡ e152d852-3204-489e-948b-b3db5b2ab222
-trans_colors = mapdistr(centers1vec, Pcolors')
+# ╔═╡ ea23bcf6-c83c-469b-a8c4-98e9b1521b71
+mapdistr(centers1, Pcolors)
 
-# ╔═╡ 4bf3969a-60bd-4348-ad3d-1dcdc30b1174
-length(trans_colors)
+# ╔═╡ 67867e65-96d1-46a5-be88-dfc9082fcb2f
+begin
+	newcent2 = copy(centers2vec)
+
+	for i in 1:length(centers2vec)
+		up = sum(Pcolors[:, i] .* centers1vec)
+		down = sum(Pcolors[:, i])
+
+		newcent2[i] = up/down
+	end
+end
 
 # ╔═╡ d304fd25-6747-4cff-9c33-fc1eb17f4264
-trans_img1 = reassign_closest(img1_array, trans_colors)
-
-# ╔═╡ 020d45ff-a075-4229-8725-91105669577d
-trans_img11 = reshape(trans_img1, (400,600,3))
+trans_img1 = reassign_closest(img1_array, newcent2)
 
 # ╔═╡ cddfa011-8be1-407b-8694-704a53583581
-colorview(RGB, permutedims(trans_img11, (3,1,2)))
+colorview(RGB, permutedims(reshape(trans_img1, (400,600,3)), (3,1,2)))
 
 # ╔═╡ 2f6ebe5e-a3ff-4d79-83bc-4b9ab19e939c
 image1_transf = reshape(mapdistr(colors2, Pcolors), size(img1down))
-
-# ╔═╡ 9c6342ae-a3e4-4c36-aef7-84496477a205
-imresize(image1_transf, (300, 450))
 
 # ╔═╡ ec53c559-044e-4287-8b44-1123fade583c
 colorscatter(colors; kwargs...) = 
@@ -1809,40 +1986,67 @@ version = "0.9.1+5"
 # ╟─03ad0574-699b-4046-863e-611e1a058d82
 # ╟─3a9db4da-22de-4b49-9630-efc997f2e3b0
 # ╟─69c0bee8-3947-4928-856d-454e5d693492
+# ╟─dc7c112b-7213-4746-b86e-8cbbb8130a01
 # ╟─4118339f-b3a1-4d89-8bbc-54fae475ae4c
 # ╟─e0931c2c-15e8-438d-bae4-c961e68d90ec
 # ╟─9e2bb61a-098a-4edd-aa87-3a3484595f4d
 # ╟─3743764b-d8d3-471d-8398-e296aad2d567
+# ╟─16ce4192-f580-46ba-80da-ac44cb13ba3b
 # ╠═45264041-09d3-412c-a2ff-50c4bdc29039
+# ╠═1afa5d13-cf22-44fb-8493-22d94b744329
 # ╠═f321ac99-d7fe-40ed-9498-b56588a03270
 # ╟─ad83b6f3-98fa-4568-ae23-43ab9813a9fd
 # ╠═d3755b9c-6682-4907-ad1f-510a117eae5e
 # ╟─2319e25f-aae4-44aa-a548-b9994641ae4f
 # ╠═41ce3af7-89bc-49b5-9ab7-4b80810603d1
+# ╠═f0887a24-1174-4b19-abe3-1492903d2307
+# ╠═79b5e85c-83df-43a1-81a1-da4409ba4311
+# ╠═41c30f3d-dbf1-40ec-8877-2ae8f3477370
+# ╟─2ace44bb-085e-4979-b2d7-c21272df21d6
+# ╠═3582f1c8-a5ee-4c38-86a3-56bca198471f
+# ╟─00dda518-43f4-42c1-ad54-d4719e7eca28
+# ╟─ec4795e5-7c10-4b93-95a4-0a6890fc0386
 # ╠═ba5a453d-8c27-4f7c-8ee2-f91736a3872d
 # ╠═9575083d-50b8-466a-b8c5-b6207e0bcba0
-# ╟─00dda518-43f4-42c1-ad54-d4719e7eca28
-# ╠═3582f1c8-a5ee-4c38-86a3-56bca198471f
-# ╠═26e85f16-443d-4c61-a65b-edb62c080632
-# ╟─de8c46df-9d6f-411c-a67c-39e8f3552882
+# ╟─5d13c0fb-b1ca-46e5-ad09-181ff8d869b1
+# ╟─28fbebcb-2e14-4e35-8a36-097d88cc4052
 # ╠═c269a523-7151-4df4-8fa8-65cbff233b21
+# ╠═e6ec5d4f-f398-44fc-82bb-434b29861f72
+# ╠═22b10e80-3c83-4a7f-8f4e-b7bb2fe8bc31
+# ╠═15867d4f-8af6-4a52-b6ae-da68ef757e69
+# ╠═58d7ad4e-64ed-4cb5-a014-74867fbd3f33
+# ╠═6a99a349-64ee-40e5-b231-9df7d6e43a5a
+# ╠═9e17dba7-1ad1-4f59-8d04-3ca67f89c73c
+# ╠═236aa68c-48f3-47d1-a0fe-ec8190298836
 # ╠═e5b7dd1c-38aa-4a2e-b8c0-92fa0c455334
 # ╠═f8e6fc0f-6731-4205-a622-b30387b068a1
-# ╠═e152d852-3204-489e-948b-b3db5b2ab222
-# ╠═4bf3969a-60bd-4348-ad3d-1dcdc30b1174
+# ╠═ea23bcf6-c83c-469b-a8c4-98e9b1521b71
+# ╠═67867e65-96d1-46a5-be88-dfc9082fcb2f
 # ╠═d304fd25-6747-4cff-9c33-fc1eb17f4264
-# ╠═020d45ff-a075-4229-8725-91105669577d
 # ╠═cddfa011-8be1-407b-8694-704a53583581
 # ╠═2f6ebe5e-a3ff-4d79-83bc-4b9ab19e939c
-# ╟─4fe21532-bf4a-452f-b078-cdbddc028cd6
-# ╠═9c6342ae-a3e4-4c36-aef7-84496477a205
-# ╠═f5318bde-d55e-44a7-b8f4-fe19f583f2ce
 # ╟─3be5ba4d-9f0f-49de-97e5-f11c72eb4fc0
 # ╟─ddbab8c0-1440-4027-b1f4-0f083448a17e
 # ╠═8131f7cf-7027-4168-b41e-e75a4001a2a5
 # ╠═d347ae0a-d085-45d4-8e3e-ac9e94d3b401
 # ╠═94f775f3-c480-4b71-a50d-49e530a6bc55
+# ╠═cf902585-cd7c-4d45-9360-8d1e509fffe8
 # ╠═393c44d3-f39e-4a07-9553-b02b56ff9dd4
+# ╠═390ef29b-e81b-47f5-ac61-cf61f29614af
+# ╠═e0e4d357-c8b0-4f7f-a03c-17dcaaff270a
+# ╠═5edd5bdf-9ffa-4230-986f-4179a677db36
+# ╠═19e1d43f-ebf8-4871-b496-7cc74e256279
+# ╠═1c445cd6-09f2-4db0-9a75-5c4d356f6545
+# ╠═ef5e008b-8c6e-4fb2-b7fb-eb9cb1454c79
+# ╠═a6f13c7e-10c7-4246-8bd1-f537f8403c6a
+# ╠═1b90a9af-2674-41cb-9f80-0c5827394e52
+# ╠═0712982f-0a5a-4ed9-ada5-9a27aa4ccc4e
+# ╠═371c352b-fd32-4079-a2e3-2d8157d31d90
+# ╠═bad5e598-b7f7-4401-8900-10f6a6a0a484
+# ╠═858ee09a-208e-4c86-861e-58165df8f6a6
+# ╠═0351dd90-2dda-4d34-a383-71da526eac4c
+# ╠═cd7fb897-8206-485e-be2c-8497c96570b0
+# ╠═61a4e40c-fd9f-4dd7-9be1-304a63b50a1c
 # ╠═18c87a62-b0e5-4e31-ad4f-d449e0f4536a
 # ╠═22a77c67-a0ed-434a-9db4-993cdce0c93b
 # ╠═ec53c559-044e-4287-8b44-1123fade583c
