@@ -14,10 +14,10 @@ using MLDatasets
 export get_moon_data, get_nmist_data, get_loss_and_accuracy, train
 
 function get_moon_data(args)
-	x_train, y_train = Data.get_moons(300, offset = 1.0)
-	x_test, y_test = Data.get_moons_from_publication()
+	x_train, y_train = Data.get_moons(300, offset = 0.5)
+	x_test, y_test = Data.get_moons(300, offset = 1.0, seed = 0) # Data.get_moons_from_publication()
 
-	x_train = transpose(x_train)
+	x_train, x_test = transpose(x_train), transpose(x_test)
 	y_train, y_test = onehotbatch(y_train, 0:1), onehotbatch(y_test, 0:1)
 
 	# create data loaders
@@ -47,7 +47,7 @@ function get_nmist_data(args)
 end
 
 function get_loss_and_accuracy(data_loader::Flux.Data.DataLoader, model)
-	accuracy = 0
+	accuracy = 0.0f0
 	loss = 0.0f0
 	num = 0
 	for (x, y) in data_loader
@@ -66,47 +66,38 @@ function neural_network()
 	)
 end
 
-function get_prediction(loader, model)
-	pred = []
-	for (x, y) in loader
-		push!(pred, model(y))
-	end
-	return pred
-end
-
 Base.@kwdef mutable struct Args
-	learning_rate::Float64 = 1e-2
-    batchsize::Int = 50
-    epochs::Int = 100
+	learning_rate::Float64 = 1e-1
+    batchsize::Int = 300
+    epochs::Int = 1000
 end
 
-function train(args...)
-	args = Args(args...)
-
-	train_loader, test_loader = get_moon_data(args) # get_nmist_data(args)
-
+function plot_train_and_test_data(train_loader::Flux.Data.DataLoader, test_loader::Flux.Data.DataLoader)
 	# plot train and test data sets
 	p_train = Plots.scatter(
 		train_loader.data[1][1,:], train_loader.data[1][2,:],
-		 c = PlotUtils.map_bool_to_color(train_loader.data[2][1,:], "blue", "red")
+			c = PlotUtils.map_bool_to_color(train_loader.data[2][1,:], "blue", "red")
 	)
 	p_test = Plots.scatter(
 		test_loader.data[1][1,:], test_loader.data[1][2,:],
 		c = PlotUtils.map_bool_to_color(test_loader.data[2][1,:], "blue", "red")
 	)
 	display(Plots.plot(p_train, p_test, layout = (1, 2)))
+end
+
+function train(train_loader::Flux.Data.DataLoader, test_loader::Flux.Data.DataLoader; args...)
+	args = Args(args...)
 
 	model = neural_network()
 	params = Flux.params(model)
-	optimizer = ADAM(args.learning_rate) # Descent(args.learning_rate) # 
+	# optimizer = ADAM(args.learning_rate) 
+	optimizer = Descent(args.learning_rate)
+	# optimizer = Optimiser(WeightDecay(), Decent(args.learning_rate))
 
 	# training
 	for epoch in 1:args.epochs
-		for (x, y) in train_loader
-			# compute gradient
-			grads = gradient(() -> logitcrossentropy(model(x), y), params)
-			Flux.Optimise.update!(optimizer, params, grads)
-		end
+		loss(x, y) = logitcrossentropy(model(x), y)
+		Flux.train!(loss, params, train_loader, optimizer)
 
 		# evaluate train and test loss and accuracy 
 		train_loss, train_accuracy = get_loss_and_accuracy(train_loader, model)
@@ -116,17 +107,17 @@ function train(args...)
 		println("  test loss = $test_loss, test accuracy = $test_accuracy")
 
 		# early exit if accuracy is over threshold
-		acc_thres = 0.90
-		if test_accuracy > acc_thres
-			@info "Stopped after $epoch epochs because test accuracy threshold of $(acc_thres * 100)% was exceeded."
-			break
-		end
+		# acc_thres = 0.90
+		# if test_accuracy > acc_thres
+		# 	@info "Stopped after $epoch epochs because test accuracy threshold of $(acc_thres * 100)% was exceeded."
+		# 	break
+		# end
 	end
 
 	return model
 end
 
-function plot_decision_boundary(loader, model)
+function plot_decision_boundary(loader, model; title = "")
 	# grid and range step size
 	n = 100
 	# determine limits of given data
@@ -163,6 +154,7 @@ function plot_decision_boundary(loader, model)
 		# actual contours
 		PlotlyJS.contour(
 			x = r_x, y = r_y, z = gr_pred, 
+			contours_start = -50, contours_end = 50, contours_size = 5, 
 			contours_coloring = "heatmap", colorscale = PlotUtils.get_custom_rdbu_scale(opacity), 
 			opacity = opacity
 		),
@@ -174,11 +166,12 @@ function plot_decision_boundary(loader, model)
 			showscale = false, line = attr(width = 3)
 		)],
 		Layout(
+			title = title,
 			width = 500, height = 500, autosize = true,
 			xaxis_showgrid = false, yaxis_showgrid = false,
 			xaxis_range = [x_min, x_max], yaxis_range = [y_min, y_max],
-			xaxis = attr(zeroline = true, zerolinewidth = 1, zerolinecolor = "black", automargin = true),
-			yaxis = attr(zeroline = true, zerolinewidth = 1, zerolinecolor = "black", automargin = true),
+			# xaxis = attr(zeroline = true, zerolinewidth = 1, zerolinecolor = "black", automargin = true),
+			# yaxis = attr(zeroline = true, zerolinewidth = 1, zerolinecolor = "black", automargin = true),
 			margin = attr(l = 50, r = 50, b = 50, t = 50, pad = 0),
 			plot_bgcolor = "rgba(0, 0, 0, 0)"
 		),
