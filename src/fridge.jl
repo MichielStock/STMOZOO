@@ -102,16 +102,51 @@ function recipeToNumVector(fridgeList,ingredientList)
     return numVector
 end
 
-compatible(x...) = !any(sum(x)[1:end-1] .== 2)
+compatible(x...) = !any(sum(x)[1:end-1] .>= 2)
 
-function findBestCombo(fridgeList, recipeDict)
-    
+function findBestCombo(fridgeList, recipeDict, numRecipes)
+
+    bestCombo = Dict()
+    ingredientsArray = []
+    namesArray = []
+
+    for (name,ingredients) in recipeDict
+        push!(namesArray,name)
+        push!(ingredientsArray, recipeToNumVector(fridgeList, ingredients))
+    end
+
+    for i = 1:numRecipes
+
+        bestOrder = sortperm(ingredientsArray, by=fridgeObjective)
+        ingredientsArray = ingredientsArray[bestOrder]
+        namesArray = namesArray[bestOrder]
+
+        tempRecipeName = namesArray[i]
+        bestCombo[tempRecipeName] = ingredientsArray[i]
+
+        if all(isone.(sum(values(bestCombo))))
+            break
+        end
+
+        namesArray = [name for (name, ingredientList) in zip(namesArray, ingredientsArray) if sum(ingredientList .== bestCombo[tempRecipeName]) == 0]
+        ingredientsArray = [ingredientList for ingredientList in ingredientsArray if sum(ingredientList .== bestCombo[tempRecipeName]) == 0]
+
+        if isempty(namesArray)
+            print("found max $i compatible recipes.\n")
+            break
+        end
+
+    end
+
+    for recipeName in keys(bestCombo)
+        print("$(recipeName) : $(recipeDict[recipeName])\n")
+    end
 end
 
 testList = ["cheese","potato","tomato","cabbage"]
-recipeDict = loadRecipeDBCSV("./docs/recipeDB.csv")
+recipeDict = loadRecipeDBCSV("./data/recipeDB.csv")
 
-print(fridgeObjective(recipeToNumVector(testList,recipeDict["New England Dinner"])))
+findBestCombo(testList, recipeDict, 3)
 
 #bestRecipe = findBestRecipe(testList, "./docs/recipeDB.csv")
 
