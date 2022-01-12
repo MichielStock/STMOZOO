@@ -628,52 +628,46 @@ function get_moons_from_publication()
     return moons, labels
 end
 
-function get_moons(n; noise = 0.1, offset = 0.0, rotation = 90)
-    X, y = make_moons(n_samples = n, noise = noise, random_state = 0)
+function get_moons(n; noise = 0.1, offset = 0.0, rotation = 90, seed = rand((1, 2^31)))
+    X, y = make_moons(n_samples = n, noise = noise, random_state = seed)
     p1 = scatter(X[:,1], X[:,2], c = y, title = "generated state")
+
+    if offset != 0.0
+        X = apply_moon_offset(X, y, offset)
+    end
+    p2 = scatter(X[:,1], X[:,2], c = y, title = "offsetted state")
 
     if rotation != 0.0
         θ = deg2rad(rotation)
         R = [cos(θ) -sin(θ); sin(θ) cos(θ)]
         X *= R
-        p2 = scatter(X[:,1], X[:,2], c = y, title = "rotated state")
     end
-    
-    if offset != 0.0
-        if rotation != 0.0
-            # after rotation: apply offset to x-axis
-            X = apply_moon_offset(X, y, offset, "x")
-        else
-            # no rotation: apply offset to y-axis
-            X = apply_moon_offset(X, y, offset, "y")
-        end
-    end
-    p3 = scatter(X[:,1], X[:,2], c = y, title = "offsetted state")
+    p3 = scatter(X[:,1], X[:,2], c = y, title = "rotated state")
     
     display(plot(p1, p2, p3, layout = (1, 3)))
     return X, y
 end
 
-function apply_moon_offset(X, y, offset, direction = "x")
-    @assert direction in ["x", "y"] "Error: direction must be either x or y"
+function apply_moon_offset(X, y, offset)
+    # @assert direction in ["x", "y"] "Error: direction must be either x or y"
     # use offset as total offset, thus devide by number of labels; assume 2 labels
     offset /= 2
-    # l = length(y)    # length
-    # b = Int(l / 2)   # boundary
+    # direction == "x" ? direction = 1 : direction = 2
 
-    direction == "x" ? direction = 1 : direction = 2
-
-    first_moon = true
+    moons = []
     for label in unique(y)
-        l_ids = findall(l -> l == label, y)
-        for id in l_ids
-            first_moon ? X[id:1:id, direction] .-= offset : X[id:1:id, direction] .+= offset
-        end
-        first_moon = false
+        push!(moons, findall(l -> l == label, y))
     end
 
-    # X[:1:b, direction] .+= offset
-    # X[(b + 1):1:l, direction] .-= offset
+    max_y = [maximum(X[m, 2]) for m in moons]
+
+    if max_y[1] > max_y[2]
+        X[moons[1], 2] .+= offset
+        X[moons[2], 2] .-= offset
+    else
+        X[moons[1], 2] .-= offset
+        X[moons[2], 2] .+= offset
+    end
 
     return X
 end
