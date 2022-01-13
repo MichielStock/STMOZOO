@@ -3,7 +3,7 @@
 
 include("../src/recipeWebscraper.jl")
 
-using .recipeWebscraper
+using .recipeWebscraper, JLD2
 
 #==================================================
           CHECK INGREDIENTS FUNCTIONS
@@ -222,7 +222,9 @@ compatible(x) = !any(sum(x)[1:end-1] .>= 2)
 
 
 testList = ["cheese","potato","tomato","cabbage"]
-recipeDict = loadRecipeDBCSV("./data/recipeDB.csv")
+# recipeDict = loadRecipeDBCSV("./data/recipeDB.csv") # this should be used the first time, else load jld2 file
+
+recipeDict = load("./data/recipeDB.jld2")
 
 test = GreedyFindCombo(testList, recipeDict, 3)
 testRecipes = [i for i in values(test)]
