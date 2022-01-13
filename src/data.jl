@@ -622,13 +622,16 @@ function moon_class_2(offset = 0.0)
     return vcat(transpose.((x, y))...)
 end
 
-function get_moons_from_publication()
+function get_moons_from_publication(; show_plot = false)
     moons = hcat(moon_class_1(), moon_class_2())
     labels = [repeat([0], 150); repeat([1], 150)]
+    if show_plot 
+        display(scatter(moons[1,:], moons[2,:], c = labels))
+    end
     return moons, labels
 end
 
-function get_moons(n; noise = 0.1, offset = 0.0, rotation = 90, seed = rand((1, 2^31)))
+function get_moons(n; noise = 0.1, offset = 0.0, rotation = 90, seed = rand((1, 2^31)), show_plot = false)
     X, y = make_moons(n_samples = n, noise = noise, random_state = seed)
     p1 = scatter(X[:,1], X[:,2], c = y, title = "generated state")
 
@@ -641,10 +644,16 @@ function get_moons(n; noise = 0.1, offset = 0.0, rotation = 90, seed = rand((1, 
         θ = deg2rad(rotation)
         R = [cos(θ) -sin(θ); sin(θ) cos(θ)]
         X *= R
+        # move center closer to (0, 0)
+        if offset != 0.0
+            X[:,2] .+= offset/2
+        end
     end
     p3 = scatter(X[:,1], X[:,2], c = y, title = "rotated state")
     
-    display(plot(p1, p2, p3, layout = (1, 3)))
+    if show_plot
+        display(plot(p1, p2, p3, layout = (1, 3)))
+    end
     return X, y
 end
 
