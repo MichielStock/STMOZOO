@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.17.1
+# v0.17.4
 
 using Markdown
 using InteractiveUtils
@@ -16,13 +16,13 @@ end
 
 # ╔═╡ 03f007fe-ed84-4ee4-a806-5239843c0391
 using Plots ,Images , Combinatorics , PlutoUI , Colors, ImageIO ,
-LinearAlgebra, Distributions, Random, DataStructures ,Clustering, ImageShow, DataFrames
+LinearAlgebra, Distributions, Random, DataStructures ,Clustering
 
 # ╔═╡ c3c61b29-ddc7-4638-9350-8ce945326d27
 md"""
 # Final Project:
 
-## Color transfer using optimal transportation done right
+## Title: Color transfer using optimal transportation done right
 
 ##### Student name: Ju Hyung Lee
 """
@@ -51,26 +51,26 @@ By default, you will see two photos in the figs/ folder in this project.
 
 The two photos below are taken by myself, showing the cityscapes of Seoul in South Korea:
 
-- The first image was taken during daytime
+- The first image was taken during daytime.
 - The second one was taken during sunset.
 
-What would the first image look like during sunset? 
+What would the **first image** look like **during sunset**? 
 
-Could we achieve this through optimal transport?
-"""
-
-# ╔═╡ 69c0bee8-3947-4928-856d-454e5d693492
-md"""
-### Or, use images of your own preference!
-
-To make things convenient, I have made a file upload box below.
-
-You can load different images that you would like to try out!
+Would we be able to predict this through optimal transport?
 """
 
 # ╔═╡ dc7c112b-7213-4746-b86e-8cbbb8130a01
 md"""
 ---
+"""
+
+# ╔═╡ 69c0bee8-3947-4928-856d-454e5d693492
+md"""
+### Or, use images of your own preference! 
+
+To make things convenient, I have made a file upload box below.
+
+You can load different images that you would like to try out!
 """
 
 # ╔═╡ 4118339f-b3a1-4d89-8bbc-54fae475ae4c
@@ -96,24 +96,96 @@ md"""
 ---
 """
 
-# ╔═╡ 1afa5d13-cf22-44fb-8493-22d94b744329
-typeof(image2file) == Dict{Any, Any}
-
 # ╔═╡ ad83b6f3-98fa-4568-ae23-43ab9813a9fd
 md"""
 ## 1. Converting images into arrays
 
-- Firstly, we will represent the images in the form of array (height x width x channel)
+- Firstly, we will represent the images in the form of 2D array (channel x (height * width))
+- To match the dimensions for clustering of images
+"""
+
+# ╔═╡ ac92d0ae-4641-4981-aab2-b63c04826119
+md"""
+##### 1.1. Conversion to 2D array for clustering purpose
+"""
+
+# ╔═╡ 2c4e983c-c922-4c2f-91e2-d5d5b2f28436
+md"""
+---
+"""
+
+# ╔═╡ 674c4223-7c93-4f89-bdd1-65fd51886a04
+md"""
+##### 1.2. Conversion to 3D array for later visualization purposes
 """
 
 # ╔═╡ 2319e25f-aae4-44aa-a548-b9994641ae4f
 md"""
 ## 2. Clustering the images using K-means clustering
+
+- From clustering.jl package, k-means clustering function **kmeans()** was used to cluster the 2D-array of images.
+- This is the **most computaionally expensive step** among this notebook. Below in section 3, you can experiment the different outcomes depending on the input number of clusters, but be aware of the runtime for n_clusters > 50.
+"""
+
+# ╔═╡ cae1a3c1-138e-4eac-b535-2936b07ae2ec
+md"""
+### Clustering result
+
+the result of kmeans() provides several attributes, and the ones we need here are:
+- centers = clustered center points
+- counts = number of points in each of the cluster
+- assignments = assignments of points to clusters
+"""
+
+# ╔═╡ 69addbcd-6158-4193-b4ef-b432d71912d5
+md"""
+---
+"""
+
+# ╔═╡ d147d490-4897-4a24-a966-5fb5de5a3347
+md"""
+##### Clustered centers
+
+- Array of **( channels x n_clusters )** showing the cluster centers
+"""
+
+# ╔═╡ 834d0e85-ba6e-4fde-b2df-2e01188c2277
+md"""
+---
+"""
+
+# ╔═╡ 3b9c7acc-5a37-4f51-8f9c-d32ab4370594
+md"""
+##### Counts
+
+- Vector of **( 1 x n_clusters )**, showing the size of each cluster
+"""
+
+# ╔═╡ 72c3d80b-e09b-4459-9216-6f9bc9669f48
+md"""
+---
+"""
+
+# ╔═╡ 7b865f98-a124-4c9e-884c-a6744ea7ca0d
+md"""
+##### Assignments
+
+- Vector of **( 1 x pixels )** showing  to which cluster each point belongs to.
+"""
+
+# ╔═╡ 24611539-ba22-483d-8be3-b79314a67dcc
+md"""
+---
+"""
+
+# ╔═╡ 58276c9d-a3d9-436b-aa59-7e05662ac0ff
+md"""
+##### Repeat for the image2
 """
 
 # ╔═╡ 2ace44bb-085e-4979-b2d7-c21272df21d6
 md"""
-### Images after clustering
+## 3. Result Visualization after clustering
 
 After K-means clustering, the colors in the image look more compressed.
 
@@ -121,6 +193,10 @@ Yet, the dimensions (number of pixels) are the same.
 
 We will transfer the color schemes of the clustered colors
 """
+
+# ╔═╡ 4b9955f2-0900-41c7-aecc-193477f9ac7f
+md"""
+**Number of clusters** """
 
 # ╔═╡ 3582f1c8-a5ee-4c38-86a3-56bca198471f
 @bind n_cluster Slider(1:1:50; default=30, show_value=true)
@@ -142,28 +218,103 @@ md"""
 
 # ╔═╡ 28fbebcb-2e14-4e35-8a36-097d88cc4052
 md"""
-## Optimal transport of the clustered colors 
+## 4. Optimal transport of the clustered colors 
 """
 
-# ╔═╡ 3be5ba4d-9f0f-49de-97e5-f11c72eb4fc0
-function nearest_color(c1, c2)
-	"""
-	Given two sets of unique color vectors,
-	make a dictionary of the closest color.
-	"""
+# ╔═╡ 054ddfae-e486-4c3e-9ac4-55bb11d47daf
+md"""
+##### 4.1. Cost matrix calculation
 
-	unique_c1 = unique(c1)
-	unique_c2 = unique(c2)
+- By default, Squared eucledian distances are calculated between cluster centers of two images.
 
-	result = Dict()
+- Below are provided a few other distance calculation. Feel free to experiment how different distance metrics affect the color transfer.
+"""
 
-	for c1 in unique_c1
-		nearest = minimum(colordiff.(c1, unique_c2))
-		result[c1] = nearest
-	end
+# ╔═╡ 54d1e2c3-ad62-4f06-9d0e-8778d0f02c16
+md"""
+###### 4.1.1. Distance types
+"""
 
-	return result
-end
+# ╔═╡ 59bc54fd-1c68-4cff-8888-1cdd5725aee6
+euclidean(x, y) = √(sum((x - y) .^ 2))
+
+# ╔═╡ df9010db-0565-43d5-b926-164d96ca400f
+Sqeuclidean(x, y) = sum((x - y) .^ 2)
+
+# ╔═╡ a9d9ee97-b186-4a76-bd61-d21c0c0b520d
+cityblock(x, y) = sum(abs.(x - y))
+
+# ╔═╡ eaf5aa75-a3d8-4d0e-8fe1-dd250fe033c1
+KLdivergence(x, y) = sum(x .* log.(x ./ y))
+
+# ╔═╡ 6e93bce8-1794-46c5-a68d-76ce0829debb
+md"""
+---
+"""
+
+# ╔═╡ 66a54b5a-4497-47d2-a360-0f23d6518d39
+md"""
+##### 4.2. Weight for each pixel
+
+- In the course, we gave a unifrom weight for each pixel.
+- But this time, we will give different weight for each pixel.
+- Size of each cluster is normalized by (height * weight), so every pixel within the same cluster will share the same weights
+"""
+
+# ╔═╡ c8a3f385-33fa-48ae-b4d1-134fffa7c22c
+md"""
+---
+"""
+
+# ╔═╡ 35196ba9-ac08-4583-981d-92f5d4374e52
+md"""
+##### 4.3. Optimal transport using the Sinkhorn algorithm
+
+- The same algorithm from the course.
+"""
+
+# ╔═╡ ecefce4d-145e-4cfe-bab5-e1a5daa6e6fd
+md"""
+### Outcome of optimal transport on image 1.
+"""
+
+# ╔═╡ 7c616c0e-55de-4e5f-aafb-34b85665df70
+md"""
+##### More and more things to experiment...
+
+Optional inputs in the Sinkhorn algorithm - **λ** and **ϵ** - also affect the outcome of Optimal Transport. Try out the different values. 
+"""
+
+# ╔═╡ 24bba47e-7aa5-4463-a448-2788537faa7a
+md"""
+---
+"""
+
+# ╔═╡ 2bf1e249-821e-40d8-a391-710baae05e65
+md"""
+**Lambda (λ)**
+"""
+
+# ╔═╡ 3687fc03-af9d-4e44-9fb5-17d086822924
+@bind lambda Slider(1.0:300.0, default=100, show_value=true)
+
+# ╔═╡ 77c07e75-c6db-4106-8d04-44b619d70465
+md"""
+**Epsilon (ϵ)**
+"""
+
+# ╔═╡ 2901b354-1e4f-432a-a4b1-5b5e37cee104
+@bind eps Slider(-8.0:-1.0, default=-1, show_value=true)
+
+# ╔═╡ 7af273d6-d725-43c6-8637-4db525f4270d
+md"""
+---
+"""
+
+# ╔═╡ 52a9c486-7b05-4881-8479-f48075e58de3
+md"""
+### Different?
+"""
 
 # ╔═╡ ddbab8c0-1440-4027-b1f4-0f083448a17e
 md"""
@@ -198,9 +349,6 @@ else
 	image1 = load("../figs/cityscape.jpg")
 end
 
-# ╔═╡ a59639d8-3e2f-423b-90dc-f259f16f9415
-image1
-
 # ╔═╡ f321ac99-d7fe-40ed-9498-b56588a03270
 # if a custom image is selected from the FilePicker above, load that image
 if typeof(image2file) == Dict{Any, Any}
@@ -210,292 +358,177 @@ else
 	image2 = load("../figs/sunset.jpg")
 end
 
-# ╔═╡ d347ae0a-d085-45d4-8e3e-ac9e94d3b401
-function image_to_array(image)
+# ╔═╡ 3038def5-3c91-4a2d-90f3-d4c827d63ce0
+function image_to_2Darray(image)
 	"""
-	Convert a loaded image into a 3D array of size (Height x Width x Channel)
-	RGB, so 3 channels!
+	Convert a loaded image into a 2D array of dimensions [channel x (width * height)]
+	In other words: [RGB x (number of pixels in the image)]
 
 	Input
 		- image = loaded image
 	Returns
-		- img_array = image converted into array
+		- img_array = image converted into 2D array
 	"""
 
-	# Colors.jl package, channelview converts image into array
-	img_array = channelview(image)
+	# Colors.jl package
+	r = convert(Array{Float64}, vec(red.(image)))
+	g = convert(Array{Float64}, vec(green.(image)))
+	b = convert(Array{Float64}, vec(blue.(image)))
 
-	# But conversion is done in channels x width x height.
-	# Do it the right way
-	img_array = permutedims(img_array, (2,3,1))
+	# channelveiw() shows the array in dimensions channels x width x height.
+	# For the subsequent experiment, we convert this to chaneels x (width * height)
+	img_array = hcat(r,g,b)'
 
 	return img_array
 end
 
 # ╔═╡ d3755b9c-6682-4907-ad1f-510a117eae5e
 begin
-	img1_array = image_to_array(image1)
-	img2_array = image_to_array(image2)
+	img1array = image_to_2Darray(image1)
+	img2array = image_to_2Darray(image2)
 end
 
-# ╔═╡ 94f775f3-c480-4b71-a50d-49e530a6bc55
-function reassign_closest(original, centroids)
-	original_flat = vec(original)
-	reassigned = copy(original_flat)
+# ╔═╡ 441e5c0f-85bf-43a3-9b34-d21fbba4dc70
+im1res = kmeans(img1array, n_cluster)
 
-	for i in 1:length(original_flat)
-		closest = argmin(abs.(original_flat[i] .- centroids))
-		reassigned[i] = centroids[closest]
-	end
+# ╔═╡ 00b81e4d-937b-4e00-83b8-abcbfcc7fcbe
+im1_centers = im1res.centers
 
-	return reassigned
-end
+# ╔═╡ 6d565196-b737-44e7-ae7f-1f407bd3f6b7
+im1_counts = im1res.counts
 
-# ╔═╡ cf902585-cd7c-4d45-9360-8d1e509fffe8
-function reassign_closest2(original, assignments, centers)
+# ╔═╡ 2f84f436-d552-4923-99e6-7362945a7ef7
+im1_assigns = im1res.assignments
 
-	or = vec(original[:,:,1])
-	og = vec(original[:,:,2])
-	ob = vec(original[:,:,3])
-
-	reassigned = vcat(or, og, ob)
-
-	for i in 1:length(reassigned)
-		reassigned[i] = centers[assignments[i]]
-	end
-
-	return reshape(reassigned, size(original))
-end
-
-# ╔═╡ af574c83-1fff-4de5-975b-3c72f63954e5
-function reassign_closest3(original, assignments, centers)
-	h,w,c = size(original)
-	original = reshape(original, (c, h*w))
-	reassign = copy(original)
-
-	for i in 1:3
-		newval = centers[assignments]
-
-		reassign[i,:] = newval
-	end
-
-	return reshape(reassign, (h,w,c))
-end
-
-# ╔═╡ 393c44d3-f39e-4a07-9553-b02b56ff9dd4
-function kmean_clust(img_array, clusters)
-	"""
-	Run clustering on the image array
-
-	Input
-		- img_array = array of an image
-		- clusters 	= number of clusters to set for k-means clustering
- 	Returns
-		- centroids = center points of k-means cluster
-		- img_clust = array of an image, after clustering.
-	"""
-	# height x width x channel
-	h,w,c = size(img_array)
-	# Reshape the array in channel x (width * height)
-	img_reshape = reshape(img_array, (c, h * w))
-
-	# Division of channels
-	r = img_reshape[1, :]
-	g = img_reshape[2, :]
-	b = img_reshape[3, :]
-
-	# Run k-means clustering
-	rclust = kmeans(r', clusters)
-	gclust = kmeans(g', clusters)
-	bclust = kmeans(b', clusters)
-
-	#summarize
-	centroids = vcat(rclust.centers, gclust.centers, bclust.centers)
-	counts = vcat(rclust.counts, gclust.counts, bclust.counts)
-	assignments = vcat(rclust.assignments, 
-					   (gclust.assignments .+ length(rclust.centers)), 
-					   (bclust.assignments .+ length(rclust.centers) * 2))
-	
-	# Reassign values to original image array with clustered values
-	img_clust = reassign_closest(img_array, centroids)
-	img_clust = reshape(img_clust, (h,w,c))
-
-	return centroids, counts, img_clust, assignments
-end
-
-# ╔═╡ 390ef29b-e81b-47f5-ac61-cf61f29614af
-function kmean_clust2(img_array, clusters)
-	"""
-	Run clustering on the image array
-
-	Input
-		- img_array = array of an image
-		- clusters 	= number of clusters to set for k-means clustering
- 	Returns
-		- centroids = center points of k-means cluster
-		- img_clust = array of an image, after clustering.
-	"""
-	# height x width x channel
-	h,w,c = size(img_array)
-	# Reshape the array in channel x (width * height)
-	img_reshape = reshape(img_array, (c, h * w))
-
-	clustR = kmeans(img_reshape, clusters)
-
-	#summarize
-	centroids = clustR.centers
-	counts = clustR.counts
-	assignments = clustR.assignments
-	
-	# Reassign values to original image array with clustered values
-	img_clust = reassign_closest(img_array, centroids)
-	img_clust = reshape(img_clust, (h,w,c))
-
-	return centroids, counts, img_clust, assignments
-end
-
-# ╔═╡ 41ce3af7-89bc-49b5-9ab7-4b80810603d1
+# ╔═╡ 200c0296-80c3-40b4-a7e0-b84fc4e4fb97
 begin
-	centers1, counts1, img1_clust, ass1 = kmean_clust2(img1_array, n_cluster)
-	centers2, counts2, img2_clust, ass2 = kmean_clust2(img2_array, n_cluster)
+	im2res = kmeans(img2array, n_cluster)
+	im2_centers = im2res.centers
+	im2_counts = im2res.counts
+	im2_assigns = im2res.assignments
 end
 
-# ╔═╡ e82903aa-c31c-4b31-aef6-1c14d57b1ca3
-ass1
-
-# ╔═╡ f0887a24-1174-4b19-abe3-1492903d2307
-centers1
-
-# ╔═╡ 79b5e85c-83df-43a1-81a1-da4409ba4311
-counts1
-
-# ╔═╡ 41c30f3d-dbf1-40ec-8877-2ae8f3477370
-length(counts1)
-
-# ╔═╡ ba5a453d-8c27-4f7c-8ee2-f91736a3872d
-colorview(RGB, permutedims(img1_clust, (3,1,2)))
-
-# ╔═╡ 9575083d-50b8-466a-b8c5-b6207e0bcba0
-colorview(RGB, permutedims(img2_clust, (3,1,2)))
-
-# ╔═╡ c269a523-7151-4df4-8fa8-65cbff233b21
+# ╔═╡ 530f6dbd-98db-4a71-a052-26884e5ca71c
 begin
-	centers1vec = vec(centers1')
-	centers2vec = vec(centers2')
+	C = zeros(length(im1_counts), length(im2_counts))
 
-	n_centers1 = length(centers1)
-	n_centers2 = length(centers2)
-end
+	for i in 1:length(im1_counts)
+		for j in 1:length(im2_counts)
+			rgb1 = im1_centers[:,j]
+			rgb2 = im2_centers[:,i]
 
-# ╔═╡ 236aa68c-48f3-47d1-a0fe-ec8190298836
-centers1vec
-
-# ╔═╡ e6ec5d4f-f398-44fc-82bb-434b29861f72
-vec(centers1')
-
-# ╔═╡ 22b10e80-3c83-4a7f-8f4e-b7bb2fe8bc31
-centers1
-
-# ╔═╡ 15867d4f-8af6-4a52-b6ae-da68ef757e69
-centers1[:,1].^2
-
-# ╔═╡ 58d7ad4e-64ed-4cb5-a014-74867fbd3f33
-centers2
-
-# ╔═╡ 6a99a349-64ee-40e5-b231-9df7d6e43a5a
-begin
-	cost_matrix = zeros(length(counts1), length(counts2))
-
-	for i in 1:length(counts1)
-		for j in 1:length(counts2)
-			rgb1 = centers1[:,i]
-			rgb2 = centers2[:,j]
-
-			dist = √(sum((rgb1 .- rgb2).^2))
-
-			cost_matrix[i,j] = dist
+			dist = Sqeuclidean(rgb1, rgb2)
+			
+			C[i,j] = dist
 		end
 	end
 end
 
-# ╔═╡ 9e17dba7-1ad1-4f59-8d04-3ca67f89c73c
-cost_matrix
+# ╔═╡ 32c2ac0a-d0ca-4002-8c03-9f0448ac418a
+C # cost matrix between color schemes of two images
 
 # ╔═╡ e5b7dd1c-38aa-4a2e-b8c0-92fa0c455334
 begin
-	h1, w1, _ = size(img1_array)
-	h2, w2, _ = size(img2_array)
+	h, w = size(image1)
+	h2, w2 = size(image2)
 	
-	a_col = counts1 / (h1 * w1)
-	b_col = counts2 / (h2 * w2)
+	a_col = im1_counts / (h * w)
+	b_col = im2_counts / (h2 * w2)
 end
 
-# ╔═╡ e0e4d357-c8b0-4f7f-a03c-17dcaaff270a
-[1,3,2,4] .+ 10 * 2
+# ╔═╡ b7b24b81-81a6-43e9-ac47-854f8d4c8680
+function image_to_3Darray(image)
+	"""
+	Convert a loaded image into a 2D array of dimensions [channel x (width * height)]
+	In other words: [RGB x (number of pixels in the image)]
 
-# ╔═╡ 5edd5bdf-9ffa-4230-986f-4179a677db36
-or = rand(1,5)
+	Input
+		- image = loaded image
+	Returns
+		- img_array = image converted into 2D array
+	"""
 
-# ╔═╡ 19e1d43f-ebf8-4871-b496-7cc74e256279
-a = kmeans(or, 3)
+	# Colors.jl package
+	img_array = channelview(image)
 
-# ╔═╡ 1c445cd6-09f2-4db0-9a75-5c4d356f6545
-b = kmeans(rand(1,5), 3)
+	# channelveiw() shows the array in dimensions channels x width x height.
+	# For the subsequent experiment, we convert this to chaneels x (width * height)
+	img_array = permutedims(img_array, (2,3,1))
 
-# ╔═╡ ef5e008b-8c6e-4fb2-b7fb-eb9cb1454c79
-c = kmeans(rand(1,5), 3)
-
-# ╔═╡ a6f13c7e-10c7-4246-8bd1-f537f8403c6a
-vcat(a.assignments, b.assignments)
-
-# ╔═╡ a4af7e2c-c96c-404b-8698-0e29007039a7
-a.assignments
-
-# ╔═╡ 1680d351-7e30-4076-9bb7-dfb72b6e349d
-or
-
-# ╔═╡ fd04c74b-dd34-4556-b82c-ed6c182a8d62
-a.centers[a.assignments]
-
-# ╔═╡ 1b90a9af-2674-41cb-9f80-0c5827394e52
-or
-
-# ╔═╡ 0712982f-0a5a-4ed9-ada5-9a27aa4ccc4e
-or2 = copy(or)
-
-# ╔═╡ 371c352b-fd32-4079-a2e3-2d8157d31d90
-for i in 1:length(or)
-	rea = a.centers[a.assignments[i]]
-
-	or2[i] = rea
+	return img_array
 end
 
-# ╔═╡ bad5e598-b7f7-4401-8900-10f6a6a0a484
-or2
+# ╔═╡ 615e0f0a-1fba-499e-b42b-3eb331311e89
+begin
+	img1array3D = image_to_3Darray(image1)
+	img2array3D = image_to_3Darray(image2)
+end
 
-# ╔═╡ 858ee09a-208e-4c86-861e-58165df8f6a6
-a.centers
+# ╔═╡ c124013f-16e5-4631-84c2-67a86ef224a2
+function reassinging(img_array, centers, assignments)
+	"""
+	Function for assigning center cluster values back to the original image.
 
-# ╔═╡ 0351dd90-2dda-4d34-a383-71da526eac4c
-a.centers
+	Input
+		- img_array   = 3D array (height x width x channel)
+		- centers 	  = cluster centers of the image
+		- assignments = assignments of points to clusters
 
-# ╔═╡ cd7fb897-8206-485e-be2c-8497c96570b0
-vcat(a.counts, b.counts)
+	Returns
+		- img_new = new representation of the image
+	"""
 
-# ╔═╡ 61a4e40c-fd9f-4dd7-9be1-304a63b50a1c
-vcat(a.centers, b.centers, c.centers)
+	img_new = copy(img_array)
+	h, w, c = size(img_array)
 
-# ╔═╡ 1ac4a735-b0ad-4dea-b90d-ae0dc70d846a
-asss = hcat(a.assignments, b.assignments, c.assignments)'
+	for i in 1:c # each channel
+		img_new[:,:,i] = reshape(centers[i,:][assignments], (h, w))
+	end
 
-# ╔═╡ 2e21acd3-e05b-463f-8046-8f877b2d573d
-convert(Matrix{Int64}, asss)
+	return img_new
+end
 
-# ╔═╡ 18c87a62-b0e5-4e31-ad4f-d449e0f4536a
-"""
-Maps one distribution to the other
-"""
-mapdistr(X, P) = Diagonal(sum(P, dims=2)[:].^-1) * P * X
+# ╔═╡ a5d95227-8dbc-4323-bec8-3c66803d4034
+begin
+	im1_clust = reassinging(img1array3D, im1_centers, im1_assigns)
+	im1_clust = colorview(RGB, permutedims(im1_clust, (3,1,2)))
+end
+
+# ╔═╡ 2c17430b-ecc8-420c-a5cd-77ec2d4cbcf8
+im1_clust
+
+# ╔═╡ 9575083d-50b8-466a-b8c5-b6207e0bcba0
+begin
+	im2_clust = reassinging(img2array3D, im2_centers, im2_assigns)
+	im2_clust = colorview(RGB, permutedims(im2_clust, (3,1,2)))
+end
+
+# ╔═╡ 471b8d90-5b64-4fed-a074-47d42ed4e0e0
+function transport_colors(centers1, centers2, P)
+	centers1_new = copy(centers1)
+
+	row, column = size(centers1_new)
+
+	for i in 1:row
+		for j in 1:column
+			
+			u = sum(P[:, j] .* centers2[i, :])
+			v = sum(P[:, j])
+
+			# Reassign value.. 
+			centers1_new[i,j] = u / v 
+		end
+	end
+	
+	#newcent11 = permutedims(newcent11, (2,1))
+	#newcent11 = reshape(newcent11, (30, 3))
+	#newcent11 = permutedims(newcent11, (2,1))
+
+	return centers1_new
+end
+
+# ╔═╡ b210feea-4c9f-406b-badc-516554d4acec
+
 
 # ╔═╡ 22a77c67-a0ed-434a-9db4-993cdce0c93b
 function sinkhorn(C::Matrix, a::Vector, b::Vector; λ=1.0, ϵ=1e-8)
@@ -516,49 +549,16 @@ function sinkhorn(C::Matrix, a::Vector, b::Vector; λ=1.0, ϵ=1e-8)
 	  end
 
 # ╔═╡ f8e6fc0f-6731-4205-a622-b30387b068a1
-Pcolors = sinkhorn(cost_matrix, a_col, b_col; λ=10.0, ϵ=1e-13)
+Pcolors = sinkhorn(C, a_col, b_col; λ=lambda, ϵ=10^(eps))
 
-# ╔═╡ ea23bcf6-c83c-469b-a8c4-98e9b1521b71
+# ╔═╡ bbcb7b48-9eac-4fc6-bb34-aacab000a2d9
+im1_centers_n = transport_colors(im1_centers, im2_centers, Pcolors)
+
+# ╔═╡ 3ab4bb47-a09c-4293-bcf0-8727287aac74
 begin
-	newcent1 = copy(centers1)
-	for i in 1:3
-		channel = mapdistr(centers1[i,:], Pcolors')
-		newcent1[i,:] = channel
-	end
+	im1_transf = reassinging(img1array3D, im1_centers_n, im1_assigns)
+	im1_transf = colorview(RGB, permutedims(im1_transf, (3,1,2)))
 end
-
-# ╔═╡ 1b4fd5f7-14a9-4754-88c7-2126c17551a7
-newcent1
-
-# ╔═╡ 6f8e3efd-cf49-4db7-808f-82772bcf875a
-newimg1 = reassign_closest3(img1_array, ass1, newcent1)
-
-# ╔═╡ b2b7524f-beb4-45ff-8366-b6481214f3cc
-newimg11 = permutedims(reshape(newimg1, (400,600,3)), (3,1,2))
-
-# ╔═╡ b1ed45b3-4313-4da3-bdf7-3475fbb692ad
-colorview(RGB, newimg11)
-
-# ╔═╡ 67867e65-96d1-46a5-be88-dfc9082fcb2f
-begin
-	newcent2 = copy(centers2)
-
-	for i in 1:length(centers2vec)
-		up = sum(Pcolors[:, i] .* centers1vec)
-		down = sum(Pcolors[:, i])
-
-		newcent2[i] = up/down
-	end
-end
-
-# ╔═╡ d304fd25-6747-4cff-9c33-fc1eb17f4264
-trans_img1 = reassign_closest(img1_array, newcent2)
-
-# ╔═╡ cddfa011-8be1-407b-8694-704a53583581
-colorview(RGB, permutedims(reshape(trans_img1, (400,600,3)), (3,1,2)))
-
-# ╔═╡ 2f6ebe5e-a3ff-4d79-83bc-4b9ab19e939c
-image1_transf = reshape(mapdistr(colors2, Pcolors), size(img1down))
 
 # ╔═╡ ec53c559-044e-4287-8b44-1123fade583c
 colorscatter(colors; kwargs...) = 
@@ -575,11 +575,9 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 Clustering = "aaaa29a8-35af-508c-8bc3-b662a17a0fe5"
 Colors = "5ae59095-9a9b-59fe-a467-6f913c188581"
 Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
-DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 ImageIO = "82e4d734-157c-48bb-816b-45c225c6df19"
-ImageShow = "4e3cecfd-b093-5904-9786-8bbb286a6a31"
 Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
@@ -590,11 +588,9 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Clustering = "~0.14.2"
 Colors = "~0.12.8"
 Combinatorics = "~1.0.2"
-DataFrames = "~1.3.1"
 DataStructures = "~0.18.11"
 Distributions = "~0.25.37"
 ImageIO = "~0.6.0"
-ImageShow = "~0.3.3"
 Images = "~0.25.1"
 Plots = "~1.25.5"
 PlutoUI = "~0.7.29"
@@ -604,7 +600,7 @@ PlutoUI = "~0.7.29"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.6.3"
+julia_version = "1.7.0"
 manifest_format = "2.0"
 
 [[deps.AbstractFFTs]]
@@ -761,11 +757,6 @@ git-tree-sha1 = "681ea870b918e7cff7111da58791d7f718067a19"
 uuid = "150eb455-5306-5404-9cee-2592286d6298"
 version = "0.6.2"
 
-[[deps.Crayons]]
-git-tree-sha1 = "b618084b49e78985ffa8422f32b9838e397b9fc2"
-uuid = "a8cc5b0e-0ffa-5ad4-8c14-923d3ee1735f"
-version = "4.1.0"
-
 [[deps.CustomUnitRanges]]
 git-tree-sha1 = "1a3f97f907e6dd8983b744d2642651bb162a3f7a"
 uuid = "dc8bdbbb-1ca9-579f-8c36-e416f6a65cce"
@@ -775,12 +766,6 @@ version = "1.0.2"
 git-tree-sha1 = "cc70b17275652eb47bc9e5f81635981f13cea5c8"
 uuid = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
 version = "1.9.0"
-
-[[deps.DataFrames]]
-deps = ["Compat", "DataAPI", "Future", "InvertedIndices", "IteratorInterfaceExtensions", "LinearAlgebra", "Markdown", "Missings", "PooledArrays", "PrettyTables", "Printf", "REPL", "Reexport", "SortingAlgorithms", "Statistics", "TableTraits", "Tables", "Unicode"]
-git-tree-sha1 = "cfdfef912b7f93e4b848e80b9befdf9e331bc05a"
-uuid = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-version = "1.3.1"
 
 [[deps.DataStructures]]
 deps = ["Compat", "InteractiveUtils", "OrderedCollections"]
@@ -928,10 +913,6 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "aa31987c2ba8704e23c6c8ba8a4f769d5d7e4f91"
 uuid = "559328eb-81f9-559d-9380-de523a88c83c"
 version = "1.0.10+0"
-
-[[deps.Future]]
-deps = ["Random"]
-uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
 
 [[deps.GLFW_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libglvnd_jll", "Pkg", "Xorg_libXcursor_jll", "Xorg_libXi_jll", "Xorg_libXinerama_jll", "Xorg_libXrandr_jll"]
@@ -1178,11 +1159,6 @@ git-tree-sha1 = "a7254c0acd8e62f1ac75ad24d5db43f5f19f3c65"
 uuid = "3587e190-3f89-42d0-90ee-14403ec27112"
 version = "0.1.2"
 
-[[deps.InvertedIndices]]
-git-tree-sha1 = "bee5f1ef5bf65df56bdd2e40447590b272a5471f"
-uuid = "41ab1584-1d38-5bbf-9106-f11c6c58b48f"
-version = "1.1.0"
-
 [[deps.IrrationalConstants]]
 git-tree-sha1 = "7fd44fd4ff43fc60815f8e764c0f352b83c49151"
 uuid = "92d709cd-6900-40b7-9082-c6be49f344b6"
@@ -1317,7 +1293,7 @@ uuid = "38a345b3-de98-5d2b-a5d3-14cd9215e700"
 version = "2.36.0+0"
 
 [[deps.LinearAlgebra]]
-deps = ["Libdl"]
+deps = ["Libdl", "libblastrampoline_jll"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [[deps.LogExpFunctions]]
@@ -1420,6 +1396,10 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "887579a3eb005446d514ab7aeac5d1d027658b8f"
 uuid = "e7412a2a-1a6e-54c0-be00-318e2571c051"
 version = "1.3.5+1"
+
+[[deps.OpenBLAS_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
+uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
 
 [[deps.OpenEXR]]
 deps = ["Colors", "FileIO", "OpenEXR_jll"]
@@ -1536,23 +1516,11 @@ git-tree-sha1 = "7711172ace7c40dc8449b7aed9d2d6f1cf56a5bd"
 uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 version = "0.7.29"
 
-[[deps.PooledArrays]]
-deps = ["DataAPI", "Future"]
-git-tree-sha1 = "db3a23166af8aebf4db5ef87ac5b00d36eb771e2"
-uuid = "2dfb63ee-cc39-5dd5-95bd-886bf059d720"
-version = "1.4.0"
-
 [[deps.Preferences]]
 deps = ["TOML"]
 git-tree-sha1 = "2cf929d64681236a2e074ffafb8d568733d2e6af"
 uuid = "21216c6a-2e73-6563-6e65-726566657250"
 version = "1.2.3"
-
-[[deps.PrettyTables]]
-deps = ["Crayons", "Formatting", "Markdown", "Reexport", "Tables"]
-git-tree-sha1 = "dfb54c4e414caa595a1f2ed759b160f5a3ddcba5"
-uuid = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
-version = "1.3.1"
 
 [[deps.Printf]]
 deps = ["Unicode"]
@@ -1593,7 +1561,7 @@ deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
 uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [[deps.Random]]
-deps = ["Serialization"]
+deps = ["SHA", "Serialization"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [[deps.RangeArrays]]
@@ -2009,6 +1977,10 @@ git-tree-sha1 = "5982a94fcba20f02f42ace44b9894ee2b140fe47"
 uuid = "0ac62f75-1d6f-5e53-bd7c-93b484bb37c0"
 version = "0.15.1+0"
 
+[[deps.libblastrampoline_jll]]
+deps = ["Artifacts", "Libdl", "OpenBLAS_jll"]
+uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
+
 [[deps.libfdk_aac_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "daacc84a041563f965be61859a36e17c4e4fcd55"
@@ -2066,81 +2038,78 @@ version = "0.9.1+5"
 # ╠═03f007fe-ed84-4ee4-a806-5239843c0391
 # ╟─03ad0574-699b-4046-863e-611e1a058d82
 # ╟─3a9db4da-22de-4b49-9630-efc997f2e3b0
-# ╟─69c0bee8-3947-4928-856d-454e5d693492
+# ╠═45264041-09d3-412c-a2ff-50c4bdc29039
+# ╠═f321ac99-d7fe-40ed-9498-b56588a03270
 # ╟─dc7c112b-7213-4746-b86e-8cbbb8130a01
+# ╟─69c0bee8-3947-4928-856d-454e5d693492
 # ╟─4118339f-b3a1-4d89-8bbc-54fae475ae4c
 # ╟─e0931c2c-15e8-438d-bae4-c961e68d90ec
 # ╟─9e2bb61a-098a-4edd-aa87-3a3484595f4d
 # ╟─3743764b-d8d3-471d-8398-e296aad2d567
 # ╟─16ce4192-f580-46ba-80da-ac44cb13ba3b
-# ╠═45264041-09d3-412c-a2ff-50c4bdc29039
-# ╠═1afa5d13-cf22-44fb-8493-22d94b744329
-# ╠═f321ac99-d7fe-40ed-9498-b56588a03270
 # ╟─ad83b6f3-98fa-4568-ae23-43ab9813a9fd
+# ╟─ac92d0ae-4641-4981-aab2-b63c04826119
 # ╠═d3755b9c-6682-4907-ad1f-510a117eae5e
+# ╟─2c4e983c-c922-4c2f-91e2-d5d5b2f28436
+# ╟─674c4223-7c93-4f89-bdd1-65fd51886a04
+# ╠═615e0f0a-1fba-499e-b42b-3eb331311e89
 # ╟─2319e25f-aae4-44aa-a548-b9994641ae4f
-# ╠═41ce3af7-89bc-49b5-9ab7-4b80810603d1
-# ╠═e82903aa-c31c-4b31-aef6-1c14d57b1ca3
-# ╠═f0887a24-1174-4b19-abe3-1492903d2307
-# ╠═79b5e85c-83df-43a1-81a1-da4409ba4311
-# ╠═41c30f3d-dbf1-40ec-8877-2ae8f3477370
+# ╟─cae1a3c1-138e-4eac-b535-2936b07ae2ec
+# ╟─441e5c0f-85bf-43a3-9b34-d21fbba4dc70
+# ╟─69addbcd-6158-4193-b4ef-b432d71912d5
+# ╟─d147d490-4897-4a24-a966-5fb5de5a3347
+# ╠═00b81e4d-937b-4e00-83b8-abcbfcc7fcbe
+# ╟─834d0e85-ba6e-4fde-b2df-2e01188c2277
+# ╟─3b9c7acc-5a37-4f51-8f9c-d32ab4370594
+# ╠═6d565196-b737-44e7-ae7f-1f407bd3f6b7
+# ╟─72c3d80b-e09b-4459-9216-6f9bc9669f48
+# ╟─7b865f98-a124-4c9e-884c-a6744ea7ca0d
+# ╠═2f84f436-d552-4923-99e6-7362945a7ef7
+# ╟─24611539-ba22-483d-8be3-b79314a67dcc
+# ╟─58276c9d-a3d9-436b-aa59-7e05662ac0ff
+# ╠═200c0296-80c3-40b4-a7e0-b84fc4e4fb97
 # ╟─2ace44bb-085e-4979-b2d7-c21272df21d6
-# ╠═3582f1c8-a5ee-4c38-86a3-56bca198471f
+# ╟─4b9955f2-0900-41c7-aecc-193477f9ac7f
+# ╟─3582f1c8-a5ee-4c38-86a3-56bca198471f
 # ╟─00dda518-43f4-42c1-ad54-d4719e7eca28
 # ╟─ec4795e5-7c10-4b93-95a4-0a6890fc0386
-# ╠═ba5a453d-8c27-4f7c-8ee2-f91736a3872d
+# ╠═a5d95227-8dbc-4323-bec8-3c66803d4034
 # ╠═9575083d-50b8-466a-b8c5-b6207e0bcba0
 # ╟─5d13c0fb-b1ca-46e5-ad09-181ff8d869b1
 # ╟─28fbebcb-2e14-4e35-8a36-097d88cc4052
-# ╠═c269a523-7151-4df4-8fa8-65cbff233b21
-# ╠═e6ec5d4f-f398-44fc-82bb-434b29861f72
-# ╠═22b10e80-3c83-4a7f-8f4e-b7bb2fe8bc31
-# ╠═15867d4f-8af6-4a52-b6ae-da68ef757e69
-# ╠═58d7ad4e-64ed-4cb5-a014-74867fbd3f33
-# ╠═6a99a349-64ee-40e5-b231-9df7d6e43a5a
-# ╠═9e17dba7-1ad1-4f59-8d04-3ca67f89c73c
-# ╠═236aa68c-48f3-47d1-a0fe-ec8190298836
+# ╟─054ddfae-e486-4c3e-9ac4-55bb11d47daf
+# ╟─54d1e2c3-ad62-4f06-9d0e-8778d0f02c16
+# ╠═59bc54fd-1c68-4cff-8888-1cdd5725aee6
+# ╠═df9010db-0565-43d5-b926-164d96ca400f
+# ╠═a9d9ee97-b186-4a76-bd61-d21c0c0b520d
+# ╠═eaf5aa75-a3d8-4d0e-8fe1-dd250fe033c1
+# ╠═530f6dbd-98db-4a71-a052-26884e5ca71c
+# ╠═32c2ac0a-d0ca-4002-8c03-9f0448ac418a
+# ╟─6e93bce8-1794-46c5-a68d-76ce0829debb
+# ╟─66a54b5a-4497-47d2-a360-0f23d6518d39
 # ╠═e5b7dd1c-38aa-4a2e-b8c0-92fa0c455334
+# ╟─c8a3f385-33fa-48ae-b4d1-134fffa7c22c
+# ╟─35196ba9-ac08-4583-981d-92f5d4374e52
 # ╠═f8e6fc0f-6731-4205-a622-b30387b068a1
-# ╠═ea23bcf6-c83c-469b-a8c4-98e9b1521b71
-# ╠═1b4fd5f7-14a9-4754-88c7-2126c17551a7
-# ╠═6f8e3efd-cf49-4db7-808f-82772bcf875a
-# ╠═b2b7524f-beb4-45ff-8366-b6481214f3cc
-# ╠═b1ed45b3-4313-4da3-bdf7-3475fbb692ad
-# ╠═a59639d8-3e2f-423b-90dc-f259f16f9415
-# ╠═67867e65-96d1-46a5-be88-dfc9082fcb2f
-# ╠═d304fd25-6747-4cff-9c33-fc1eb17f4264
-# ╠═cddfa011-8be1-407b-8694-704a53583581
-# ╠═2f6ebe5e-a3ff-4d79-83bc-4b9ab19e939c
-# ╟─3be5ba4d-9f0f-49de-97e5-f11c72eb4fc0
+# ╟─ecefce4d-145e-4cfe-bab5-e1a5daa6e6fd
+# ╠═bbcb7b48-9eac-4fc6-bb34-aacab000a2d9
+# ╟─7c616c0e-55de-4e5f-aafb-34b85665df70
+# ╟─24bba47e-7aa5-4463-a448-2788537faa7a
+# ╟─2bf1e249-821e-40d8-a391-710baae05e65
+# ╟─3687fc03-af9d-4e44-9fb5-17d086822924
+# ╟─77c07e75-c6db-4106-8d04-44b619d70465
+# ╟─2901b354-1e4f-432a-a4b1-5b5e37cee104
+# ╟─7af273d6-d725-43c6-8637-4db525f4270d
+# ╠═3ab4bb47-a09c-4293-bcf0-8727287aac74
+# ╟─52a9c486-7b05-4881-8479-f48075e58de3
+# ╟─2c17430b-ecc8-420c-a5cd-77ec2d4cbcf8
 # ╟─ddbab8c0-1440-4027-b1f4-0f083448a17e
 # ╠═8131f7cf-7027-4168-b41e-e75a4001a2a5
-# ╠═d347ae0a-d085-45d4-8e3e-ac9e94d3b401
-# ╠═94f775f3-c480-4b71-a50d-49e530a6bc55
-# ╠═cf902585-cd7c-4d45-9360-8d1e509fffe8
-# ╠═af574c83-1fff-4de5-975b-3c72f63954e5
-# ╠═393c44d3-f39e-4a07-9553-b02b56ff9dd4
-# ╠═390ef29b-e81b-47f5-ac61-cf61f29614af
-# ╠═e0e4d357-c8b0-4f7f-a03c-17dcaaff270a
-# ╠═5edd5bdf-9ffa-4230-986f-4179a677db36
-# ╠═19e1d43f-ebf8-4871-b496-7cc74e256279
-# ╠═1c445cd6-09f2-4db0-9a75-5c4d356f6545
-# ╠═ef5e008b-8c6e-4fb2-b7fb-eb9cb1454c79
-# ╠═a6f13c7e-10c7-4246-8bd1-f537f8403c6a
-# ╠═a4af7e2c-c96c-404b-8698-0e29007039a7
-# ╠═1680d351-7e30-4076-9bb7-dfb72b6e349d
-# ╠═fd04c74b-dd34-4556-b82c-ed6c182a8d62
-# ╠═1b90a9af-2674-41cb-9f80-0c5827394e52
-# ╠═0712982f-0a5a-4ed9-ada5-9a27aa4ccc4e
-# ╠═371c352b-fd32-4079-a2e3-2d8157d31d90
-# ╠═bad5e598-b7f7-4401-8900-10f6a6a0a484
-# ╠═858ee09a-208e-4c86-861e-58165df8f6a6
-# ╠═0351dd90-2dda-4d34-a383-71da526eac4c
-# ╠═cd7fb897-8206-485e-be2c-8497c96570b0
-# ╠═61a4e40c-fd9f-4dd7-9be1-304a63b50a1c
-# ╠═1ac4a735-b0ad-4dea-b90d-ae0dc70d846a
-# ╠═2e21acd3-e05b-463f-8046-8f877b2d573d
-# ╠═18c87a62-b0e5-4e31-ad4f-d449e0f4536a
+# ╠═3038def5-3c91-4a2d-90f3-d4c827d63ce0
+# ╠═b7b24b81-81a6-43e9-ac47-854f8d4c8680
+# ╠═c124013f-16e5-4631-84c2-67a86ef224a2
+# ╠═471b8d90-5b64-4fed-a074-47d42ed4e0e0
+# ╠═b210feea-4c9f-406b-badc-516554d4acec
 # ╠═22a77c67-a0ed-434a-9db4-993cdce0c93b
 # ╠═ec53c559-044e-4287-8b44-1123fade583c
 # ╟─00000000-0000-0000-0000-000000000001
