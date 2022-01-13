@@ -2,20 +2,23 @@ module NeuralNetwork
 
 include("data.jl")
 include("plotutils.jl")
+include("regularization.jl")
 
 using Flux
 using Flux: onehotbatch, onecold
 using Flux.Data: DataLoader
 using Flux.Losses: logitcrossentropy
+using MLDatasets
 using Plots
 using PlotlyJS
-using MLDatasets
+using ProgressMeter
+using Statistics
 
 export get_moon_data, get_nmist_data, get_loss_and_accuracy, train
 
 function get_moon_data(args)
 	x_train, y_train = Data.get_moons(300, offset = 0.5)
-	x_test, y_test = Data.get_moons(300, offset = 1.0, seed = 0) # Data.get_moons_from_publication()
+	x_test, y_test = Data.get_moons(300, offset = 0.5, seed = 0) # Data.get_moons_from_publication()
 
 	x_train, x_test = transpose(x_train), transpose(x_test)
 	y_train, y_test = onehotbatch(y_train, 0:1), onehotbatch(y_test, 0:1)
@@ -46,17 +49,18 @@ function get_nmist_data(args)
 	return train_loader, test_loader
 end
 
-function get_loss_and_accuracy(data_loader::Flux.Data.DataLoader, model)
+function get_loss_and_accuracy(data_loader::Flux.Data.DataLoader, model; args...)
+	args = Args(args...)
 	accuracy = 0.0f0
 	loss = 0.0f0
 	num = 0
 	for (x, y) in data_loader
 		ŷ = model(y)
-		loss += logitcrossentropy(ŷ, y, agg = sum)
+		loss += Regularization.spectral_decoupling(ŷ, y, args.λ) # logitcrossentropy(ŷ, y, agg = sum)
 		accuracy += sum(onecold(ŷ) .== onecold(y))
 		num += size(x)[end]
 	end
-	return loss / num, accuracy / num
+	return loss, accuracy / num
 end
 
 function neural_network()
@@ -67,9 +71,10 @@ function neural_network()
 end
 
 Base.@kwdef mutable struct Args
-	learning_rate::Float64 = 1e-1
+	learning_rate::Float64 = 0.1
     batchsize::Int = 300
     epochs::Int = 1000
+	λ::Float64 = 3e-1
 end
 
 function plot_train_and_test_data(train_loader::Flux.Data.DataLoader, test_loader::Flux.Data.DataLoader)
@@ -95,23 +100,21 @@ function train(train_loader::Flux.Data.DataLoader, test_loader::Flux.Data.DataLo
 	# optimizer = Optimiser(WeightDecay(), Decent(args.learning_rate))
 
 	# training
+	prog = Progress(args.epochs, 0.25, "Training... ", 75)
 	for epoch in 1:args.epochs
-		loss(x, y) = logitcrossentropy(model(x), y)
+		# loss(x, y) = logitcrossentropy(model(x), y)
+		loss(x, y) = Regularization.spectral_decoupling(model(x), y, args.λ)
 		Flux.train!(loss, params, train_loader, optimizer)
 
 		# evaluate train and test loss and accuracy 
 		train_loss, train_accuracy = get_loss_and_accuracy(train_loader, model)
 		test_loss, test_accuracy = get_loss_and_accuracy(test_loader, model)
-		println("Epoch $epoch")
-		println("  train loss = $train_loss, train accuracy = $train_accuracy")
-		println("  test loss = $test_loss, test accuracy = $test_accuracy")
 
-		# early exit if accuracy is over threshold
-		# acc_thres = 0.90
-		# if test_accuracy > acc_thres
-		# 	@info "Stopped after $epoch epochs because test accuracy threshold of $(acc_thres * 100)% was exceeded."
-		# 	break
-		# end
+		ProgressMeter.next!(prog; showvalues = [
+			(:epoch, epoch), 
+			(:train_loss, train_loss), (:test_loss, test_loss),
+			(:train_accuracy, train_accuracy), (:test_accuracy, test_accuracy)
+			])
 	end
 
 	return model
@@ -170,8 +173,8 @@ function plot_decision_boundary(loader, model; title = "")
 			width = 500, height = 500, autosize = true,
 			xaxis_showgrid = false, yaxis_showgrid = false,
 			xaxis_range = [x_min, x_max], yaxis_range = [y_min, y_max],
-			# xaxis = attr(zeroline = true, zerolinewidth = 1, zerolinecolor = "black", automargin = true),
-			# yaxis = attr(zeroline = true, zerolinewidth = 1, zerolinecolor = "black", automargin = true),
+			xaxis = attr(zeroline = true, zerolinewidth = 1, zerolinecolor = "black", automargin = true),
+			yaxis = attr(zeroline = true, zerolinewidth = 1, zerolinecolor = "black", automargin = true),
 			margin = attr(l = 50, r = 50, b = 50, t = 50, pad = 0),
 			plot_bgcolor = "rgba(0, 0, 0, 0)"
 		),
