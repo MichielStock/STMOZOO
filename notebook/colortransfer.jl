@@ -16,7 +16,7 @@ end
 
 # ╔═╡ 03f007fe-ed84-4ee4-a806-5239843c0391
 using Plots ,Images , Combinatorics , PlutoUI , Colors, ImageIO ,
-LinearAlgebra, Distributions, Random, DataStructures ,Clustering, ImageShow
+LinearAlgebra, Distributions, Random, DataStructures ,Clustering, ImageShow, DataFrames
 
 # ╔═╡ c3c61b29-ddc7-4638-9350-8ce945326d27
 md"""
@@ -198,6 +198,9 @@ else
 	image1 = load("../figs/cityscape.jpg")
 end
 
+# ╔═╡ a59639d8-3e2f-423b-90dc-f259f16f9415
+image1
+
 # ╔═╡ f321ac99-d7fe-40ed-9498-b56588a03270
 # if a custom image is selected from the FilePicker above, load that image
 if typeof(image2file) == Dict{Any, Any}
@@ -264,6 +267,21 @@ function reassign_closest2(original, assignments, centers)
 	return reshape(reassigned, size(original))
 end
 
+# ╔═╡ af574c83-1fff-4de5-975b-3c72f63954e5
+function reassign_closest3(original, assignments, centers)
+	h,w,c = size(original)
+	original = reshape(original, (c, h*w))
+	reassign = copy(original)
+
+	for i in 1:3
+		newval = centers[assignments]
+
+		reassign[i,:] = newval
+	end
+
+	return reshape(reassign, (h,w,c))
+end
+
 # ╔═╡ 393c44d3-f39e-4a07-9553-b02b56ff9dd4
 function kmean_clust(img_array, clusters)
 	"""
@@ -327,19 +345,23 @@ function kmean_clust2(img_array, clusters)
 	#summarize
 	centroids = clustR.centers
 	counts = clustR.counts
+	assignments = clustR.assignments
 	
 	# Reassign values to original image array with clustered values
 	img_clust = reassign_closest(img_array, centroids)
 	img_clust = reshape(img_clust, (h,w,c))
 
-	return centroids, counts, img_clust
+	return centroids, counts, img_clust, assignments
 end
 
 # ╔═╡ 41ce3af7-89bc-49b5-9ab7-4b80810603d1
 begin
-	centers1, counts1, img1_clust = kmean_clust2(img1_array, n_cluster)
-	centers2, counts2, img2_clust = kmean_clust2(img2_array, n_cluster)
+	centers1, counts1, img1_clust, ass1 = kmean_clust2(img1_array, n_cluster)
+	centers2, counts2, img2_clust, ass2 = kmean_clust2(img2_array, n_cluster)
 end
+
+# ╔═╡ e82903aa-c31c-4b31-aef6-1c14d57b1ca3
+ass1
 
 # ╔═╡ f0887a24-1174-4b19-abe3-1492903d2307
 centers1
@@ -426,6 +448,15 @@ c = kmeans(rand(1,5), 3)
 # ╔═╡ a6f13c7e-10c7-4246-8bd1-f537f8403c6a
 vcat(a.assignments, b.assignments)
 
+# ╔═╡ a4af7e2c-c96c-404b-8698-0e29007039a7
+a.assignments
+
+# ╔═╡ 1680d351-7e30-4076-9bb7-dfb72b6e349d
+or
+
+# ╔═╡ fd04c74b-dd34-4556-b82c-ed6c182a8d62
+a.centers[a.assignments]
+
 # ╔═╡ 1b90a9af-2674-41cb-9f80-0c5827394e52
 or
 
@@ -453,6 +484,12 @@ vcat(a.counts, b.counts)
 
 # ╔═╡ 61a4e40c-fd9f-4dd7-9be1-304a63b50a1c
 vcat(a.centers, b.centers, c.centers)
+
+# ╔═╡ 1ac4a735-b0ad-4dea-b90d-ae0dc70d846a
+asss = hcat(a.assignments, b.assignments, c.assignments)'
+
+# ╔═╡ 2e21acd3-e05b-463f-8046-8f877b2d573d
+convert(Matrix{Int64}, asss)
 
 # ╔═╡ 18c87a62-b0e5-4e31-ad4f-d449e0f4536a
 """
@@ -482,11 +519,29 @@ function sinkhorn(C::Matrix, a::Vector, b::Vector; λ=1.0, ϵ=1e-8)
 Pcolors = sinkhorn(cost_matrix, a_col, b_col; λ=10.0, ϵ=1e-13)
 
 # ╔═╡ ea23bcf6-c83c-469b-a8c4-98e9b1521b71
-mapdistr(centers1, Pcolors)
+begin
+	newcent1 = copy(centers1)
+	for i in 1:3
+		channel = mapdistr(centers1[i,:], Pcolors')
+		newcent1[i,:] = channel
+	end
+end
+
+# ╔═╡ 1b4fd5f7-14a9-4754-88c7-2126c17551a7
+newcent1
+
+# ╔═╡ 6f8e3efd-cf49-4db7-808f-82772bcf875a
+newimg1 = reassign_closest3(img1_array, ass1, newcent1)
+
+# ╔═╡ b2b7524f-beb4-45ff-8366-b6481214f3cc
+newimg11 = permutedims(reshape(newimg1, (400,600,3)), (3,1,2))
+
+# ╔═╡ b1ed45b3-4313-4da3-bdf7-3475fbb692ad
+colorview(RGB, newimg11)
 
 # ╔═╡ 67867e65-96d1-46a5-be88-dfc9082fcb2f
 begin
-	newcent2 = copy(centers2vec)
+	newcent2 = copy(centers2)
 
 	for i in 1:length(centers2vec)
 		up = sum(Pcolors[:, i] .* centers1vec)
@@ -520,6 +575,7 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 Clustering = "aaaa29a8-35af-508c-8bc3-b662a17a0fe5"
 Colors = "5ae59095-9a9b-59fe-a467-6f913c188581"
 Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 ImageIO = "82e4d734-157c-48bb-816b-45c225c6df19"
@@ -534,6 +590,7 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Clustering = "~0.14.2"
 Colors = "~0.12.8"
 Combinatorics = "~1.0.2"
+DataFrames = "~1.3.1"
 DataStructures = "~0.18.11"
 Distributions = "~0.25.37"
 ImageIO = "~0.6.0"
@@ -704,6 +761,11 @@ git-tree-sha1 = "681ea870b918e7cff7111da58791d7f718067a19"
 uuid = "150eb455-5306-5404-9cee-2592286d6298"
 version = "0.6.2"
 
+[[deps.Crayons]]
+git-tree-sha1 = "b618084b49e78985ffa8422f32b9838e397b9fc2"
+uuid = "a8cc5b0e-0ffa-5ad4-8c14-923d3ee1735f"
+version = "4.1.0"
+
 [[deps.CustomUnitRanges]]
 git-tree-sha1 = "1a3f97f907e6dd8983b744d2642651bb162a3f7a"
 uuid = "dc8bdbbb-1ca9-579f-8c36-e416f6a65cce"
@@ -713,6 +775,12 @@ version = "1.0.2"
 git-tree-sha1 = "cc70b17275652eb47bc9e5f81635981f13cea5c8"
 uuid = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
 version = "1.9.0"
+
+[[deps.DataFrames]]
+deps = ["Compat", "DataAPI", "Future", "InvertedIndices", "IteratorInterfaceExtensions", "LinearAlgebra", "Markdown", "Missings", "PooledArrays", "PrettyTables", "Printf", "REPL", "Reexport", "SortingAlgorithms", "Statistics", "TableTraits", "Tables", "Unicode"]
+git-tree-sha1 = "cfdfef912b7f93e4b848e80b9befdf9e331bc05a"
+uuid = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+version = "1.3.1"
 
 [[deps.DataStructures]]
 deps = ["Compat", "InteractiveUtils", "OrderedCollections"]
@@ -861,6 +929,10 @@ git-tree-sha1 = "aa31987c2ba8704e23c6c8ba8a4f769d5d7e4f91"
 uuid = "559328eb-81f9-559d-9380-de523a88c83c"
 version = "1.0.10+0"
 
+[[deps.Future]]
+deps = ["Random"]
+uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
+
 [[deps.GLFW_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libglvnd_jll", "Pkg", "Xorg_libXcursor_jll", "Xorg_libXi_jll", "Xorg_libXinerama_jll", "Xorg_libXrandr_jll"]
 git-tree-sha1 = "0c603255764a1fa0b61752d2bec14cfbd18f7fe8"
@@ -1004,9 +1076,9 @@ version = "1.2.1"
 
 [[deps.ImageMagick_jll]]
 deps = ["Artifacts", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pkg", "Zlib_jll", "libpng_jll"]
-git-tree-sha1 = "ea2b6fd947cdfc43c6b8c15cff982533ec1f72cd"
+git-tree-sha1 = "d43c324d044dc8256e1470a561ee7a0cf5e122c9"
 uuid = "c73af94c-d91f-53ed-93a7-00f77d67a9d7"
-version = "6.9.12+0"
+version = "6.9.12+1"
 
 [[deps.ImageMetadata]]
 deps = ["AxisArrays", "ImageAxes", "ImageBase", "ImageCore"]
@@ -1105,6 +1177,11 @@ deps = ["Test"]
 git-tree-sha1 = "a7254c0acd8e62f1ac75ad24d5db43f5f19f3c65"
 uuid = "3587e190-3f89-42d0-90ee-14403ec27112"
 version = "0.1.2"
+
+[[deps.InvertedIndices]]
+git-tree-sha1 = "bee5f1ef5bf65df56bdd2e40447590b272a5471f"
+uuid = "41ab1584-1d38-5bbf-9106-f11c6c58b48f"
+version = "1.1.0"
 
 [[deps.IrrationalConstants]]
 git-tree-sha1 = "7fd44fd4ff43fc60815f8e764c0f352b83c49151"
@@ -1459,11 +1536,23 @@ git-tree-sha1 = "7711172ace7c40dc8449b7aed9d2d6f1cf56a5bd"
 uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 version = "0.7.29"
 
+[[deps.PooledArrays]]
+deps = ["DataAPI", "Future"]
+git-tree-sha1 = "db3a23166af8aebf4db5ef87ac5b00d36eb771e2"
+uuid = "2dfb63ee-cc39-5dd5-95bd-886bf059d720"
+version = "1.4.0"
+
 [[deps.Preferences]]
 deps = ["TOML"]
 git-tree-sha1 = "2cf929d64681236a2e074ffafb8d568733d2e6af"
 uuid = "21216c6a-2e73-6563-6e65-726566657250"
 version = "1.2.3"
+
+[[deps.PrettyTables]]
+deps = ["Crayons", "Formatting", "Markdown", "Reexport", "Tables"]
+git-tree-sha1 = "dfb54c4e414caa595a1f2ed759b160f5a3ddcba5"
+uuid = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
+version = "1.3.1"
 
 [[deps.Printf]]
 deps = ["Unicode"]
@@ -1991,6 +2080,7 @@ version = "0.9.1+5"
 # ╠═d3755b9c-6682-4907-ad1f-510a117eae5e
 # ╟─2319e25f-aae4-44aa-a548-b9994641ae4f
 # ╠═41ce3af7-89bc-49b5-9ab7-4b80810603d1
+# ╠═e82903aa-c31c-4b31-aef6-1c14d57b1ca3
 # ╠═f0887a24-1174-4b19-abe3-1492903d2307
 # ╠═79b5e85c-83df-43a1-81a1-da4409ba4311
 # ╠═41c30f3d-dbf1-40ec-8877-2ae8f3477370
@@ -2013,6 +2103,11 @@ version = "0.9.1+5"
 # ╠═e5b7dd1c-38aa-4a2e-b8c0-92fa0c455334
 # ╠═f8e6fc0f-6731-4205-a622-b30387b068a1
 # ╠═ea23bcf6-c83c-469b-a8c4-98e9b1521b71
+# ╠═1b4fd5f7-14a9-4754-88c7-2126c17551a7
+# ╠═6f8e3efd-cf49-4db7-808f-82772bcf875a
+# ╠═b2b7524f-beb4-45ff-8366-b6481214f3cc
+# ╠═b1ed45b3-4313-4da3-bdf7-3475fbb692ad
+# ╠═a59639d8-3e2f-423b-90dc-f259f16f9415
 # ╠═67867e65-96d1-46a5-be88-dfc9082fcb2f
 # ╠═d304fd25-6747-4cff-9c33-fc1eb17f4264
 # ╠═cddfa011-8be1-407b-8694-704a53583581
@@ -2023,6 +2118,7 @@ version = "0.9.1+5"
 # ╠═d347ae0a-d085-45d4-8e3e-ac9e94d3b401
 # ╠═94f775f3-c480-4b71-a50d-49e530a6bc55
 # ╠═cf902585-cd7c-4d45-9360-8d1e509fffe8
+# ╠═af574c83-1fff-4de5-975b-3c72f63954e5
 # ╠═393c44d3-f39e-4a07-9553-b02b56ff9dd4
 # ╠═390ef29b-e81b-47f5-ac61-cf61f29614af
 # ╠═e0e4d357-c8b0-4f7f-a03c-17dcaaff270a
@@ -2031,6 +2127,9 @@ version = "0.9.1+5"
 # ╠═1c445cd6-09f2-4db0-9a75-5c4d356f6545
 # ╠═ef5e008b-8c6e-4fb2-b7fb-eb9cb1454c79
 # ╠═a6f13c7e-10c7-4246-8bd1-f537f8403c6a
+# ╠═a4af7e2c-c96c-404b-8698-0e29007039a7
+# ╠═1680d351-7e30-4076-9bb7-dfb72b6e349d
+# ╠═fd04c74b-dd34-4556-b82c-ed6c182a8d62
 # ╠═1b90a9af-2674-41cb-9f80-0c5827394e52
 # ╠═0712982f-0a5a-4ed9-ada5-9a27aa4ccc4e
 # ╠═371c352b-fd32-4079-a2e3-2d8157d31d90
@@ -2039,6 +2138,8 @@ version = "0.9.1+5"
 # ╠═0351dd90-2dda-4d34-a383-71da526eac4c
 # ╠═cd7fb897-8206-485e-be2c-8497c96570b0
 # ╠═61a4e40c-fd9f-4dd7-9be1-304a63b50a1c
+# ╠═1ac4a735-b0ad-4dea-b90d-ae0dc70d846a
+# ╠═2e21acd3-e05b-463f-8046-8f877b2d573d
 # ╠═18c87a62-b0e5-4e31-ad4f-d449e0f4536a
 # ╠═22a77c67-a0ed-434a-9db4-993cdce0c93b
 # ╠═ec53c559-044e-4287-8b44-1123fade583c
