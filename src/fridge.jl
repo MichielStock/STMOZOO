@@ -67,7 +67,7 @@ end
 
 fridgeObjective(x::Array{Float64}) = sum(x[1:end-1]) + 6*sum(x[1:end-1] .== 0) + 2*x[end]
 
-fridgeObjective(x::Array{Array{Float64}}) = print("true")
+fridgeObjective(x) = compatible(x) ? sum(sum(x) .== 0)*4 + sum(x)[end]*2 : Inf # arbitrary weight for now
 
 #==================================================
                 GREEDY ALGORITHM
@@ -213,7 +213,7 @@ function recipeToNumVector(fridgeList,ingredientList)
     return numVector
 end
 
-compatible(x...) = !any(sum(x)[1:end-1] .>= 2)
+compatible(x) = !any(sum(x)[1:end-1] .>= 2)
 
 
 #==================================================
@@ -224,7 +224,9 @@ compatible(x...) = !any(sum(x)[1:end-1] .>= 2)
 testList = ["cheese","potato","tomato","cabbage"]
 recipeDict = loadRecipeDBCSV("./data/recipeDB.csv")
 
-GreedyFindCombo(testList, recipeDict, 3)
+test = GreedyFindCombo(testList, recipeDict, 3)
+testRecipes = [i for i in values(test)]
+
 
 
 #bestRecipe = findBestRecipe(testList, "./docs/recipeDB.csv")
