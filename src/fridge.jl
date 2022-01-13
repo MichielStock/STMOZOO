@@ -5,6 +5,10 @@ include("../src/recipeWebscraper.jl")
 
 using .recipeWebscraper
 
+#==================================================
+          CHECK INGREDIENTS FUNCTIONS
+==================================================#
+
 function createIngredientDatabase(recipeDict)
     # create an unique vector of all possible ingredients
     ingredientList = []
@@ -57,54 +61,19 @@ function checkIngredients(fridgeList,ingredientList)
     return fridgeList
 end
 
+#==================================================
+            OBJECTIVE FUNCTIONS
+==================================================#
+
 fridgeObjective(x::Array{Float64}) = sum(x[1:end-1]) + 6*sum(x[1:end-1] .== 0) + 2*x[end]
 
-function fridgeObjective(ingredientList,fridgeList)
-    overlap = sum([food in ingredientList for food in fridgeList])
-    remainingFood = length(fridgeList) - overlap
-    extraIngredients = length(ingredientList) - overlap
-    return overlap + 6*remainingFood + 2*extraIngredients
-end
+fridgeObjective(x::Array{Array{Float64}}) = print("true")
 
-function bestOverlap(recipeDict,fridgeList)
-    bestObjective = Inf
-    bestRecipe = ""
-    for recipe in keys(recipeDict)
-        objective = fridgeObjective(recipeDict[recipe],fridgeList)
-        if objective < bestObjective
-            bestObjective = objective
-            bestRecipe = recipe
-        end
-    end
-    return bestRecipe
-end
+#==================================================
+                GREEDY ALGORITHM
+==================================================#
 
-function findBestRecipe(fridgeList, csvPath)
-    # load the recipe dictionary from the csv file
-    recipeDict = loadRecipeDBCSV(csvPath)
-
-    # create a list of all ingredients in your database
-    ingredientList = createIngredientDatabase(recipeDict)
-
-    # check for every food in your fridge if it's in the database. If not check if their are alternatives.
-    fridgeList = checkIngredients(fridgeList, ingredientList)
-
-    # find the best recipe
-    return bestOverlap(recipeDict,fridgeList)
-end
-
-function recipeToNumVector(fridgeList,ingredientList)
-    numVector = zeros(length(fridgeList)+1)
-    for i in 1:length(fridgeList)
-        numVector[i] = fridgeList[i] in ingredientList ? 1 : 0
-    end
-    numVector[end] = length(ingredientList) - sum(numVector)
-    return numVector
-end
-
-compatible(x...) = !any(sum(x)[1:end-1] .>= 2)
-
-function findBestCombo(fridgeList, recipeDict, numRecipes)
+function GreedyFindCombo(fridgeList, recipeDict, numRecipes)
 
     bestCombo = Dict()
     ingredientsArray = []
@@ -138,15 +107,125 @@ function findBestCombo(fridgeList, recipeDict, numRecipes)
 
     end
 
+    print("Greedy search results:\n")
+
     for recipeName in keys(bestCombo)
         print("$(recipeName) : $(recipeDict[recipeName])\n")
     end
+
+    return bestCombo
 end
+
+#==================================================
+                NEIGBOURHOODS
+==================================================#
+
+#=
+IDEETJES
+
+1) verwijder 1 ingredient en kijk of je dan een andere combinatie kan vormen met mindere score
+2) verwijder een recept en kijk of je een combo kan vinden van recepten die een betere score geven dan de huidige versie
+=#
+
+function removeRecipe(curSolution, fridgeList, recipeDict)
+    
+end
+
+#==================================================
+        SIMULATED ANNEALING ALGORITHM
+==================================================#
+
+function SAFindCombo(curSolution,  fridgeList, recipeDict;
+    kT=100, # repetitions per temperature
+    r=0.95, # cooling rate
+    Tmax=2, # maximal temperature to start
+    Tmin=1) # minimal temperature to end
+    
+    @assert 0 < Tmin < Tmax "Temperatures should be positive"
+	@assert 0 < r < 1 "cooling rate is between 0 and 1"
+	solution = curSolution
+	obj = fridgeObjective(solution)
+	#track!(tracker, f, s) # not yet implemented, maybe later
+
+	# current temperature
+	T = Tmax
+	while T > Tmin
+		# repeat kT times
+		for _ in 1:kT
+			sn = removeRecipe(curSolution, fridgeList, recipeDict)  # random neighbor
+			obj_sn = fridgeObjective(sn)
+			# if the neighbor improves the solution, keep it
+			# otherwise accept with a probability determined by the
+			# Metropolis heuristic
+			if obj_sn > obj || rand() < exp(-(obj-obj_sn)/T)
+				solution = sn
+				obj = obj_sn
+			end
+		end
+		#track!(tracker, f, s) # not yet implemented, maybe later
+
+		# decay temperature
+		T *= r
+	end
+
+    return solution
+end
+
+#==================================================
+                OVERVIEW FUNCTION
+==================================================#
+
+function findBestRecipe(fridgeList, csvPath; numRecipes=3)
+    # load the recipe dictionary from the csv file
+    recipeDict = loadRecipeDBCSV(csvPath)
+
+    # create a list of all ingredients in your database
+    ingredientList = createIngredientDatabase(recipeDict)
+
+    # check for every food in your fridge if it's in the database. If not check if their are alternatives.
+    fridgeList = checkIngredients(fridgeList, ingredientList)
+
+    # find the best greedy recipe
+    greedySolution = GreedyFindCombo(fridgeList, recipeDict, numRecipes)
+
+    # find the best recipe with SA
+    SASolution = SAFindCombo(greedySolution,  fridgeList, recipeDict)
+
+    # print the solution 
+    print("The best recipes to make are:\n\n")
+    for recipeName in keys(SASolution)
+        print("$(recipeName) : $(recipeDict[recipeName])\n")
+    end
+
+    return SASolution
+end
+
+#==================================================
+            SUPPORTING FUNCTIONS
+==================================================#
+
+function recipeToNumVector(fridgeList,ingredientList)
+    numVector = zeros(length(fridgeList)+1)
+    for i in 1:length(fridgeList)
+        numVector[i] = fridgeList[i] in ingredientList ? 1 : 0
+    end
+    numVector[end] = length(ingredientList) - sum(numVector)
+    return numVector
+end
+
+compatible(x...) = !any(sum(x)[1:end-1] .>= 2)
+
+
+#==================================================
+     TEST CORNER - MOVE LATER TO fridgeTest.jl
+==================================================#
+
 
 testList = ["cheese","potato","tomato","cabbage"]
 recipeDict = loadRecipeDBCSV("./data/recipeDB.csv")
 
-findBestCombo(testList, recipeDict, 3)
+GreedyFindCombo(testList, recipeDict, 3)
+
 
 #bestRecipe = findBestRecipe(testList, "./docs/recipeDB.csv")
 
