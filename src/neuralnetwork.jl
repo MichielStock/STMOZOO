@@ -71,7 +71,7 @@ function neural_network()
 end
 
 Base.@kwdef mutable struct Args
-	learning_rate::Float64 = 0.1
+	learning_rate::Float64 = 1e-2
     batchsize::Int = 300
     epochs::Int = 1000
 	λ::Float64 = 3e-1
@@ -96,7 +96,9 @@ function train(train_loader::Flux.Data.DataLoader, test_loader::Flux.Data.DataLo
 	model = neural_network()
 	params = Flux.params(model)
 	# optimizer = ADAM(args.learning_rate) 
-	optimizer = Descent(args.learning_rate)
+	# optimizer = Descent(args.learning_rate)
+	
+	optimizer = Momentum(args.learning_rate, 0.9) # stochastic gradient descent
 	# optimizer = Optimiser(WeightDecay(), Decent(args.learning_rate))
 
 	# training
