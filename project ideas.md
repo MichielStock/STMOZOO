@@ -16,6 +16,9 @@ Explain an optimization method not covered in the course though an interactive n
 - link between [fractals and the Newton method](https://www.youtube.com/watch?v=-RdOwhmqP5s)
 - [MAP-elites](https://arxiv.org/abs/1504.04909)
 - [information-geometric opitmization algorithms](http://www.cmap.polytechnique.fr/~anne.auger/teaching-slides/05_DFO-IGO.pdf)
+- the big deal with multi-objective optimization
+- Thompson sampling: optimal gambling 🎲
+- Christofides' algorithm for solving the TSP 
 - ...
 
 ## Tools 🔧
@@ -46,4 +49,11 @@ Experiment and learn. Reproduce the results of a paper (in simplified form). Sho
 - [convex restrictions in physical design](https://stanford.edu/~boyd/papers/pdf/cvx_restrictions_physical_design.pdf)
 - non-covergence as a regularization mechanism in machine learning
 - improving gradient descent or learning using [gradient startvation](https://mohammadpz.github.io/GradientStarvation.html)
+- improving the convergence of evolutionary algorithms by varying the objective function
+- the optimization landscape of ANNs
+- comparision of optimizers for deep learning
+- Newton methods for lazy bums: is the diagonal sufficient?
+- utilitarian ethics: optimization for the Good Place?
+- [Maze solver using bacteria](https://www.technologyreview.com/2021/11/09/1039107/e-coli-maze-solving-biocomputer/?s=03) (simulation of an experiment)
+- [discovering natural laws](https://www.science.org/doi/abs/10.1126/science.1165893)
 - ...
