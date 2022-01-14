@@ -9,11 +9,9 @@ Welcome to the color transfer repository in STMO zoo! This is categorized as a '
 
 By saying 'experiment', this part of the zoo will explore:
 
-- Implementation of color transfer from the course, but with different images
-- Observe the difference between different parameters of optimal transport algorithm
-- Applications in the transfer of color schemes (between & within images)
+- Implementation of color transfer from the course, but with additional steps.
+- Observe the affectations of different parameters in every functions used throughout the color transefer.
 
-
-At the moment, all the necessary codes are in notebook/colortransfer.jl
+All the necessary codes are in notebook/colortransfer.jl
 
 [![Build Status](https://travis-ci.org/MichielStock/STMOZOO.svg?branch=master)](https://travis-ci.org/MichielStock/STMOZOO)[![Coverage Status](https://coveralls.io/repos/github/MichielStock/STMOZOO/badge.svg?branch=master)](https://coveralls.io/github/MichielStock/STMOZOO?branch=master)
