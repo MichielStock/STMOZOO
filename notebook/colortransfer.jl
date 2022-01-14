@@ -80,6 +80,10 @@ md"""
 To make things convenient, I have made a file upload box below.
 
 You can load different images that you would like to try out!
+
+**NOTE: Put the pictures you want to try in the ColorTransfer.jl/figs/ folder**
+
+- Due to some limitations in PlutoUI and julia, the filepath of selected images could not be retreived.
 """
 
 # ╔═╡ 4118339f-b3a1-4d89-8bbc-54fae475ae4c
@@ -93,7 +97,7 @@ By default, the image figs/cityscape.jpg is used!
 
 # ╔═╡ 9e2bb61a-098a-4edd-aa87-3a3484595f4d
 md"""
-#### Select image 2 (target image)
+#### Select image 2 (reference image)
 By default, the image figs/sunset.jpg is used!
 """
 
