@@ -15,20 +15,20 @@ macro bind(def, element)
 end
 
 # ╔═╡ 03f007fe-ed84-4ee4-a806-5239843c0391
-using Plots ,Images , Combinatorics , PlutoUI , Colors, ImageIO ,
-LinearAlgebra, Distributions, Random, DataStructures ,Clustering
+using Plots ,Images , PlutoUI , Colors, ImageIO, LinearAlgebra, Distributions ,Clustering
 
 # ╔═╡ c3c61b29-ddc7-4638-9350-8ce945326d27
 md"""
-# Final Project:
+## Final Project: Color transfer using optimal transportation done right
 
-## Title: Color transfer using optimal transportation done right
-
-##### Student name: Ju Hyung Lee
+##### Project by Ju Hyung Lee
 """
 
+# ╔═╡ 877f1fc5-2acd-48ad-87e3-0f28d9c9c9c7
+TableOfContents(title="Table of Contents 🔬", depth=2)
+
 # ╔═╡ adf59de3-bc73-4d4c-9293-47a2f8569ee5
-imresize(load("../figs/3klmmh.jpg"), (578, 333))
+imresize(load("../figs/colors_everywhere.jpg"), (280, 350))
 
 # ╔═╡ 03ad0574-699b-4046-863e-611e1a058d82
 md"""
@@ -40,12 +40,21 @@ In chapter 6, we learned the concept of **optimal transportation**, and saw that
 
 	Given the RGB representation of the pixels of two images (X1,X2) and a cost over the colors, transfer the color scheme of image 2 to image 1.
 
- In this project, we will see a more proper pipeline of color transfer.
+##### What to expect different from the one we implemented in the course?
+
+- The images will be processed in Arrays of values (Height x Width x Channels) instead of complete dependence to the package Colors.jl.
+- The color schemees in the images are clustered.
+- Thus, much shorter runtime of the codes, and no need to downsample the images!
+- Different ways to calculate the color differences
+- Different weights assigned to each pixels, whereas we gave an uniform distribution in the course.
 """
+
+# ╔═╡ 2aea58e2-9168-43ff-bdd0-dcd7e6ee0339
+md""" --- """
 
 # ╔═╡ 3a9db4da-22de-4b49-9630-efc997f2e3b0
 md"""
-## Sample images
+## 0. Load Sample images
 
 By default, you will see two photos in the figs/ folder in this project.
 
@@ -99,14 +108,13 @@ md"""
 # ╔═╡ ad83b6f3-98fa-4568-ae23-43ab9813a9fd
 md"""
 ## 1. Converting images into arrays
-
-- Firstly, we will represent the images in the form of 2D array (channel x (height * width))
-- To match the dimensions for clustering of images
 """
 
 # ╔═╡ ac92d0ae-4641-4981-aab2-b63c04826119
 md"""
-##### 1.1. Conversion to 2D array for clustering purpose
+##### 1.1. Conversion to 2D array for clustering and later calculations purposes
+
+- ( channels x (height * width) )
 """
 
 # ╔═╡ 2c4e983c-c922-4c2f-91e2-d5d5b2f28436
@@ -117,6 +125,8 @@ md"""
 # ╔═╡ 674c4223-7c93-4f89-bdd1-65fd51886a04
 md"""
 ##### 1.2. Conversion to 3D array for later visualization purposes
+
+- ( height x width x channels )
 """
 
 # ╔═╡ 2319e25f-aae4-44aa-a548-b9994641ae4f
@@ -127,16 +137,6 @@ md"""
 - This is the **most computaionally expensive step** among this notebook. Below in section 3, you can experiment the different outcomes depending on the input number of clusters, but be aware of the runtime for n_clusters > 50.
 """
 
-# ╔═╡ cae1a3c1-138e-4eac-b535-2936b07ae2ec
-md"""
-### Clustering result
-
-the result of kmeans() provides several attributes, and the ones we need here are:
-- centers = clustered center points
-- counts = number of points in each of the cluster
-- assignments = assignments of points to clusters
-"""
-
 # ╔═╡ 69addbcd-6158-4193-b4ef-b432d71912d5
 md"""
 ---
@@ -144,7 +144,7 @@ md"""
 
 # ╔═╡ d147d490-4897-4a24-a966-5fb5de5a3347
 md"""
-##### Clustered centers
+##### 2.1. Clustered centers
 
 - Array of **( channels x n_clusters )** showing the cluster centers
 """
@@ -156,7 +156,7 @@ md"""
 
 # ╔═╡ 3b9c7acc-5a37-4f51-8f9c-d32ab4370594
 md"""
-##### Counts
+##### 2.2. Counts
 
 - Vector of **( 1 x n_clusters )**, showing the size of each cluster
 """
@@ -168,7 +168,7 @@ md"""
 
 # ╔═╡ 7b865f98-a124-4c9e-884c-a6744ea7ca0d
 md"""
-##### Assignments
+##### 2.3. Assignments
 
 - Vector of **( 1 x pixels )** showing  to which cluster each point belongs to.
 """
@@ -180,12 +180,12 @@ md"""
 
 # ╔═╡ 58276c9d-a3d9-436b-aa59-7e05662ac0ff
 md"""
-##### Repeat for the image2
+##### 2.4. Repeat for the image2
 """
 
 # ╔═╡ 2ace44bb-085e-4979-b2d7-c21272df21d6
 md"""
-## 3. Result Visualization after clustering
+## 3. Images after the clustering
 
 After K-means clustering, the colors in the image look more compressed.
 
@@ -194,17 +194,17 @@ Yet, the dimensions (number of pixels) are the same.
 We will transfer the color schemes of the clustered colors
 """
 
-# ╔═╡ 4b9955f2-0900-41c7-aecc-193477f9ac7f
-md"""
-**Number of clusters** """
-
-# ╔═╡ 3582f1c8-a5ee-4c38-86a3-56bca198471f
-@bind n_cluster Slider(1:1:50; default=30, show_value=true)
-
 # ╔═╡ 00dda518-43f4-42c1-ad54-d4719e7eca28
 md"""
 Depending on the n_cluster value, the compression in the colors will be different
 """
+
+# ╔═╡ 4b9955f2-0900-41c7-aecc-193477f9ac7f
+md"""
+**Number of clusters** -> over 50 clusters will take some time """
+
+# ╔═╡ 3582f1c8-a5ee-4c38-86a3-56bca198471f
+@bind n_cluster Slider(1:1:200; default=50, show_value=true)
 
 # ╔═╡ ec4795e5-7c10-4b93-95a4-0a6890fc0386
 md"""
@@ -223,38 +223,35 @@ md"""
 
 # ╔═╡ 054ddfae-e486-4c3e-9ac4-55bb11d47daf
 md"""
-##### 4.1. Cost matrix calculation
+#### 4.1. Cost matrix calculation
 
 - By default, Squared eucledian distances are calculated between cluster centers of two images.
 
 - Below are provided a few other distance calculation. Feel free to experiment how different distance metrics affect the color transfer.
 """
 
+# ╔═╡ cf322e23-074b-4d58-9cf1-1554bdd610eb
+md"""
+--- """
+
 # ╔═╡ 54d1e2c3-ad62-4f06-9d0e-8778d0f02c16
 md"""
-###### 4.1.1. Distance types
+##### 4.1.1. Distance formulas to try for cost matrix calculation
 """
-
-# ╔═╡ 59bc54fd-1c68-4cff-8888-1cdd5725aee6
-euclidean(x, y) = √(sum((x - y) .^ 2))
 
 # ╔═╡ df9010db-0565-43d5-b926-164d96ca400f
 Sqeuclidean(x, y) = sum((x - y) .^ 2)
 
-# ╔═╡ a9d9ee97-b186-4a76-bd61-d21c0c0b520d
-cityblock(x, y) = sum(abs.(x - y))
-
 # ╔═╡ eaf5aa75-a3d8-4d0e-8fe1-dd250fe033c1
 KLdivergence(x, y) = sum(x .* log.(x ./ y))
 
-# ╔═╡ 6e93bce8-1794-46c5-a68d-76ce0829debb
+# ╔═╡ eb00a4c3-da73-4608-8447-5ab7d63a0876
 md"""
----
-"""
+--- """
 
 # ╔═╡ 66a54b5a-4497-47d2-a360-0f23d6518d39
 md"""
-##### 4.2. Weight for each pixel
+#### 4.2. Weight for each pixel
 
 - In the course, we gave a unifrom weight for each pixel.
 - But this time, we will give different weight for each pixel.
@@ -268,14 +265,19 @@ md"""
 
 # ╔═╡ 35196ba9-ac08-4583-981d-92f5d4374e52
 md"""
-##### 4.3. Optimal transport using the Sinkhorn algorithm
+#### 4.3. Optimal transport using the Sinkhorn algorithm
 
 - The same algorithm from the course.
 """
 
+# ╔═╡ 7601994f-d7d3-4be4-91ed-a823f14f4489
+md""" --- """
+
 # ╔═╡ ecefce4d-145e-4cfe-bab5-e1a5daa6e6fd
 md"""
-### Outcome of optimal transport on image 1.
+#### 4.4. Outcome of optimal transport on image 1.
+
+- Now that we obtained the optimal distribution matrix **Pcolors**, we can map this distribution to center clusters of color schemes
 """
 
 # ╔═╡ 7c616c0e-55de-4e5f-aafb-34b85665df70
@@ -292,7 +294,7 @@ md"""
 
 # ╔═╡ 2bf1e249-821e-40d8-a391-710baae05e65
 md"""
-**Lambda (λ)**
+**Lambda (λ)** -> In general, increase in λ gives more vibrant colors to the image
 """
 
 # ╔═╡ 3687fc03-af9d-4e44-9fb5-17d086822924
@@ -300,21 +302,59 @@ md"""
 
 # ╔═╡ 77c07e75-c6db-4106-8d04-44b619d70465
 md"""
-**Epsilon (ϵ)**
+**Epsilon (ϵ)** -> In general, lower values makes the image more foggy
 """
 
 # ╔═╡ 2901b354-1e4f-432a-a4b1-5b5e37cee104
-@bind eps Slider(-8.0:-1.0, default=-1, show_value=true)
+@bind eps Slider(-4.0:1.0, default=-1, show_value=true)
 
 # ╔═╡ 7af273d6-d725-43c6-8637-4db525f4270d
 md"""
 ---
 """
 
+# ╔═╡ 7f783b21-8b8e-4788-8f35-e8b644bd20ea
+md"""
+#### Visualization of the outcome
+"""
+
+# ╔═╡ 7a77606c-ca57-4eb7-89bf-644bb699f5fb
+md"""
+###### Image too dark/bright? adjust the exposure.
+"""
+
+# ╔═╡ 4c7b5536-1583-444c-ae7f-327d96497a4a
+@bind k Slider(0.5:0.05:1.5, default=1, show_value=true)
+
+# ╔═╡ bf0e1f73-58e4-4e53-a2bf-aa009c430da6
+md""" --- """
+
+# ╔═╡ f147bad3-4dae-4f1c-b478-e5955dcf95d0
+md"""
+#### How about the other way around? 
+
+- How about colors of image1 transferred to image2?
+- This can easily be achieved by transposing the Pcolors distributions matrix
+"""
+
+# ╔═╡ 974e61fb-19e6-4ec3-9b6b-8e89658209f6
+md"""
+###### Image too dark/bright? adjust the exposure
+"""
+
+# ╔═╡ 9d162a07-434e-4b84-a4ff-812210ec3f0e
+@bind k2 Slider(0.5:0.05:1.5, default=1, show_value=true)
+
+# ╔═╡ 5306846b-d686-47f6-bf1f-6464b85be409
+md""" --- """
+
 # ╔═╡ 52a9c486-7b05-4881-8479-f48075e58de3
 md"""
-### Different?
+### Comparison overall
 """
+
+# ╔═╡ f44ee7f6-b903-4b00-89ba-91b6039d3c73
+md""" --- """
 
 # ╔═╡ ddbab8c0-1440-4027-b1f4-0f083448a17e
 md"""
@@ -328,7 +368,8 @@ function load_image(x)
 
 	Input
 		- x = selected image file from FilePicker()
-	Returns
+	
+	Return
 		- loaded_file = loaded image from the selected image file path
 	"""
 	
@@ -359,14 +400,15 @@ else
 end
 
 # ╔═╡ 3038def5-3c91-4a2d-90f3-d4c827d63ce0
-function image_to_2Darray(image)
+function image_to_2Darray(image::Matrix)
 	"""
 	Convert a loaded image into a 2D array of dimensions [channel x (width * height)]
 	In other words: [RGB x (number of pixels in the image)]
 
 	Input
 		- image = loaded image
-	Returns
+	
+	Return
 		- img_array = image converted into 2D array
 	"""
 
@@ -408,25 +450,6 @@ begin
 	im2_assigns = im2res.assignments
 end
 
-# ╔═╡ 530f6dbd-98db-4a71-a052-26884e5ca71c
-begin
-	C = zeros(length(im1_counts), length(im2_counts))
-
-	for i in 1:length(im1_counts)
-		for j in 1:length(im2_counts)
-			rgb1 = im1_centers[:,j]
-			rgb2 = im2_centers[:,i]
-
-			dist = Sqeuclidean(rgb1, rgb2)
-			
-			C[i,j] = dist
-		end
-	end
-end
-
-# ╔═╡ 32c2ac0a-d0ca-4002-8c03-9f0448ac418a
-C # cost matrix between color schemes of two images
-
 # ╔═╡ e5b7dd1c-38aa-4a2e-b8c0-92fa0c455334
 begin
 	h, w = size(image1)
@@ -437,14 +460,15 @@ begin
 end
 
 # ╔═╡ b7b24b81-81a6-43e9-ac47-854f8d4c8680
-function image_to_3Darray(image)
+function image_to_3Darray(image::Matrix)
 	"""
 	Convert a loaded image into a 2D array of dimensions [channel x (width * height)]
 	In other words: [RGB x (number of pixels in the image)]
 
 	Input
 		- image = loaded image
-	Returns
+	
+	Return
 		- img_array = image converted into 2D array
 	"""
 
@@ -464,8 +488,11 @@ begin
 	img2array3D = image_to_3Darray(image2)
 end
 
+# ╔═╡ cf53d575-bb38-41f1-b9bd-a7d29ffa94c6
+typeof(img1array3D)
+
 # ╔═╡ c124013f-16e5-4631-84c2-67a86ef224a2
-function reassinging(img_array, centers, assignments)
+function reassinging(img_array::Array, centers::Matrix, assignments::Vector)
 	"""
 	Function for assigning center cluster values back to the original image.
 
@@ -474,7 +501,7 @@ function reassinging(img_array, centers, assignments)
 		- centers 	  = cluster centers of the image
 		- assignments = assignments of points to clusters
 
-	Returns
+	Return
 		- img_new = new representation of the image
 	"""
 
@@ -492,19 +519,63 @@ end
 begin
 	im1_clust = reassinging(img1array3D, im1_centers, im1_assigns)
 	im1_clust = colorview(RGB, permutedims(im1_clust, (3,1,2)))
-end
-
-# ╔═╡ 2c17430b-ecc8-420c-a5cd-77ec2d4cbcf8
-im1_clust
-
-# ╔═╡ 9575083d-50b8-466a-b8c5-b6207e0bcba0
-begin
 	im2_clust = reassinging(img2array3D, im2_centers, im2_assigns)
 	im2_clust = colorview(RGB, permutedims(im2_clust, (3,1,2)))
+
+	# Visualize the images together!
+	[im1_clust ; im2_clust]
 end
 
+# ╔═╡ 0efb67d1-a37c-4628-a80c-b51e6437dcc7
+function cost_matrix(centers1::Matrix, centers2::Matrix, f_dist)
+	"""
+	Function to generate a cost matrix between the two images.
+
+	Input
+		- centers1 = center clusters of image 1 (from k-means clustering)
+		- cenetrs2 = center clusters of image 2 (from k-means clustering)
+		- f_dist   = Distance calcuation types
+
+	Return
+		- C = the cost matrix
+	"""
+	# Initialize Cost matrix
+	length1 = size(centers1, 2)
+	length2 = size(centers2, 2)
+	
+	C = zeros(length1, length2)
+
+	for i in 1:length1
+		for j in 1:length2
+			rgb1 = centers1[:,j]
+			rgb2 = centers2[:,i]
+
+			distance = f_dist(rgb1, rgb2)
+
+			C[i,j] = distance
+		end
+	end
+
+	return C
+end
+
+# ╔═╡ 32c2ac0a-d0ca-4002-8c03-9f0448ac418a
+# cost matrix between color schemes of two images\
+C = cost_matrix(im1_centers, im2_centers, Sqeuclidean)
+
 # ╔═╡ 471b8d90-5b64-4fed-a074-47d42ed4e0e0
-function transport_colors(centers1, centers2, P)
+function transport_colors(centers1::Matrix, centers2::Matrix, P)
+	"""
+	With the optimal distribution matrix P, map this to the color schemes of desired image. This is the final step in this project. through this function, color schemes of image 2 will be transferred to the image 1.
+
+	Input
+		- centers1 = center clusters of image 1
+		- centers2 = center clusters of image 2
+		- P 	   = Optimal distribution matrix
+
+	Return
+		- centers1_new = re-mapped center clusters of image1
+	"""
 	centers1_new = copy(centers1)
 
 	row, column = size(centers1_new)
@@ -526,9 +597,6 @@ function transport_colors(centers1, centers2, P)
 
 	return centers1_new
 end
-
-# ╔═╡ b210feea-4c9f-406b-badc-516554d4acec
-
 
 # ╔═╡ 22a77c67-a0ed-434a-9db4-993cdce0c93b
 function sinkhorn(C::Matrix, a::Vector, b::Vector; λ=1.0, ϵ=1e-8)
@@ -557,8 +625,20 @@ im1_centers_n = transport_colors(im1_centers, im2_centers, Pcolors)
 # ╔═╡ 3ab4bb47-a09c-4293-bcf0-8727287aac74
 begin
 	im1_transf = reassinging(img1array3D, im1_centers_n, im1_assigns)
-	im1_transf = colorview(RGB, permutedims(im1_transf, (3,1,2)))
+	im1_transf = colorview(RGB, permutedims(im1_transf, (3,1,2))) * k
 end
+
+# ╔═╡ a588d77e-c8b6-4bb8-b854-eed42e15cbef
+im2_centers_n = transport_colors(im2_centers, im1_centers, Pcolors')
+
+# ╔═╡ e785cd6d-5ee6-4b31-82f9-5d0f4ed0c4f6
+begin
+	im2_transf = reassinging(img2array3D, im2_centers_n, im2_assigns)
+	im2_transf = colorview(RGB, permutedims(im2_transf, (3,1,2))) * k2
+end
+
+# ╔═╡ 9b2d7059-df96-4c8d-8404-777fae5f63f7
+[im1_clust im2_clust ; im1_transf im2_transf]
 
 # ╔═╡ ec53c559-044e-4287-8b44-1123fade583c
 colorscatter(colors; kwargs...) = 
@@ -574,21 +654,16 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 Clustering = "aaaa29a8-35af-508c-8bc3-b662a17a0fe5"
 Colors = "5ae59095-9a9b-59fe-a467-6f913c188581"
-Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
-DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 ImageIO = "82e4d734-157c-48bb-816b-45c225c6df19"
 Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
-Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [compat]
 Clustering = "~0.14.2"
 Colors = "~0.12.8"
-Combinatorics = "~1.0.2"
-DataStructures = "~0.18.11"
 Distributions = "~0.25.37"
 ImageIO = "~0.6.0"
 Images = "~0.25.1"
@@ -724,11 +799,6 @@ deps = ["ColorTypes", "FixedPointNumbers", "Reexport"]
 git-tree-sha1 = "417b0ed7b8b838aa6ca0a87aadf1bb9eb111ce40"
 uuid = "5ae59095-9a9b-59fe-a467-6f913c188581"
 version = "0.12.8"
-
-[[deps.Combinatorics]]
-git-tree-sha1 = "08c8b6831dc00bfea825826be0bc8336fc369860"
-uuid = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
-version = "1.0.2"
 
 [[deps.Compat]]
 deps = ["Base64", "Dates", "DelimitedFiles", "Distributed", "InteractiveUtils", "LibGit2", "Libdl", "LinearAlgebra", "Markdown", "Mmap", "Pkg", "Printf", "REPL", "Random", "SHA", "Serialization", "SharedArrays", "Sockets", "SparseArrays", "Statistics", "Test", "UUIDs", "Unicode"]
@@ -2034,9 +2104,11 @@ version = "0.9.1+5"
 
 # ╔═╡ Cell order:
 # ╟─c3c61b29-ddc7-4638-9350-8ce945326d27
+# ╟─877f1fc5-2acd-48ad-87e3-0f28d9c9c9c7
 # ╟─adf59de3-bc73-4d4c-9293-47a2f8569ee5
 # ╠═03f007fe-ed84-4ee4-a806-5239843c0391
 # ╟─03ad0574-699b-4046-863e-611e1a058d82
+# ╟─2aea58e2-9168-43ff-bdd0-dcd7e6ee0339
 # ╟─3a9db4da-22de-4b49-9630-efc997f2e3b0
 # ╠═45264041-09d3-412c-a2ff-50c4bdc29039
 # ╠═f321ac99-d7fe-40ed-9498-b56588a03270
@@ -2053,9 +2125,9 @@ version = "0.9.1+5"
 # ╟─2c4e983c-c922-4c2f-91e2-d5d5b2f28436
 # ╟─674c4223-7c93-4f89-bdd1-65fd51886a04
 # ╠═615e0f0a-1fba-499e-b42b-3eb331311e89
+# ╠═cf53d575-bb38-41f1-b9bd-a7d29ffa94c6
 # ╟─2319e25f-aae4-44aa-a548-b9994641ae4f
-# ╟─cae1a3c1-138e-4eac-b535-2936b07ae2ec
-# ╟─441e5c0f-85bf-43a3-9b34-d21fbba4dc70
+# ╠═441e5c0f-85bf-43a3-9b34-d21fbba4dc70
 # ╟─69addbcd-6158-4193-b4ef-b432d71912d5
 # ╟─d147d490-4897-4a24-a966-5fb5de5a3347
 # ╠═00b81e4d-937b-4e00-83b8-abcbfcc7fcbe
@@ -2069,28 +2141,26 @@ version = "0.9.1+5"
 # ╟─58276c9d-a3d9-436b-aa59-7e05662ac0ff
 # ╠═200c0296-80c3-40b4-a7e0-b84fc4e4fb97
 # ╟─2ace44bb-085e-4979-b2d7-c21272df21d6
-# ╟─4b9955f2-0900-41c7-aecc-193477f9ac7f
-# ╟─3582f1c8-a5ee-4c38-86a3-56bca198471f
 # ╟─00dda518-43f4-42c1-ad54-d4719e7eca28
+# ╟─4b9955f2-0900-41c7-aecc-193477f9ac7f
+# ╠═3582f1c8-a5ee-4c38-86a3-56bca198471f
 # ╟─ec4795e5-7c10-4b93-95a4-0a6890fc0386
 # ╠═a5d95227-8dbc-4323-bec8-3c66803d4034
-# ╠═9575083d-50b8-466a-b8c5-b6207e0bcba0
 # ╟─5d13c0fb-b1ca-46e5-ad09-181ff8d869b1
 # ╟─28fbebcb-2e14-4e35-8a36-097d88cc4052
 # ╟─054ddfae-e486-4c3e-9ac4-55bb11d47daf
-# ╟─54d1e2c3-ad62-4f06-9d0e-8778d0f02c16
-# ╠═59bc54fd-1c68-4cff-8888-1cdd5725aee6
-# ╠═df9010db-0565-43d5-b926-164d96ca400f
-# ╠═a9d9ee97-b186-4a76-bd61-d21c0c0b520d
-# ╠═eaf5aa75-a3d8-4d0e-8fe1-dd250fe033c1
-# ╠═530f6dbd-98db-4a71-a052-26884e5ca71c
 # ╠═32c2ac0a-d0ca-4002-8c03-9f0448ac418a
-# ╟─6e93bce8-1794-46c5-a68d-76ce0829debb
+# ╟─cf322e23-074b-4d58-9cf1-1554bdd610eb
+# ╟─54d1e2c3-ad62-4f06-9d0e-8778d0f02c16
+# ╠═df9010db-0565-43d5-b926-164d96ca400f
+# ╠═eaf5aa75-a3d8-4d0e-8fe1-dd250fe033c1
+# ╟─eb00a4c3-da73-4608-8447-5ab7d63a0876
 # ╟─66a54b5a-4497-47d2-a360-0f23d6518d39
 # ╠═e5b7dd1c-38aa-4a2e-b8c0-92fa0c455334
 # ╟─c8a3f385-33fa-48ae-b4d1-134fffa7c22c
 # ╟─35196ba9-ac08-4583-981d-92f5d4374e52
 # ╠═f8e6fc0f-6731-4205-a622-b30387b068a1
+# ╟─7601994f-d7d3-4be4-91ed-a823f14f4489
 # ╟─ecefce4d-145e-4cfe-bab5-e1a5daa6e6fd
 # ╠═bbcb7b48-9eac-4fc6-bb34-aacab000a2d9
 # ╟─7c616c0e-55de-4e5f-aafb-34b85665df70
@@ -2100,16 +2170,27 @@ version = "0.9.1+5"
 # ╟─77c07e75-c6db-4106-8d04-44b619d70465
 # ╟─2901b354-1e4f-432a-a4b1-5b5e37cee104
 # ╟─7af273d6-d725-43c6-8637-4db525f4270d
+# ╟─7f783b21-8b8e-4788-8f35-e8b644bd20ea
+# ╟─7a77606c-ca57-4eb7-89bf-644bb699f5fb
+# ╟─4c7b5536-1583-444c-ae7f-327d96497a4a
 # ╠═3ab4bb47-a09c-4293-bcf0-8727287aac74
+# ╟─bf0e1f73-58e4-4e53-a2bf-aa009c430da6
+# ╟─f147bad3-4dae-4f1c-b478-e5955dcf95d0
+# ╠═a588d77e-c8b6-4bb8-b854-eed42e15cbef
+# ╟─974e61fb-19e6-4ec3-9b6b-8e89658209f6
+# ╟─9d162a07-434e-4b84-a4ff-812210ec3f0e
+# ╠═e785cd6d-5ee6-4b31-82f9-5d0f4ed0c4f6
+# ╟─5306846b-d686-47f6-bf1f-6464b85be409
 # ╟─52a9c486-7b05-4881-8479-f48075e58de3
-# ╟─2c17430b-ecc8-420c-a5cd-77ec2d4cbcf8
+# ╟─9b2d7059-df96-4c8d-8404-777fae5f63f7
+# ╟─f44ee7f6-b903-4b00-89ba-91b6039d3c73
 # ╟─ddbab8c0-1440-4027-b1f4-0f083448a17e
 # ╠═8131f7cf-7027-4168-b41e-e75a4001a2a5
 # ╠═3038def5-3c91-4a2d-90f3-d4c827d63ce0
 # ╠═b7b24b81-81a6-43e9-ac47-854f8d4c8680
 # ╠═c124013f-16e5-4631-84c2-67a86ef224a2
+# ╠═0efb67d1-a37c-4628-a80c-b51e6437dcc7
 # ╠═471b8d90-5b64-4fed-a074-47d42ed4e0e0
-# ╠═b210feea-4c9f-406b-badc-516554d4acec
 # ╠═22a77c67-a0ed-434a-9db4-993cdce0c93b
 # ╠═ec53c559-044e-4287-8b44-1123fade583c
 # ╟─00000000-0000-0000-0000-000000000001
