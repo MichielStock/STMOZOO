@@ -492,9 +492,6 @@ begin
 	img2array3D = image_to_3Darray(image2)
 end
 
-# ╔═╡ cf53d575-bb38-41f1-b9bd-a7d29ffa94c6
-typeof(img1array3D)
-
 # ╔═╡ c124013f-16e5-4631-84c2-67a86ef224a2
 function reassinging(img_array::Array, centers::Matrix, assignments::Vector)
 	"""
@@ -2129,7 +2126,6 @@ version = "0.9.1+5"
 # ╟─2c4e983c-c922-4c2f-91e2-d5d5b2f28436
 # ╟─674c4223-7c93-4f89-bdd1-65fd51886a04
 # ╠═615e0f0a-1fba-499e-b42b-3eb331311e89
-# ╠═cf53d575-bb38-41f1-b9bd-a7d29ffa94c6
 # ╟─2319e25f-aae4-44aa-a548-b9994641ae4f
 # ╠═441e5c0f-85bf-43a3-9b34-d21fbba4dc70
 # ╟─69addbcd-6158-4193-b4ef-b432d71912d5
