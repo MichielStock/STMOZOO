@@ -5,7 +5,25 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ 0150a3e2-f98e-4412-9e96-1a2db5a9421e
-using Combinatorics, Plots, Statistics, Distributions, MLDatasets
+using Combinatorics, Plots, Statistics, Distributions, MLDatasets, Flux, CUDA, Zygote
+
+# ╔═╡ 352a4a75-8136-474e-a80a-9d65baabd195
+using Flux: Data.DataLoader
+
+# ╔═╡ 79d4c2f0-bc6e-43f1-b877-a63226f8aadc
+using Flux: onehotbatch, onecold, crossentropy
+
+# ╔═╡ de52e90b-cdee-4221-b502-8a4d128bcc79
+using Flux: @epochs
+
+# ╔═╡ 261dd1eb-3158-4c20-aec7-01c4dfeab897
+using Base: @kwdef
+
+# ╔═╡ 4372356d-92f6-45f0-97c0-f28b2299a5a8
+using Flux.Losses: logitcrossentropy
+
+# ╔═╡ dd1e716d-af7c-4cb7-b0a1-459122832d37
+using BSON: @save
 
 # ╔═╡ 936344da-213a-11ec-3e68-05f0f85cf2f3
 md"""
@@ -50,143 +68,460 @@ md"""
 ![Notation4Variables.png](https://github.com/HeesooSong/STMOZOO/blob/master/notebook/Figures/Notation4Variables.png?raw=true)
 """
 
+# ╔═╡ 233fe6b3-479c-4631-b434-8b41a684ac21
+#wd[2][:,:,3,1]
+
+# ╔═╡ f7c0cb4b-c98a-404d-96f6-7a20f167d11d
+md"## 2. CNN training functions
+
+The baseline of the training structure is referred from FluxML/model-zoo tutorial notebook [2]."
+
+# ╔═╡ f6a38e02-f53f-440d-934b-4ed1f00d1827
+function getdata(args, device)
+	ENV["DATADEPS_ALWAYS_ACCEPT"] = "true"
+	
+	# load data
+	if args.dataset == "MNIST"
+		x_train, y_train = MNIST.traindata(Float32)
+		x_test, y_test = MNIST.testdata(Float32)
+	elseif args.dataset == "CIFAR10"
+		x_train, y_train = CIFAR10.traindata(Float32)
+		x_test, y_test = CIFAR10.testdata(Float32)
+	end
+	
+	# Add channel layer
+	# The unsqueeze() function helps image data to be in order of (width, height, #channels, batch size)
+	x_train = Flux.unsqueeze(x_train, 3)
+	x_test = Flux.unsqueeze(x_test, 3)
+	
+	# Encode labels
+	y_train = onehotbatch(y_train, 0:9)
+	y_test = onehotbatch(y_test, 0:9)
+	
+	return x_train, x_test, y_train, y_test
+end
+
+# ╔═╡ 965d6f22-5522-416f-ab1e-e66623262e90
+function build_model(; imgsize=(28, 28, 1), nclasses=10)
+	return Chain(
+	# input 28x28x1
+	Conv((3,3), 1=>16, pad=1), BatchNorm(16, relu), 	 # 28x28x16
+	Conv((3,3), 16=>16, pad=1), BatchNorm(16, relu), 	 # 28x28x16
+	MeanPool((2, 2)), 								 	 # 14x14x16
+	Conv((3,3), 16=>16, pad=1), BatchNorm(16, relu), 	 # 14x14x16
+	Conv((3,3), 16=>16, pad=1), BatchNorm(16, relu), 	 # 14x14x16
+	MeanPool((2, 2)), 								 	 # 7x7x16
+	Conv((3,3), 16=>16, pad=1), BatchNorm(16, relu), 	 # 7x7x16
+	Conv((3,3), 16=>16, pad=1), BatchNorm(16, relu), 	 # 7x7x16
+
+	# Average pooling on each width x height feature map
+	GlobalMeanPool(),
+	# Remove 1x1 dimensions (singletons)
+	flatten,
+	
+	Dense(16, 10),
+	softmax)
+end
+
+# ╔═╡ 0d7b525d-3f30-44fc-b771-1665d3f2e045
+function loss_and_accuracy(data_loader, model, device)
+	acc = 0
+	ls = 0.0f0
+	num = 0
+	for (x, y) in data_loader
+		x, y = device(x), device(y)
+		ŷ = model(x)
+		ls += crossentropy(ŷ, y, agg=sum)
+		acc += sum(onecold(ŷ) .== onecold(y))
+		num += size(x)[end]
+	end
+	return ls/num, acc/num
+end
+
 # ╔═╡ 703ef56f-1045-4572-ae2a-170a48945e84
-function RSO(X,L,C,W)
+function RSO(X,L,X_test,L_test, C,model, batch_size, device)
+	"""
+	model = convolutional model structure
+	X = Input data
+	L = labels
+	C = Number of rounds to update parameters
+	"""
+
 	# Normalize input data to have zero mean and unit standard deviation
 	X .= (X .- sum(X))./std(X)
+	X_test .= (X_test .- sum(X_test))./std(X_test)
+	train_loader = DataLoader((X, L), batchsize=batch_size, shuffle=true)
+	test_loader = DataLoader((X_test, L_test), batchsize=batch_size, shuffle=true)
 
-	L = 3 # number of input channels (RGB)
-	k = 255 # filter size
+	random_batch = []
+	for (x, l) in train_loader
+		push!(random_batch, (x,l))
+	end
 	
 	# W = Weight set of layers
 	# Wd = Weight tensors of layer d that generates an activation
 	# wid = weight tensor that generates an activation aᵢ
 	# wj = a weight in wid
+	
+	std_prep = []
 	σ_d = Float64[]
-	for d in 1:length(W)
+	D = 0
+	for layer in model
+		D += 1
+		Wd = Flux.params(layer)
 		# Initialize the weights of the network with Gaussian distribution
-		for id in 1:length(W[d])
-			wj = rand(Normal(0, sqrt(2/abs(L*k*k))), length(W[d][id])) #or L*k*k
-			W[d][id] = wj
+		for id in Wd
+			if typeof(id) == Array{Float32, 4}
+				wj = convert(Array{Float32, 4}, rand(Normal(0, sqrt(2/length(id))), (3,3,4,4)))
+			elseif typeof(id) == Vector{Float32}
+				wj = convert(Vector{Float32}, rand(Normal(0, sqrt(2/length(id))), length(id)))
+			else
+				wj = convert(Matrix{Float32}, rand(Normal(0, sqrt(2/length(id))), size(id)))
+			end
+			id = wj
+			append!(std_prep, vec(wj))
 		end
 		# Compute std of all elements in the weight tensor Wd
-		push!(σ_d, std(W[d]))
+		push!(σ_d, std(std_prep))
 	end
 
+	
 	# Weight update
-	for _ in 1:C
-		d = length(W)
+	for c in 1:C
+		d = D
 		while d > 0
-			for id in 1:length(Wd)
-				# Randomly sample change in weights from Gaussian distribution whose
-				# standard deviation is the same as the SD of the layer
-				for j in 1:length(wid)
+			println("layer $d")
+			Wd = Flux.params(model[d])
+			for id in Wd
+				# Randomly sample change in weights from Gaussian distribution
+				for j in 1:length(id)
 					# Randomly sample mini-batch
-					random_batch = rand(1:length(X))
-					x = X[random_batch]
-					l = L[random_batch]
-
-					# Initialize weight change matrix
-					ΔWj = [[zeros(Float64, length(wid)) for m in 1:length(Wd)] for n in 1:length(W)]
-					# Sample a weight from normal distribution
-					ΔWj[d][id][j] = rand(Normal(0, σ_d[d]), 1)
+					(x, y) = rand(random_batch, 1)[1]
+					x, y = device(x), device(y)
 					
-					W = argmin(F(x,l, W+ΔWj), F(x,l,W), F(x,l, W-ΔWj))
+					# Sample a weight from normal distribution
+					ΔWj = rand(Normal(0, σ_d[d]), 1)[1]
+
+					# F(x,l, W+ΔWj)
+					id[j] = id[j]+ΔWj
+					ŷ = model(x)
+					ls_pos = crossentropy(ŷ, y, agg=sum) / size(x)[end]
+					#acc_pos = sum(onecold(ŷ) .== onecold(y)) / size(x)[end]
+
+					# F(x,l,W)
+					id[j] = id[j]-ΔWj
+					ŷ = model(x)
+					ls_org = crossentropy(ŷ, y, agg=sum) / size(x)[end]
+					#acc_org = sum(onecold(ŷ) .== onecold(y)) / size(x)[end]
+
+					# F(x,l, W-ΔWj)
+					id[j] = id[j]-ΔWj
+					ŷ = model(x)
+					ls_neg = crossentropy(ŷ, y, agg=sum) / size(x)[end]
+					#acc_neg = sum(onecold(ŷ) .== onecold(y)) / size(x)[end]
+
+					min_loss = argmin([ls_org, ls_pos, ls_neg])
+
+					if min_loss == 1
+						id[j] = id[j] + ΔWj
+					elseif min_loss == 2
+						id[j] = id[j] + 2*ΔWj
+					elseif min_loss == 3
+						id[j] = id[j]
+					end
 				end
 			end
 			d -= 1
 		end
+
+		train_loss, train_acc = loss_and_accuracy(train_loader, model, device)
+		test_loss, test_acc = loss_and_accuracy(test_loader, model, device)
+
+		println("RSO Epoch=$c")
+		println("   train_loss = $train_loss, train_accuracy = $train_acc")
+		println("   test_loss = $test_loss, test_accuracy = $test_acc")
+	
 	end
 	
-	return W
+	return Flux.params(model)
 end
+
+# ╔═╡ 74e7b431-08c7-4ded-9033-c6858b9574c1
+
+
+# ╔═╡ 11872972-0526-4c07-902b-0b8f3ac0553f
+md"## 3. Experiments
+
+### 3-1. MNIST - compare accuracies of RSO, SGD, WANN
+MNIST dataset is consists of 60,000 training images and 10,000 test images of handwritten digits. Each image is a 28x28 pixel gray-scale image.
+
+**RSO**"
+
+# ╔═╡ db28a9fb-dbf7-428d-af19-ef371d6d2014
+md"256 batches - epoch1 - logitcrossentropy - 5020s\
+256 batches - epoch1 - crossentropy - 5240s\
+5000 batches - epoch1 - crossentropy - 73042s - loss: 14.132923/acc: 0.1135
+"
+
+# ╔═╡ 5b844fba-dae3-4945-a57e-d76caf8ee0df
+md"**SGD (Backpropagation)**"
+
+# ╔═╡ 184ac4ea-4d5b-4041-b37e-7f9fc154d863
+#begin
+#	acc_tracker = TrackObj(Float32)
+#	train(epochs=50, tracker=acc_tracker)
+#end
+
+# ╔═╡ 29143eb7-ea08-43e9-bae1-5179b58eb495
+
+
+# ╔═╡ 697b4ec8-4f47-4561-b0c4-cc74514f4aff
+md"**WANN**"
+
+# ╔═╡ 29479431-b1b7-40d3-a21f-15f0265e069c
+
 
 # ╔═╡ 64e7be40-cd0b-40c4-b476-51c6a66d40e1
 md"""
-Consider the Indiana Jones problem:
+In summary: 
 
+|           |    RSO   |    SGD   |   WANN   |
+|-----------|----------|----------|----------|
+| Accuracy  |          |      1   |    2     |
 
-| i |  artifact     | $v_i$ |  $w_i$ |
-|---|---------------|-------|--------|
-| 1 |  statue 1     |   1   |  2     |
-| 2 |  statue 2     |   1   |  2     |
-| 3 |  statue 3     |   1   |  2     |
-| 4 |  tablet 1     |  10   |  5     |
-| 5 |  tablet 2     |  10   |  5     |
-| 6 |  golden mask  |  13   |  7     |
-| 7 |  golden plate |   7   |  3     |
 """
 
-# ╔═╡ be803662-aa08-4ee3-a400-bbc18b7d060f
-md"""The capacity is $C kg.
+# ╔═╡ 9c5ef276-7864-42e0-8afb-fde1bf6cccfb
 
-So we can define the instance as (feel free to modify)"""
 
-# ╔═╡ 2d9598de-dfd6-46c7-bf4f-c2f48134e558
-md"We might as well define some useful function that work on `Knapsack` structures."
+# ╔═╡ 8e1498dc-5b45-49a3-bf58-9a77aba16085
+md"### 3-2 Comparison of weight update strategies
 
-# ╔═╡ e1fa7a85-5aab-4e17-b02f-c9a0c62f3f47
-md"### Brute force"
+**1) Perturbing a single weight per update**"
 
-# ╔═╡ 3e95cf39-5d8f-498a-bdb6-df99a51257f3
-md"Here, `heuristic` is a function we can provide to guide the greedy search. For example, if we search by value."
+# ╔═╡ 76134ecf-191e-47cc-98e8-8d80e57fa3f8
 
-# ╔═╡ fe8bb7b2-6fd2-4b8f-9ef0-9d2fcc1b744a
-md"""
-## Exercise: brute-force TSP
 
-Consider the capitals of the provice of Belgium 🇧🇪
-"""
+# ╔═╡ a0fd0657-e133-4daa-9efc-f51326d53960
+md"**2) Perturbing all weights in a layer per update**"
 
-# ╔═╡ 66eb2e32-c0bd-42ab-bb67-05dbd01a1d6e
-md"**Assignment** Loop over all possible tours to find the shortest one. A tour is just gives the order of the cities indices. For example"
+# ╔═╡ 8c116b3f-3bd7-4010-809a-abcf1bce7fae
+
+
+# ╔═╡ 8a9c0cb1-850c-49e3-b268-9cef2b52eed2
+md"**3) Perturbing all weights in whole network per update**"
+
+# ╔═╡ df2b0c81-7a00-4b5a-a096-322e6d4df20f
+
+
+# ╔═╡ 4884cb1b-6c62-4b52-96bb-b80147f24abe
+
+
+# ╔═╡ 954ee843-59ca-4303-9f30-e69be076b510
+md"### 3-3. Order of optimization within a layer
+RSO needs an order for optimizing each of the weights, $$w_{j} ∈ w_{id}$$, where $$n_{d}$$ is the number of neurons and $$W_{d} = \{w_{1}, w_{2}.., w_{id}, ..w_{nd}\}$$. Verify the robustness to the optimization order by testing with inverted order of optimization.\
+\
+**1) Default right order**\
+Start optimizing the set of weights that affect each output neuron $$w_{id} ∈ W_{d}$$."
+
+# ╔═╡ f06363ed-0913-4b74-9eae-64febdf2fd7f
+
+
+# ╔═╡ 316786ba-0132-4352-93a6-45761afa3b5b
+md"**2) Inverted order**\
+Start optimizing the set of weights that interact with one input channel $$L_{i} ∈ L$$."
+
+# ╔═╡ acf5796d-9f3c-421c-a306-c6e76b1a1bd1
+
+
+# ╔═╡ 5102eacd-543d-47a0-bfe5-445b095d0e02
+md"Optimization in the default order gave **{   }**% accuracy and the optimization in the inverted order gave **{   }**% accuracy on the MNIST dataset. Both performs almost identical and this demonstrates the robustness of RSO to a given optimization order in a layer."
+
+# ╔═╡ 717b7ca2-a397-47e7-b661-04c9ed2cc571
+
+
+# ╔═╡ 5c2eb6c7-d9ee-4cda-bfdc-4456e7e92a47
+md"### 3-4. CIFAR-10: Effect of different network depths
+
+**Depth-3 + RSO**"
+
+# ╔═╡ 027a6cde-7408-480a-94a8-52a05967b552
+
+
+# ╔═╡ 9eb0b980-09b3-468f-aa3c-6d3af07c5839
+md"**Depth-5 + RSO**"
+
+# ╔═╡ 7c890ca9-7d0d-4e93-b539-a510b3407d11
+
+
+# ╔═╡ 733cd465-9b1b-40f6-96e0-2ad6da9517a4
+md"**Depth-10 + RSO**"
+
+# ╔═╡ df294d51-e7d3-406c-91ce-30f216603ae6
+
+
+# ╔═╡ d0d8dc13-63c6-4046-ba29-2be0713d9d18
+md"**Depth-10 + SGD**"
+
+# ╔═╡ 2464be0b-ade9-4c21-9f07-251124fa83ec
+md"To compare RSO and SGD, they also performed grid search to find the best performing parameters in Depth-10. Maybe skip this if no time..."
+
+# ╔═╡ b751c909-dd29-4713-9a19-c807cd66d4a4
+
+
+# ╔═╡ 3a62729e-aa6b-45b4-b184-e2341bee97db
+md"### 3-5. Comparison of total weight updates
+
+A grid search "
+
+# ╔═╡ 57ee5c6f-3818-4bb8-86fd-d3cb65f57ffb
+
+
+# ╔═╡ 231ef8dd-6c84-40df-b580-4db96e0ca724
+
+
+# ╔═╡ 985fde4f-e67d-495d-8ffa-7fffb9a74fe9
+md"### 3-6. Updating weights in parallel
+
+Parallel optimization strategy to significantly reduce the run time of the algorithm may done by optimizing one weight at a time and using an older state of the network. 
+
+**1) Search each weight in a layer $$w_{j}$$ in parallel**\
+The search for the new estimate for each weight uses the state of the network before the optimization started for layer d."
+
+# ╔═╡ 7cd9b5d0-58a8-4118-a94f-43be0f4c80db
+
+
+# ╔═╡ 3ae1b8cc-2a17-43f2-991c-b1c3f8e7a436
+md"**2) Search weights of each output neuron $$w_{id}$$ in parallel**\
+Spawn different threads per neuron and update the weights for the assigned neuron sequentially within each thread. Then, merge the weights for all neurons in the layer.
+
+FIGURE 4"
+
+# ╔═╡ b5ba53e5-4a42-4f53-b71f-78d7c6c1da76
+
 
 # ╔═╡ 5afd91f6-9e0d-4774-a954-3f00b71dd2e7
 md"## Appendix"
 
-# ╔═╡ 8c685b23-0ee2-4027-ad5c-01c1dce6fe3a
-stad_coor = Dict(
-	"Antwerpen" => (51.219901727372466, 4.413766520738599),
-	"Hasselt" => (50.929969726608796, 5.337669056378496),
-	"Gent" => (51.046603059146115, 3.7227238267036165),
-	"Leuven" => (50.87717306970613, 4.7013098809614045),
-	"Brugge"=>(51.20994021593339, 3.2237458378594632),
-	"Bergen" => (50.45178175960054, 3.95116527396219),
-	"Luik" => (50.63563258400128, 5.58639186132504),
-	"Aarlen" => (49.68489470742727, 5.812244206475732),
-	"Namen" => (50.45840475199352, 4.858245535731698),
-	"Waver" => (50.71402361189344, 4.596358571899753),
-	"Brussel" => (50.86323347803335, 4.349845202806156)
-);
+# ╔═╡ 796aa432-e28f-4243-92c0-934f4e4f022f
+md"### Tracker
 
-# ╔═╡ 1a6ded1a-cfbe-4d7b-b70f-b06075747561
-cities = keys(stad_coor) |> collect;
+These tracker functions are brought directly from the lecture notebook `searching_methods.jl`. A tracker is a data structure to keep track of the training loss during the run of the algorithm."
 
-# ╔═╡ 8e5dcba4-21dc-4e7c-a3cb-7eec261a270c
-cities
+# ╔═╡ f622af0a-033b-48c5-aedb-e86926b731a4
+abstract type Tracker end
 
-# ╔═╡ 15c2faec-655f-4d56-9e4c-5abd4c1d9026
-nsteden = ncities = length(cities);
+# ╔═╡ 86ced829-524f-4948-9df9-6812762c8fa3
+struct NoTracking <: Tracker end
 
-# ╔═╡ 827b5a0e-c838-42d2-be03-87a4dd34b24a
-dist_sphere((lat1, long1), (lat2, long2); r=6_371) = 2r * asin(√(sin((lat2 -lat1)/2)^2 + cos(lat1)*cos(lat2)*sin((long2-long1)/2)^2));
+# ╔═╡ 07e1abb3-dcf9-4632-bf07-ce128296dfd5
+notrack = NoTracking()
 
-# ╔═╡ 18e490a3-5823-4862-ae86-07546f556eab
-D = [dist_sphere(stad_coor[h1] .* pi ./ 180, stad_coor[h2] .* pi ./ 180) for h1 in cities, h2 in cities];
+# ╔═╡ 72482d89-c3f1-479c-b06c-da73259f68b0
+@kwdef mutable struct Args
+	tracker::Tracker=notrack  # track loss or accuracy
+	ŋ::Float64 = 0.1    	  # learning rate
+	batchsize::Int = 256 	  # batch size
+	epochs::Int = 1 	 	  # number of epochs
+	use_cuda::Bool = false    # use gpu (if cuda available)
+	dataset::String = "MNIST" # MNIST or CIFAR10
+	optimiser::String = "SGD" # SGD or RSO
+	RSOupdate::Int = 50 	  # number of rounds to update RSO
+end
 
-# ╔═╡ 54db8c49-dee0-4ef1-bd26-78d10b03ae76
-D  # distance matrix
+# ╔═╡ 08eb9335-3ba7-4f18-bd7f-dc841b716cfb
+struct TrackObj{T} <: Tracker
+	objectives::Vector{T}
+	TrackObj(T::Type=Float32) = new{T}([])
+end
 
-# ╔═╡ c59969a6-eb3e-47c5-9bd8-f1af03fce595
-function total_distance(route, incomplete=false)
-	c = 0.0
-	prev = incomplete ? 1 : route[end]
-	for next in route
-		c += D[prev, next]
-		prev = next
+# ╔═╡ 3d873be9-796c-487d-b1ba-5b35455656f1
+track!(::NoTracking, loss_acc) = nothing
+
+# ╔═╡ c3ca3de8-7af9-48f7-9311-25d5ac8f39c3
+track!(tracker::TrackObj, loss_acc) = push!(tracker.objectives, loss_acc)
+
+# ╔═╡ 3ca0aed1-1d31-41c7-80b8-cfb3ce79d1f5
+function train(; kws...)
+	args = Args(; kws...) # collect options in a stuct for convinience
+
+	if CUDA.functional() && args.use_cuda
+		@info "Training on CUDA GPU"
+		CUDA.allwoscalar(false)
+		device = gpu
+	else
+		@info "Training on CPU"
+		device = cpu
 	end
-	incomplete && (c += D[route[end], 1])
-	return c
+
+	# Prepare datasets
+	x_train, x_test, y_train, y_test = getdata(args, device)
+
+	# Create DataLoaders (mini-batch iterators)
+	train_loader = DataLoader((x_train, y_train), batchsize=args.batchsize, shuffle=true)
+	test_loader = DataLoader((x_test, y_test), batchsize=args.batchsize)
+	
+	# Construct model
+	model = build_model() |> device
+	ps = Flux.params(model) # model's trainable parameters
+
+	best_param = ps
+	
+	## Training
+	if args.optimiser == "SGD"
+		## Optimizer
+		opt = Descent(args.ŋ)
+		
+		best_loss = 10
+		best_acc = 0
+		for epoch in 1:args.epochs
+			for (x, y) in train_loader
+				x, y = device(x), device(y) # transfer data to device
+				# compute gradient
+				gs = gradient(() -> crossentropy(model(x), y), ps) 
+				Flux.Optimise.update!(opt, ps, gs) # update parameters
+			end
+	
+			# Report on train and test
+			train_loss, train_acc = loss_and_accuracy(train_loader, model, device)
+			test_loss, test_acc = loss_and_accuracy(test_loader, model, device)
+	
+			track!(args.tracker, test_acc)
+			if test_loss < best_loss
+				best_param = ps
+				best_loss = test_loss
+				best_acc = test_acc
+			end
+			
+			println("Epoch=$epoch")
+			println("   train_loss = $train_loss, train_accuracy = $train_acc")
+			println("   test_loss = $test_loss, test_accuracy = $test_acc")
+		end
+
+	elseif args.optimiser == "RSO"
+		# Run RSO function and update ps
+		best_param = RSO(x_train, y_train, x_test, y_test, args.RSOupdate, model, args.batchsize, device)
+		best_loss, best_acc = loss_and_accuracy(test_loader, model, device)
+	end
+	
+	# Save model weights
+	if args.optimiser == "SGD"
+		@save "bestweight_$(args.dataset)_$(args.optimiser)_$(args.ŋ)_$(args.batchsize)_$(args.epochs).bson" best_param
+	elseif args.optimiser == "RSO"
+		@save "bestweight_$(args.dataset)_$(args.optimiser)_$(args.batchsize)_$(args.RSOupdate).bson" best_param
+	end
+	# Load parameters back with following lines
+	# using BSON: @load
+	# @load "mymodel.bson" weights
+	# Flux.loadparams!(model, weights)
+
+	println("Best test loss = $best_loss, Best test accuracy = $best_acc")
+end
+
+# ╔═╡ 2edab904-37a6-4c2e-949d-d0868e36b688
+begin
+	acc_tracker_RSO = TrackObj(Float32)
+	train(RSOupdate=50, optimiser="RSO", tracker=acc_tracker_RSO, batchsize=64)
 end
 
 # ╔═╡ fde5a843-5767-4fc7-a381-eb2ecc1fe801
@@ -201,59 +536,88 @@ begin
 	mycolors = [myblue, myred, mygreen, myorange, myyellow]
 end;
 
-# ╔═╡ 137dc6ec-72c5-4858-a18a-9fb433899805
-function plot_tour(route)
-	routec = [route..., route[1]]
-	p = plot()
-	for (i,j) in zip(routec[1:end-1], routec[2:end])
-		h1, h2 = cities[i], cities[j]
-		lat1, long1 = stad_coor[h1]
-		lat2, long2 = stad_coor[h2]
-		plot!(p, [long1, long2], [lat1, lat2], color=myred, label="", lw=3, alpha=0.8)
-	end
-	for h in cities
-		lat, long = stad_coor[h]
-		scatter!(p, [long], [lat], label="", color=myblue, ms=8)
-		annotate!((long+0.06, lat+0.06, h))
-	end
-	return p
-end
+# ╔═╡ cdc0de3d-ca1a-47cd-aaf4-dfcb0afb46c8
+Plots.plot(tracker::TrackObj; kwargs...) = plot(tracker.objectives, xlabel="epochs", ylable="Accuracy", lw=2, color=myred, legend=:bottomright; kwargs...)
+
+# ╔═╡ 59398ae6-5c42-4fbf-a2b9-3c33e9b2a246
+plot(acc_tracker_RSO, label="RSO-MNIST")
+
+# ╔═╡ fa4e79c2-28dc-418c-bee3-396f2aa535b5
+plot(acc_tracker, label="SGD-MNIST")
 
 # ╔═╡ e3e29321-c698-407b-9f59-ec1ac30c5f87
 md"## References
-[1] Tripathi, R., & Singh, B. (2020). RSO: A Gradient Free Sampling Based Approach For Training Deep Neural Networks. arXiv preprint arXiv:2005.05955."
+[1] Tripathi, R., & Singh, B. (2020). RSO: A Gradient Free Sampling Based Approach For Training Deep Neural Networks. arXiv preprint arXiv:2005.05955.
+
+[2] https://github.com/FluxML/model-zoo/blob/master/vision/mlp_mnist/mlp_mnist.jl"
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
+BSON = "fbb218c0-5317-5bc6-957e-2ee96dd4b1f0"
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
+BSON = "~0.3.4"
+CUDA = "~3.6.2"
 Combinatorics = "~1.0.2"
 Distributions = "~0.25.37"
+Flux = "~0.12.8"
 MLDatasets = "~0.5.14"
-Plots = "~1.23.6"
+Plots = "~1.25.4"
+Zygote = "~0.6.33"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
+[[AbstractFFTs]]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "485ee0867925449198280d4af84bdb46a2a404d0"
+uuid = "621f4979-c628-5d54-868e-fcf4e3e8185c"
+version = "1.0.1"
+
+[[AbstractTrees]]
+git-tree-sha1 = "03e0550477d86222521d254b741d470ba17ea0b5"
+uuid = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
+version = "0.3.4"
+
 [[Adapt]]
 deps = ["LinearAlgebra"]
-git-tree-sha1 = "84918055d15b3114ede17ac6a7182f68870c16f7"
+git-tree-sha1 = "9faf218ea18c51fcccaf956c8d39614c9d30fe8b"
 uuid = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
-version = "3.3.1"
+version = "3.3.2"
 
 [[ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
 
+[[ArrayInterface]]
+deps = ["Compat", "IfElse", "LinearAlgebra", "Requires", "SparseArrays", "Static"]
+git-tree-sha1 = "1ee88c4c76caa995a885dc2f22a5d548dfbbc0ba"
+uuid = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
+version = "3.2.2"
+
 [[Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
+
+[[BFloat16s]]
+deps = ["LinearAlgebra", "Printf", "Random", "Test"]
+git-tree-sha1 = "a598ecb0d717092b5539dbbe890c98bac842b072"
+uuid = "ab4f0b2a-ad5b-11e8-123f-65d77653426b"
+version = "0.2.0"
+
+[[BSON]]
+git-tree-sha1 = "ebcd6e22d69f21249b7b8668351ebf42d6dc87a1"
+uuid = "fbb218c0-5317-5bc6-957e-2ee96dd4b1f0"
+version = "0.3.4"
 
 [[Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
@@ -294,23 +658,40 @@ git-tree-sha1 = "19a35467a82e236ff51bc17a3a44b69ef35185a2"
 uuid = "6e34b625-4abd-537c-b88f-471c36dfa7a0"
 version = "1.0.8+0"
 
+[[CEnum]]
+git-tree-sha1 = "215a9aa4a1f23fbd05b92769fdd62559488d70e9"
+uuid = "fa961155-64e5-5f13-b03f-caf6b980ea82"
+version = "0.4.1"
+
+[[CUDA]]
+deps = ["AbstractFFTs", "Adapt", "BFloat16s", "CEnum", "CompilerSupportLibraries_jll", "ExprTools", "GPUArrays", "GPUCompiler", "LLVM", "LazyArtifacts", "Libdl", "LinearAlgebra", "Logging", "Printf", "Random", "Random123", "RandomNumbers", "Reexport", "Requires", "SparseArrays", "SpecialFunctions", "TimerOutputs"]
+git-tree-sha1 = "429a1a05348ce948a96adbdd873fbe6d9e5e052f"
+uuid = "052768ef-5323-5732-b1bb-66c8b64840ba"
+version = "3.6.2"
+
 [[Cairo_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll", "JLLWrappers", "LZO_jll", "Libdl", "Pixman_jll", "Pkg", "Xorg_libXext_jll", "Xorg_libXrender_jll", "Zlib_jll", "libpng_jll"]
 git-tree-sha1 = "4b859a208b2397a7a623a03449e4636bdb17bcf2"
 uuid = "83423d85-b0ee-5818-9007-b63ccbeb887a"
 version = "1.16.1+1"
 
+[[ChainRules]]
+deps = ["ChainRulesCore", "Compat", "LinearAlgebra", "Random", "RealDot", "Statistics"]
+git-tree-sha1 = "c6366ec79d9e62cd11030bba0945712eb4013712"
+uuid = "082447d4-558c-5d27-93f4-14fc19e9eca2"
+version = "1.17.0"
+
 [[ChainRulesCore]]
 deps = ["Compat", "LinearAlgebra", "SparseArrays"]
-git-tree-sha1 = "f885e7e7c124f8c92650d61b9477b9ac2ee607dd"
+git-tree-sha1 = "d711603452231bad418bd5e0c91f1abd650cba71"
 uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-version = "1.11.1"
+version = "1.11.3"
 
 [[ChangesOfVariables]]
-deps = ["LinearAlgebra", "Test"]
-git-tree-sha1 = "9a1d594397670492219635b35a3d830b04730d62"
+deps = ["ChainRulesCore", "LinearAlgebra", "Test"]
+git-tree-sha1 = "bf98fa45a0a4cee295de98d4c1462be26345b9a1"
 uuid = "9e997f8a-9a97-42d5-a9f1-ce6bfc15e2c0"
-version = "0.1.1"
+version = "0.1.2"
 
 [[CodecZlib]]
 deps = ["TranscodingStreams", "Zlib_jll"]
@@ -341,11 +722,17 @@ git-tree-sha1 = "08c8b6831dc00bfea825826be0bc8336fc369860"
 uuid = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
 version = "1.0.2"
 
+[[CommonSubexpressions]]
+deps = ["MacroTools", "Test"]
+git-tree-sha1 = "7b8a93dba8af7e3b42fecabf646260105ac373f7"
+uuid = "bbf7d656-a473-5ed7-a52c-81e309532950"
+version = "0.3.0"
+
 [[Compat]]
 deps = ["Base64", "Dates", "DelimitedFiles", "Distributed", "InteractiveUtils", "LibGit2", "Libdl", "LinearAlgebra", "Markdown", "Mmap", "Pkg", "Printf", "REPL", "Random", "SHA", "Serialization", "SharedArrays", "Sockets", "SparseArrays", "Statistics", "Test", "UUIDs", "Unicode"]
-git-tree-sha1 = "dce3e3fea680869eaa0b774b2e8343e9ff442313"
+git-tree-sha1 = "44c37b4636bc54afac5c574d2d02b625349d6582"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
-version = "3.40.0"
+version = "3.41.0"
 
 [[CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -370,9 +757,9 @@ version = "0.7.7"
 
 [[DataStructures]]
 deps = ["Compat", "InteractiveUtils", "OrderedCollections"]
-git-tree-sha1 = "7d9d316f04214f7efdbb6398d545446e246eff02"
+git-tree-sha1 = "3daef5523dd2e769dad2365274f760ff5f282c7d"
 uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
-version = "0.18.10"
+version = "0.18.11"
 
 [[DataValueInterfaces]]
 git-tree-sha1 = "bfc1187b79289637fa0ef6d4436ebdfe6905cbd6"
@@ -392,6 +779,18 @@ deps = ["InverseFunctions", "Test"]
 git-tree-sha1 = "80c3e8639e3353e5d2912fb3a1916b8455e2494b"
 uuid = "b429d917-457f-4dbc-8f4c-0cc954292b1d"
 version = "0.4.0"
+
+[[DiffResults]]
+deps = ["StaticArrays"]
+git-tree-sha1 = "c18e98cba888c6c25d1c3b048e4b3380ca956805"
+uuid = "163ba53b-c6d8-5494-b064-1a9d43ac40c5"
+version = "1.0.3"
+
+[[DiffRules]]
+deps = ["LogExpFunctions", "NaNMath", "Random", "SpecialFunctions"]
+git-tree-sha1 = "9bc5dac3c8b6706b58ad5ce24cffd9861f07c94f"
+uuid = "b552c78f-8df3-52c6-915a-8e097449b14b"
+version = "1.9.0"
 
 [[Distributed]]
 deps = ["Random", "Serialization", "Sockets"]
@@ -425,6 +824,11 @@ git-tree-sha1 = "b3bfd02e98aedfa5cf885665493c5598c350cd2f"
 uuid = "2e619515-83b5-522b-bb60-26c02a35a201"
 version = "2.2.10+0"
 
+[[ExprTools]]
+git-tree-sha1 = "b7e3d17636b348f005f11040025ae8c6f645fe92"
+uuid = "e2ba6199-217a-4e67-a87a-7c52f15ade04"
+version = "0.1.6"
+
 [[FFMPEG]]
 deps = ["FFMPEG_jll"]
 git-tree-sha1 = "b57e3acbe22f8484b4b5ff66a7499717fe1a9cc8"
@@ -449,6 +853,12 @@ git-tree-sha1 = "335bfdceacc84c5cdf16aadc768aa5ddfc5383cc"
 uuid = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
 version = "0.8.4"
 
+[[Flux]]
+deps = ["AbstractTrees", "Adapt", "ArrayInterface", "CUDA", "CodecZlib", "Colors", "DelimitedFiles", "Functors", "Juno", "LinearAlgebra", "MacroTools", "NNlib", "NNlibCUDA", "Pkg", "Printf", "Random", "Reexport", "SHA", "SparseArrays", "Statistics", "StatsBase", "Test", "ZipFile", "Zygote"]
+git-tree-sha1 = "e8b37bb43c01eed0418821d1f9d20eca5ba6ab21"
+uuid = "587475ba-b771-5e3f-ad9e-33799f191a9c"
+version = "0.12.8"
+
 [[Fontconfig_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Expat_jll", "FreeType2_jll", "JLLWrappers", "Libdl", "Libuuid_jll", "Pkg", "Zlib_jll"]
 git-tree-sha1 = "21efd19106a55620a188615da6d3d06cd7f6ee03"
@@ -460,6 +870,12 @@ deps = ["Printf"]
 git-tree-sha1 = "8339d61043228fdd3eb658d86c926cb282ae72a8"
 uuid = "59287772-0a20-5a39-b81b-1366585eb4c0"
 version = "0.4.2"
+
+[[ForwardDiff]]
+deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "LinearAlgebra", "LogExpFunctions", "NaNMath", "Preferences", "Printf", "Random", "SpecialFunctions", "StaticArrays"]
+git-tree-sha1 = "2b72a5624e289ee18256111657663721d59c143e"
+uuid = "f6369f11-7733-5829-9624-2563aa707210"
+version = "0.10.24"
 
 [[FreeType2_jll]]
 deps = ["Artifacts", "Bzip2_jll", "JLLWrappers", "Libdl", "Pkg", "Zlib_jll"]
@@ -473,23 +889,40 @@ git-tree-sha1 = "aa31987c2ba8704e23c6c8ba8a4f769d5d7e4f91"
 uuid = "559328eb-81f9-559d-9380-de523a88c83c"
 version = "1.0.10+0"
 
+[[Functors]]
+git-tree-sha1 = "e4768c3b7f597d5a352afa09874d16e3c3f6ead2"
+uuid = "d9f16b24-f501-4c13-a1f2-28368ffc5196"
+version = "0.2.7"
+
 [[GLFW_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libglvnd_jll", "Pkg", "Xorg_libXcursor_jll", "Xorg_libXi_jll", "Xorg_libXinerama_jll", "Xorg_libXrandr_jll"]
 git-tree-sha1 = "0c603255764a1fa0b61752d2bec14cfbd18f7fe8"
 uuid = "0656b61e-2033-5cc2-a64a-77c0f6c09b89"
 version = "3.3.5+1"
 
+[[GPUArrays]]
+deps = ["Adapt", "LinearAlgebra", "Printf", "Random", "Serialization", "Statistics"]
+git-tree-sha1 = "d9681e61fbce7dde48684b40bdb1a319c4083be7"
+uuid = "0c68f7d7-f131-5f86-a1c3-88cf8149b2d7"
+version = "8.1.3"
+
+[[GPUCompiler]]
+deps = ["ExprTools", "InteractiveUtils", "LLVM", "Libdl", "Logging", "TimerOutputs", "UUIDs"]
+git-tree-sha1 = "2cac236070c2c4b36de54ae9146b55ee2c34ac7a"
+uuid = "61eb1bfa-7361-4325-ad38-22787b887f55"
+version = "0.13.10"
+
 [[GR]]
 deps = ["Base64", "DelimitedFiles", "GR_jll", "HTTP", "JSON", "Libdl", "LinearAlgebra", "Pkg", "Printf", "Random", "Serialization", "Sockets", "Test", "UUIDs"]
-git-tree-sha1 = "30f2b340c2fff8410d89bfcdc9c0a6dd661ac5f7"
+git-tree-sha1 = "b9a93bcdf34618031891ee56aad94cfff0843753"
 uuid = "28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71"
-version = "0.62.1"
+version = "0.63.0"
 
 [[GR_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Cairo_jll", "FFMPEG_jll", "Fontconfig_jll", "GLFW_jll", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pixman_jll", "Pkg", "Qt5Base_jll", "Zlib_jll", "libpng_jll"]
-git-tree-sha1 = "fd75fa3a2080109a2c0ec9864a6e14c60cca3866"
+git-tree-sha1 = "f97acd98255568c3c9b416c5a3cf246c1315771b"
 uuid = "d2c73de3-f751-5644-a686-071e5b155ba9"
-version = "0.62.0+0"
+version = "0.63.0+0"
 
 [[GZip]]
 deps = ["Libdl"]
@@ -550,6 +983,17 @@ git-tree-sha1 = "129acf094d168394e80ee1dc4bc06ec835e510a3"
 uuid = "2e76f6c2-a576-52d4-95c1-20adfe4de566"
 version = "2.8.1+1"
 
+[[IRTools]]
+deps = ["InteractiveUtils", "MacroTools", "Test"]
+git-tree-sha1 = "006127162a51f0effbdfaab5ac0c83f8eb7ea8f3"
+uuid = "7869d1d1-7146-5819-86e3-90919afe41df"
+version = "0.4.4"
+
+[[IfElse]]
+git-tree-sha1 = "debdd00ffef04665ccbb3e150747a77560e8fad1"
+uuid = "615f187c-cbe4-4ef1-ba3b-2fcf58d6d173"
+version = "0.1.1"
+
 [[IniFile]]
 deps = ["Test"]
 git-tree-sha1 = "098e4d2c533924c921f9f9847274f2ad89e018b8"
@@ -578,9 +1022,9 @@ uuid = "92d709cd-6900-40b7-9082-c6be49f344b6"
 version = "0.1.1"
 
 [[IterTools]]
-git-tree-sha1 = "05110a2ab1fc5f932622ffea2a003221f4782c18"
+git-tree-sha1 = "fa6287a4469f5e048d763df38279ee729fbd44e5"
 uuid = "c8e1da08-722c-5040-9ed9-7db0dc04731e"
-version = "1.3.0"
+version = "1.4.0"
 
 [[IteratorInterfaceExtensions]]
 git-tree-sha1 = "a3f24677c21f5bbe9d2a714f95dcd58337fb2856"
@@ -611,11 +1055,29 @@ git-tree-sha1 = "d735490ac75c5cb9f1b00d8b5509c11984dc6943"
 uuid = "aacddb02-875f-59d6-b918-886e6ef4fbf8"
 version = "2.1.0+0"
 
+[[Juno]]
+deps = ["Base64", "Logging", "Media", "Profile"]
+git-tree-sha1 = "07cb43290a840908a771552911a6274bc6c072c7"
+uuid = "e5e0dc1b-0480-54bc-9374-aad01c23163d"
+version = "0.8.4"
+
 [[LAME_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "f6250b16881adf048549549fba48b1161acdac8c"
 uuid = "c1c5ebd0-6772-5130-a774-d5fcae4a789d"
 version = "3.100.1+0"
+
+[[LLVM]]
+deps = ["CEnum", "LLVMExtra_jll", "Libdl", "Printf", "Unicode"]
+git-tree-sha1 = "7cc22e69995e2329cc047a879395b2b74647ab5f"
+uuid = "929cbde3-209d-540e-8aea-75f648917ca0"
+version = "4.7.0"
+
+[[LLVMExtra_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "62115afed394c016c2d3096c5b85c407b48be96b"
+uuid = "dad2f222-ce93-54a1-a47d-0025e8a3acab"
+version = "0.0.13+1"
 
 [[LZO_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -633,6 +1095,10 @@ deps = ["Formatting", "InteractiveUtils", "LaTeXStrings", "MacroTools", "Markdow
 git-tree-sha1 = "a8f4f279b6fa3c3c4f1adadd78a621b13a506bce"
 uuid = "23fbe1c1-3f47-55db-b15f-69d7ec21a316"
 version = "0.15.9"
+
+[[LazyArtifacts]]
+deps = ["Artifacts", "Pkg"]
+uuid = "4af54fe1-eca0-43a8-85a7-787d91b784e3"
 
 [[LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
@@ -707,9 +1173,9 @@ uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [[LogExpFunctions]]
 deps = ["ChainRulesCore", "ChangesOfVariables", "DocStringExtensions", "InverseFunctions", "IrrationalConstants", "LinearAlgebra"]
-git-tree-sha1 = "be9eef9f9d78cecb6f262f3c10da151a6c5ab827"
+git-tree-sha1 = "e5718a00af0ab9756305a0392832c8952c7426c1"
 uuid = "2ab3a3ac-af41-5b50-aa03-7779005ae688"
-version = "0.3.5"
+version = "0.3.6"
 
 [[Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
@@ -757,6 +1223,12 @@ git-tree-sha1 = "e498ddeee6f9fdb4551ce855a46f54dbd900245f"
 uuid = "442fdcdd-2543-5da2-b0f3-8c86c306513e"
 version = "0.3.1"
 
+[[Media]]
+deps = ["MacroTools", "Test"]
+git-tree-sha1 = "75a54abd10709c01f1b86b84ec225d26e840ed58"
+uuid = "e89f7d12-3494-54d1-8411-f7d8b9ae1f27"
+version = "0.5.0"
+
 [[Missings]]
 deps = ["DataAPI"]
 git-tree-sha1 = "bf210ce90b6c9eed32d25dbcae1ebc565df2687f"
@@ -769,19 +1241,31 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 [[MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
 
+[[NNlib]]
+deps = ["Adapt", "ChainRulesCore", "Compat", "LinearAlgebra", "Pkg", "Requires", "Statistics"]
+git-tree-sha1 = "2eb305b13eaed91d7da14269bf17ce6664bfee3d"
+uuid = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
+version = "0.7.31"
+
+[[NNlibCUDA]]
+deps = ["CUDA", "LinearAlgebra", "NNlib", "Random", "Statistics"]
+git-tree-sha1 = "a2dc748c9f6615197b6b97c10bcce829830574c9"
+uuid = "a00861dc-f156-4864-bf3c-e6376f28a68d"
+version = "0.1.11"
+
 [[NaNMath]]
-git-tree-sha1 = "bfe47e760d60b82b66b61d2d44128b62e3a369fb"
+git-tree-sha1 = "f755f36b19a5116bb580de457cda0c140153f283"
 uuid = "77ba4419-2d1f-58cd-9bb1-8ffee604a2e3"
-version = "0.3.5"
+version = "0.3.6"
 
 [[NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
 
 [[Ogg_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "7937eda4681660b4d6aeeecc2f7e1c81c8ee4e2f"
+git-tree-sha1 = "887579a3eb005446d514ab7aeac5d1d027658b8f"
 uuid = "e7412a2a-1a6e-54c0-be00-318e2571c051"
-version = "1.3.5+0"
+version = "1.3.5+1"
 
 [[OpenLibm_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -824,9 +1308,9 @@ version = "0.11.5"
 
 [[Parsers]]
 deps = ["Dates"]
-git-tree-sha1 = "ae4bbcadb2906ccc085cf52ac286dc1377dceccc"
+git-tree-sha1 = "d7fa6237da8004be601e19bd6666083056649918"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "2.1.2"
+version = "2.1.3"
 
 [[Pickle]]
 deps = ["DataStructures", "InternedStrings", "Serialization", "SparseArrays", "Strided", "ZipFile"]
@@ -852,25 +1336,29 @@ version = "2.0.1"
 
 [[PlotUtils]]
 deps = ["ColorSchemes", "Colors", "Dates", "Printf", "Random", "Reexport", "Statistics"]
-git-tree-sha1 = "b084324b4af5a438cd63619fd006614b3b20b87b"
+git-tree-sha1 = "68604313ed59f0408313228ba09e79252e4b2da8"
 uuid = "995b91a9-d308-5afd-9ec6-746e21dbc043"
-version = "1.0.15"
+version = "1.1.2"
 
 [[Plots]]
-deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "GeometryBasics", "JSON", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "PlotThemes", "PlotUtils", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "UUIDs", "UnicodeFun"]
-git-tree-sha1 = "0d185e8c33401084cab546a756b387b15f76720c"
+deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "GeometryBasics", "JSON", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "PlotThemes", "PlotUtils", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "UUIDs", "UnicodeFun", "Unzip"]
+git-tree-sha1 = "71d65e9242935132e71c4fbf084451579491166a"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-version = "1.23.6"
+version = "1.25.4"
 
 [[Preferences]]
 deps = ["TOML"]
-git-tree-sha1 = "00cfd92944ca9c760982747e9a1d0d5d86ab1e5a"
+git-tree-sha1 = "2cf929d64681236a2e074ffafb8d568733d2e6af"
 uuid = "21216c6a-2e73-6563-6e65-726566657250"
-version = "1.2.2"
+version = "1.2.3"
 
 [[Printf]]
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+
+[[Profile]]
+deps = ["Printf"]
+uuid = "9abbd945-dff8-562f-b5e8-e1ebf5ef1b79"
 
 [[Qt5Base_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Fontconfig_jll", "Glib_jll", "JLLWrappers", "Libdl", "Libglvnd_jll", "OpenSSL_jll", "Pkg", "Xorg_libXext_jll", "Xorg_libxcb_jll", "Xorg_xcb_util_image_jll", "Xorg_xcb_util_keysyms_jll", "Xorg_xcb_util_renderutil_jll", "Xorg_xcb_util_wm_jll", "Zlib_jll", "xkbcommon_jll"]
@@ -892,10 +1380,28 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 deps = ["Serialization"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
+[[Random123]]
+deps = ["Libdl", "Random", "RandomNumbers"]
+git-tree-sha1 = "0e8b146557ad1c6deb1367655e052276690e71a3"
+uuid = "74087812-796a-5b5d-8853-05524746bad3"
+version = "1.4.2"
+
+[[RandomNumbers]]
+deps = ["Random", "Requires"]
+git-tree-sha1 = "043da614cc7e95c703498a491e2c21f58a2b8111"
+uuid = "e6cf234a-135c-5ec9-84dd-332b85af5143"
+version = "1.5.3"
+
+[[RealDot]]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "9f0a1b71baaf7650f4fa8a1d168c7fb6ee41f0c9"
+uuid = "c1ae055f-0cd5-4b69-90a6-9a35b1a98df9"
+version = "0.1.0"
+
 [[RecipesBase]]
-git-tree-sha1 = "44a75aa7a527910ee3d1751d1f0e4148698add9e"
+git-tree-sha1 = "6bf3f380ff52ce0832ddd3a2a7b9538ed1bcca7d"
 uuid = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
-version = "1.1.2"
+version = "1.2.1"
 
 [[RecipesPipeline]]
 deps = ["Dates", "NaNMath", "PlotUtils", "RecipesBase"]
@@ -910,9 +1416,9 @@ version = "1.2.2"
 
 [[Requires]]
 deps = ["UUIDs"]
-git-tree-sha1 = "4036a3bd08ac7e968e27c203d45f5fff15020621"
+git-tree-sha1 = "8f82019e525f4d5c669692772a6f4b0a58b06a6a"
 uuid = "ae029012-a4dd-5104-9daa-d747884805df"
-version = "1.1.3"
+version = "1.2.0"
 
 [[Rmath]]
 deps = ["Random", "Rmath_jll"]
@@ -967,26 +1473,32 @@ git-tree-sha1 = "e08890d19787ec25029113e88c34ec20cac1c91e"
 uuid = "276daf66-3868-5448-9aa4-cd146d93841b"
 version = "2.0.0"
 
+[[Static]]
+deps = ["IfElse"]
+git-tree-sha1 = "7f5a513baec6f122401abfc8e9c074fdac54f6c1"
+uuid = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
+version = "0.4.1"
+
 [[StaticArrays]]
 deps = ["LinearAlgebra", "Random", "Statistics"]
-git-tree-sha1 = "3c76dde64d03699e074ac02eb2e8ba8254d428da"
+git-tree-sha1 = "de9e88179b584ba9cf3cc5edbb7a41f26ce42cda"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "1.2.13"
+version = "1.3.0"
 
 [[Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
 uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [[StatsAPI]]
-git-tree-sha1 = "1958272568dc176a1d881acb797beb909c785510"
+git-tree-sha1 = "d88665adc9bcf45903013af0982e2fd05ae3d0a6"
 uuid = "82ae8749-77ed-4fe6-ae5f-f523153014b0"
-version = "1.0.0"
+version = "1.2.0"
 
 [[StatsBase]]
 deps = ["DataAPI", "DataStructures", "LinearAlgebra", "LogExpFunctions", "Missings", "Printf", "Random", "SortingAlgorithms", "SparseArrays", "Statistics", "StatsAPI"]
-git-tree-sha1 = "2bb0cb32026a66037360606510fca5984ccc6b75"
+git-tree-sha1 = "51383f2d367eb3b444c961d485c565e4c0cf4ba0"
 uuid = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
-version = "0.33.13"
+version = "0.33.14"
 
 [[StatsFuns]]
 deps = ["ChainRulesCore", "InverseFunctions", "IrrationalConstants", "LogExpFunctions", "Reexport", "Rmath", "SpecialFunctions"]
@@ -1028,9 +1540,9 @@ version = "1.0.1"
 
 [[Tables]]
 deps = ["DataAPI", "DataValueInterfaces", "IteratorInterfaceExtensions", "LinearAlgebra", "TableTraits", "Test"]
-git-tree-sha1 = "fed34d0e71b91734bf0a7e10eb1bb05296ddbcd0"
+git-tree-sha1 = "bb1064c9a84c52e277f1096cf41434b675cd368b"
 uuid = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
-version = "1.6.0"
+version = "1.6.1"
 
 [[Tar]]
 deps = ["ArgTools", "SHA"]
@@ -1039,6 +1551,12 @@ uuid = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
 [[Test]]
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[[TimerOutputs]]
+deps = ["ExprTools", "Printf"]
+git-tree-sha1 = "7cb456f358e8f9d102a8b25e8dfedf58fa5689bc"
+uuid = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
+version = "0.5.13"
 
 [[TranscodingStreams]]
 deps = ["Random", "Test"]
@@ -1075,6 +1593,11 @@ git-tree-sha1 = "53915e50200959667e78a92a418594b428dffddf"
 uuid = "1cfade01-22cf-5700-b092-accc4b62d6e1"
 version = "0.4.1"
 
+[[Unzip]]
+git-tree-sha1 = "34db80951901073501137bdbc3d5a8e7bbd06670"
+uuid = "41fe7b60-77ed-43a1-b4f0-825fd5a5650d"
+version = "0.1.2"
+
 [[Wayland_jll]]
 deps = ["Artifacts", "Expat_jll", "JLLWrappers", "Libdl", "Libffi_jll", "Pkg", "XML2_jll"]
 git-tree-sha1 = "3e61f0b86f90dacb0bc0e73a0c5a83f6a8636e23"
@@ -1082,10 +1605,10 @@ uuid = "a2964d1f-97da-50d4-b82a-358c7fce9d89"
 version = "1.19.0+0"
 
 [[Wayland_protocols_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "Wayland_jll"]
-git-tree-sha1 = "2839f1c1296940218e35df0bbb220f2a79686670"
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "66d72dc6fcc86352f01676e8f0f698562e60510f"
 uuid = "2381bf8a-dfd0-557d-9999-79630e7b1b91"
-version = "1.18.0+4"
+version = "1.23.0+0"
 
 [[XML2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libiconv_jll", "Pkg", "Zlib_jll"]
@@ -1241,6 +1764,18 @@ git-tree-sha1 = "cc4bf3fdde8b7e3e9fa0351bdeedba1cf3b7f6e6"
 uuid = "3161d3a3-bdf6-5164-811a-617609db77b4"
 version = "1.5.0+0"
 
+[[Zygote]]
+deps = ["AbstractFFTs", "ChainRules", "ChainRulesCore", "DiffRules", "Distributed", "FillArrays", "ForwardDiff", "IRTools", "InteractiveUtils", "LinearAlgebra", "MacroTools", "NaNMath", "Random", "Requires", "SpecialFunctions", "Statistics", "ZygoteRules"]
+git-tree-sha1 = "78da1a0a69bcc86b33f7cb07bc1566c926412de3"
+uuid = "e88e6eb3-aa80-5325-afca-941959d7151f"
+version = "0.6.33"
+
+[[ZygoteRules]]
+deps = ["MacroTools"]
+git-tree-sha1 = "8c1a8e4dfacb1fd631745552c8db35d0deb09ea0"
+uuid = "700de1a5-db45-46bc-99cf-38207098b444"
+version = "0.2.2"
+
 [[libass_jll]]
 deps = ["Artifacts", "Bzip2_jll", "FreeType2_jll", "FriBidi_jll", "HarfBuzz_jll", "JLLWrappers", "Libdl", "Pkg", "Zlib_jll"]
 git-tree-sha1 = "5982a94fcba20f02f42ace44b9894ee2b140fe47"
@@ -1295,28 +1830,75 @@ version = "0.9.1+5"
 # ╔═╡ Cell order:
 # ╟─936344da-213a-11ec-3e68-05f0f85cf2f3
 # ╠═0150a3e2-f98e-4412-9e96-1a2db5a9421e
+# ╠═352a4a75-8136-474e-a80a-9d65baabd195
+# ╠═79d4c2f0-bc6e-43f1-b877-a63226f8aadc
+# ╠═de52e90b-cdee-4221-b502-8a4d128bcc79
+# ╠═261dd1eb-3158-4c20-aec7-01c4dfeab897
+# ╠═4372356d-92f6-45f0-97c0-f28b2299a5a8
+# ╠═dd1e716d-af7c-4cb7-b0a1-459122832d37
 # ╟─62c4926d-0350-4088-8729-0ee5afb306be
 # ╟─98e7978d-2355-407c-b87f-c0bd64b430aa
 # ╟─8cd1b08a-644e-4cdb-87ab-6f7270a29681
 # ╟─198f91c6-46dc-46dc-a013-c3064a7348cd
 # ╠═703ef56f-1045-4572-ae2a-170a48945e84
+# ╠═233fe6b3-479c-4631-b434-8b41a684ac21
+# ╟─f7c0cb4b-c98a-404d-96f6-7a20f167d11d
+# ╠═f6a38e02-f53f-440d-934b-4ed1f00d1827
+# ╠═965d6f22-5522-416f-ab1e-e66623262e90
+# ╠═0d7b525d-3f30-44fc-b771-1665d3f2e045
+# ╠═3ca0aed1-1d31-41c7-80b8-cfb3ce79d1f5
+# ╠═72482d89-c3f1-479c-b06c-da73259f68b0
+# ╟─74e7b431-08c7-4ded-9033-c6858b9574c1
+# ╟─11872972-0526-4c07-902b-0b8f3ac0553f
+# ╠═2edab904-37a6-4c2e-949d-d0868e36b688
+# ╠═db28a9fb-dbf7-428d-af19-ef371d6d2014
+# ╠═59398ae6-5c42-4fbf-a2b9-3c33e9b2a246
+# ╟─5b844fba-dae3-4945-a57e-d76caf8ee0df
+# ╠═184ac4ea-4d5b-4041-b37e-7f9fc154d863
+# ╠═fa4e79c2-28dc-418c-bee3-396f2aa535b5
+# ╠═29143eb7-ea08-43e9-bae1-5179b58eb495
+# ╟─697b4ec8-4f47-4561-b0c4-cc74514f4aff
+# ╠═29479431-b1b7-40d3-a21f-15f0265e069c
 # ╟─64e7be40-cd0b-40c4-b476-51c6a66d40e1
-# ╟─be803662-aa08-4ee3-a400-bbc18b7d060f
-# ╟─2d9598de-dfd6-46c7-bf4f-c2f48134e558
-# ╟─e1fa7a85-5aab-4e17-b02f-c9a0c62f3f47
-# ╟─3e95cf39-5d8f-498a-bdb6-df99a51257f3
-# ╟─fe8bb7b2-6fd2-4b8f-9ef0-9d2fcc1b744a
-# ╠═8e5dcba4-21dc-4e7c-a3cb-7eec261a270c
-# ╠═54db8c49-dee0-4ef1-bd26-78d10b03ae76
-# ╟─66eb2e32-c0bd-42ab-bb67-05dbd01a1d6e
+# ╟─9c5ef276-7864-42e0-8afb-fde1bf6cccfb
+# ╟─8e1498dc-5b45-49a3-bf58-9a77aba16085
+# ╠═76134ecf-191e-47cc-98e8-8d80e57fa3f8
+# ╟─a0fd0657-e133-4daa-9efc-f51326d53960
+# ╠═8c116b3f-3bd7-4010-809a-abcf1bce7fae
+# ╟─8a9c0cb1-850c-49e3-b268-9cef2b52eed2
+# ╠═df2b0c81-7a00-4b5a-a096-322e6d4df20f
+# ╟─4884cb1b-6c62-4b52-96bb-b80147f24abe
+# ╟─954ee843-59ca-4303-9f30-e69be076b510
+# ╠═f06363ed-0913-4b74-9eae-64febdf2fd7f
+# ╟─316786ba-0132-4352-93a6-45761afa3b5b
+# ╠═acf5796d-9f3c-421c-a306-c6e76b1a1bd1
+# ╟─5102eacd-543d-47a0-bfe5-445b095d0e02
+# ╟─717b7ca2-a397-47e7-b661-04c9ed2cc571
+# ╟─5c2eb6c7-d9ee-4cda-bfdc-4456e7e92a47
+# ╠═027a6cde-7408-480a-94a8-52a05967b552
+# ╠═9eb0b980-09b3-468f-aa3c-6d3af07c5839
+# ╠═7c890ca9-7d0d-4e93-b539-a510b3407d11
+# ╠═733cd465-9b1b-40f6-96e0-2ad6da9517a4
+# ╠═df294d51-e7d3-406c-91ce-30f216603ae6
+# ╠═d0d8dc13-63c6-4046-ba29-2be0713d9d18
+# ╟─2464be0b-ade9-4c21-9f07-251124fa83ec
+# ╟─b751c909-dd29-4713-9a19-c807cd66d4a4
+# ╟─3a62729e-aa6b-45b4-b184-e2341bee97db
+# ╠═57ee5c6f-3818-4bb8-86fd-d3cb65f57ffb
+# ╟─231ef8dd-6c84-40df-b580-4db96e0ca724
+# ╟─985fde4f-e67d-495d-8ffa-7fffb9a74fe9
+# ╠═7cd9b5d0-58a8-4118-a94f-43be0f4c80db
+# ╟─3ae1b8cc-2a17-43f2-991c-b1c3f8e7a436
+# ╠═b5ba53e5-4a42-4f53-b71f-78d7c6c1da76
 # ╟─5afd91f6-9e0d-4774-a954-3f00b71dd2e7
-# ╠═8c685b23-0ee2-4027-ad5c-01c1dce6fe3a
-# ╠═1a6ded1a-cfbe-4d7b-b70f-b06075747561
-# ╠═15c2faec-655f-4d56-9e4c-5abd4c1d9026
-# ╠═827b5a0e-c838-42d2-be03-87a4dd34b24a
-# ╠═c59969a6-eb3e-47c5-9bd8-f1af03fce595
-# ╠═18e490a3-5823-4862-ae86-07546f556eab
-# ╠═137dc6ec-72c5-4858-a18a-9fb433899805
+# ╟─796aa432-e28f-4243-92c0-934f4e4f022f
+# ╠═f622af0a-033b-48c5-aedb-e86926b731a4
+# ╠═86ced829-524f-4948-9df9-6812762c8fa3
+# ╠═07e1abb3-dcf9-4632-bf07-ce128296dfd5
+# ╠═08eb9335-3ba7-4f18-bd7f-dc841b716cfb
+# ╠═3d873be9-796c-487d-b1ba-5b35455656f1
+# ╠═c3ca3de8-7af9-48f7-9311-25d5ac8f39c3
+# ╠═cdc0de3d-ca1a-47cd-aaf4-dfcb0afb46c8
 # ╟─fde5a843-5767-4fc7-a381-eb2ecc1fe801
 # ╠═e3e29321-c698-407b-9f59-ec1ac30c5f87
 # ╟─00000000-0000-0000-0000-000000000001
