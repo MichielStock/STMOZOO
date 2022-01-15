@@ -101,16 +101,9 @@ function GreedyFindCombo(fridgeList, recipeDict, numRecipes)
         ingredientsArray = [ingredientList for ingredientList in ingredientsArray if sum(ingredientList .== bestCombo[tempRecipeName]) == 0]
 
         if isempty(namesArray)
-            print("found max $i compatible recipes.\n")
             break
         end
 
-    end
-
-    print("Greedy search results:\n")
-
-    for recipeName in keys(bestCombo)
-        print("$(recipeName) : $(recipeDict[recipeName])\n")
     end
 
     return bestCombo
@@ -127,37 +120,51 @@ IDEETJES
 2) verwijder een recept en kijk of je een combo kan vinden van recepten die een betere score geven dan de huidige versie
 =#
 
-function removeRecipe(curSolution, fridgeList, recipeDict)
-    
+function removeRecipe(curSolution, fridgeList, recipeDict, numRecipes)
+    toRemove = rand(curSolution)[1]
+    # adapt the fridgeList so that only ingredients from the removed ingredient are available
+    tempFridgeList = [i for i in fridgeList if in(i,recipeDict[toRemove])]
+
+    # adapt the recipeDict and use greedy search to find a new solution
+    tempRecipeDict = copy(recipeDict)
+    for recipe in keys(curSolution)
+        delete!(tempRecipeDict,recipe)
+    end
+
+    neighbour = GreedyFindCombo(tempFridgeList, tempRecipeDict, numRecipes)
+
+    return neighbour
 end
 
 #==================================================
         SIMULATED ANNEALING ALGORITHM
 ==================================================#
 
-function SAFindCombo(curSolution,  fridgeList, recipeDict;
+function SAFindCombo(curSolution,  fridgeList, recipeDict, numRecipes;
     kT=100, # repetitions per temperature
-    r=0.95, # cooling rate
-    Tmax=2, # maximal temperature to start
+    r=0.75, # cooling rate
+    Tmax=4, # maximal temperature to start
     Tmin=1) # minimal temperature to end
     
     @assert 0 < Tmin < Tmax "Temperatures should be positive"
 	@assert 0 < r < 1 "cooling rate is between 0 and 1"
 	solution = curSolution
-	obj = fridgeObjective(solution)
+	obj = fridgeObjective([i for i in values(solution)])
 	#track!(tracker, f, s) # not yet implemented, maybe later
 
 	# current temperature
 	T = Tmax
 	while T > Tmin
+        print("T = $T \n")
 		# repeat kT times
 		for _ in 1:kT
-			sn = removeRecipe(curSolution, fridgeList, recipeDict)  # random neighbor
-			obj_sn = fridgeObjective(sn)
+			sn = removeRecipe(curSolution, fridgeList, recipeDict, numRecipes)  # random neighbor
+			obj_sn = fridgeObjective([i for i in values(sn)])
 			# if the neighbor improves the solution, keep it
 			# otherwise accept with a probability determined by the
 			# Metropolis heuristic
 			if obj_sn > obj || rand() < exp(-(obj-obj_sn)/T)
+                print(sn)
 				solution = sn
 				obj = obj_sn
 			end
@@ -176,8 +183,8 @@ end
 ==================================================#
 
 function findBestRecipe(fridgeList, csvPath; numRecipes=3)
-    # load the recipe dictionary from the csv file
-    recipeDict = loadRecipeDBCSV(csvPath)
+    # load the recipe dictionary from the db file
+    recipeDict = csvPath[end-3:end] == ".csv" ? loadRecipeDBCSV(csvPath) : load(csvPath)
 
     # create a list of all ingredients in your database
     ingredientList = createIngredientDatabase(recipeDict)
@@ -189,7 +196,7 @@ function findBestRecipe(fridgeList, csvPath; numRecipes=3)
     greedySolution = GreedyFindCombo(fridgeList, recipeDict, numRecipes)
 
     # find the best recipe with SA
-    SASolution = SAFindCombo(greedySolution,  fridgeList, recipeDict)
+    SASolution = SAFindCombo(greedySolution,  fridgeList, recipeDict, numRecipes)
 
     # print the solution 
     print("The best recipes to make are:\n\n")
@@ -221,13 +228,9 @@ compatible(x) = !any(sum(x)[1:end-1] .>= 2)
 ==================================================#
 
 
-testList = ["cheese","potato","tomato","cabbage"]
-# recipeDict = loadRecipeDBCSV("./data/recipeDB.csv") # this should be used the first time, else load jld2 file
+testList = ["cheese","potato","tomato","cabbage","salt","beetroot","cauliflower"]
 
-recipeDict = load("./data/recipeDB.jld2")
-
-test = GreedyFindCombo(testList, recipeDict, 3)
-testRecipes = [i for i in values(test)]
+test = findBestRecipe(testList, "./data/recipeDB.jld2", numRecipes=10)
 
 
 
