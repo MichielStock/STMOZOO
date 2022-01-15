@@ -66,6 +66,8 @@ md"## 1. Construct RSO function"
 # ╔═╡ 198f91c6-46dc-46dc-a013-c3064a7348cd
 md"""
 ![Notation4Variables.png](https://github.com/HeesooSong/STMOZOO/blob/master/notebook/Figures/Notation4Variables.png?raw=true)
+
+![Pseudocode.png](https://github.com/HeesooSong/STMOZOO/blob/master/notebook/Figures/Pseudocode.png?raw=true)
 """
 
 # ╔═╡ 233fe6b3-479c-4631-b434-8b41a684ac21
@@ -256,6 +258,12 @@ md"## 3. Experiments
 MNIST dataset is consists of 60,000 training images and 10,000 test images of handwritten digits. Each image is a 28x28 pixel gray-scale image.
 
 **RSO**"
+
+# ╔═╡ 2edab904-37a6-4c2e-949d-d0868e36b688
+#begin
+#	acc_tracker_RSO = TrackObj(Float32)
+#	train(RSOupdate=50, optimiser="RSO", tracker=acc_tracker_RSO, batchsize=64)
+#end
 
 # ╔═╡ db28a9fb-dbf7-428d-af19-ef371d6d2014
 md"256 batches - epoch1 - logitcrossentropy - 5020s\
@@ -516,12 +524,6 @@ function train(; kws...)
 	# Flux.loadparams!(model, weights)
 
 	println("Best test loss = $best_loss, Best test accuracy = $best_acc")
-end
-
-# ╔═╡ 2edab904-37a6-4c2e-949d-d0868e36b688
-begin
-	acc_tracker_RSO = TrackObj(Float32)
-	train(RSOupdate=50, optimiser="RSO", tracker=acc_tracker_RSO, batchsize=64)
 end
 
 # ╔═╡ fde5a843-5767-4fc7-a381-eb2ecc1fe801
