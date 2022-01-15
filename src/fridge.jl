@@ -122,8 +122,14 @@ IDEETJES
 
 function removeRecipe(curSolution, fridgeList, recipeDict, numRecipes)
     toRemove = rand(curSolution)[1]
+    print("toRemove = $toRemove\n")
     # adapt the fridgeList so that only ingredients from the removed ingredient are available
-    tempFridgeList = [i for i in fridgeList if in(i,recipeDict[toRemove])]
+    tempFridgeList = copy(fridgeList)
+    for recipe in keys(curSolution)
+        if recipe != toRemove
+            tempFridgeList = [i for i in fridgeList if !in(i,recipeDict[recipe])]
+        end
+    end
 
     # adapt the recipeDict and use greedy search to find a new solution
     tempRecipeDict = copy(recipeDict)
@@ -132,6 +138,18 @@ function removeRecipe(curSolution, fridgeList, recipeDict, numRecipes)
     end
 
     neighbour = GreedyFindCombo(tempFridgeList, tempRecipeDict, numRecipes)
+    print("neighbour = $neighbour\n")
+
+    # correct recipe vectors
+    for recipe in keys(neighbour)
+        neighbour[recipe] = recipeToNumVector(fridgeList,recipeDict[recipe])
+    end
+
+    # here combine the two dictionaries
+    tempCurSolution = copy(curSolution)
+    delete!(tempCurSolution,toRemove)
+    print("tempCurSolution = $tempCurSolution\n")
+    neighbour = merge(neighbour,tempCurSolution)
 
     return neighbour
 end
@@ -158,15 +176,15 @@ function SAFindCombo(curSolution,  fridgeList, recipeDict, numRecipes;
         print("T = $T \n")
 		# repeat kT times
 		for _ in 1:kT
-			sn = removeRecipe(curSolution, fridgeList, recipeDict, numRecipes)  # random neighbor
+			sn = removeRecipe(solution, fridgeList, recipeDict, numRecipes)  # random neighbor
 			obj_sn = fridgeObjective([i for i in values(sn)])
 			# if the neighbor improves the solution, keep it
 			# otherwise accept with a probability determined by the
 			# Metropolis heuristic
-			if obj_sn > obj || rand() < exp(-(obj-obj_sn)/T)
-                print(sn)
+			if obj_sn < obj || rand() < exp(-(obj_sn-obj)/T)
 				solution = sn
 				obj = obj_sn
+                print("solution = $solution\n")
 			end
 		end
 		#track!(tracker, f, s) # not yet implemented, maybe later
