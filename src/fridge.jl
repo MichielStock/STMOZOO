@@ -65,9 +65,9 @@ end
             OBJECTIVE FUNCTIONS
 ==================================================#
 
-fridgeObjective(x::Array{Float64}) = sum(x[1:end-1]) + 6*sum(x[1:end-1] .== 0) + 2*x[end]
+fridgeObjective(x::Array{Int64}) = sum(x[1:end-1]) + 6*sum(x[1:end-1] .== 0) + 2*x[end]
 
-fridgeObjective(x) = compatible(x) ? sum(sum(x) .== 0)*4 + sum(x)[end]*2 : Inf # arbitrary weight for now
+fridgeObjective(x) = compatible(x) ? sum(sum(x) .== 0)*6 + sum(x)[end]*2 : Inf # arbitrary weight for now
 
 #==================================================
                 GREEDY ALGORITHM
@@ -90,15 +90,15 @@ function GreedyFindCombo(fridgeList, recipeDict, numRecipes)
         ingredientsArray = ingredientsArray[bestOrder]
         namesArray = namesArray[bestOrder]
 
-        tempRecipeName = namesArray[i]
-        bestCombo[tempRecipeName] = ingredientsArray[i]
+        tempRecipeName = namesArray[1]
+        bestCombo[tempRecipeName] = ingredientsArray[1]
 
         if all(isone.(sum(values(bestCombo))))
             break
         end
 
-        namesArray = [name for (name, ingredientList) in zip(namesArray, ingredientsArray) if sum(ingredientList .== bestCombo[tempRecipeName]) == 0]
-        ingredientsArray = [ingredientList for ingredientList in ingredientsArray if sum(ingredientList .== bestCombo[tempRecipeName]) == 0]
+        namesArray = [name for (name, ingredientList) in zip(namesArray, ingredientsArray) if sum(ingredientList[1:end-1] .& bestCombo[tempRecipeName][1:end-1] ) == 0]
+        ingredientsArray = [ingredientList for ingredientList in ingredientsArray if sum(ingredientList[1:end-1] .& bestCombo[tempRecipeName][1:end-1] ) == 0]
 
         if isempty(namesArray)
             break
@@ -120,9 +120,8 @@ IDEETJES
 2) verwijder een recept en kijk of je een combo kan vinden van recepten die een betere score geven dan de huidige versie
 =#
 
-function removeRecipe(curSolution, fridgeList, recipeDict, numRecipes)
+function removeRecipe(curSolution, fridgeList, recipeDict, numRecipes, tabuList)
     toRemove = rand(curSolution)[1]
-    print("toRemove = $toRemove\n")
     # adapt the fridgeList so that only ingredients from the removed ingredient are available
     tempFridgeList = copy(fridgeList)
     for recipe in keys(curSolution)
@@ -137,8 +136,13 @@ function removeRecipe(curSolution, fridgeList, recipeDict, numRecipes)
         delete!(tempRecipeDict,recipe)
     end
 
+    for recipe in tabuList
+        try delete!(tempRecipeDict,recipe)
+        catch e
+        end
+    end
+
     neighbour = GreedyFindCombo(tempFridgeList, tempRecipeDict, numRecipes)
-    print("neighbour = $neighbour\n")
 
     # correct recipe vectors
     for recipe in keys(neighbour)
@@ -148,7 +152,6 @@ function removeRecipe(curSolution, fridgeList, recipeDict, numRecipes)
     # here combine the two dictionaries
     tempCurSolution = copy(curSolution)
     delete!(tempCurSolution,toRemove)
-    print("tempCurSolution = $tempCurSolution\n")
     neighbour = merge(neighbour,tempCurSolution)
 
     return neighbour
@@ -162,12 +165,14 @@ function SAFindCombo(curSolution,  fridgeList, recipeDict, numRecipes;
     kT=100, # repetitions per temperature
     r=0.75, # cooling rate
     Tmax=4, # maximal temperature to start
-    Tmin=1) # minimal temperature to end
+    Tmin=1, # minimal temperature to end
+    tabuLength=3) # number of cycli that recipe needs to be blocked
     
     @assert 0 < Tmin < Tmax "Temperatures should be positive"
 	@assert 0 < r < 1 "cooling rate is between 0 and 1"
 	solution = curSolution
 	obj = fridgeObjective([i for i in values(solution)])
+    tabuList = String[i for i in keys(curSolution)] 
 	#track!(tracker, f, s) # not yet implemented, maybe later
 
 	# current temperature
@@ -176,7 +181,7 @@ function SAFindCombo(curSolution,  fridgeList, recipeDict, numRecipes;
         print("T = $T \n")
 		# repeat kT times
 		for _ in 1:kT
-			sn = removeRecipe(solution, fridgeList, recipeDict, numRecipes)  # random neighbor
+			sn = removeRecipe(solution, fridgeList, recipeDict, numRecipes, tabuList)  # random neighbor
 			obj_sn = fridgeObjective([i for i in values(sn)])
 			# if the neighbor improves the solution, keep it
 			# otherwise accept with a probability determined by the
@@ -186,6 +191,17 @@ function SAFindCombo(curSolution,  fridgeList, recipeDict, numRecipes;
 				obj = obj_sn
                 print("solution = $solution\n")
 			end
+
+            for recipe in keys(sn)
+                if !in(recipe, tabuList)
+                    if length(tabuList) < tabuLength
+                        pushfirst!(tabuList,recipe)
+                    else
+                        pop!(tabuList)
+                        pushfirst!(tabuList,recipe) 
+                    end
+                end
+            end
 		end
 		#track!(tracker, f, s) # not yet implemented, maybe later
 
@@ -230,7 +246,7 @@ end
 ==================================================#
 
 function recipeToNumVector(fridgeList,ingredientList)
-    numVector = zeros(length(fridgeList)+1)
+    numVector = zeros(Int64,length(fridgeList)+1)
     for i in 1:length(fridgeList)
         numVector[i] = fridgeList[i] in ingredientList ? 1 : 0
     end
@@ -246,14 +262,7 @@ compatible(x) = !any(sum(x)[1:end-1] .>= 2)
 ==================================================#
 
 
-testList = ["cheese","potato","tomato","cabbage","salt","beetroot","cauliflower"]
+testList = ["cheese","potato","tomato","cabbage","beetroot","cauliflower"]
+testList2 = ["cheese","potato","tomato","cabbage"]
 
 test = findBestRecipe(testList, "./data/recipeDB.jld2", numRecipes=10)
-
-
-
-#bestRecipe = findBestRecipe(testList, "./docs/recipeDB.csv")
-
-#print(bestRecipe)
-
-
