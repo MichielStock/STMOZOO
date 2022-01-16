@@ -4,9 +4,9 @@ using Plots
 using ScikitLearn
 @sk_import datasets: make_moons
 
-export get_moons, get_moons_from_publication
+export generate_moons, get_moons_from_publication
 
-function moon_class_1(offset = 0.0)
+function moon_class_1(offset = 0.0, coord_down_scale = 1)
     x = [
         -2.717835893494339 - offset,
         -2.0025756608302556 - offset,
@@ -311,10 +311,10 @@ function moon_class_1(offset = 0.0)
         -0.7882243058017496,
         -0.9895456553950488
     ]
-    return vcat(transpose.((x, y))...)
+    return vcat(transpose.((x, y))...) / coord_down_scale
 end
 
-function moon_class_2(offset = 0.0)
+function moon_class_2(offset = 0.0, coord_down_scale = 1)
     x = [
         1.2605697631874289 + offset,
         0.4428841761287988 + offset,
@@ -618,12 +618,12 @@ function moon_class_2(offset = 0.0)
         1.6438700737392897,
         -3.0090552847647456,
         0.2317409067300455
-    ]
-    return vcat(transpose.((x, y))...)
+    ] 
+    return vcat(transpose.((x, y))...) / coord_down_scale
 end
 
-function get_moons_from_publication(; show_plot = false)
-    moons = hcat(moon_class_1(), moon_class_2())
+function get_moons_from_publication(;offset = 0.0, coord_down_scale = 1, show_plot = false)
+    moons = hcat(moon_class_1(offset, coord_down_scale), moon_class_2(offset, coord_down_scale))
     labels = [repeat([0], 150); repeat([1], 150)]
     if show_plot 
         display(scatter(moons[1,:], moons[2,:], c = labels))
@@ -631,7 +631,7 @@ function get_moons_from_publication(; show_plot = false)
     return moons, labels
 end
 
-function get_moons(n; noise = 0.1, offset = 0.0, rotation = 90, seed = rand((1, 2^31)), show_plot = false)
+function generate_moons(n; noise = 0.1, offset = 0.0, rotation = 90, seed = rand((1, 2^31)), show_plot = false)
     X, y = make_moons(n_samples = n, noise = noise, random_state = seed)
     p1 = scatter(X[:,1], X[:,2], c = y, title = "generated state")
 

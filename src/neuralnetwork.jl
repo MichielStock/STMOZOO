@@ -14,11 +14,11 @@ using PlotlyJS
 using ProgressMeter
 using Statistics
 
-export get_moon_data, get_nmist_data, get_loss_and_accuracy, train
+export get_moon_data_loader, get_nmist_data_loader, get_loss_and_accuracy, train
 
-function get_moon_data(args)
-	x_train, y_train = Data.get_moons(300, offset = 0.5)
-	x_test, y_test = Data.get_moons(300, offset = 0.5, seed = 0) # Data.get_moons_from_publication()
+function get_moon_data_loader(args)
+	x_train, y_train = Data.generate_moons(300, offset = 0.5)
+	x_test, y_test = Data.generate_moons(300, offset = 0.5, seed = 0)
 
 	x_train, x_test = transpose(x_train), transpose(x_test)
 	y_train, y_test = onehotbatch(y_train, 0:1), onehotbatch(y_test, 0:1)
@@ -30,7 +30,7 @@ function get_moon_data(args)
 	return train_loader, test_loader
 end
 
-function get_nmist_data(args)
+function get_nmist_data_loader(args)
 	# Loading Dataset	
 	xtrain, ytrain = MLDatasets.MNIST.traindata(Float32)
 	xtest, ytest = MLDatasets.MNIST.testdata(Float32)
@@ -72,7 +72,7 @@ end
 
 Base.@kwdef mutable struct Args
 	learning_rate::Float64 = 1e-2
-    batchsize::Int = 300
+    batchsize::Int = 50
     epochs::Int = 1000
 	λ::Float64 = 3e-1
 end
@@ -159,7 +159,7 @@ function plot_decision_boundary(loader, model; title = "")
 		# actual contours
 		PlotlyJS.contour(
 			x = r_x, y = r_y, z = gr_pred, 
-			contours_start = -50, contours_end = 50, contours_size = 5, 
+			contours_start = -10, contours_end = 10, contours_size = 1, 
 			contours_coloring = "heatmap", colorscale = PlotUtils.get_custom_rdbu_scale(opacity), 
 			opacity = opacity
 		),
