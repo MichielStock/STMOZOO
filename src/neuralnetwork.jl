@@ -15,20 +15,41 @@ using Statistics
 
 export get_loss_and_accuracy, train
 
-function get_loss_and_accuracy(data_loader::Flux.Data.DataLoader, model; args...)
-	args = Args(args...)
+"""
+	get_loss_and_accuracy(data_loader, model, spectral_decoupling; args...)
+
+Calculates loss and accuracy of the given data for the input model.
+
+# Examples
+```julia-repl
+julia> get_loss_and_accuracy(train_loader, model)
+(0.1337, 1.0f0)
+```
+"""
+function get_loss_and_accuracy(data_loader::Flux.Data.DataLoader, model, spectral_decoupling::Bool = false; args...)
+	args = Args(; args...)
+	@assert spectral_decoupling && args.λ "λ must be specified if spectral decoupling is used"
+
 	accuracy = 0.0f0
 	loss = 0.0f0
 	num = 0
 	for (x, y) in data_loader
 		ŷ = model(y)
-		loss += Regularization.spectral_decoupling(ŷ, y, args.λ) # logitcrossentropy(ŷ, y, agg = sum)
+		loss += spectral_decoupling ? 
+			Regularization.spectral_decoupling(ŷ, y, args.λ) : 
+			logitcrossentropy(ŷ, y, agg = sum)
 		accuracy += sum(onecold(ŷ) .== onecold(y))
 		num += size(x)[end]
 	end
-	return loss, accuracy / num
+	return spectral_decoupling ? loss : loss / num, accuracy / num
 end
 
+"""
+	neural_network()
+
+Creates a Flux neural network according to the topology used by Pezeshki et al.
+That is a NN with 2 hidden layers, 500 units each and ReLU activation.
+"""
 function neural_network()
 	return Chain(
 		Dense(2, 500, relu),
@@ -36,10 +57,28 @@ function neural_network()
 	)
 end
 
-function train(train_loader::Flux.Data.DataLoader, test_loader::Flux.Data.DataLoader, optimizer::String = "SGD", spectral_decoupling::Bool = false; args...)
-	args = Args(args...)
+"""
+    train(train_loader, test_loader, optimizer, spectral_decoupling; args...)
 
-	@info "opt = $optimizer, sd = $spectral_decoupling, lr = $(args.learning_rate), bs = $(args.batchsize)" * (spectral_decoupling ? "λ = $(args.λ)" : "")
+Creates and trains a neural network as defined in [`neural_network`](@ref) using cross-entropy loss with 
+the specified optimizer and additionally spectral decoupling as a loss regularization.
+
+# Examples
+```julia-repl
+julia> train(train_loader, test_loader, "SGD", false)
+[ Info: opt = SGD, sd = false, lr = 0.01, bs = 50
+Training... 100%|███████████████████████████████████████████████████████████████████████████| Time: 0:00:42
+  epoch:           1000
+  train_loss:      0.1337
+  test_loss:       0.1337
+  train_accuracy:  1.0
+  test_accuracy:   1.0
+```
+"""
+function train(train_loader::Flux.Data.DataLoader, test_loader::Flux.Data.DataLoader, optimizer::String = "SGD", spectral_decoupling::Bool = false; args...)
+	args = Args(; args...)
+
+	@info "opt = $optimizer, sd = $spectral_decoupling, lr = $(args.learning_rate), bs = $(args.batchsize)" * (spectral_decoupling ? ", λ = $(args.λ)" : "")
 
 	model = neural_network()
 	params = Flux.params(model)
@@ -68,6 +107,16 @@ function train(train_loader::Flux.Data.DataLoader, test_loader::Flux.Data.DataLo
 	return model
 end
 
+"""
+	get_optimizer(learning_rate, optimizer)
+
+Returns a Flux.Optimiser according to the one requested by acronym with fixed parameters except 
+for the given learning rate. Supported optimizers are:
+	- Adaptive Moment Estimation (ADAM)
+	- Gradient Descent (GD)
+	- Stochastic Gradient Descent (SGD)
+	- Weight Decay (WD)
+"""
 function get_optimizer(learning_rate, optimizer = "SGD")
 	optimizer = uppercase(optimizer)
 	@assert optimizer in ["ADAM", "GD", "SGD", "WD"] "Requested optimizer '$optimizer' is not supported."
@@ -92,9 +141,6 @@ function plot_decision_boundary(loader, model; title = "")
 	y_max = maximum(loader.data[1][2,:]) + .25
 	x_min = minimum(loader.data[1][1,:]) - .25
 	y_min = minimum(loader.data[1][2,:]) - .25
-
-	# upper = ceil(maximum([x_max, y_max]), digits = 1, base = 2)
-	# lower = floor(minimum([x_min, y_min]), digits = 1, base = 2)
 
 	r_x = LinRange(x_min, x_max, n)
 	r_y = LinRange(y_min, y_max, n)
@@ -139,7 +185,7 @@ function plot_decision_boundary(loader, model; title = "")
 			xaxis_range = [x_min, x_max], yaxis_range = [y_min, y_max],
 			xaxis = attr(zeroline = true, zerolinewidth = 1, zerolinecolor = "black", automargin = true),
 			yaxis = attr(zeroline = true, zerolinewidth = 1, zerolinecolor = "black", automargin = true),
-			margin = attr(l = 50, r = 50, b = 50, t = 50, pad = 0),
+			margin = attr(l = 0, r = 0, b = 0, t = 0, pad = 0),
 			plot_bgcolor = "rgba(0, 0, 0, 0)"
 		),
 		config = PlotConfig(

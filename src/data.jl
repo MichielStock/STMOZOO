@@ -12,7 +12,7 @@ using ScikitLearn
 export get_moon_data_loader, get_nmist_data_loader, plot_train_and_test_data
 
 function get_moon_data_loader(; args...)
-    args = Args(args...)
+    args = Args(; args...)
 
 	x_train, y_train = generate_moons(300, offset = 0.5)
 	x_test, y_test = generate_moons(300, offset = 0.5, seed = 0)
@@ -28,7 +28,7 @@ function get_moon_data_loader(; args...)
 end
 
 function get_nmist_data_loader(; args...)
-    args = Args(args...)
+    args = Args(; args...)
 
 	# Loading Dataset	
 	xtrain, ytrain = MLDatasets.MNIST.traindata(Float32)
