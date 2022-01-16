@@ -1,12 +1,11 @@
 module NeuralNetwork
 
-include("data.jl")
+include("args.jl")
 include("plotutils.jl")
 include("regularization.jl")
 
 using Flux
-using Flux: onehotbatch, onecold
-using Flux.Data: DataLoader
+using Flux: onecold
 using Flux.Losses: logitcrossentropy
 using MLDatasets
 using Plots
@@ -14,40 +13,7 @@ using PlotlyJS
 using ProgressMeter
 using Statistics
 
-export get_moon_data_loader, get_nmist_data_loader, get_loss_and_accuracy, train
-
-function get_moon_data_loader(args)
-	x_train, y_train = Data.generate_moons(300, offset = 0.5)
-	x_test, y_test = Data.generate_moons(300, offset = 0.5, seed = 0)
-
-	x_train, x_test = transpose(x_train), transpose(x_test)
-	y_train, y_test = onehotbatch(y_train, 0:1), onehotbatch(y_test, 0:1)
-
-	# create data loaders
-	train_loader = DataLoader((x_train, y_train), batchsize = args.batchsize, shuffle = true)
-	test_loader = DataLoader((x_test, y_test), batchsize = args.batchsize)
-
-	return train_loader, test_loader
-end
-
-function get_nmist_data_loader(args)
-	# Loading Dataset	
-	xtrain, ytrain = MLDatasets.MNIST.traindata(Float32)
-	xtest, ytest = MLDatasets.MNIST.testdata(Float32)
-	
-	# Reshape Data in order to flatten each image into a linear array
-	xtrain = Flux.flatten(xtrain)
-	xtest = Flux.flatten(xtest)
-
-	# One-hot-encode the labels
-	ytrain, ytest = onehotbatch(ytrain, 0:9), onehotbatch(ytest, 0:9)
-
-	# Create DataLoaders (mini-batch iterators)
-	train_loader = DataLoader((xtrain, ytrain), batchsize=args.batchsize, shuffle=true)
-	test_loader = DataLoader((xtest, ytest), batchsize=args.batchsize)
-
-	return train_loader, test_loader
-end
+export get_loss_and_accuracy, train
 
 function get_loss_and_accuracy(data_loader::Flux.Data.DataLoader, model; args...)
 	args = Args(args...)
@@ -70,42 +36,22 @@ function neural_network()
 	)
 end
 
-Base.@kwdef mutable struct Args
-	learning_rate::Float64 = 1e-2
-    batchsize::Int = 50
-    epochs::Int = 1000
-	λ::Float64 = 3e-1
-end
-
-function plot_train_and_test_data(train_loader::Flux.Data.DataLoader, test_loader::Flux.Data.DataLoader)
-	# plot train and test data sets
-	p_train = Plots.scatter(
-		train_loader.data[1][1,:], train_loader.data[1][2,:],
-			c = PlotUtils.map_bool_to_color(train_loader.data[2][1,:], "blue", "red")
-	)
-	p_test = Plots.scatter(
-		test_loader.data[1][1,:], test_loader.data[1][2,:],
-		c = PlotUtils.map_bool_to_color(test_loader.data[2][1,:], "blue", "red")
-	)
-	display(Plots.plot(p_train, p_test, layout = (1, 2)))
-end
-
-function train(train_loader::Flux.Data.DataLoader, test_loader::Flux.Data.DataLoader; args...)
+function train(train_loader::Flux.Data.DataLoader, test_loader::Flux.Data.DataLoader, optimizer::String = "SGD", spectral_decoupling::Bool = false; args...)
 	args = Args(args...)
+
+	@info "opt = $optimizer, sd = $spectral_decoupling, lr = $(args.learning_rate), bs = $(args.batchsize)" * (spectral_decoupling ? "λ = $(args.λ)" : "")
 
 	model = neural_network()
 	params = Flux.params(model)
-	# optimizer = ADAM(args.learning_rate) 
-	# optimizer = Descent(args.learning_rate)
-	
-	optimizer = Momentum(args.learning_rate, 0.9) # stochastic gradient descent
-	# optimizer = Optimiser(WeightDecay(), Decent(args.learning_rate))
+	optimizer = get_optimizer(args.learning_rate, optimizer)
 
 	# training
 	prog = Progress(args.epochs, 0.25, "Training... ", 75)
 	for epoch in 1:args.epochs
-		# loss(x, y) = logitcrossentropy(model(x), y)
-		loss(x, y) = Regularization.spectral_decoupling(model(x), y, args.λ)
+		loss(x, y) = spectral_decoupling ? 
+			Regularization.spectral_decoupling(model(x), y, args.λ) : 
+			logitcrossentropy(model(x), y)
+
 		Flux.train!(loss, params, train_loader, optimizer)
 
 		# evaluate train and test loss and accuracy 
@@ -120,6 +66,22 @@ function train(train_loader::Flux.Data.DataLoader, test_loader::Flux.Data.DataLo
 	end
 
 	return model
+end
+
+function get_optimizer(learning_rate, optimizer = "SGD")
+	optimizer = uppercase(optimizer)
+	@assert optimizer in ["ADAM", "GD", "SGD", "WD"] "Requested optimizer '$optimizer' is not supported."
+
+	if optimizer == "ADAM"
+		return ADAM(learning_rate) 
+	elseif optimizer == "GD"
+		return Descent(learning_rate)
+	elseif optimizer == "SGD"
+		# stochastic gradient descent
+		return Momentum(learning_rate, 0.9) 
+	elseif optimizer == "WD"
+		return Optimiser(WeightDecay(), Decent(learning_rate))
+	end
 end
 
 function plot_decision_boundary(loader, model; title = "")

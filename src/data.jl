@@ -1,10 +1,111 @@
 module Data
 
+include("args.jl")
+
+using Flux
+using Flux: onehotbatch
+using Flux.Data: DataLoader
 using Plots
 using ScikitLearn
 @sk_import datasets: make_moons
 
-export generate_moons, get_moons_from_publication
+export get_moon_data_loader, get_nmist_data_loader, plot_train_and_test_data
+
+function get_moon_data_loader(; args...)
+    args = Args(args...)
+
+	x_train, y_train = generate_moons(300, offset = 0.5)
+	x_test, y_test = generate_moons(300, offset = 0.5, seed = 0)
+
+	x_train, x_test = transpose(x_train), transpose(x_test)
+	y_train, y_test = onehotbatch(y_train, 0:1), onehotbatch(y_test, 0:1)
+
+	# create data loaders
+	train_loader = DataLoader((x_train, y_train), batchsize = args.batchsize, shuffle = true)
+	test_loader = DataLoader((x_test, y_test), batchsize = args.batchsize)
+
+	return train_loader, test_loader
+end
+
+function get_nmist_data_loader(; args...)
+    args = Args(args...)
+
+	# Loading Dataset	
+	xtrain, ytrain = MLDatasets.MNIST.traindata(Float32)
+	xtest, ytest = MLDatasets.MNIST.testdata(Float32)
+	
+	# Reshape Data in order to flatten each image into a linear array
+	xtrain = Flux.flatten(xtrain)
+	xtest = Flux.flatten(xtest)
+
+	# One-hot-encode the labels
+	ytrain, ytest = onehotbatch(ytrain, 0:9), onehotbatch(ytest, 0:9)
+
+	# Create DataLoaders (mini-batch iterators)
+	train_loader = DataLoader((xtrain, ytrain), batchsize=args.batchsize, shuffle=true)
+	test_loader = DataLoader((xtest, ytest), batchsize=args.batchsize)
+
+	return train_loader, test_loader
+end
+
+function generate_moons_from_publication(; offset = 0.0, coord_down_scale = 1, show_plot = false)
+    moons = hcat(moon_class_1(offset, coord_down_scale), moon_class_2(offset, coord_down_scale))
+    labels = [repeat([0], 150); repeat([1], 150)]
+    if show_plot 
+        display(scatter(moons[1,:], moons[2,:], c = labels))
+    end
+    return moons, labels
+end
+
+function generate_moons(n; noise = 0.1, offset = 0.0, rotation = 90, seed = rand((1, 2^31)), show_plot = false)
+    X, y = make_moons(n_samples = n, noise = noise, random_state = seed)
+    p1 = scatter(X[:,1], X[:,2], c = y, title = "generated state")
+
+    if offset != 0.0
+        X = apply_moon_offset(X, y, offset)
+    end
+    p2 = scatter(X[:,1], X[:,2], c = y, title = "offsetted state")
+
+    if rotation != 0.0
+        θ = deg2rad(rotation)
+        R = [cos(θ) -sin(θ); sin(θ) cos(θ)]
+        X *= R
+        # move center closer to (0, 0)
+        if offset != 0.0
+            X[:,2] .+= offset/2
+        end
+    end
+    p3 = scatter(X[:,1], X[:,2], c = y, title = "rotated state")
+    
+    if show_plot
+        display(plot(p1, p2, p3, layout = (1, 3)))
+    end
+    return X, y
+end
+
+function apply_moon_offset(X, y, offset)
+    # @assert direction in ["x", "y"] "Error: direction must be either x or y"
+    # use offset as total offset, thus devide by number of labels; assume 2 labels
+    offset /= 2
+    # direction == "x" ? direction = 1 : direction = 2
+
+    moons = []
+    for label in unique(y)
+        push!(moons, findall(l -> l == label, y))
+    end
+
+    max_y = [maximum(X[m, 2]) for m in moons]
+
+    if max_y[1] > max_y[2]
+        X[moons[1], 2] .+= offset
+        X[moons[2], 2] .-= offset
+    else
+        X[moons[1], 2] .-= offset
+        X[moons[2], 2] .+= offset
+    end
+
+    return X
+end
 
 function moon_class_1(offset = 0.0, coord_down_scale = 1)
     x = [
@@ -622,63 +723,17 @@ function moon_class_2(offset = 0.0, coord_down_scale = 1)
     return vcat(transpose.((x, y))...) / coord_down_scale
 end
 
-function get_moons_from_publication(;offset = 0.0, coord_down_scale = 1, show_plot = false)
-    moons = hcat(moon_class_1(offset, coord_down_scale), moon_class_2(offset, coord_down_scale))
-    labels = [repeat([0], 150); repeat([1], 150)]
-    if show_plot 
-        display(scatter(moons[1,:], moons[2,:], c = labels))
-    end
-    return moons, labels
-end
-
-function generate_moons(n; noise = 0.1, offset = 0.0, rotation = 90, seed = rand((1, 2^31)), show_plot = false)
-    X, y = make_moons(n_samples = n, noise = noise, random_state = seed)
-    p1 = scatter(X[:,1], X[:,2], c = y, title = "generated state")
-
-    if offset != 0.0
-        X = apply_moon_offset(X, y, offset)
-    end
-    p2 = scatter(X[:,1], X[:,2], c = y, title = "offsetted state")
-
-    if rotation != 0.0
-        θ = deg2rad(rotation)
-        R = [cos(θ) -sin(θ); sin(θ) cos(θ)]
-        X *= R
-        # move center closer to (0, 0)
-        if offset != 0.0
-            X[:,2] .+= offset/2
-        end
-    end
-    p3 = scatter(X[:,1], X[:,2], c = y, title = "rotated state")
-    
-    if show_plot
-        display(plot(p1, p2, p3, layout = (1, 3)))
-    end
-    return X, y
-end
-
-function apply_moon_offset(X, y, offset)
-    # @assert direction in ["x", "y"] "Error: direction must be either x or y"
-    # use offset as total offset, thus devide by number of labels; assume 2 labels
-    offset /= 2
-    # direction == "x" ? direction = 1 : direction = 2
-
-    moons = []
-    for label in unique(y)
-        push!(moons, findall(l -> l == label, y))
-    end
-
-    max_y = [maximum(X[m, 2]) for m in moons]
-
-    if max_y[1] > max_y[2]
-        X[moons[1], 2] .+= offset
-        X[moons[2], 2] .-= offset
-    else
-        X[moons[1], 2] .-= offset
-        X[moons[2], 2] .+= offset
-    end
-
-    return X
+function plot_train_and_test_data(train_loader::Flux.Data.DataLoader, test_loader::Flux.Data.DataLoader)
+	# plot train and test data sets
+	p_train = Plots.scatter(
+		train_loader.data[1][1,:], train_loader.data[1][2,:],
+			c = PlotUtils.map_bool_to_color(train_loader.data[2][1,:], "blue", "red")
+	)
+	p_test = Plots.scatter(
+		test_loader.data[1][1,:], test_loader.data[1][2,:],
+		c = PlotUtils.map_bool_to_color(test_loader.data[2][1,:], "blue", "red")
+	)
+	display(Plots.plot(p_train, p_test, layout = (1, 2)))
 end
 
 end
