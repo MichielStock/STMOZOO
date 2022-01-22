@@ -1,4 +1,4 @@
-<span><font-size=4em>
+<span><style="font-size=4em">
 # STMO-ZOO : Color transfer using Optimal transportation done right
 
 ### Student name : Ju Hyung Lee
