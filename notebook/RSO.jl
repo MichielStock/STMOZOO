@@ -195,7 +195,7 @@ MNIST dataset is consists of 60,000 training images and 10,000 test images of ha
 md"**original model**\
 256 batches - epoch1 - logitcrossentropy - 5020s\
 256 batches - epoch1 - crossentropy - 5240s\
-5000 batches - epoch1 - crossentropy - 73042s - loss: 14.132923/acc: 0.1135\
+5000 batches - epoch1 - crossentropy - 73042s\
 
 
 **simple model**\
