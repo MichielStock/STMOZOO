@@ -34,6 +34,10 @@ md"""
 **Heesoo SONG**
 """
 
+# ╔═╡ 8c3625c6-4537-4a32-9a8d-ea33cf5ee7df
+md"Before running this Pluto script, install MLDatasets packages via julia powershell using the line below:\
+Pkg.add(\"MLDatasets\")"
+
 # ╔═╡ 62c4926d-0350-4088-8729-0ee5afb306be
 md"""
 ## 0. Introduction
@@ -46,9 +50,9 @@ md"""
 
 ### RSO: Random Search Optimization
 
-RSO is a new weight update algorithm for training deep neural networks which explores the region around the initialization point by sampling weight changes to minimize the objective function. The idea is based on the assumption that the initial set of weights is already close to the final solution, as deep neural networks are heavily over-parametrized. Unlike traditional backpropagation in training deep neural networks that involves estimation of gradient at a given point, RSO is a gradient-free method. The formal expression of the RSO update rule is as following:
+RSO is a new weight update algorithm for training deep neural networks which explores the region around the initialization point by sampling weight changes to minimize the objective function. The idea is based on the assumption that the initial set of weights is already close to the final solution, as deep neural networks are heavily over-parametrized. Unlike traditional backpropagation in training deep neural networks that involves estimation of gradient at a given point, RSO is a gradient-free method that searches for the update one weight at a time with random sampling. The formal expression of the RSO update rule is as following:
 
-$$wᵢ₊₁=\Bigg\{ \begin{align*}
+$$w_{i+1}=\Bigg\{ \begin{align*}
 &wᵢ,\qquad \qquad f(x, wᵢ)<=f(s,wᵢ+\Delta wᵢ)\\
 &wᵢ+\Delta wᵢ,\quad f(x, wᵢ)>f(s,wᵢ+\Delta wᵢ)
 \end{align*}$$
@@ -63,6 +67,15 @@ In the following sections, we will construct RSO function and compare its optimi
 # ╔═╡ 8cd1b08a-644e-4cdb-87ab-6f7270a29681
 md"## 1. Construct RSO function"
 
+# ╔═╡ 9bb4e28e-dd24-451c-9e95-205ba2e084ef
+md"""RSO function is constructed by following the pseudocode provided in the paper. The variables used in the pseudocode are explained below:
+
+\- $$W = \{W_1,...,W_d,...,W_D\}$$ = Weight set of layers \
+\- $$W_d = \{w_1,...,w_{i_d},...,w_{n_d}\}$$ = Weight tensors of layer d that generates an activation set $A_d = \{a_1,...,a_{i_d},...,a_{n_d}\}$\
+\- $$w_{id}$$ = a weight tensor that generates an activation $a_{id}$\
+\- $$w_j$$ = a weight in wid
+"""
+
 # ╔═╡ 198f91c6-46dc-46dc-a013-c3064a7348cd
 md"""
 ![Notation4Variables.png](https://github.com/HeesooSong/STMOZOO/blob/master/notebook/Figures/Notation4Variables.png?raw=true)
@@ -70,8 +83,13 @@ md"""
 ![Pseudocode.png](https://github.com/HeesooSong/STMOZOO/blob/master/notebook/Figures/Pseudocode.png?raw=true)
 """
 
-# ╔═╡ 233fe6b3-479c-4631-b434-8b41a684ac21
-#wd[2][:,:,3,1]
+# ╔═╡ 5e51a853-8736-4f92-b7f4-216ff4ab0b90
+md"First, the weights are initialized by following the Gaussian distribution $$N(0, \sqrt{2/|w{i_d}|})$$ assuming that the initial weights of convolutional neural network is already close to the final solution. $$|w{i_d}|$$ means the number of parameters in the weight set $$w_{i_d}$$. Then compute standard deviation of all elements in the weight tensor Wd.
+
+Next, weight update is performed. The weights of the layer closest to the labels 
+are updated first and then sequentially move closer to the input. For each weight, the change is randomly sampled from Gaussian distribution $$N(0, \sigma_d)$$. Then losses are computed for three different weight change scenario $$(W+\Delta W_j, W, W-\Delta W_j)$$ and compared. The weight set that gives minimum loss value is taken. 
+
+To note again, this update is perfomed on one weight at a time for every weights. Through C number of rounds (epochs) of these updates, model can be fitted efficiently as much as back-propagation method."
 
 # ╔═╡ f7c0cb4b-c98a-404d-96f6-7a20f167d11d
 md"## 2. CNN training functions
@@ -99,12 +117,17 @@ function getdata(args, device)
 	# Encode labels
 	y_train = onehotbatch(y_train, 0:9)
 	y_test = onehotbatch(y_test, 0:9)
+
+	# Create DataLoaders (mini-batch iterators)
+	train_loader = DataLoader((x_train, y_train), batchsize=args.batchsize, shuffle=true)
+	test_loader = DataLoader((x_test, y_test), batchsize=args.batchsize)
 	
-	return x_train, x_test, y_train, y_test
+	return train_loader, test_loader
 end
 
 # ╔═╡ 965d6f22-5522-416f-ab1e-e66623262e90
-function build_model(; imgsize=(28, 28, 1), nclasses=10)
+function original_model(; imgsize=(28, 28, 1), nclasses=10)
+	# This is the model described in the paper
 	return Chain(
 	# input 28x28x1
 	Conv((3,3), 1=>16, pad=1), BatchNorm(16, relu), 	 # 28x28x16
@@ -121,8 +144,25 @@ function build_model(; imgsize=(28, 28, 1), nclasses=10)
 	# Remove 1x1 dimensions (singletons)
 	flatten,
 	
-	Dense(16, 10),
+	Dense(16, nclasses),
 	softmax)
+end
+
+# ╔═╡ 399f02e7-81ef-4f06-9df3-a3857532654a
+function simple_model(; imgsize=(28, 28, 1), nclasses=10)
+	# Simpler model to test algorithm
+	cnn_output_size = Int.(floor.([imgsize[1]/4,imgsize[2]/4,16]))
+	
+	return Chain(
+	# input 28x28x1
+	Conv((3,3), 1=>16, pad=1, relu), 	#14x14x16
+	MaxPool((2,2)),
+	Conv((3,3), 16=>16, pad=1, relu), 	#7x7x16
+	MaxPool((2,2)),
+	
+	flatten,
+	
+    Dense(prod(cnn_output_size), nclasses))
 end
 
 # ╔═╡ 0d7b525d-3f30-44fc-b771-1665d3f2e045
@@ -133,119 +173,11 @@ function loss_and_accuracy(data_loader, model, device)
 	for (x, y) in data_loader
 		x, y = device(x), device(y)
 		ŷ = model(x)
-		ls += crossentropy(ŷ, y, agg=sum)
+		ls += logitcrossentropy(ŷ, y, agg=sum)
 		acc += sum(onecold(ŷ) .== onecold(y))
 		num += size(x)[end]
 	end
 	return ls/num, acc/num
-end
-
-# ╔═╡ 703ef56f-1045-4572-ae2a-170a48945e84
-function RSO(X,L,X_test,L_test, C,model, batch_size, device)
-	"""
-	model = convolutional model structure
-	X = Input data
-	L = labels
-	C = Number of rounds to update parameters
-	"""
-
-	# Normalize input data to have zero mean and unit standard deviation
-	X .= (X .- sum(X))./std(X)
-	X_test .= (X_test .- sum(X_test))./std(X_test)
-	train_loader = DataLoader((X, L), batchsize=batch_size, shuffle=true)
-	test_loader = DataLoader((X_test, L_test), batchsize=batch_size, shuffle=true)
-
-	random_batch = []
-	for (x, l) in train_loader
-		push!(random_batch, (x,l))
-	end
-	
-	# W = Weight set of layers
-	# Wd = Weight tensors of layer d that generates an activation
-	# wid = weight tensor that generates an activation aᵢ
-	# wj = a weight in wid
-	
-	std_prep = []
-	σ_d = Float64[]
-	D = 0
-	for layer in model
-		D += 1
-		Wd = Flux.params(layer)
-		# Initialize the weights of the network with Gaussian distribution
-		for id in Wd
-			if typeof(id) == Array{Float32, 4}
-				wj = convert(Array{Float32, 4}, rand(Normal(0, sqrt(2/length(id))), (3,3,4,4)))
-			elseif typeof(id) == Vector{Float32}
-				wj = convert(Vector{Float32}, rand(Normal(0, sqrt(2/length(id))), length(id)))
-			else
-				wj = convert(Matrix{Float32}, rand(Normal(0, sqrt(2/length(id))), size(id)))
-			end
-			id = wj
-			append!(std_prep, vec(wj))
-		end
-		# Compute std of all elements in the weight tensor Wd
-		push!(σ_d, std(std_prep))
-	end
-
-	
-	# Weight update
-	for c in 1:C
-		d = D
-		while d > 0
-			println("layer $d")
-			Wd = Flux.params(model[d])
-			for id in Wd
-				# Randomly sample change in weights from Gaussian distribution
-				for j in 1:length(id)
-					# Randomly sample mini-batch
-					(x, y) = rand(random_batch, 1)[1]
-					x, y = device(x), device(y)
-					
-					# Sample a weight from normal distribution
-					ΔWj = rand(Normal(0, σ_d[d]), 1)[1]
-
-					# F(x,l, W+ΔWj)
-					id[j] = id[j]+ΔWj
-					ŷ = model(x)
-					ls_pos = crossentropy(ŷ, y, agg=sum) / size(x)[end]
-					#acc_pos = sum(onecold(ŷ) .== onecold(y)) / size(x)[end]
-
-					# F(x,l,W)
-					id[j] = id[j]-ΔWj
-					ŷ = model(x)
-					ls_org = crossentropy(ŷ, y, agg=sum) / size(x)[end]
-					#acc_org = sum(onecold(ŷ) .== onecold(y)) / size(x)[end]
-
-					# F(x,l, W-ΔWj)
-					id[j] = id[j]-ΔWj
-					ŷ = model(x)
-					ls_neg = crossentropy(ŷ, y, agg=sum) / size(x)[end]
-					#acc_neg = sum(onecold(ŷ) .== onecold(y)) / size(x)[end]
-
-					min_loss = argmin([ls_org, ls_pos, ls_neg])
-
-					if min_loss == 1
-						id[j] = id[j] + ΔWj
-					elseif min_loss == 2
-						id[j] = id[j] + 2*ΔWj
-					elseif min_loss == 3
-						id[j] = id[j]
-					end
-				end
-			end
-			d -= 1
-		end
-
-		train_loss, train_acc = loss_and_accuracy(train_loader, model, device)
-		test_loss, test_acc = loss_and_accuracy(test_loader, model, device)
-
-		println("RSO Epoch=$c")
-		println("   train_loss = $train_loss, train_accuracy = $train_acc")
-		println("   test_loss = $test_loss, test_accuracy = $test_acc")
-	
-	end
-	
-	return Flux.params(model)
 end
 
 # ╔═╡ 74e7b431-08c7-4ded-9033-c6858b9574c1
@@ -254,48 +186,51 @@ end
 # ╔═╡ 11872972-0526-4c07-902b-0b8f3ac0553f
 md"## 3. Experiments
 
-### 3-1. MNIST - compare accuracies of RSO, SGD, WANN
+### 3-1. MNIST - compare accuracies of RSO, SGD
 MNIST dataset is consists of 60,000 training images and 10,000 test images of handwritten digits. Each image is a 28x28 pixel gray-scale image.
 
 **RSO**"
 
-# ╔═╡ 2edab904-37a6-4c2e-949d-d0868e36b688
-#begin
-#	acc_tracker_RSO = TrackObj(Float32)
-#	train(RSOupdate=50, optimiser="RSO", tracker=acc_tracker_RSO, batchsize=64)
-#end
-
 # ╔═╡ db28a9fb-dbf7-428d-af19-ef371d6d2014
-md"256 batches - epoch1 - logitcrossentropy - 5020s\
+md"**original model**\
+256 batches - epoch1 - logitcrossentropy - 5020s\
 256 batches - epoch1 - crossentropy - 5240s\
-5000 batches - epoch1 - crossentropy - 73042s - loss: 14.132923/acc: 0.1135
+5000 batches - epoch1 - crossentropy - 73042s - loss: 14.132923/acc: 0.1135\
+
+
+**simple model**\
+128 batches - epoch1 - 472s - loss: 12.311763, accuracy = 0.1032\
+1000 batches - epoch1 - 2974s - loss = 20.598274, accuracy = 0.1135\
+1000 batches - epoch3 - 7963s - loss = 4.4746695, accuracy = 0.1109\
+---- No input normalization -\
+----1000 batches - epoch1 - 3065s - loss = 1.039716, accuracy = 0.7029\
+----1000 batches - epoch10 - 36464s - loss = 0.12634973, accuracy = 0.9604\
+----512 batches - epoch10 - 19186s - loss = 0.19334497, accuracy = 0.9397\
+----256 batches - epoch10 - 
 "
 
 # ╔═╡ 5b844fba-dae3-4945-a57e-d76caf8ee0df
 md"**SGD (Backpropagation)**"
 
+# ╔═╡ e30452d4-e4b8-43b2-9ada-e9aa31c7bb12
+md"256 batches - epoch 50 - logitcrossentropy - simple model - 2027s"
+
 # ╔═╡ 184ac4ea-4d5b-4041-b37e-7f9fc154d863
 #begin
 #	acc_tracker = TrackObj(Float32)
-#	train(epochs=50, tracker=acc_tracker)
+#	train(epochs=1, tracker=acc_tracker)
 #end
 
 # ╔═╡ 29143eb7-ea08-43e9-bae1-5179b58eb495
-
-
-# ╔═╡ 697b4ec8-4f47-4561-b0c4-cc74514f4aff
-md"**WANN**"
-
-# ╔═╡ 29479431-b1b7-40d3-a21f-15f0265e069c
 
 
 # ╔═╡ 64e7be40-cd0b-40c4-b476-51c6a66d40e1
 md"""
 In summary: 
 
-|           |    RSO   |    SGD   |   WANN   |
-|-----------|----------|----------|----------|
-| Accuracy  |          |      1   |    2     |
+|           |    RSO   |    SGD   |
+|-----------|----------|----------|
+| Accuracy  |          |      1   |
 
 """
 
@@ -348,66 +283,6 @@ md"Optimization in the default order gave **{   }**% accuracy and the optimizati
 # ╔═╡ 717b7ca2-a397-47e7-b661-04c9ed2cc571
 
 
-# ╔═╡ 5c2eb6c7-d9ee-4cda-bfdc-4456e7e92a47
-md"### 3-4. CIFAR-10: Effect of different network depths
-
-**Depth-3 + RSO**"
-
-# ╔═╡ 027a6cde-7408-480a-94a8-52a05967b552
-
-
-# ╔═╡ 9eb0b980-09b3-468f-aa3c-6d3af07c5839
-md"**Depth-5 + RSO**"
-
-# ╔═╡ 7c890ca9-7d0d-4e93-b539-a510b3407d11
-
-
-# ╔═╡ 733cd465-9b1b-40f6-96e0-2ad6da9517a4
-md"**Depth-10 + RSO**"
-
-# ╔═╡ df294d51-e7d3-406c-91ce-30f216603ae6
-
-
-# ╔═╡ d0d8dc13-63c6-4046-ba29-2be0713d9d18
-md"**Depth-10 + SGD**"
-
-# ╔═╡ 2464be0b-ade9-4c21-9f07-251124fa83ec
-md"To compare RSO and SGD, they also performed grid search to find the best performing parameters in Depth-10. Maybe skip this if no time..."
-
-# ╔═╡ b751c909-dd29-4713-9a19-c807cd66d4a4
-
-
-# ╔═╡ 3a62729e-aa6b-45b4-b184-e2341bee97db
-md"### 3-5. Comparison of total weight updates
-
-A grid search "
-
-# ╔═╡ 57ee5c6f-3818-4bb8-86fd-d3cb65f57ffb
-
-
-# ╔═╡ 231ef8dd-6c84-40df-b580-4db96e0ca724
-
-
-# ╔═╡ 985fde4f-e67d-495d-8ffa-7fffb9a74fe9
-md"### 3-6. Updating weights in parallel
-
-Parallel optimization strategy to significantly reduce the run time of the algorithm may done by optimizing one weight at a time and using an older state of the network. 
-
-**1) Search each weight in a layer $$w_{j}$$ in parallel**\
-The search for the new estimate for each weight uses the state of the network before the optimization started for layer d."
-
-# ╔═╡ 7cd9b5d0-58a8-4118-a94f-43be0f4c80db
-
-
-# ╔═╡ 3ae1b8cc-2a17-43f2-991c-b1c3f8e7a436
-md"**2) Search weights of each output neuron $$w_{id}$$ in parallel**\
-Spawn different threads per neuron and update the weights for the assigned neuron sequentially within each thread. Then, merge the weights for all neurons in the layer.
-
-FIGURE 4"
-
-# ╔═╡ b5ba53e5-4a42-4f53-b71f-78d7c6c1da76
-
-
 # ╔═╡ 5afd91f6-9e0d-4774-a954-3f00b71dd2e7
 md"## Appendix"
 
@@ -434,7 +309,6 @@ notrack = NoTracking()
 	use_cuda::Bool = false    # use gpu (if cuda available)
 	dataset::String = "MNIST" # MNIST or CIFAR10
 	optimiser::String = "SGD" # SGD or RSO
-	RSOupdate::Int = 50 	  # number of rounds to update RSO
 end
 
 # ╔═╡ 08eb9335-3ba7-4f18-bd7f-dc841b716cfb
@@ -448,6 +322,121 @@ track!(::NoTracking, loss_acc) = nothing
 
 # ╔═╡ c3ca3de8-7af9-48f7-9311-25d5ac8f39c3
 track!(tracker::TrackObj, loss_acc) = push!(tracker.objectives, loss_acc)
+
+# ╔═╡ 703ef56f-1045-4572-ae2a-170a48945e84
+function RSO(train_loader, test_loader, C,model, batch_size, device, args)
+	"""
+	model = convolutional model structure
+	C = Number of rounds to update parameters (epochs)
+	batch_size = size of the mini batch that will be used to calculate loss
+	device = CPU or GPU
+	"""
+
+	# Evaluate initial weight
+	test_loss, test_acc = loss_and_accuracy(test_loader, model, device)
+	println("Initial Weight:")
+	println("   test_loss = $test_loss, test_accuracy = $test_acc")
+
+	random_batch = []
+	for (x, l) in train_loader
+		push!(random_batch, (x,l))
+	end
+	
+	# Initialize weights
+	std_prep = []
+	σ_d = Float64[]
+	D = 0
+	for layer in model
+		D += 1
+		Wd = Flux.params(layer)
+		# Initialize the weights of the network with Gaussian distribution
+		for id in Wd
+			if typeof(id) == Array{Float32, 4}
+				wj = convert(Array{Float32, 4}, rand(Normal(0, sqrt(2/length(id))), size(id)))
+			elseif typeof(id) == Vector{Float32}
+				wj = convert(Vector{Float32}, rand(Normal(0, sqrt(2/length(id))), length(id)))
+			elseif typeof(id) == Matrix{Float32}
+				wj = convert(Matrix{Float32}, rand(Normal(0, sqrt(2/length(id))), size(id)))
+			end
+			id = wj
+			append!(std_prep, vec(wj))
+		end
+		# Compute std of all elements in the weight tensor Wd
+		push!(σ_d, std(std_prep))
+	end
+
+	# Weight update
+	for c in 1:C
+		d = D
+		# First update the weights of the layer closest to the labels 
+		# and then sequentially move closer to the input
+		while d > 0
+			println("layer $d")
+			Wd = Flux.params(model[d])
+			for id in Wd
+				println("number of parameters: $(length(id))")
+				# Randomly sample change in weights from Gaussian distribution
+				for j in 1:length(id)
+					if j % 1000 == 0
+						println(j)
+					end
+					# Randomly sample mini-batch
+					(x, y) = rand(random_batch, 1)[1]
+					x, y = device(x), device(y)
+					
+					# Sample a weight from normal distribution
+					ΔWj = rand(Normal(0, σ_d[d]), 1)[1]
+
+					# Weight update with three scenario
+					## F(x,l, W+ΔWj)
+					id[j] = id[j]+ΔWj
+					ŷ = model(x)
+					ls_pos = logitcrossentropy(ŷ, y, agg=sum) / size(x)[end]
+
+					## F(x,l,W)
+					id[j] = id[j]-ΔWj
+					ŷ = model(x)
+					ls_org = logitcrossentropy(ŷ, y, agg=sum) / size(x)[end]
+
+					## F(x,l, W-ΔWj)
+					id[j] = id[j]-ΔWj
+					ŷ = model(x)
+					ls_neg = logitcrossentropy(ŷ, y, agg=sum) / size(x)[end]
+
+					# Check weight update that gives minimum loss
+					min_loss = argmin([ls_org, ls_pos, ls_neg])
+
+					# Save weight update with minimum loss
+					if min_loss == 1
+						id[j] = id[j] + ΔWj
+					elseif min_loss == 2
+						id[j] = id[j] + 2*ΔWj
+					elseif min_loss == 3
+						id[j] = id[j]
+					end
+
+					# track accuracy of the model
+					ŷ = model(x)
+					acc = sum(onecold(ŷ) .== onecold(y)) / size(x)[end]
+										
+				end
+			end
+			d -= 1
+		end
+
+		train_loss, train_acc = loss_and_accuracy(train_loader, model, device)
+		test_loss, test_acc = loss_and_accuracy(test_loader, model, device)
+
+		track!(args.tracker, test_acc)
+
+		println("RSO Epoch=$c")
+		println("   train_loss = $train_loss, train_accuracy = $train_acc")
+		println("   test_loss = $test_loss, test_accuracy = $test_acc")
+	
+	end
+	
+	return Flux.params(model)
+end
 
 # ╔═╡ 3ca0aed1-1d31-41c7-80b8-cfb3ce79d1f5
 function train(; kws...)
@@ -463,14 +452,11 @@ function train(; kws...)
 	end
 
 	# Prepare datasets
-	x_train, x_test, y_train, y_test = getdata(args, device)
-
-	# Create DataLoaders (mini-batch iterators)
-	train_loader = DataLoader((x_train, y_train), batchsize=args.batchsize, shuffle=true)
-	test_loader = DataLoader((x_test, y_test), batchsize=args.batchsize)
+	train_loader, test_loader = getdata(args, device)
 	
 	# Construct model
-	model = build_model() |> device
+	#model = original_model() |> device
+	model = simple_model() |> device
 	ps = Flux.params(model) # model's trainable parameters
 
 	best_param = ps
@@ -486,15 +472,18 @@ function train(; kws...)
 			for (x, y) in train_loader
 				x, y = device(x), device(y) # transfer data to device
 				# compute gradient
-				gs = gradient(() -> crossentropy(model(x), y), ps) 
+				gs = gradient(() -> logitcrossentropy(model(x), y), ps) 
 				Flux.Optimise.update!(opt, ps, gs) # update parameters
 			end
 	
 			# Report on train and test
 			train_loss, train_acc = loss_and_accuracy(train_loader, model, device)
 			test_loss, test_acc = loss_and_accuracy(test_loader, model, device)
-	
+
+			# track accuracy of the model
 			track!(args.tracker, test_acc)
+
+			# Save the best model
 			if test_loss < best_loss
 				best_param = ps
 				best_loss = test_loss
@@ -506,9 +495,11 @@ function train(; kws...)
 			println("   test_loss = $test_loss, test_accuracy = $test_acc")
 		end
 
+
 	elseif args.optimiser == "RSO"
 		# Run RSO function and update ps
-		best_param = RSO(x_train, y_train, x_test, y_test, args.RSOupdate, model, args.batchsize, device)
+		best_param = RSO(train_loader, test_loader, args.epochs, model,
+						args.batchsize, device, args)
 		best_loss, best_acc = loss_and_accuracy(test_loader, model, device)
 	end
 	
@@ -516,7 +507,7 @@ function train(; kws...)
 	if args.optimiser == "SGD"
 		@save "bestweight_$(args.dataset)_$(args.optimiser)_$(args.ŋ)_$(args.batchsize)_$(args.epochs).bson" best_param
 	elseif args.optimiser == "RSO"
-		@save "bestweight_$(args.dataset)_$(args.optimiser)_$(args.batchsize)_$(args.RSOupdate).bson" best_param
+		@save "bestweight_$(args.dataset)_$(args.optimiser)_$(args.batchsize)_$(args.epochs).bson" best_param
 	end
 	# Load parameters back with following lines
 	# using BSON: @load
@@ -524,6 +515,12 @@ function train(; kws...)
 	# Flux.loadparams!(model, weights)
 
 	println("Best test loss = $best_loss, Best test accuracy = $best_acc")
+end
+
+# ╔═╡ 2edab904-37a6-4c2e-949d-d0868e36b688
+begin
+	acc_tracker_RSO = TrackObj(Float32)
+	train(epochs=10, optimiser="RSO", tracker=acc_tracker_RSO, batchsize=256)
 end
 
 # ╔═╡ fde5a843-5767-4fc7-a381-eb2ecc1fe801
@@ -539,7 +536,7 @@ begin
 end;
 
 # ╔═╡ cdc0de3d-ca1a-47cd-aaf4-dfcb0afb46c8
-Plots.plot(tracker::TrackObj; kwargs...) = plot(tracker.objectives, xlabel="epochs", ylable="Accuracy", lw=2, color=myred, legend=:bottomright; kwargs...)
+Plots.plot(tracker::TrackObj; kwargs...) = plot(tracker.objectives, xlabel="epochs", ylabel="Accuracy", lw=2, color=myred, legend=:bottomright; kwargs...)
 
 # ╔═╡ 59398ae6-5c42-4fbf-a2b9-3c33e9b2a246
 plot(acc_tracker_RSO, label="RSO-MNIST")
@@ -1831,6 +1828,7 @@ version = "0.9.1+5"
 
 # ╔═╡ Cell order:
 # ╟─936344da-213a-11ec-3e68-05f0f85cf2f3
+# ╟─8c3625c6-4537-4a32-9a8d-ea33cf5ee7df
 # ╠═0150a3e2-f98e-4412-9e96-1a2db5a9421e
 # ╠═352a4a75-8136-474e-a80a-9d65baabd195
 # ╠═79d4c2f0-bc6e-43f1-b877-a63226f8aadc
@@ -1841,12 +1839,14 @@ version = "0.9.1+5"
 # ╟─62c4926d-0350-4088-8729-0ee5afb306be
 # ╟─98e7978d-2355-407c-b87f-c0bd64b430aa
 # ╟─8cd1b08a-644e-4cdb-87ab-6f7270a29681
+# ╟─9bb4e28e-dd24-451c-9e95-205ba2e084ef
 # ╟─198f91c6-46dc-46dc-a013-c3064a7348cd
+# ╟─5e51a853-8736-4f92-b7f4-216ff4ab0b90
 # ╠═703ef56f-1045-4572-ae2a-170a48945e84
-# ╠═233fe6b3-479c-4631-b434-8b41a684ac21
 # ╟─f7c0cb4b-c98a-404d-96f6-7a20f167d11d
 # ╠═f6a38e02-f53f-440d-934b-4ed1f00d1827
 # ╠═965d6f22-5522-416f-ab1e-e66623262e90
+# ╠═399f02e7-81ef-4f06-9df3-a3857532654a
 # ╠═0d7b525d-3f30-44fc-b771-1665d3f2e045
 # ╠═3ca0aed1-1d31-41c7-80b8-cfb3ce79d1f5
 # ╠═72482d89-c3f1-479c-b06c-da73259f68b0
@@ -1856,11 +1856,10 @@ version = "0.9.1+5"
 # ╠═db28a9fb-dbf7-428d-af19-ef371d6d2014
 # ╠═59398ae6-5c42-4fbf-a2b9-3c33e9b2a246
 # ╟─5b844fba-dae3-4945-a57e-d76caf8ee0df
+# ╠═e30452d4-e4b8-43b2-9ada-e9aa31c7bb12
 # ╠═184ac4ea-4d5b-4041-b37e-7f9fc154d863
 # ╠═fa4e79c2-28dc-418c-bee3-396f2aa535b5
 # ╠═29143eb7-ea08-43e9-bae1-5179b58eb495
-# ╟─697b4ec8-4f47-4561-b0c4-cc74514f4aff
-# ╠═29479431-b1b7-40d3-a21f-15f0265e069c
 # ╟─64e7be40-cd0b-40c4-b476-51c6a66d40e1
 # ╟─9c5ef276-7864-42e0-8afb-fde1bf6cccfb
 # ╟─8e1498dc-5b45-49a3-bf58-9a77aba16085
@@ -1876,22 +1875,6 @@ version = "0.9.1+5"
 # ╠═acf5796d-9f3c-421c-a306-c6e76b1a1bd1
 # ╟─5102eacd-543d-47a0-bfe5-445b095d0e02
 # ╟─717b7ca2-a397-47e7-b661-04c9ed2cc571
-# ╟─5c2eb6c7-d9ee-4cda-bfdc-4456e7e92a47
-# ╠═027a6cde-7408-480a-94a8-52a05967b552
-# ╠═9eb0b980-09b3-468f-aa3c-6d3af07c5839
-# ╠═7c890ca9-7d0d-4e93-b539-a510b3407d11
-# ╠═733cd465-9b1b-40f6-96e0-2ad6da9517a4
-# ╠═df294d51-e7d3-406c-91ce-30f216603ae6
-# ╠═d0d8dc13-63c6-4046-ba29-2be0713d9d18
-# ╟─2464be0b-ade9-4c21-9f07-251124fa83ec
-# ╟─b751c909-dd29-4713-9a19-c807cd66d4a4
-# ╟─3a62729e-aa6b-45b4-b184-e2341bee97db
-# ╠═57ee5c6f-3818-4bb8-86fd-d3cb65f57ffb
-# ╟─231ef8dd-6c84-40df-b580-4db96e0ca724
-# ╟─985fde4f-e67d-495d-8ffa-7fffb9a74fe9
-# ╠═7cd9b5d0-58a8-4118-a94f-43be0f4c80db
-# ╟─3ae1b8cc-2a17-43f2-991c-b1c3f8e7a436
-# ╠═b5ba53e5-4a42-4f53-b71f-78d7c6c1da76
 # ╟─5afd91f6-9e0d-4774-a954-3f00b71dd2e7
 # ╟─796aa432-e28f-4243-92c0-934f4e4f022f
 # ╠═f622af0a-033b-48c5-aedb-e86926b731a4
