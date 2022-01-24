@@ -5,7 +5,7 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ 0150a3e2-f98e-4412-9e96-1a2db5a9421e
-using Combinatorics, Plots, Statistics, Distributions, MLDatasets, Flux, CUDA, Zygote, Test
+using Combinatorics, Plots, Statistics, Distributions, MLDatasets, Flux, CUDA, Test
 
 # ╔═╡ 352a4a75-8136-474e-a80a-9d65baabd195
 using Flux: Data.DataLoader
@@ -22,9 +22,6 @@ using Base: @kwdef
 # ╔═╡ 4372356d-92f6-45f0-97c0-f28b2299a5a8
 using Flux.Losses: logitcrossentropy
 
-# ╔═╡ dd1e716d-af7c-4cb7-b0a1-459122832d37
-using BSON: @save
-
 # ╔═╡ 936344da-213a-11ec-3e68-05f0f85cf2f3
 md"""
 # RSO: Fitting a neural network by optimizing one weight at a time
@@ -35,8 +32,8 @@ md"""
 """
 
 # ╔═╡ 8c3625c6-4537-4a32-9a8d-ea33cf5ee7df
-md"Before running this Pluto script, install MLDatasets packages via julia powershell using the line below:\
-Pkg.add(\"MLDatasets\")"
+md"**IMPORTANT!! Install MLDatasets packages first:\
+Pkg.add(\"MLDatasets\")**"
 
 # ╔═╡ 62c4926d-0350-4088-8729-0ee5afb306be
 md"""
@@ -44,13 +41,13 @@ md"""
 
 ### Research Goal
 
-> **(1)** Propose RSO (random search optimization), a new weight update scheme for training deep neural networks, and **(2)** compare its accuracy and efficiency to backpropagation.
+> **(1)** Propose RSO (random search optimization), a new weight update scheme for training deep neural networks, and **(2)** compare its accuracy to backpropagation.
 
 \
 
 ### RSO: Random Search Optimization
 
-RSO is a new weight update algorithm for training deep neural networks which explores the region around the initialization point by sampling weight changes to minimize the objective function. The idea is based on the assumption that the initial set of weights is already close to the final solution, as deep neural networks are heavily over-parametrized. Unlike traditional backpropagation in training deep neural networks that involves estimation of gradient at a given point, RSO is a gradient-free method that searches for the update one weight at a time with random sampling. The formal expression of the RSO update rule is as following:
+RSO is a new weight update algorithm for training deep neural networks which explores the region around the initialization point by sampling weight changes to minimize the objective function. The idea is based on the assumption that the initial set of weights is already close to the final solution, as deep neural networks are heavily over-parametrized. Unlike traditional backpropagation in training deep neural networks that involves estimation of gradient at a given point, **RSO is a gradient-free method that searches for the update one weight at a time with random sampling**. The formal expression of the RSO update rule is as following:
 
 $$w_{i+1}=\Bigg\{ \begin{align*}
 &wᵢ,\qquad \qquad f(x, wᵢ)<=f(s,wᵢ+\Delta wᵢ)\\
@@ -58,7 +55,7 @@ $$w_{i+1}=\Bigg\{ \begin{align*}
 \end{align*}$$
 , where $\Delta wᵢ$ is the weight change hypothesis.
 
-In the following sections, we will construct RSO function and compare its optimization efficiency and classification accuracy to backpropagation method. As experimented in the article, MNIST and CIFAR-10 datasets with 6-10 layers of deep convolutional neural networks will be used to obtain the classification accuracy.
+In the following sections, we will reproduce RSO function and compare its classification accuracy to backpropagation method (SGD). Here, we used a simple model with one convolutional layers rather than the original model from the paper which was comprised of 6 convolutional layers.
 """
 
 # ╔═╡ 98e7978d-2355-407c-b87f-c0bd64b430aa
@@ -68,33 +65,98 @@ In the following sections, we will construct RSO function and compare its optimi
 md"## 1. Construct RSO function"
 
 # ╔═╡ 9bb4e28e-dd24-451c-9e95-205ba2e084ef
-md"""RSO function is constructed by following the pseudocode provided in the paper. The variables used in the pseudocode are explained below:
+md"""### 1-1. Parameters 
+RSO function is constructed by following the pseudocode provided in the paper. The variables used in the pseudocode are explained below:
 
-\- $$W = \{W_1,...,W_d,...,W_D\}$$ = Weight set of layers \
-\- $$W_d = \{w_1,...,w_{i_d},...,w_{n_d}\}$$ = Weight tensors of layer d that generates an activation set $A_d = \{a_1,...,a_{i_d},...,a_{n_d}\}$\
-\- $$w_{id}$$ = a weight tensor that generates an activation $a_{id}$\
-\- $$w_j$$ = a weight in wid
+![Notation4Variables.png](https://github.com/HeesooSong/STMOZOO/blob/master/notebook/Figures/Notation4Variables.png?raw=true)
+
+>\- $$W = \{W_1,...,W_d,...,W_D\}$$ = Weight set of layers \
+>\- $$W_d = \{w_1,...,w_{i_d},...,w_{n_d}\}$$ = Weight tensors of layer d that generates an activation set $$A_d = \{a_1,...,a_{i_d},...,a_{n_d}\}$$\
+>\- $$w_{id}$$ = a weight tensor that generates an activation $a_{id}$\
+>\- $$w_j$$ = a weight in wid
 """
 
 # ╔═╡ 198f91c6-46dc-46dc-a013-c3064a7348cd
-md"""
-![Notation4Variables.png](https://github.com/HeesooSong/STMOZOO/blob/master/notebook/Figures/Notation4Variables.png?raw=true)
+md"### 1-2. Pseudocode
 
 ![Pseudocode.png](https://github.com/HeesooSong/STMOZOO/blob/master/notebook/Figures/Pseudocode.png?raw=true)
-"""
+"
 
 # ╔═╡ 5e51a853-8736-4f92-b7f4-216ff4ab0b90
-md"First, the weights are initialized by following the Gaussian distribution $$N(0, \sqrt{2/|w{i_d}|})$$ assuming that the initial weights of convolutional neural network is already close to the final solution. $$|w{i_d}|$$ means the number of parameters in the weight set $$w_{i_d}$$. Then compute standard deviation of all elements in the weight tensor Wd.
+md"First, the weights are initialized by following the Gaussian distribution $$N(0, \sqrt{2/|w_{i_d}|})$$ assuming that the initial weights of convolutional neural network is already close to the final solution. $$|w_{i_d}|$$ means the number of parameters in the weight set $$w_{i_d}$$. Then compute standard deviation of all elements in the weight tensor $$W_d$$.
 
 Next, weight update is performed. The weights of the layer closest to the labels 
-are updated first and then sequentially move closer to the input. For each weight, the change is randomly sampled from Gaussian distribution $$N(0, \sigma_d)$$. Then losses are computed for three different weight change scenario $$(W+\Delta W_j, W, W-\Delta W_j)$$ and compared. The weight set that gives minimum loss value is taken. 
+are updated first and then sequentially move closer to the input. For each weight, the change is randomly sampled from Gaussian distribution $$N(0, \sigma_d)$$, in which the standard deviation computed in the initialization step. Then losses are computed for three different weight change scenario $$(W+\Delta W_j, W, W-\Delta W_j)$$ and compared. The weight set that gives minimum loss value is taken. 
 
-To note again, this update is perfomed on one weight at a time for every weights. Through C number of rounds (epochs) of these updates, model can be fitted efficiently as much as back-propagation method."
+To note again, this update is perfomed on one weight at a time for every weights. Through C number of rounds (epochs) of these updates, model can be improved."
+
+# ╔═╡ bc0e3c51-16e1-47d1-8372-268debce32fa
+md"### 1-3. RSO function"
+
+# ╔═╡ 75f178d4-85d5-4591-89f7-a4e359a04f0b
+
+
+# ╔═╡ 11872972-0526-4c07-902b-0b8f3ac0553f
+md"## 2. Experiment - compare RSO & SGD
+Here we will use MNIST dataset for the training. MNIST dataset is consists of 60,000 training images and 10,000 test images of handwritten digits. Each image is a 28x28 pixel gray-scale image. Based on this dataset, we will compare the classification accuracy of RSO and SGD. The box below is the training variables that can be changed.
+"
+
+# ╔═╡ 5b844fba-dae3-4945-a57e-d76caf8ee0df
+md"### 2-1. SGD (Backpropagation)
+
+For OneConv_model with 32 batch size, it takes around 100 seconds to compute 10 epochs."
+
+# ╔═╡ 0f00bfef-32fe-489d-93e7-669c89af6eff
+md"### 2-2. RSO
+
+For OneConv_model with 32 batch size, it takes around 200 seconds to compute 10 epochs."
+
+# ╔═╡ 94c436d1-d4c1-4eb1-8940-e8b12e608b30
+md"### 2-3. Result"
+
+# ╔═╡ 82f5a6d7-c15d-4350-b5fd-8aaa16229740
+md"""
+##### 1) RSO performance summary:
+
+|                   |    Epoch   |    batch    |   time(s) |    loss    |   acc   |
+|:------------------|------------|-------------|-----------|------------|---------|
+| **Original model**|    1       |      256    |   5240    |   -        |   -     |
+|                   |    1       |    1000     |  73042    |     -      |    -    |
+|                   |            |             |           |            |         |
+|                   |            |             |           |            |         |
+| **TwoConv model** |    10      |    32       |   1457    | 0.5126024  | 0.8504  |
+|                   |    10      |   512       |  19186    | 0.19334497 | 0.9397  |
+|                   |    10      |  1000       |  36464    | 0.12634973 | 0.9604  |
+|                   |            |             |           |            |         |
+|                   |            |             |           |            |         |
+| **OneConv model** |    10      |    32       |   212     | 0.6316686  | 0.8075  |
+|                   |    10      |    64       |   345     | 0.55254054 | 0.8353  |
+|                   |    10      |    256      |   1641    | 0.37202972 | 0.8929  |
+|                   |    10      |    512      |   2834    | 0.29727805 | 0.9152  |
+|                   |    10      |    1024     |   5046    | 0.3011675  | 0.9148  |
+
+This table shows the performance of RSO in different conditions. Different models are explained in `3-1.2) Model Structures`. The loss and accuracy are not recorded in original model since it took immensive amount of time in training with original model even for 1 epoch. In both simpler models, it can be observed that the loss and accuracy improves as the batch size increases. This is because the loss calculation for weight updates were based on larger samples which lead to more precise reflection of the model (line 63, 68, 73 in RSO function). Furthermore, the generall loss and accuracy was better in TwoConv model than OneConv model.
+"""
+
+# ╔═╡ 27df401a-709d-4c73-bd4c-5333572ab233
+md"##### 2) Accuracy Comparison"
+
+# ╔═╡ 0082e604-f8bf-4e89-a3b3-f168c6e04efa
+md"Although it seems that RSO is lagging behind SGD in this plot, we have to consider that it was not the best model due to practical reasons. As shown above in `1) RSO performance summary`, the accuracy can peak 96.04% even with a little bit of more complexity in the model with larger batch size. According to the paper, RSO can perform 99.12% of accuracy after 50 cycles of updates with MNIST dataset, while the SGD gives 99.27% of accuracy after 50 epochs. Thus, one may consider using random sampling method than back-propagation methods for training neural networks as proposed and demonstrated in the paper."
+
+# ╔═╡ 6d9fa03d-cd79-416a-b686-d244afdba854
+
+
+# ╔═╡ 5afd91f6-9e0d-4774-a954-3f00b71dd2e7
+md"## 3. Appendix (Source code)"
 
 # ╔═╡ f7c0cb4b-c98a-404d-96f6-7a20f167d11d
-md"## 2. CNN training functions
+md"### 3-1. CNN training functions
 
-The baseline of the training structure is referred from FluxML/model-zoo tutorial notebook [2]."
+The baseline of the training structure is referred from FluxML/model-zoo tutorial notebook [2].
+
+##### 1) Create mini-batch iterators (DataLoaders)
+Prepare dataset for training. This involves loading data, adding channel layer, encoding, and creating DataLoader object."
 
 # ╔═╡ f6a38e02-f53f-440d-934b-4ed1f00d1827
 function getdata(args, device)
@@ -125,6 +187,12 @@ function getdata(args, device)
 	return train_loader, test_loader
 end
 
+# ╔═╡ 85f193d7-7382-445d-8213-870aba58af71
+md"##### 2) Model structures
+- **Original model:** Original model is the model described in the paper. It is comprised of 6 convolutional layers with mean pooling layer in every two convolutional layers.
+- **TwoConv model:** Simplified model for algorithm test. It contains two convolutional layers.
+- **OneConv model:** Further simplified model for algorithm test. It contains only one convolutional layer."
+
 # ╔═╡ 965d6f22-5522-416f-ab1e-e66623262e90
 function original_model(; imgsize=(28, 28, 1), nclasses=10)
 	# This is the model described in the paper
@@ -149,7 +217,7 @@ function original_model(; imgsize=(28, 28, 1), nclasses=10)
 end
 
 # ╔═╡ 399f02e7-81ef-4f06-9df3-a3857532654a
-function simple_model(; imgsize=(28, 28, 1), nclasses=10)
+function TwoConv_model(; imgsize=(28, 28, 1), nclasses=10)
 	# Simpler model to test algorithm
 	cnn_output_size = Int.(floor.([imgsize[1]/4,imgsize[2]/4,16]))
 	
@@ -166,7 +234,7 @@ function simple_model(; imgsize=(28, 28, 1), nclasses=10)
 end
 
 # ╔═╡ f8d655ea-db55-4fd5-b324-25987b9d200d
-function very_simple_model(; imgsize=(28, 28, 1), nclasses=10)
+function OneConv_model(; imgsize=(28, 28, 1), nclasses=10)
 	# Simpler model to test algorithm
 	cnn_output_size = Int.(floor.([imgsize[1]/2,imgsize[2]/2,4]))
 	
@@ -179,6 +247,9 @@ function very_simple_model(; imgsize=(28, 28, 1), nclasses=10)
 	
     Dense(prod(cnn_output_size), nclasses))
 end
+
+# ╔═╡ f51a102a-bb79-47b5-b1dd-d04992bf2ba0
+md"##### 3) Loss and accuracy"
 
 # ╔═╡ 0d7b525d-3f30-44fc-b771-1665d3f2e045
 function loss_and_accuracy(data_loader, model, device)
@@ -195,75 +266,11 @@ function loss_and_accuracy(data_loader, model, device)
 	return ls/num, acc/num
 end
 
-# ╔═╡ 74e7b431-08c7-4ded-9033-c6858b9574c1
-
-
-# ╔═╡ 11872972-0526-4c07-902b-0b8f3ac0553f
-md"## 3. Experiments
-
-### 3-1. MNIST - compare accuracies of RSO, SGD
-MNIST dataset is consists of 60,000 training images and 10,000 test images of handwritten digits. Each image is a 28x28 pixel gray-scale image.
-
-**RSO**"
-
-# ╔═╡ 2edab904-37a6-4c2e-949d-d0868e36b688
-#begin
-#	acc_tracker_RSO = TrackObj(Float32)
-#	train(epochs=10, optimiser="RSO", tracker=acc_tracker_RSO, batchsize=1024)
-#end
-
-# ╔═╡ db28a9fb-dbf7-428d-af19-ef371d6d2014
-md"**original model**\
-256 batches - epoch1 - 5240s\
-5000 batches - epoch1 - 73042s\
-
-**simple model**\
-1000 batches - epoch1 - 3065s - loss = 1.039716, accuracy = 0.7029\
-1000 batches - epoch10 - 36464s - loss = 0.12634973, accuracy = 0.9604\
-512 batches - epoch10 - 19186s - loss = 0.19334497, accuracy = 0.9397\
-256 batches - epoch10 - 
-
-**very simple model**\
-256 batches - epoch1 - 159s - loss: 1.4583962, accuracy = 0.5976\
-256 batches - epoch10 - 1641s - loss = 0.37202972, accuracy = 0.8929\
-512 batches - epoch10 - 2834s - loss = 0.29727805, accuracy = 0.9152\
-1024 batches - epoch10 - 5046s - loss = 0.3011675, accuracy = 0.9148
-"
-
-# ╔═╡ 5b844fba-dae3-4945-a57e-d76caf8ee0df
-md"**SGD (Backpropagation)**"
-
-# ╔═╡ e30452d4-e4b8-43b2-9ada-e9aa31c7bb12
-md"256 batches - epoch 50 - logitcrossentropy - simple model - 2027s\
-256 batches - epoch 50 - very simple model - 471s - loss = 0.057645123, accuracy = 0.9806"
-
-# ╔═╡ 184ac4ea-4d5b-4041-b37e-7f9fc154d863
-#begin
-#	acc_tracker = TrackObj(Float32)
-#	train(epochs=50, tracker=acc_tracker)
-#end
-
-# ╔═╡ 29143eb7-ea08-43e9-bae1-5179b58eb495
-
-
-# ╔═╡ 64e7be40-cd0b-40c4-b476-51c6a66d40e1
-md"""
-In summary: 
-
-|           |    RSO   |    SGD   |
-|-----------|----------|----------|
-| Accuracy  |          |      1   |
-
-"""
-
-# ╔═╡ 717b7ca2-a397-47e7-b661-04c9ed2cc571
-
-
-# ╔═╡ 5afd91f6-9e0d-4774-a954-3f00b71dd2e7
-md"## Appendix"
+# ╔═╡ 28a8be56-c56b-49db-b57d-0a676d7f7f47
+md"##### 4) Training main body"
 
 # ╔═╡ 796aa432-e28f-4243-92c0-934f4e4f022f
-md"### Tracker
+md"### 3-2. Tracker
 
 These tracker functions are brought directly from the lecture notebook `searching_methods.jl`. A tracker is a data structure to keep track of the training loss during the run of the algorithm."
 
@@ -278,13 +285,14 @@ notrack = NoTracking()
 
 # ╔═╡ 72482d89-c3f1-479c-b06c-da73259f68b0
 @kwdef mutable struct Args
-	tracker::Tracker=notrack  # track loss or accuracy
-	ŋ::Float64 = 0.1    	  # learning rate
-	batchsize::Int = 256 	  # batch size
-	epochs::Int = 1 	 	  # number of epochs
-	use_cuda::Bool = false    # use gpu (if cuda available)
-	dataset::String = "MNIST" # MNIST or CIFAR10
-	optimiser::String = "SGD" # SGD or RSO
+	tracker::Tracker=notrack    # track loss or accuracy
+	use_cuda::Bool = false      # use gpu (if gpu available - not tested)
+	ŋ::Float64 = 0.01    	    # learning rate
+	batchsize::Int = 256 	    # batch size
+	epochs::Int = 1 	 	    # number of epochs
+	dataset::String = "MNIST"   # MNIST or CIFAR10
+	optimiser::String = "SGD"   # SGD or RSO
+	model::String = "OneConv"   # Original or TwoConv or OneConv
 end
 
 # ╔═╡ 08eb9335-3ba7-4f18-bd7f-dc841b716cfb
@@ -347,15 +355,10 @@ function RSO(train_loader, test_loader, C,model, batch_size, device, args)
 		# First update the weights of the layer closest to the labels 
 		# and then sequentially move closer to the input
 		while d > 0
-			println("layer $d")
 			Wd = Flux.params(model[d])
 			for id in Wd
-				println("number of parameters: $(length(id))")
 				# Randomly sample change in weights from Gaussian distribution
 				for j in 1:length(id)
-					if j % 1000 == 0
-						println(j)
-					end
 					# Randomly sample mini-batch
 					(x, y) = rand(random_batch, 1)[1]
 					x, y = device(x), device(y)
@@ -390,11 +393,7 @@ function RSO(train_loader, test_loader, C,model, batch_size, device, args)
 					elseif min_loss == 3
 						id[j] = id[j]
 					end
-
-					# track accuracy of the model
-					#ŷ = model(x)
-					#acc = sum(onecold(ŷ) .== onecold(y)) / size(x)[end]
-										
+		
 				end
 			end
 			d -= 1
@@ -405,9 +404,9 @@ function RSO(train_loader, test_loader, C,model, batch_size, device, args)
 
 		track!(args.tracker, test_acc)
 
-		println("RSO Epoch=$c")
-		println("   train_loss = $train_loss, train_accuracy = $train_acc")
-		println("   test_loss = $test_loss, test_accuracy = $test_acc")
+		println("----RSO Epoch=$c")
+		println("----   train_loss = $train_loss, train_accuracy = $train_acc")
+		println("----   test_loss = $test_loss, test_accuracy = $test_acc")
 	
 	end
 	
@@ -418,9 +417,11 @@ end
 function train(; kws...)
 	args = Args(; kws...) # collect options in a stuct for convinience
 
+	# Choose device
+	## WARNING: GPU not tested
 	if CUDA.functional() && args.use_cuda
 		@info "Training on CUDA GPU"
-		CUDA.allwoscalar(false)
+		CUDA.allowscalar(false)
 		device = gpu
 	else
 		@info "Training on CPU"
@@ -431,9 +432,14 @@ function train(; kws...)
 	train_loader, test_loader = getdata(args, device)
 	
 	# Construct model
-	#model = original_model() |> device
-	#model = simple_model() |> device
-	model = very_simple_model() |> device
+	if args.model == "original"
+		model = original_model() |> device
+	elseif args.model == "TwoConv"
+		model = TwoConv_model() |> device
+	elseif args.model == "OneConv"
+		model = OneConv_model() |> device
+	end
+	
 	ps = Flux.params(model) # model's trainable parameters
 
 	best_param = ps
@@ -480,18 +486,27 @@ function train(; kws...)
 		best_loss, best_acc = loss_and_accuracy(test_loader, model, device)
 	end
 	
-	# Save model weights
-	if args.optimiser == "SGD"
-		@save "bestweight_$(args.dataset)_$(args.optimiser)_$(args.ŋ)_$(args.batchsize)_$(args.epochs).bson" best_param
-	elseif args.optimiser == "RSO"
-		@save "bestweight_$(args.dataset)_$(args.optimiser)_$(args.batchsize)_$(args.epochs).bson" best_param
-	end
-	# Load parameters back with following lines
-	# using BSON: @load
-	# @load "mymodel.bson" weights
-	# Flux.loadparams!(model, weights)
 
 	println("Best test loss = $best_loss, Best test accuracy = $best_acc")
+end
+
+# ╔═╡ 184ac4ea-4d5b-4041-b37e-7f9fc154d863
+begin
+	acc_tracker_SGD = TrackObj(Float32)
+	train(epochs=10, tracker=acc_tracker_SGD, batchsize=32)
+end
+
+# ╔═╡ 2edab904-37a6-4c2e-949d-d0868e36b688
+begin
+	acc_tracker_RSO = TrackObj(Float32)
+	train(epochs=10, optimiser="RSO", tracker=acc_tracker_RSO, batchsize=32)
+end
+
+# ╔═╡ 59398ae6-5c42-4fbf-a2b9-3c33e9b2a246
+begin
+	combine = hcat(acc_tracker_SGD.objectives, acc_tracker_RSO.objectives)
+	
+	plot(combine, title="RSO vs. SGD", label=["SGD-MNIST" "RSO_MNIST"], xlabel="epochs", ylabel="Accuracy", lw=2, legend=:bottomright)
 end
 
 # ╔═╡ fde5a843-5767-4fc7-a381-eb2ecc1fe801
@@ -506,34 +521,33 @@ begin
 	mycolors = [myblue, myred, mygreen, myorange, myyellow]
 end;
 
-# ╔═╡ cdc0de3d-ca1a-47cd-aaf4-dfcb0afb46c8
-Plots.plot(tracker::TrackObj; kwargs...) = plot(tracker.objectives, xlabel="epochs", ylabel="Accuracy", lw=2, color=myred, legend=:bottomright; kwargs...)
-
-# ╔═╡ 59398ae6-5c42-4fbf-a2b9-3c33e9b2a246
-plot(acc_tracker_RSO, label="RSO-MNIST")
-
-# ╔═╡ fa4e79c2-28dc-418c-bee3-396f2aa535b5
-plot(acc_tracker, label="SGD-MNIST")
-
 # ╔═╡ 39f1690d-3003-45be-94a8-aa5c025594e5
-md"### Unit test"
+md"## 4. Unit test"
 
 # ╔═╡ 1cd39002-70c6-4bb8-a05a-96ff3416e654
 @testset "Unit test" begin
-	@test
-	@test
+	args = Args(;)
+	train_loader, test_loader = getdata(args, cpu)
+	model = OneConv_model() |> cpu
+
+	@test typeof(MNIST.traindata(Float32, 1)) == Tuple{Matrix{Float32}, Int64}
+	@test [getdata(args, cpu)] != []
+	@test typeof(loss_and_accuracy(train_loader, model, cpu)) == Tuple{Float32, Float64}
+
 end
+
+# ╔═╡ 8e79b955-7d69-4974-aa93-fdcb8498c4bf
+
 
 # ╔═╡ e3e29321-c698-407b-9f59-ec1ac30c5f87
 md"## References
-[1] Tripathi, R., & Singh, B. (2020). RSO: A Gradient Free Sampling Based Approach For Training Deep Neural Networks. arXiv preprint arXiv:2005.05955.
+[1] Tripathi, R., & Singh, B. (2020). RSO: A Gradient Free Sampling Based Approach For Training Deep Neural Networks. arXiv preprint arXiv:2005.05955. [Link to paper](https://arxiv.org/abs/2005.05955)
 
-[2] https://github.com/FluxML/model-zoo/blob/master/vision/mlp_mnist/mlp_mnist.jl"
+[2] [FluxML/model-zoo/vision/mlp\_mnist/mlp\_mnist.jl](https://github.com/FluxML/model-zoo/blob/master/vision/mlp_mnist/mlp_mnist.jl)"
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
-BSON = "fbb218c0-5317-5bc6-957e-2ee96dd4b1f0"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
@@ -542,17 +556,14 @@ MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
-BSON = "~0.3.4"
-CUDA = "~3.6.2"
+CUDA = "~3.7.0"
 Combinatorics = "~1.0.2"
-Distributions = "~0.25.37"
+Distributions = "~0.25.41"
 Flux = "~0.12.8"
 MLDatasets = "~0.5.14"
-Plots = "~1.25.4"
-Zygote = "~0.6.33"
+Plots = "~1.25.6"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -560,10 +571,10 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
 [[AbstractFFTs]]
-deps = ["LinearAlgebra"]
-git-tree-sha1 = "485ee0867925449198280d4af84bdb46a2a404d0"
+deps = ["ChainRulesCore", "LinearAlgebra"]
+git-tree-sha1 = "6f1d9bc1c08f9f4a8fa92e3ea3cb50153a1b40d4"
 uuid = "621f4979-c628-5d54-868e-fcf4e3e8185c"
-version = "1.0.1"
+version = "1.1.0"
 
 [[AbstractTrees]]
 git-tree-sha1 = "03e0550477d86222521d254b741d470ba17ea0b5"
@@ -572,9 +583,9 @@ version = "0.3.4"
 
 [[Adapt]]
 deps = ["LinearAlgebra"]
-git-tree-sha1 = "9faf218ea18c51fcccaf956c8d39614c9d30fe8b"
+git-tree-sha1 = "af92965fb30777147966f58acb05da51c5616b5f"
 uuid = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
-version = "3.3.2"
+version = "3.3.3"
 
 [[ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
@@ -593,11 +604,6 @@ deps = ["LinearAlgebra", "Printf", "Random", "Test"]
 git-tree-sha1 = "a598ecb0d717092b5539dbbe890c98bac842b072"
 uuid = "ab4f0b2a-ad5b-11e8-123f-65d77653426b"
 version = "0.2.0"
-
-[[BSON]]
-git-tree-sha1 = "ebcd6e22d69f21249b7b8668351ebf42d6dc87a1"
-uuid = "fbb218c0-5317-5bc6-957e-2ee96dd4b1f0"
-version = "0.3.4"
 
 [[Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
@@ -645,9 +651,9 @@ version = "0.4.1"
 
 [[CUDA]]
 deps = ["AbstractFFTs", "Adapt", "BFloat16s", "CEnum", "CompilerSupportLibraries_jll", "ExprTools", "GPUArrays", "GPUCompiler", "LLVM", "LazyArtifacts", "Libdl", "LinearAlgebra", "Logging", "Printf", "Random", "Random123", "RandomNumbers", "Reexport", "Requires", "SparseArrays", "SpecialFunctions", "TimerOutputs"]
-git-tree-sha1 = "429a1a05348ce948a96adbdd873fbe6d9e5e052f"
+git-tree-sha1 = "e2d995efe0e223773a74778ce539e60025b09e52"
 uuid = "052768ef-5323-5732-b1bb-66c8b64840ba"
-version = "3.6.2"
+version = "3.7.0"
 
 [[Cairo_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll", "JLLWrappers", "LZO_jll", "Libdl", "Pixman_jll", "Pkg", "Xorg_libXext_jll", "Xorg_libXrender_jll", "Zlib_jll", "libpng_jll"]
@@ -656,16 +662,16 @@ uuid = "83423d85-b0ee-5818-9007-b63ccbeb887a"
 version = "1.16.1+1"
 
 [[ChainRules]]
-deps = ["ChainRulesCore", "Compat", "LinearAlgebra", "Random", "RealDot", "Statistics"]
-git-tree-sha1 = "c6366ec79d9e62cd11030bba0945712eb4013712"
+deps = ["ChainRulesCore", "Compat", "IrrationalConstants", "LinearAlgebra", "Random", "RealDot", "Statistics"]
+git-tree-sha1 = "e659ddd9b3d67b236c750805e0176217f26d70a9"
 uuid = "082447d4-558c-5d27-93f4-14fc19e9eca2"
-version = "1.17.0"
+version = "1.23.0"
 
 [[ChainRulesCore]]
 deps = ["Compat", "LinearAlgebra", "SparseArrays"]
-git-tree-sha1 = "d711603452231bad418bd5e0c91f1abd650cba71"
+git-tree-sha1 = "54fc4400de6e5c3e27be6047da2ef6ba355511f8"
 uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-version = "1.11.3"
+version = "1.11.6"
 
 [[ChangesOfVariables]]
 deps = ["ChainRulesCore", "LinearAlgebra", "Test"]
@@ -681,9 +687,9 @@ version = "0.7.0"
 
 [[ColorSchemes]]
 deps = ["ColorTypes", "Colors", "FixedPointNumbers", "Random"]
-git-tree-sha1 = "a851fec56cb73cfdf43762999ec72eff5b86882a"
+git-tree-sha1 = "6b6f04f93710c71550ec7e16b650c1b9a612d0b6"
 uuid = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
-version = "3.15.0"
+version = "3.16.0"
 
 [[ColorTypes]]
 deps = ["FixedPointNumbers", "Random"]
@@ -778,9 +784,9 @@ uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[Distributions]]
 deps = ["ChainRulesCore", "DensityInterface", "FillArrays", "LinearAlgebra", "PDMats", "Printf", "QuadGK", "Random", "SparseArrays", "SpecialFunctions", "Statistics", "StatsBase", "StatsFuns", "Test"]
-git-tree-sha1 = "6a8dc9f82e5ce28279b6e3e2cea9421154f5bd0d"
+git-tree-sha1 = "5863b0b10512ed4add2b5ec07e335dc6121065a5"
 uuid = "31c24e10-a181-5473-b8eb-7969acd0382f"
-version = "0.25.37"
+version = "0.25.41"
 
 [[DocStringExtensions]]
 deps = ["LibGit2"]
@@ -805,9 +811,9 @@ uuid = "2e619515-83b5-522b-bb60-26c02a35a201"
 version = "2.2.10+0"
 
 [[ExprTools]]
-git-tree-sha1 = "b7e3d17636b348f005f11040025ae8c6f645fe92"
+git-tree-sha1 = "56559bbef6ca5ea0c0818fa5c90320398a6fbf8d"
 uuid = "e2ba6199-217a-4e67-a87a-7c52f15ade04"
-version = "0.1.6"
+version = "0.1.8"
 
 [[FFMPEG]]
 deps = ["FFMPEG_jll"]
@@ -853,9 +859,9 @@ version = "0.4.2"
 
 [[ForwardDiff]]
 deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "LinearAlgebra", "LogExpFunctions", "NaNMath", "Preferences", "Printf", "Random", "SpecialFunctions", "StaticArrays"]
-git-tree-sha1 = "2b72a5624e289ee18256111657663721d59c143e"
+git-tree-sha1 = "1bd6fc0c344fc0cbee1f42f8d2e7ec8253dda2d2"
 uuid = "f6369f11-7733-5829-9624-2563aa707210"
-version = "0.10.24"
+version = "0.10.25"
 
 [[FreeType2_jll]]
 deps = ["Artifacts", "Bzip2_jll", "JLLWrappers", "Libdl", "Pkg", "Zlib_jll"]
@@ -888,21 +894,21 @@ version = "8.1.3"
 
 [[GPUCompiler]]
 deps = ["ExprTools", "InteractiveUtils", "LLVM", "Libdl", "Logging", "TimerOutputs", "UUIDs"]
-git-tree-sha1 = "2cac236070c2c4b36de54ae9146b55ee2c34ac7a"
+git-tree-sha1 = "abd824e1f2ecd18d33811629c781441e94a24e81"
 uuid = "61eb1bfa-7361-4325-ad38-22787b887f55"
-version = "0.13.10"
+version = "0.13.11"
 
 [[GR]]
-deps = ["Base64", "DelimitedFiles", "GR_jll", "HTTP", "JSON", "Libdl", "LinearAlgebra", "Pkg", "Printf", "Random", "Serialization", "Sockets", "Test", "UUIDs"]
-git-tree-sha1 = "b9a93bcdf34618031891ee56aad94cfff0843753"
+deps = ["Base64", "DelimitedFiles", "GR_jll", "HTTP", "JSON", "Libdl", "LinearAlgebra", "Pkg", "Printf", "Random", "RelocatableFolders", "Serialization", "Sockets", "Test", "UUIDs"]
+git-tree-sha1 = "4a740db447aae0fbeb3ee730de1afbb14ac798a1"
 uuid = "28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71"
-version = "0.63.0"
+version = "0.63.1"
 
 [[GR_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Cairo_jll", "FFMPEG_jll", "Fontconfig_jll", "GLFW_jll", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pixman_jll", "Pkg", "Qt5Base_jll", "Zlib_jll", "libpng_jll"]
-git-tree-sha1 = "f97acd98255568c3c9b416c5a3cf246c1315771b"
+git-tree-sha1 = "aa22e1ee9e722f1da183eb33370df4c1aeb6c2cd"
 uuid = "d2c73de3-f751-5644-a686-071e5b155ba9"
-version = "0.63.0+0"
+version = "0.63.1+0"
 
 [[GZip]]
 deps = ["Libdl"]
@@ -947,9 +953,9 @@ version = "0.15.7"
 
 [[HDF5_jll]]
 deps = ["Artifacts", "JLLWrappers", "LibCURL_jll", "Libdl", "OpenSSL_jll", "Pkg", "Zlib_jll"]
-git-tree-sha1 = "fd83fa0bde42e01952757f01149dd968c06c4dba"
+git-tree-sha1 = "bab67c0d1c4662d2c4be8c6007751b0b6111de5c"
 uuid = "0234f1f7-429e-5d53-9886-15a909be8d59"
-version = "1.12.0+1"
+version = "1.12.1+0"
 
 [[HTTP]]
 deps = ["Base64", "Dates", "IniFile", "Logging", "MbedTLS", "NetworkOptions", "Sockets", "URIs"]
@@ -1013,9 +1019,9 @@ version = "1.0.0"
 
 [[JLLWrappers]]
 deps = ["Preferences"]
-git-tree-sha1 = "642a199af8b68253517b80bd3bfd17eb4e84df6e"
+git-tree-sha1 = "22df5b96feef82434b07327e2d3c770a9b21e023"
 uuid = "692b3bcd-3c85-4b1f-b108-f13ce0eb3210"
-version = "1.3.0"
+version = "1.4.0"
 
 [[JSON]]
 deps = ["Dates", "Mmap", "Parsers", "Unicode"]
@@ -1049,9 +1055,9 @@ version = "3.100.1+0"
 
 [[LLVM]]
 deps = ["CEnum", "LLVMExtra_jll", "Libdl", "Printf", "Unicode"]
-git-tree-sha1 = "7cc22e69995e2329cc047a879395b2b74647ab5f"
+git-tree-sha1 = "f8dcd7adfda0dddaf944e62476d823164cccc217"
 uuid = "929cbde3-209d-540e-8aea-75f648917ca0"
-version = "4.7.0"
+version = "4.7.1"
 
 [[LLVMExtra_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1223,9 +1229,9 @@ uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
 
 [[NNlib]]
 deps = ["Adapt", "ChainRulesCore", "Compat", "LinearAlgebra", "Pkg", "Requires", "Statistics"]
-git-tree-sha1 = "2eb305b13eaed91d7da14269bf17ce6664bfee3d"
+git-tree-sha1 = "3a8dfd0cfb5bb3b82d09949e14423409b9334acb"
 uuid = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
-version = "0.7.31"
+version = "0.7.34"
 
 [[NNlibCUDA]]
 deps = ["CUDA", "LinearAlgebra", "NNlib", "Random", "Statistics"]
@@ -1253,9 +1259,9 @@ uuid = "05823500-19ac-5b8b-9628-191a04bc5112"
 
 [[OpenSSL_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "15003dcb7d8db3c6c857fda14891a539a8f2705a"
+git-tree-sha1 = "648107615c15d4e09f7eca16307bc821c1f718d8"
 uuid = "458c3c95-2e84-50aa-8efc-19380b2a3a95"
-version = "1.1.10+0"
+version = "1.1.13+0"
 
 [[OpenSpecFun_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Pkg"]
@@ -1288,9 +1294,9 @@ version = "0.11.5"
 
 [[Parsers]]
 deps = ["Dates"]
-git-tree-sha1 = "d7fa6237da8004be601e19bd6666083056649918"
+git-tree-sha1 = "92f91ba9e5941fc781fecf5494ac1da87bdac775"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "2.1.3"
+version = "2.2.0"
 
 [[Pickle]]
 deps = ["DataStructures", "InternedStrings", "Serialization", "SparseArrays", "Strided", "ZipFile"]
@@ -1316,15 +1322,15 @@ version = "2.0.1"
 
 [[PlotUtils]]
 deps = ["ColorSchemes", "Colors", "Dates", "Printf", "Random", "Reexport", "Statistics"]
-git-tree-sha1 = "68604313ed59f0408313228ba09e79252e4b2da8"
+git-tree-sha1 = "6f1b25e8ea06279b5689263cc538f51331d7ca17"
 uuid = "995b91a9-d308-5afd-9ec6-746e21dbc043"
-version = "1.1.2"
+version = "1.1.3"
 
 [[Plots]]
 deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "GeometryBasics", "JSON", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "PlotThemes", "PlotUtils", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "UUIDs", "UnicodeFun", "Unzip"]
-git-tree-sha1 = "71d65e9242935132e71c4fbf084451579491166a"
+git-tree-sha1 = "db7393a80d0e5bef70f2b518990835541917a544"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-version = "1.25.4"
+version = "1.25.6"
 
 [[Preferences]]
 deps = ["TOML"]
@@ -1385,20 +1391,26 @@ version = "1.2.1"
 
 [[RecipesPipeline]]
 deps = ["Dates", "NaNMath", "PlotUtils", "RecipesBase"]
-git-tree-sha1 = "7ad0dfa8d03b7bcf8c597f59f5292801730c55b8"
+git-tree-sha1 = "37c1631cb3cc36a535105e6d5557864c82cd8c2b"
 uuid = "01d81517-befc-4cb6-b9ec-a95719d0359c"
-version = "0.4.1"
+version = "0.5.0"
 
 [[Reexport]]
 git-tree-sha1 = "45e428421666073eab6f2da5c9d310d99bb12f9b"
 uuid = "189a3867-3050-52da-a836-e630ba90ab69"
 version = "1.2.2"
 
+[[RelocatableFolders]]
+deps = ["SHA", "Scratch"]
+git-tree-sha1 = "cdbd3b1338c72ce29d9584fdbe9e9b70eeb5adca"
+uuid = "05181044-ff0b-4ac5-8273-598c1e38db00"
+version = "0.1.3"
+
 [[Requires]]
 deps = ["UUIDs"]
-git-tree-sha1 = "8f82019e525f4d5c669692772a6f4b0a58b06a6a"
+git-tree-sha1 = "838a3a4188e2ded87a4f9f184b4b0d78a1e91cb7"
 uuid = "ae029012-a4dd-5104-9daa-d747884805df"
-version = "1.2.0"
+version = "1.3.0"
 
 [[Rmath]]
 deps = ["Random", "Rmath_jll"]
@@ -1461,9 +1473,9 @@ version = "0.4.1"
 
 [[StaticArrays]]
 deps = ["LinearAlgebra", "Random", "Statistics"]
-git-tree-sha1 = "de9e88179b584ba9cf3cc5edbb7a41f26ce42cda"
+git-tree-sha1 = "2884859916598f974858ff01df7dfc6c708dd895"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "1.3.0"
+version = "1.3.3"
 
 [[Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
@@ -1494,9 +1506,9 @@ version = "1.1.2"
 
 [[StructArrays]]
 deps = ["Adapt", "DataAPI", "StaticArrays", "Tables"]
-git-tree-sha1 = "2ce41e0d042c60ecd131e9fb7154a3bfadbf50d3"
+git-tree-sha1 = "d21f2c564b21a202f4677c0fba5b5ee431058544"
 uuid = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
-version = "0.6.3"
+version = "0.6.4"
 
 [[StructTypes]]
 deps = ["Dates", "UUIDs"]
@@ -1534,9 +1546,9 @@ uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [[TimerOutputs]]
 deps = ["ExprTools", "Printf"]
-git-tree-sha1 = "7cb456f358e8f9d102a8b25e8dfedf58fa5689bc"
+git-tree-sha1 = "97e999be94a7147d0609d0b9fc9feca4bf24d76b"
 uuid = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
-version = "0.5.13"
+version = "0.5.15"
 
 [[TranscodingStreams]]
 deps = ["Random", "Test"]
@@ -1746,9 +1758,9 @@ version = "1.5.0+0"
 
 [[Zygote]]
 deps = ["AbstractFFTs", "ChainRules", "ChainRulesCore", "DiffRules", "Distributed", "FillArrays", "ForwardDiff", "IRTools", "InteractiveUtils", "LinearAlgebra", "MacroTools", "NaNMath", "Random", "Requires", "SpecialFunctions", "Statistics", "ZygoteRules"]
-git-tree-sha1 = "78da1a0a69bcc86b33f7cb07bc1566c926412de3"
+git-tree-sha1 = "88a4d79f4e389456d5a90d79d53d1738860ef0a5"
 uuid = "e88e6eb3-aa80-5325-afca-941959d7151f"
-version = "0.6.33"
+version = "0.6.34"
 
 [[ZygoteRules]]
 deps = ["MacroTools"]
@@ -1816,35 +1828,38 @@ version = "0.9.1+5"
 # ╠═de52e90b-cdee-4221-b502-8a4d128bcc79
 # ╠═261dd1eb-3158-4c20-aec7-01c4dfeab897
 # ╠═4372356d-92f6-45f0-97c0-f28b2299a5a8
-# ╠═dd1e716d-af7c-4cb7-b0a1-459122832d37
 # ╟─62c4926d-0350-4088-8729-0ee5afb306be
 # ╟─98e7978d-2355-407c-b87f-c0bd64b430aa
 # ╟─8cd1b08a-644e-4cdb-87ab-6f7270a29681
 # ╟─9bb4e28e-dd24-451c-9e95-205ba2e084ef
 # ╟─198f91c6-46dc-46dc-a013-c3064a7348cd
 # ╟─5e51a853-8736-4f92-b7f4-216ff4ab0b90
+# ╟─bc0e3c51-16e1-47d1-8372-268debce32fa
 # ╠═703ef56f-1045-4572-ae2a-170a48945e84
+# ╟─75f178d4-85d5-4591-89f7-a4e359a04f0b
+# ╟─11872972-0526-4c07-902b-0b8f3ac0553f
+# ╠═72482d89-c3f1-479c-b06c-da73259f68b0
+# ╟─5b844fba-dae3-4945-a57e-d76caf8ee0df
+# ╠═184ac4ea-4d5b-4041-b37e-7f9fc154d863
+# ╟─0f00bfef-32fe-489d-93e7-669c89af6eff
+# ╠═2edab904-37a6-4c2e-949d-d0868e36b688
+# ╟─94c436d1-d4c1-4eb1-8940-e8b12e608b30
+# ╟─82f5a6d7-c15d-4350-b5fd-8aaa16229740
+# ╟─27df401a-709d-4c73-bd4c-5333572ab233
+# ╟─59398ae6-5c42-4fbf-a2b9-3c33e9b2a246
+# ╟─0082e604-f8bf-4e89-a3b3-f168c6e04efa
+# ╟─6d9fa03d-cd79-416a-b686-d244afdba854
+# ╟─5afd91f6-9e0d-4774-a954-3f00b71dd2e7
 # ╟─f7c0cb4b-c98a-404d-96f6-7a20f167d11d
 # ╠═f6a38e02-f53f-440d-934b-4ed1f00d1827
+# ╟─85f193d7-7382-445d-8213-870aba58af71
 # ╠═965d6f22-5522-416f-ab1e-e66623262e90
 # ╠═399f02e7-81ef-4f06-9df3-a3857532654a
 # ╠═f8d655ea-db55-4fd5-b324-25987b9d200d
+# ╟─f51a102a-bb79-47b5-b1dd-d04992bf2ba0
 # ╠═0d7b525d-3f30-44fc-b771-1665d3f2e045
+# ╟─28a8be56-c56b-49db-b57d-0a676d7f7f47
 # ╠═3ca0aed1-1d31-41c7-80b8-cfb3ce79d1f5
-# ╠═72482d89-c3f1-479c-b06c-da73259f68b0
-# ╟─74e7b431-08c7-4ded-9033-c6858b9574c1
-# ╟─11872972-0526-4c07-902b-0b8f3ac0553f
-# ╠═2edab904-37a6-4c2e-949d-d0868e36b688
-# ╠═db28a9fb-dbf7-428d-af19-ef371d6d2014
-# ╠═59398ae6-5c42-4fbf-a2b9-3c33e9b2a246
-# ╟─5b844fba-dae3-4945-a57e-d76caf8ee0df
-# ╠═e30452d4-e4b8-43b2-9ada-e9aa31c7bb12
-# ╠═184ac4ea-4d5b-4041-b37e-7f9fc154d863
-# ╠═fa4e79c2-28dc-418c-bee3-396f2aa535b5
-# ╠═29143eb7-ea08-43e9-bae1-5179b58eb495
-# ╟─64e7be40-cd0b-40c4-b476-51c6a66d40e1
-# ╟─717b7ca2-a397-47e7-b661-04c9ed2cc571
-# ╟─5afd91f6-9e0d-4774-a954-3f00b71dd2e7
 # ╟─796aa432-e28f-4243-92c0-934f4e4f022f
 # ╠═f622af0a-033b-48c5-aedb-e86926b731a4
 # ╠═86ced829-524f-4948-9df9-6812762c8fa3
@@ -1852,10 +1867,10 @@ version = "0.9.1+5"
 # ╠═08eb9335-3ba7-4f18-bd7f-dc841b716cfb
 # ╠═3d873be9-796c-487d-b1ba-5b35455656f1
 # ╠═c3ca3de8-7af9-48f7-9311-25d5ac8f39c3
-# ╠═cdc0de3d-ca1a-47cd-aaf4-dfcb0afb46c8
 # ╟─fde5a843-5767-4fc7-a381-eb2ecc1fe801
-# ╠═39f1690d-3003-45be-94a8-aa5c025594e5
-# ╠═1cd39002-70c6-4bb8-a05a-96ff3416e654
-# ╠═e3e29321-c698-407b-9f59-ec1ac30c5f87
+# ╟─39f1690d-3003-45be-94a8-aa5c025594e5
+# ╟─1cd39002-70c6-4bb8-a05a-96ff3416e654
+# ╟─8e79b955-7d69-4974-aa93-fdcb8498c4bf
+# ╟─e3e29321-c698-407b-9f59-ec1ac30c5f87
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
