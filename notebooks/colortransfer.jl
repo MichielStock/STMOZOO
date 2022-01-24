@@ -15,7 +15,7 @@ macro bind(def, element)
 end
 
 # ╔═╡ 03f007fe-ed84-4ee4-a806-5239843c0391
-using Plots ,Images , PlutoUI , Glob, Colors, ImageIO, LinearAlgebra, Distributions ,Clustering
+using Plots ,Images , PlutoUI , Glob, Colors, ImageIO, LinearAlgebra, Distributions ,Clustering, Test
 
 # ╔═╡ c3c61b29-ddc7-4638-9350-8ce945326d27
 md"""
@@ -423,7 +423,7 @@ md""" --- """
 
 # ╔═╡ ddbab8c0-1440-4027-b1f4-0f083448a17e
 md"""
-## SRC
+## Appendix (source code)
 """
 
 # ╔═╡ 8131f7cf-7027-4168-b41e-e75a4001a2a5
@@ -739,6 +739,31 @@ colorscatter(colors; kwargs...) =
 			color=colors, label="",
 			m = 0.5)
 
+# ╔═╡ a1d493ba-0bda-47f5-a5d7-dc3082a47819
+@testset begin
+	a = 5
+end
+
+# ╔═╡ a6f86f24-604c-4cf5-ac46-cc7b18882277
+@testset begin
+	a_filename = "../figs/nutshell.png"
+
+	# Emulation of the function image_load()
+	a_img = load(a_filename)
+	a_img = RGB.(a_img)
+
+	# Check if the image loaded is in the RGB color space
+	@test typeof(a_img) == Matrix{RGB{N0f8}}
+
+	# Check if the image_to_3Darray gives a 3D array with width x height x channel
+	a_array = image_to_3d_array(a_img)
+	@test length(size(a_array)) == 3
+
+	# Check if the image_to_2Darray gives a 2D array with channel x (width * height)
+	a_array_2 = image_to_2d_array(a_img)
+	@test length(size(a_array_2)) == 2
+end
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
@@ -751,6 +776,7 @@ Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 Clustering = "~0.14.2"
@@ -2180,9 +2206,9 @@ version = "1.8.6+1"
 
 [[deps.libvorbis_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Ogg_jll", "Pkg"]
-git-tree-sha1 = "c45f4e40e7aafe9d086379e5578947ec8b95a8fb"
+git-tree-sha1 = "b910cb81ef3fe6e78bf6acee440bda86fd6ae00c"
 uuid = "f27f6e37-5d2b-51aa-960f-b287f2bc3b7a"
-version = "1.3.7+0"
+version = "1.3.7+1"
 
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -2315,5 +2341,7 @@ version = "0.9.1+5"
 # ╠═471b8d90-5b64-4fed-a074-47d42ed4e0e0
 # ╠═22a77c67-a0ed-434a-9db4-993cdce0c93b
 # ╠═ec53c559-044e-4287-8b44-1123fade583c
+# ╠═a1d493ba-0bda-47f5-a5d7-dc3082a47819
+# ╟─a6f86f24-604c-4cf5-ac46-cc7b18882277
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
