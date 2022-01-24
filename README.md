@@ -16,6 +16,8 @@ By saying **"a different way"**, you will see:
 - Optimal transport between the clustered color schemes **rather than** for all pixels
 - Thus, **much faster execution** of the codes!
 
+<h2> Running the code </h2> 
+
 All the necessary codes are in **notebook/colortransfer.jl** (Stand-alone pluto notebook)
 
 ![alt text](https://github.com/juhlee/ColorTransfer.jl/blob/master/figs/nutshell.png)
