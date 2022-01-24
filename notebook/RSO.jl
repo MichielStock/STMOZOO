@@ -5,7 +5,7 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ 0150a3e2-f98e-4412-9e96-1a2db5a9421e
-using Combinatorics, Plots, Statistics, Distributions, MLDatasets, Flux, CUDA, Zygote
+using Combinatorics, Plots, Statistics, Distributions, MLDatasets, Flux, CUDA, Zygote, Test
 
 # ╔═╡ 352a4a75-8136-474e-a80a-9d65baabd195
 using Flux: Data.DataLoader
@@ -165,6 +165,21 @@ function simple_model(; imgsize=(28, 28, 1), nclasses=10)
     Dense(prod(cnn_output_size), nclasses))
 end
 
+# ╔═╡ f8d655ea-db55-4fd5-b324-25987b9d200d
+function very_simple_model(; imgsize=(28, 28, 1), nclasses=10)
+	# Simpler model to test algorithm
+	cnn_output_size = Int.(floor.([imgsize[1]/2,imgsize[2]/2,4]))
+	
+	return Chain(
+	# input 28x28x1
+	Conv((3,3), 1=>4, pad=1, relu), 	#14x14x16
+	MaxPool((2,2)),
+	
+	flatten,
+	
+    Dense(prod(cnn_output_size), nclasses))
+end
+
 # ╔═╡ 0d7b525d-3f30-44fc-b771-1665d3f2e045
 function loss_and_accuracy(data_loader, model, device)
 	acc = 0
@@ -191,34 +206,41 @@ MNIST dataset is consists of 60,000 training images and 10,000 test images of ha
 
 **RSO**"
 
+# ╔═╡ 2edab904-37a6-4c2e-949d-d0868e36b688
+#begin
+#	acc_tracker_RSO = TrackObj(Float32)
+#	train(epochs=10, optimiser="RSO", tracker=acc_tracker_RSO, batchsize=1024)
+#end
+
 # ╔═╡ db28a9fb-dbf7-428d-af19-ef371d6d2014
 md"**original model**\
-256 batches - epoch1 - logitcrossentropy - 5020s\
-256 batches - epoch1 - crossentropy - 5240s\
-5000 batches - epoch1 - crossentropy - 73042s\
-
+256 batches - epoch1 - 5240s\
+5000 batches - epoch1 - 73042s\
 
 **simple model**\
-128 batches - epoch1 - 472s - loss: 12.311763, accuracy = 0.1032\
-1000 batches - epoch1 - 2974s - loss = 20.598274, accuracy = 0.1135\
-1000 batches - epoch3 - 7963s - loss = 4.4746695, accuracy = 0.1109\
----- No input normalization -\
-----1000 batches - epoch1 - 3065s - loss = 1.039716, accuracy = 0.7029\
-----1000 batches - epoch10 - 36464s - loss = 0.12634973, accuracy = 0.9604\
-----512 batches - epoch10 - 19186s - loss = 0.19334497, accuracy = 0.9397\
-----256 batches - epoch10 - 
+1000 batches - epoch1 - 3065s - loss = 1.039716, accuracy = 0.7029\
+1000 batches - epoch10 - 36464s - loss = 0.12634973, accuracy = 0.9604\
+512 batches - epoch10 - 19186s - loss = 0.19334497, accuracy = 0.9397\
+256 batches - epoch10 - 
+
+**very simple model**\
+256 batches - epoch1 - 159s - loss: 1.4583962, accuracy = 0.5976\
+256 batches - epoch10 - 1641s - loss = 0.37202972, accuracy = 0.8929\
+512 batches - epoch10 - 2834s - loss = 0.29727805, accuracy = 0.9152\
+1024 batches - epoch10 - 5046s - loss = 0.3011675, accuracy = 0.9148
 "
 
 # ╔═╡ 5b844fba-dae3-4945-a57e-d76caf8ee0df
 md"**SGD (Backpropagation)**"
 
 # ╔═╡ e30452d4-e4b8-43b2-9ada-e9aa31c7bb12
-md"256 batches - epoch 50 - logitcrossentropy - simple model - 2027s"
+md"256 batches - epoch 50 - logitcrossentropy - simple model - 2027s\
+256 batches - epoch 50 - very simple model - 471s - loss = 0.057645123, accuracy = 0.9806"
 
 # ╔═╡ 184ac4ea-4d5b-4041-b37e-7f9fc154d863
 #begin
 #	acc_tracker = TrackObj(Float32)
-#	train(epochs=1, tracker=acc_tracker)
+#	train(epochs=50, tracker=acc_tracker)
 #end
 
 # ╔═╡ 29143eb7-ea08-43e9-bae1-5179b58eb495
@@ -233,52 +255,6 @@ In summary:
 | Accuracy  |          |      1   |
 
 """
-
-# ╔═╡ 9c5ef276-7864-42e0-8afb-fde1bf6cccfb
-
-
-# ╔═╡ 8e1498dc-5b45-49a3-bf58-9a77aba16085
-md"### 3-2 Comparison of weight update strategies
-
-**1) Perturbing a single weight per update**"
-
-# ╔═╡ 76134ecf-191e-47cc-98e8-8d80e57fa3f8
-
-
-# ╔═╡ a0fd0657-e133-4daa-9efc-f51326d53960
-md"**2) Perturbing all weights in a layer per update**"
-
-# ╔═╡ 8c116b3f-3bd7-4010-809a-abcf1bce7fae
-
-
-# ╔═╡ 8a9c0cb1-850c-49e3-b268-9cef2b52eed2
-md"**3) Perturbing all weights in whole network per update**"
-
-# ╔═╡ df2b0c81-7a00-4b5a-a096-322e6d4df20f
-
-
-# ╔═╡ 4884cb1b-6c62-4b52-96bb-b80147f24abe
-
-
-# ╔═╡ 954ee843-59ca-4303-9f30-e69be076b510
-md"### 3-3. Order of optimization within a layer
-RSO needs an order for optimizing each of the weights, $$w_{j} ∈ w_{id}$$, where $$n_{d}$$ is the number of neurons and $$W_{d} = \{w_{1}, w_{2}.., w_{id}, ..w_{nd}\}$$. Verify the robustness to the optimization order by testing with inverted order of optimization.\
-\
-**1) Default right order**\
-Start optimizing the set of weights that affect each output neuron $$w_{id} ∈ W_{d}$$."
-
-# ╔═╡ f06363ed-0913-4b74-9eae-64febdf2fd7f
-
-
-# ╔═╡ 316786ba-0132-4352-93a6-45761afa3b5b
-md"**2) Inverted order**\
-Start optimizing the set of weights that interact with one input channel $$L_{i} ∈ L$$."
-
-# ╔═╡ acf5796d-9f3c-421c-a306-c6e76b1a1bd1
-
-
-# ╔═╡ 5102eacd-543d-47a0-bfe5-445b095d0e02
-md"Optimization in the default order gave **{   }**% accuracy and the optimization in the inverted order gave **{   }**% accuracy on the MNIST dataset. Both performs almost identical and this demonstrates the robustness of RSO to a given optimization order in a layer."
 
 # ╔═╡ 717b7ca2-a397-47e7-b661-04c9ed2cc571
 
@@ -416,8 +392,8 @@ function RSO(train_loader, test_loader, C,model, batch_size, device, args)
 					end
 
 					# track accuracy of the model
-					ŷ = model(x)
-					acc = sum(onecold(ŷ) .== onecold(y)) / size(x)[end]
+					#ŷ = model(x)
+					#acc = sum(onecold(ŷ) .== onecold(y)) / size(x)[end]
 										
 				end
 			end
@@ -456,7 +432,8 @@ function train(; kws...)
 	
 	# Construct model
 	#model = original_model() |> device
-	model = simple_model() |> device
+	#model = simple_model() |> device
+	model = very_simple_model() |> device
 	ps = Flux.params(model) # model's trainable parameters
 
 	best_param = ps
@@ -517,12 +494,6 @@ function train(; kws...)
 	println("Best test loss = $best_loss, Best test accuracy = $best_acc")
 end
 
-# ╔═╡ 2edab904-37a6-4c2e-949d-d0868e36b688
-begin
-	acc_tracker_RSO = TrackObj(Float32)
-	train(epochs=10, optimiser="RSO", tracker=acc_tracker_RSO, batchsize=256)
-end
-
 # ╔═╡ fde5a843-5767-4fc7-a381-eb2ecc1fe801
 begin
 	myblue = "#304da5"
@@ -544,6 +515,15 @@ plot(acc_tracker_RSO, label="RSO-MNIST")
 # ╔═╡ fa4e79c2-28dc-418c-bee3-396f2aa535b5
 plot(acc_tracker, label="SGD-MNIST")
 
+# ╔═╡ 39f1690d-3003-45be-94a8-aa5c025594e5
+md"### Unit test"
+
+# ╔═╡ 1cd39002-70c6-4bb8-a05a-96ff3416e654
+@testset "Unit test" begin
+	@test
+	@test
+end
+
 # ╔═╡ e3e29321-c698-407b-9f59-ec1ac30c5f87
 md"## References
 [1] Tripathi, R., & Singh, B. (2020). RSO: A Gradient Free Sampling Based Approach For Training Deep Neural Networks. arXiv preprint arXiv:2005.05955.
@@ -561,6 +541,7 @@ Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
@@ -1795,9 +1776,9 @@ version = "1.6.38+0"
 
 [[libvorbis_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Ogg_jll", "Pkg"]
-git-tree-sha1 = "c45f4e40e7aafe9d086379e5578947ec8b95a8fb"
+git-tree-sha1 = "b910cb81ef3fe6e78bf6acee440bda86fd6ae00c"
 uuid = "f27f6e37-5d2b-51aa-960f-b287f2bc3b7a"
-version = "1.3.7+0"
+version = "1.3.7+1"
 
 [[nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -1847,6 +1828,7 @@ version = "0.9.1+5"
 # ╠═f6a38e02-f53f-440d-934b-4ed1f00d1827
 # ╠═965d6f22-5522-416f-ab1e-e66623262e90
 # ╠═399f02e7-81ef-4f06-9df3-a3857532654a
+# ╠═f8d655ea-db55-4fd5-b324-25987b9d200d
 # ╠═0d7b525d-3f30-44fc-b771-1665d3f2e045
 # ╠═3ca0aed1-1d31-41c7-80b8-cfb3ce79d1f5
 # ╠═72482d89-c3f1-479c-b06c-da73259f68b0
@@ -1861,19 +1843,6 @@ version = "0.9.1+5"
 # ╠═fa4e79c2-28dc-418c-bee3-396f2aa535b5
 # ╠═29143eb7-ea08-43e9-bae1-5179b58eb495
 # ╟─64e7be40-cd0b-40c4-b476-51c6a66d40e1
-# ╟─9c5ef276-7864-42e0-8afb-fde1bf6cccfb
-# ╟─8e1498dc-5b45-49a3-bf58-9a77aba16085
-# ╠═76134ecf-191e-47cc-98e8-8d80e57fa3f8
-# ╟─a0fd0657-e133-4daa-9efc-f51326d53960
-# ╠═8c116b3f-3bd7-4010-809a-abcf1bce7fae
-# ╟─8a9c0cb1-850c-49e3-b268-9cef2b52eed2
-# ╠═df2b0c81-7a00-4b5a-a096-322e6d4df20f
-# ╟─4884cb1b-6c62-4b52-96bb-b80147f24abe
-# ╟─954ee843-59ca-4303-9f30-e69be076b510
-# ╠═f06363ed-0913-4b74-9eae-64febdf2fd7f
-# ╟─316786ba-0132-4352-93a6-45761afa3b5b
-# ╠═acf5796d-9f3c-421c-a306-c6e76b1a1bd1
-# ╟─5102eacd-543d-47a0-bfe5-445b095d0e02
 # ╟─717b7ca2-a397-47e7-b661-04c9ed2cc571
 # ╟─5afd91f6-9e0d-4774-a954-3f00b71dd2e7
 # ╟─796aa432-e28f-4243-92c0-934f4e4f022f
@@ -1885,6 +1854,8 @@ version = "0.9.1+5"
 # ╠═c3ca3de8-7af9-48f7-9311-25d5ac8f39c3
 # ╠═cdc0de3d-ca1a-47cd-aaf4-dfcb0afb46c8
 # ╟─fde5a843-5767-4fc7-a381-eb2ecc1fe801
+# ╠═39f1690d-3003-45be-94a8-aa5c025594e5
+# ╠═1cd39002-70c6-4bb8-a05a-96ff3416e654
 # ╠═e3e29321-c698-407b-9f59-ec1ac30c5f87
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
