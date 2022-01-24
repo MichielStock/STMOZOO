@@ -25,6 +25,6 @@ The original paper (https://arxiv.org/abs/2005.05955) showed that sampling metho
 
 **!!IMPORTANT!!**\
 Before you open and run the notebook, install MLDatasets.jl package so that you can access to MNIST dataset:
-Pkg.add("MLDatasets")
+**Pkg.add("MLDatasets")**
 
 Then, my notebook will do the rest! :)
