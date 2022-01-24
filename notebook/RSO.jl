@@ -404,9 +404,9 @@ function RSO(train_loader, test_loader, C,model, batch_size, device, args)
 
 		track!(args.tracker, test_acc)
 
-		println("----RSO Epoch=$c")
-		println("----   train_loss = $train_loss, train_accuracy = $train_acc")
-		println("----   test_loss = $test_loss, test_accuracy = $test_acc")
+		println("RSO Round=$c")
+		println("   train_loss = $train_loss, train_accuracy = $train_acc")
+		println("   test_loss = $test_loss, test_accuracy = $test_acc")
 	
 	end
 	
