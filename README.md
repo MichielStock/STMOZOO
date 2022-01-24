@@ -23,7 +23,7 @@ Heesoo Song (01514152)
 
 The original paper (https://arxiv.org/abs/2005.05955) showed that sampling method could be compatible to the traditional back-propagation method (e.g. SGD) which gives very close classification accuracy in a very few rounds of updates. In this project, I tried to reproduce RSO function from the paper with simpler convolutional neural network (1 convolutional layer) and compared its classification accuracy to backpropagation method.
 
-**IMPORTANT**
+**!!IMPORTANT!!**\
 Before you open and run the notebook, install MLDatasets.jl package so that you can access to MNIST dataset:
 Pkg.add("MLDatasets")
 
