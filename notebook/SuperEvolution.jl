@@ -31,13 +31,13 @@ md"""
 """
 
 # ╔═╡ 06fe0d51-26b1-4ea7-b789-985964f7b110
-imresize(Images.load(Images.download("https://github.com/shvhoye/SuperEvolution.jl/blob/master/Figures/Clover.png?raw=true")), ratio = 1/2.5)
+imresize(Images.load(Images.download("https://github.com/shvhoye/SuperEvolution.jl/blob/master/figures/Clover.png?raw=true")), ratio = 1/2.5)
 
 # ╔═╡ e2357883-94f7-42c9-8bef-6644af323c7b
 md""" 
 ## Overview
 
-In this notebook, we will explore the Superformula, how it can be used to visualise and explain evolution and how Superformula shapes can be fitted to real images using optimization algorithms such as simulated annealing or the MAP-Elites algorithm. 
+In this notebook, we will explore the Superformula, how it can be used to visualize and explain evolution, and how Superformula shapes can be fitted to real images using optimization algorithms such as simulated annealing or the MAP-Elites algorithm.
 
 1. The Superformula
 
@@ -53,33 +53,58 @@ In this notebook, we will explore the Superformula, how it can be used to visual
 md"""
 ## 1. The Superformula
 
-The Superformula is a generalization of the superellipse. It is a simple geometrical equation that can be used to describe many complex shapes and curves found in nature such as starfish, flowers, diatoms ... , but also many abstract and man-made geometrical shapes and forms. The shapes obtained using the Superformula are called Supershapes (Gielis, 2003). 
+The Superformula is a generalization of the superellipse. It is a simple geometrical equation that can be used to describe many complex shapes and curves found in nature such as starfish, flowers, diatoms ..., but also many abstract and man-made geometrical shapes and forms. The shapes obtained using the Superformula are called Supershapes (Gielis, 2003). 
 
-With r the radius and ϕ the angle in polar coordinates, different shapes can be generated using the following formula:
+With $r$ the radius and $ϕ$ the angle in polar coordinates, different shapes can be generated using the following formula:
 
 
 $$\\[2pt]$$
-
 
 $$r\left(\varphi\right) = \left(\left|\frac{\cos\left(\frac{m\varphi}{4}\right)}{a}\right| ^{n_2}+ \left|\frac{\sin\left(\frac{m\varphi}{4}\right)}{b}\right| ^{n_3}\right) ^{-\frac{1}{n_{1}}}$$
 
 $$\\[2pt]$$
 
+The parameters of the Superformula: $a$, $b$, $m$, $n_1$, $n_2$ and $n_3$ can also be seen as the "genes" of the Supershapes. If you change the parameters and thus the genes of the Supershape you will obtain a different form.
 
-a, b, m, n1, n2 and n3 are the parameters of the Superformula and can be seen as the "genes" of the Supershapes. If you change the parameters and thus the genes of the Supershape you will obtain a different form.
-
-The implementation of the Superformula and other functions can be found in the appendix. Below you can see one of the many possible forms that can be described using the superformula.
+The implementation of the Superformula can be found just below. Other functions can be found in the appendix.
 
 """
+
+# ╔═╡ 7aa5ebe5-4207-4caf-8e85-fbd56e26c52d
+"""
+
+	superformula(phi; a = 1, b = 1, m = 7, n1 = 3, n2 = 4, n3 = 17)
+
+	An implementation of the Superformula as described by Gielis in 2003.
+
+	Input:
+		- phi: the angle in a polar coordinate system
+		- a, b, m, n1, n2 and n3: parameters of the Superformula
+
+	Output:
+		- r: the radius in a polar coordinate system
+
+"""
+function superformula(phi; a = 1, b = 1, m = 7, n1 = 3, n2 = 4, n3 = 17)
+	
+	raux = abs.(1 / a .* abs.(cos.(m * phi / 4))) .^ n2 + abs.(1 / b .* abs.(sin.(m * phi / 4))) .^ n3
+  
+	r = abs.(raux) .^ (- 1 / n1)
+  
+	return r
+
+end
+
+# ╔═╡ 4524e200-ae4e-41c8-b06b-a41b7e39f899
+md"""Below you can see one of the many possible forms that can be described using the superformula."""
 
 # ╔═╡ 69f12062-cf39-4f57-b2ea-24e25b41ddd5
 md"""
 ## 2. Exploring what the Superformula can do
 
-"""
+The parameters/genes of the Supershape can be changed using the sliders below. You can play with the sliders and observe the rich diversity of resulting Supershapes you are able to form.
 
-# ╔═╡ 1764540c-9cfd-46cc-969f-5defaf467072
-md"""The parameters/genes of the Supershape can be changes using the sliders below. You can play with the sliders and observe the rich diversity of resulting Supershapes you are able to form."""
+"""
 
 # ╔═╡ 93880c6b-a27e-4f7d-a5d9-74b5e5d363fc
 @bind a Slider(0:50, show_value=true, default=21)
@@ -108,13 +133,13 @@ md"""
 # ╔═╡ d9159850-9f56-4c6d-bd2c-c984bb72b9b8
 md"""
 
-In an attempt to explain and visualise the concept of evolution, the user can evolve a  Supershape. This can by achieved starting with a parent Supershape and next creating each time eight mutants and selecting one each time to become the parent in the next generation. Since it is you, the user, that is selecting the parent for the next generation, this evolutionary process can be seen as some sort of subjective optimization of the Supershape towards a shape the user likes. This is because there is no given objective function that is able to tell the algorithm which mutant has a higher or lower objective value, but the user selects a mutant based on the user's subjective choice.
+In an attempt to explain and visualize the concept of evolution, the user can evolve a Supershape. This can be achieved by starting with a parent Supershape and next creating each time eight mutants and selecting one each time to become the parent in the next generation. Since it is you, the user, that is selecting the parent for the next generation, this evolutionary process can be seen as some sort of subjective optimization of the Supershape towards a shape the user likes. This is because there is no given objective function that is able to tell the algorithm which mutant has a higher or lower objective value, but the user selects a mutant based on the user's subjective choice.
 
-The small applet below that allows the user to evolve a Supershape is inspired by the book "The Blind Watchmaker: Why the Evidence of Evolution Reveals a Universe without Design" by Richard Dawkins in 2015.
+The small applet below that allows the user to evolve a Supershape is inspired by the book "The Blind Watchmaker: Why the Evidence of Evolution Reveals a Universe without Design" by Richard Dawkins in 1986.
 
 In the implementation below, 9 Supershapes can be seen: 1 parent in the center and its 8 mutants/offspring surrounding it. The mutant's genes are identical to its parent's genes except for some slight mutations.
 
-By pressing on one of the buttons for a certain mutant, you can select which mutant you want to become the parent in the next generation. This process can be repeated to see how the Supershape evolves over time. In the figure, P stand for parent and M for mutant, followed by its number.
+By pressing on one of the buttons for a certain mutant, you can select which mutant you want to become the parent in the next generation. This process can be repeated to see how the Supershape evolves over time. In the figure, P stands for parent and M for mutant, followed by its number.
 
 The slider below the figure allows you to modify how different the next generation will be compared to the parent.
 
@@ -122,13 +147,13 @@ One fun experiment to do would be to guide your Supershape towards some goal. Yo
 
 The genes for the current parent are also visible below.
 
-The gradual change in the Supershape's appearance in each generation serves as a simple model of biological evolution. Each Supershape is nearly identical to its parent, but after many generations the appearance of the Supershape can diverge wildly from the original Supershape. Even though Biological evolution works on a much longer time scale, it does work in a similar way. As an example, your dog probably closely resembles his parents, his parents probably closely resemble their parents and so on, but if you were to go back tens of thousands of generations your dog's distant ancestors would only bear a slight resemblance to your dog (Dawkins, 2015).
+The gradual change in the Supershape's appearance in each generation serves as a simple model of biological evolution. Each Supershape is nearly identical to its parent, but after many generations, the appearance of the Supershape can diverge wildly from the original Supershape. Even though biological evolution works on a much longer time scale, it does work in a similar way. As an example, your dog probably closely resembles his parents, his parents probably closely resemble their parents and so on, but if you were to go back tens of thousands of generations your dog's distant ancestors would only bear a slight resemblance to your dog (Dawkins, 1986).
 
-Since you select which mutant you want to survive, the evolution of Supershapes in this case is an example of artificial selection. Similar to how humans influenced the  evolution of dogs over the past 15,000 – 30,000 years. In nature, however, evolution is based on natural selection: organisms that are best suited for their environment are the ones most likely to survive and pass on their genes (Dawkins, 2015).
+Since you select which mutant you want to survive, the evolution of Supershapes in this case is an example of artificial selection. Similar to how humans influenced the evolution of dogs over the past 15,000 – 30,000 years. In nature, however, evolution is based on natural selection: organisms that are best suited for their environment are the ones most likely to survive and pass on their genes (Dawkins, 1986).
 
-In his book, Dawkins uses a similar applet as seen below to argue that natural selection can explain the complex adaptations of organisms. An imporant aspect that can be illustrated, is the difference between the potential for the development of complexity as a result of pure randomness, as opposed to that of randomness coupled with cumulative selection. The accumulation of random events is crucial for evolution and the emergence of complex features in life (Dawkins, 2015).
+In his book, Dawkins uses a similar applet as seen below to argue that natural selection can explain the complex adaptations of organisms. An important aspect that can be illustrated, is the difference between the potential for the development of complexity as a result of pure randomness, as opposed to that of randomness coupled with cumulative selection. The accumulation of random events is crucial for evolution and the emergence of complex features in life (Dawkins, 1986).
 
-Besides evolution, Supershapes not only useful for modeling shapes found in nature, but also allow insight into why certain forms grow the way they do (Gielis, 2003).
+Besides evolution, Supershapes are not only useful for modeling shapes found in nature but also allow insight into why certain forms grow the way they do (Gielis, 2003).
 
 """
 
@@ -182,7 +207,7 @@ begin
 end
 
 # ╔═╡ 94071fd6-9ad8-47f6-9600-40f5b4ba8f94
-md"""*If an error occurs when starting over, please just click in the block of code and it will be solved."""
+md"""*If an error occurs when starting over, please just click in the block of code above and it will be resolved."""
 
 # ╔═╡ c0ddc94c-16cb-4073-9d7d-b677980ca7fa
 md"""
@@ -200,7 +225,7 @@ md"""
 
 # ╔═╡ b3c2a892-2dba-419d-8d4a-f573aec3720d
 md"""
-The superformula can describe many complex shapes and curves that are found nature, such as starfish, diatoms, flowers ... as can be seen below. You can try to select mutants to obtain the shapes below.
+The Superformula can describe many complex shapes and curves that are found in nature, such as starfish, diatoms, flowers ... as can be seen below. You can try to select mutants to obtain the shapes below.
 
 Alternatively, you can push one of the buttons for the supershapes so it becomes the first parent in the evolution simulation above. (S in the figures stands for Supershape, followed by the number of the shape.)
 
@@ -243,16 +268,16 @@ md"""Once you have selected multiple mutants above, you can push the "Animate" b
 md"""
 ## 4. Fitting Supershapes to images of diatoms, flowers and starfish using simulated annealing and MAP-Elites
 
-Since the Superformula has the ability to describe so man naturally occuring shapes, it could be interesting to see if Supershapes can be fit to images of diatoms, flowers and starfish.
+Since the Superformula has the ability to describe so many naturally occurring shapes, it could be interesting to see if Supershapes can be fit to images of diatoms, flowers and starfish.
 
-The objective is to obtain a Supershape that resembles the original/natural shape as close a possible. An example of this can be seen below, but in these two examples I tweaked the parameters by hand.
+The objective is to obtain a Supershape that resembles the original/natural shape as close as possible. An example of this can be seen below, but in these two examples, I tweaked the parameters by hand.
 
 """
 
 # ╔═╡ cf1245c4-4298-41cf-a368-124b38982a68
 md"""
 
-A figure of a diatom with an overlapping Supershape with parameters a = 1, b = 1, m = 3, n1 = 5, n2 = 8 and n3 = 8
+A figure of a diatom with an overlapping Supershape with parameters $a$ = 1, $b$ = 1, $m$ = 3, $n_1$ = 5, $n_2$ = 8 and $n_3$ = 8
 
 
 """
@@ -260,14 +285,14 @@ A figure of a diatom with an overlapping Supershape with parameters a = 1, b = 1
 # ╔═╡ f4444d7d-f283-42b5-a6c6-579a0564c354
 md"""
 
-A figure of a flower with an overlapping Supershape with parameters a = 1, b = 1, m = 40, n1 = 13, n2 = -4 and  n3 = 17.
+A figure of a flower with an overlapping Supershape with parameters $a$ = 1, $b$ = 1, $m$ = 40, $n_1$ = 13, $n_2$ = -4 and  $n_3$ = 17.
 
 
 """
 
 # ╔═╡ 7c19a13d-16a7-43e2-89f7-987690e60269
 md"""
-In order to fit the Supershapes to the figures, the simulated annealing algorithms and the MAP-Elites algorithms will be used and the solutions of both will be compared. In order for the algorithms to work, some image processing has to be done first. This can be viewed in the appendix.
+In order to fit the Supershapes to the figures, the simulated annealing algorithms and the MAP-Elites algorithms will be used and the solutions of both will be compared. For simplicity, we will start by trying to recreate a specific Supershape using SA and ME. Next, it can be tried on real images, but some image processing has to be done first. This can be viewed in the appendix.
 
 """
 
@@ -282,19 +307,19 @@ The parameters for the SA algorithm:
 """
 
 # ╔═╡ 419d5824-c7c8-43a9-8107-8b04b0ed093a
-@bind logTmin Slider(-10:1.0, show_value=true, default=-1.0)
+@bind logTmin Slider(-10:1.0, show_value=true, default=-2.0)
 
 # ╔═╡ a47999e1-9415-492d-8784-4ced249a1b79
-@bind logTmax Slider(1:5.0, show_value=true, default=2.0)
+@bind logTmax Slider(1:5.0, show_value=true, default=4.0)
 
 # ╔═╡ 36b88a3b-b8d9-452d-b5c4-bb30aced0b4b
-@bind r Slider(0.01:0.01:0.99, show_value=true, default=0.95)
+@bind r Slider(0.01:0.01:0.99, show_value=true, default=0.85)
 
 # ╔═╡ 85a9b84f-a9d1-4532-ba58-ac0eaa978af0
-@bind kT Slider(1:20:1000, show_value=true, default=20.0)
+@bind kT Slider(1:20:1000, show_value=true, default=100.0)
 
 # ╔═╡ 368f2043-6505-4c48-801e-aad1537e7b30
-# Because running SA takes a couple of minutes, it doesn't run automatically. You have to push to "Run SA" button for it to start.
+md"""Because running SA takes a couple of minutes, it doesn't run automatically. You can push the "Run SA" button to start."""
 
 # ╔═╡ 4938804e-3f04-4821-847d-4bdb9c24d78b
 @bind SA CounterButton("Run SA")
@@ -305,84 +330,28 @@ The parameters for the SA algorithm:
 # ╔═╡ 24159b9c-d157-40cd-9539-3855101c2b73
 md"""
 
-**4.2 MAP-Elites**
+**4.2 MAP-Elites (ME)**
 
 
 """
 
 # ╔═╡ 219b169c-6b41-4981-b5bc-7fa7241326c7
-# Because running MAP-Elites takes ~ half a minute, it doesn't run automatically. You have to push to "Run MAP-Elites" button for it to start.
+md"""Because running MAP-Elites takes ~ half a minute, it doesn't run automatically. You can push the "Run MAP-Elites" button to start."""
 
 # ╔═╡ 28c31d86-816b-48c3-bf67-1734a8002d57
 @bind ME CounterButton("Run MAP-Elites")
 
-# ╔═╡ 73de15fd-7da9-45f3-b8a3-d60c3ee897f4
-#=
-begin
+# ╔═╡ f88a733a-6bb2-4d0d-8c52-cef4498a5754
+md"""In the next part, the ME algorithm tries to approximate the contour extracted from a real image using a Supershape."""
 
-	#initial_supershape = [1 1 2 2 2 2 1 1 0 10 10 10] 
+# ╔═╡ ebf8ad58-30fa-4a2d-b3d1-a008cca30d22
+@bind ME2 CounterButton("Run MAP-Elites 2")
 
-	image2 = [copy(x_flower1), copy(y_flower1)]
-	
-	MAP_solutions_supershapes2, MAP_performances_supershapes2 = 
-	MAP_Elites(initial_supershape, random_selection, random_neighbor, supershapes_objective, niche_supershapes, N, image2; max_iteration = 100000)
+# ╔═╡ 36b314bf-e3d6-4f73-be03-81d140723f86
 
 
-end
-=#
-
-# ╔═╡ 631043ae-f3f9-48bb-8a79-724a8c577f0d
-#=
-let
-
-	p = 0:.001:2
-	phi = p.* pi
-
-	s_me = MAP_solutions_supershapes2[argmax(MAP_performances_supershapes2)]
-	
-	a = s_me[1]
-	b = s_me[2]
-	m = s_me[3]
-	n1 = s_me[4]
-	n2 = s_me[5]
-	n3 = s_me[6]
-	parameter1 =  s_me[7]
-	parameter2 =  s_me[8]
-	parameter3 =  s_me[9]
-	parameter4 =  s_me[10]
-	parameter5 =  s_me[11]
-	parameter6 =  s_me[12]
-
-
-	rnew = fill(0.0, length(phi))
-	x = fill(0.0, length(phi))
-	y = fill(0.0, length(phi))
-	
-	for (num, i) in enumerate(phi)
-		
-		rnew[num] =  round(superformula(a= a, b = b, m = m, n1 = n1, n2 = n2, n3 = n3, i), digits=8)
-
-		x[num] = rnew[num] .* cos(i+parameter1)*parameter3 + parameter5
-  
-		y[num] = rnew[num] .* sin(i+parameter2)*parameter4 + parameter6
-
-	end
-	
-	
-
-	#plot(Diatom3)
-	
-	plot(x_flower1, y_flower1, label = false)
-	
-	plot!(x, y, w = 5,  color = "blue", label = false, border=:none, fg_legend = :transparent, title = "The solution plot over the original figure")
-
-end
-=#
-
-# ╔═╡ 920d7be1-0bda-41cd-9b17-25ecded09bf2
-# I thinkSA and ME don't give good solutions because the objective function "supershapes_objective" needs to be better. 
-
-#(+ I am planning on expanding the niches for ME)
+# ╔═╡ 81e5f62c-e7f5-4782-b555-19ec870ab2ef
+md"""The results vary depending on the shape we are trying to approximate. I suspect that either (or both) the neighbor and objective function would need refinement for better results. I did try to use the MSE of a Fast Fourier transforms (on the radii in polar coordinates) as the objective function, but it lead to worse results than those above. Adjusting only one (random) parameter at a time when creating a new neighbor also did not improve the results."""
 
 # ╔═╡ 99a9bc93-2942-4e32-96b8-369649c0148b
 md"""## Super Evolution unit tests
@@ -393,13 +362,10 @@ Unit tests to ensure that the Superformula function and the mutant function meet
 
 """
 
-# ╔═╡ a0d11014-cd58-44f0-9b71-cb12d3dbbed0
-# Unit tests for SA and MAP-Elites?
-
 # ╔═╡ 194351eb-bf39-428f-aae1-d2501bf4384b
 md""" ## References
 
-- Dawkins, R. (2015). The Blind Watchmaker: Why the Evidence of Evolution Reveals a Universe without Design [E-book]. W. W. Norton &Amp; Company.
+- Dawkins, R., & Pyle, L. (1986). The blind watchmaker.
 
 - Gielis, J. (2003). A generic geometric transformation that unifies a wide range of natural and abstract shapes. American journal of botany, 90(3), 333-338.
 
@@ -420,7 +386,7 @@ Table of contents for the appendix
 	
 	e. Figures used in section 4
 	
-	f. Segementation and contours of images for section 4
+	f. Segmentation and contours of images for section 4
 
 """
 
@@ -430,31 +396,6 @@ md"""
 **a. Superformula related functions and variables**
 
 """
-
-# ╔═╡ 6715d27c-e5bf-482d-8665-6c5f991291cc
-"""
-
-	superformula(phi ;a = 1, b = 1, m = 7, n1 = 3, n2 = 4, n3 = 17)
-
-	An implementation of the Superformula as described by Gielis in 2003.
-
-	Input:
-		- phi: the angle in polar coordinate system
-		- a, b, m, n1, n2 and n3: parameters of the Superformula
-
-	Output:
-		- r: the radius in polar coordinate system
-
-"""
-function superformula(phi ;a = 1, b = 1, m = 7, n1 = 3, n2 = 4, n3 = 17)
-	
-	raux = abs.(1 / a .* abs.(cos.(m * phi / 4))) .^ n2 + abs.(1 / b .* abs.(sin.(m * phi / 4))) .^ n3
-  
-	r = abs.(raux) .^ (- 1 / n1)
-  
-	return r
-
-end
 
 # ╔═╡ 0034ac1f-9e7f-4ee1-b894-edf8c22ab1db
 superformula(x...; kwargs...) = superformula(x; kwargs...)
@@ -524,7 +465,6 @@ begin
 
 	# Initialising some variables for the evolution of the Supershapes
 	
-
 	a_figures = [1 3 1 0.8] 
 	
 	b_figures = [1 3 1 1] 
@@ -556,7 +496,6 @@ begin
 	a_mutant, b_mutant, m_mutant, n1_mutant, n2_mutant, n3_mutant = fill(1.0, 8), fill(1.0, 8), fill(7.0, 8), fill(3.0, 8), fill(4.0, 8), fill(17.0, 8)
 		
 	parents = []
-
 	
 	md"""Initialising some variables for the evolution of the Supershapes"""
 
@@ -564,6 +503,49 @@ end
 
 # ╔═╡ 432bac03-8a76-481a-a053-b4599e9bb57f
 ϕ = 0:.001:2 .* pi
+
+# ╔═╡ a64106b2-e70c-4eb5-967f-ab0e9994b2c3
+let
+	
+	supershape_solution = [1 1 3 5 8 8 0.5 0.5 120 120 220 155]  
+
+	#supershape_solution = [1 1 40 13 -4 17 0.5 0.5 120 120 220 155]  
+
+	phi = ϕ
+
+	a = supershape_solution[1]
+	b =  supershape_solution[2]
+	m =  supershape_solution[3]
+	n1 =  supershape_solution[4]
+	n2 =  supershape_solution[5]
+	n3 =  supershape_solution[6]
+	parameter1 =  supershape_solution[7]
+	parameter2 =  supershape_solution[8]
+	parameter3 =  supershape_solution[9]
+	parameter4 =  supershape_solution[10]
+	parameter5 =  supershape_solution[11]
+	parameter6 =  supershape_solution[12]
+
+	rnew = fill(0.0, length(phi))
+	x = fill(0.0, length(phi))
+	y = fill(0.0, length(phi))
+	
+	for (num, i) in enumerate(phi)
+		
+		rnew[num] =  round(superformula(a= a, b = b, m = m, n1 = n1, n2 = n2, n3 = n3, i), digits=8)
+
+		x[num] = rnew[num] .* cos(i+parameter1)*parameter3 + parameter5
+  
+		y[num] = rnew[num] .* sin(i+parameter2)*parameter4 + parameter6
+
+
+	end
+
+	global image = rnew
+
+	md""" The shape we want to recreate is hidden here. """
+
+end
 
 # ╔═╡ bf7f0593-79f7-4161-b128-c199ae4cb5c2
 
@@ -577,7 +559,7 @@ md"""
 """
 
 # ╔═╡ 1063bb90-2818-4174-a003-c17160e71fd5
-initial_supershape = [1 1 2 2 2 2 1 1 0 10 10 10] 
+initial_supershape = [1 1 2 2 2 2 1 1 10 10 10 10] 
 
 # ╔═╡ 9cfdaff3-5abf-4784-815f-4530b71a60e5
 """
@@ -594,7 +576,7 @@ initial_supershape = [1 1 2 2 2 2 1 1 0 10 10 10]
 
 """
 function random_neighbor(supershape)
-	
+
 	a  =  copy(supershape[1])
 	
 	b =  copy(supershape[2])
@@ -619,11 +601,11 @@ function random_neighbor(supershape)
 	
 	parameter6 =  copy(supershape[12])
 
-	d = Normal(0.0, 0.2)
+	d = Normal(0.0, 0.05)
 	
-	d2 = Normal(0.0, 0.1)	
+	d2 = Normal(0.0, 0.005)	
 
-	d3 = Normal(0.0, 50)	
+	d3 = Normal(0.0, 5)	
 	
 	a_new = 1 #a + rand(d)
 	
@@ -673,7 +655,51 @@ end
 """
 function supershapes_objective(supershape_solution, image)
 
-	p = 0:.001:2
+	p = range(start = 0, stop = 2, length = length(image))
+
+	phi = p.* pi
+
+	a = supershape_solution[1]
+	b =  supershape_solution[2]
+	m =  supershape_solution[3]
+	n1 =  supershape_solution[4]
+	n2 =  supershape_solution[5]
+	n3 =  supershape_solution[6]
+
+	rnew = fill(0.0, length(phi))
+	x = fill(0.0, length(phi))
+	y = fill(0.0, length(phi))
+	
+	for (num, i) in enumerate(phi)
+		
+		rnew[num] =  round(superformula(a= a, b = b, m = m, n1 = n1, n2 = n2, n3 = n3, i), digits=8)
+
+	end
+	
+	MSE = sum((image .- rnew).^2)/length(rnew)
+
+	obj = -MSE 
+	
+	return obj
+
+end
+
+# ╔═╡ da39722f-4691-4166-8f5c-5df999f2e797
+"""
+	supershapes_objective2(supershape_solution, image)
+	
+	Objective function to steer the Supershape towards a form that is similar to the contour of a given image
+
+	Inputs:
+		- Supershape: all the parameters needed to make a Supershape + rotation and translation parameters
+		- image: x and y coordinates for the contour of the image
+
+	Output:
+		- obj: an objective value
+"""
+function supershapes_objective2(supershape_solution, image)
+
+	p = range(start = 0, stop = 2, length = length(image[1]))
 	phi = p.* pi
 
 	a = supershape_solution[1]
@@ -710,26 +736,13 @@ function supershapes_objective(supershape_solution, image)
 	x2 = sort(copy(x))
 	y2 = sort(copy(y))
 	
-	global MSE = 0
-	
-	for i in 1:minimum([length(x_image_sorted) length(x2)])
+	MSE = sum((x_image_sorted .- x2).^2 + (y_image_sorted .- y2).^2)/length(x_image_sorted)
 
-
-		MSE += (x_image_sorted[i] - x2[i])^2 + (y_image_sorted[i] - y2[i])^2
-
-
-	end
-
-	MSE = MSE/minimum([length(x_image_sorted) length(x2)])
-
-	obj = -MSE # Try and minimise this objective
+	obj = -MSE 
 
 	return obj
 
 end
-
-# ╔═╡ 200e9dd0-60af-41d1-949e-0d6994e76ee1
-md"""Some tests below"""
 
 # ╔═╡ 32cfb418-4c52-47ae-a720-cbfea2f30c18
 
@@ -743,6 +756,18 @@ md"""
 """
 
 # ╔═╡ b6d736e6-c0db-4807-9f76-44a5d7e8990d
+"""
+	random_selection(X)
+
+	Selects a random elite form the map/archive
+
+	Inputs:
+		- X: archive/map containing the elites
+	
+	Output:
+	 - selection: a random elite form the map/archive
+
+"""
 function random_selection(X)
 	
 	selection = [1000.0 1000.0 1000.0 1000.0 1000.0 1000.0 1000.0 1000.0 1000.0 1000.0 1000.0 1000.0]
@@ -760,10 +785,22 @@ function random_selection(X)
 end
 
 # ╔═╡ b672c45f-c389-4e4a-992f-1840e9da367e
+"""
+	niche_supershapes(x)
+
+	Find the niche a specific Supershape belongs to
+
+	Inputs:
+		- x: a possible solution containing all the parameters of a Supershape
+	
+	Output:
+	 - i, j: the place niche the Supershape holds in the archive
+
+
+"""
 function niche_supershapes(x)
 
-
-	#niches = a b m ...
+	#niches = a b m n1 n2 n3
 
 	if x[3] <= 0
 
@@ -789,6 +826,32 @@ function niche_supershapes(x)
 	elseif 2 < x[4] 
 		
 		j = 3
+	end
+
+	if x[5] <= 0
+
+		i = 4
+		
+	elseif 2 >= x[5] > 0
+		
+		i = 5
+
+	elseif 2 < x[5] 
+		
+		i = 6
+	end
+	
+	if x[6] <= 0
+
+		j = 4
+		
+	elseif 2 >= x[6] > 0
+		
+		j = 5
+
+	elseif 2 < x[6] 
+		
+		j = 6
 	end
 	
 	return i, j
@@ -897,6 +960,19 @@ function MAP_Elites(initial_solution, random_selection, random_variation, perfor
 
 end
 
+# ╔═╡ 82be1c86-69c8-4a64-aa34-3fbf2bf0033f
+if ME > 0
+	begin
+	
+		N = 6
+		
+		MAP_solutions_supershapes, MAP_performances_supershapes = 
+		MAP_Elites(initial_supershape, random_selection, random_neighbor, supershapes_objective, niche_supershapes, N, image; max_iteration = 10000)
+	
+	
+	end
+end
+
 # ╔═╡ 84404fa1-7b80-418b-b401-b8c959c52fee
 
 
@@ -991,18 +1067,33 @@ function simulated_annealing(f, s₀, image, tracker=notrack;
 end
 	
 
+# ╔═╡ cf2ae45e-be02-44ae-9b20-57107bf9ed16
+if SA > 0
+	begin
+		
+		# Stores the objective through the iterations
+		
+		sa_tracker = TrackObj(Float64) 
+	
+		s_sa, obj_sa = simulated_annealing(supershapes_objective,  initial_supershape, image,
+				sa_tracker, Tmin=10^logTmin, Tmax=10^logTmax; r, kT)
+	
+
+	end
+end
+
 # ╔═╡ 0e9343f1-e10b-4270-8931-aefddcb1816c
 Plots.plot(tracker::TrackObj; kwargs...) = plot(tracker.objectives, xlabel="iteratation", label="objective", lw=2, #color=myred, 
 legend=:bottomright; kwargs...)
 
-# ╔═╡ 39906aa0-dfcf-47a1-889c-b7eabfb85d89
+# ╔═╡ bc4c4e75-e7a9-4da4-82b3-3ca74a72df4a
 """
-	plotsuperformula(phi ;a = 1, b = 1, m = 7, n1 = 3, n2 = 4, n3 = 17, label = "", colour = 1)
+	plotsuperformula(phi; a = 1, b = 1, m = 7, n1 = 3, n2 = 4, n3 = 17, label = "", colour = 1)
 
-	A function that takes in the parameters for the Superformula, converts them to an x and a y in a Cartesian coordinate system so they can then be plotted.
+	A function that takes in the parameters for the Superformula, converts them to an x and a y in a Cartesian coordinate system and plots the resulting curve.
 
 	Input:
-		- phi: the angle in polar coordinate system
+		- phi: the angle in a polar coordinate system
 		- a, b, m, n1, n2 and n3: parameters of the Superformula
 		- label: the label of the figure
 		- colour: the colour of the Supershape
@@ -1012,7 +1103,7 @@ legend=:bottomright; kwargs...)
 		- a plot of the Supershape
 
 """
-function plotsuperformula(phi ;a = 1, b = 1, m = 7, n1 = 3, n2 = 4, n3 = 17, label = "", colour = 1)
+function plotsuperformula(phi; a = 1, b = 1, m = 7, n1 = 3, n2 = 4, n3 = 17, label = "", colour = 1)
 
 	rnew = fill(0.0, length(phi))
 	x = fill(0.0, length(phi))
@@ -1028,29 +1119,56 @@ function plotsuperformula(phi ;a = 1, b = 1, m = 7, n1 = 3, n2 = 4, n3 = 17, lab
 
 	end
 	
-	return plot(x, y, axis = nothing, label= "$label", border=:none, fg_legend = :transparent, colour = colour)
+	return plot(x, y, axis = nothing, label= "$label", border=:none, fg_legend = :transparent, colour = colour, aspect_ratio = :equal)
 
 end
 
-# ╔═╡ d9d39127-135a-4c39-a5fc-c81e56c0c0a8
+# ╔═╡ 1e12714b-1860-47d4-a098-946ccb38a526
 plotsuperformula(ϕ)
 
 # ╔═╡ b35f0400-009e-4ea7-b380-f516e6499ac7
 plotsuperformula(ϕ; a = a, b = b, m = m, n1 = n1, n2 = n2, n3 = n3)
 
+# ╔═╡ 3f823e11-d5e8-4850-945b-c7d23de6b769
+animation = @animate for i in 1:length(a_parents)
+
+	Animate
+	
+		a = a_parents[i]
+		
+		b = b_parents[i]
+			
+		m = m_parents[i]
+		
+		n1 = n1_parents[i]
+			
+		n2 = n2_parents[i]
+			
+		n3 = n3_parents[i]
+
+		plotsuperformula(ϕ; a = a, b = b, m = m, n1 = n1, n2 = n2, n3 = n3)
+	
+end
+
+# ╔═╡ 4e8037a5-524a-4307-809e-3c9f833d9027
+gif(animation, fps = 2)
+
 # ╔═╡ 07aef886-ed96-4419-b8cf-270ac96a944a
 let 
 
+
+	
 	### JUST CLICK ON THIS TEXT TO RESOLVE THE ERROR AND START OVER :)
 	
+
+
 	
 	## Code that allows you to evolve the supershapes
 
-	# Outside of this block of code, some variables are initialised variables. This can be looked at at the end of the appendix.
+	# Outside of this block of code, some variables are initialised variables. This can be looked at at in the appendix.
 
 	# outside_mutants is an array that keeps track of how many times a button for a certain mutant has been pushed. mutants_list does the same, but is not automatically updated. We can use this difference to find out which button the user pressed, so we can make that mutant the parent in the next generation.
 
-	
 	outside_mutants = [m1 m2 m3 m4 m5 m6 m7 m8]
 
 	# Test to see which mutant the user has selected to be the parent in the next generation.
@@ -1075,7 +1193,6 @@ let
 
 	test2 = figures .!= figures_list 
 
-	
 	if length(parents) == 0
 
 		# Start with a given shape
@@ -1208,20 +1325,19 @@ end
 # ╔═╡ 5d5d1465-b37e-4a74-b528-00a4e6841c99
 md"""
 
-The "genes" of the current parent.
+The "genes" of the current parent: 
 
-a = $(round(a_parent_1, digits = 3))
+Gene $a$ = $(round(a_parent_1, digits = 3))
 
-b = $(round(b_parent_1, digits = 3))
+Gene $b$ = $(round(b_parent_1, digits = 3))
 
-m = $(round(m_parent_1, digits = 3))
+Gene $m$ = $(round(m_parent_1, digits = 3))
 
-n1 = $(round(n1_parent_1, digits = 3))
+Gene $n_1$ = $(round(n1_parent_1, digits = 3))
 
-n2 = $(round(n2_parent_1, digits = 3))
+Gene $n_2$ = $(round(n2_parent_1, digits = 3))
 
-n3 = $(round(n3_parent_1, digits = 3))
-
+Gene $n_3$ = $(round(n3_parent_1, digits = 3))
 
 """
 
@@ -1242,29 +1358,97 @@ let
 
 end
 
-# ╔═╡ 3f823e11-d5e8-4850-945b-c7d23de6b769
-animation = @animate for i in 1:length(a_parents)
-
-	Animate
-	
-		a = a_parents[i]
-		
-		b = b_parents[i]
-			
-		m = m_parents[i]
-		
-		n1 = n1_parents[i]
-			
-		n2 = n2_parents[i]
-			
-		n3 = n3_parents[i]
-
-		plotsuperformula(ϕ; a = a, b = b, m = m, n1 = n1, n2 = n2, n3 = n3)
-	
+# ╔═╡ 3189cc45-66b8-4e54-a813-e5d0dcc9c2a0
+if SA > 0
+	plot(sa_tracker, title="Simulated annealing", aspect_ratio = :equal)
 end
 
-# ╔═╡ 4e8037a5-524a-4307-809e-3c9f833d9027
-gif(animation, fps = 2)
+# ╔═╡ 280a3ca4-a519-4e8b-90bc-69c636f8f012
+if SA > 0
+	let
+	
+		p = range(start = 0, stop = 2, length = length(image))
+		phi = p.* pi
+		
+		a = s_sa[1]
+		b = s_sa[2]
+		m = s_sa[3]
+		n1 = s_sa[4]
+		n2 = s_sa[5]
+		n3 = s_sa[6]
+		parameter1 =  s_sa[7]
+		parameter2 =  s_sa[8]
+		parameter3 =  s_sa[9]
+		parameter4 =  s_sa[10]
+		parameter5 =  s_sa[11]
+		parameter6 =  s_sa[12]
+	
+		rnew = fill(0.0, length(phi))
+		x = fill(0.0, length(phi))
+		y = fill(0.0, length(phi))
+		
+		for (num, i) in enumerate(phi)
+			
+			rnew[num] =  round(superformula(a= a, b = b, m = m, n1 = n1, n2 = n2, n3 = n3, i), digits=8)
+	
+			x[num] = rnew[num] .* cos(i+parameter1)*parameter3 + parameter5
+	  
+			y[num] = rnew[num] .* sin(i+parameter2)*parameter4 + parameter6
+	
+		end
+		
+
+	plot(phi, image, proj=:polar, label="Original shape",  border=:none, fg_legend = :transparent, aspect_ratio = :equal,  axis=nothing)
+
+	plot!(phi, rnew, proj=:polar, label="Approximation with ME",  border=:none, fg_legend = :transparent, aspect_ratio = :equal,  axis=nothing)
+	
+	end
+end
+
+# ╔═╡ 44266510-8c64-429b-925b-901293e3c033
+if ME > 0
+	let
+	
+		p = range(start = 0, stop = 2, length = length(image))
+		phi = p.* pi
+	
+		s_me = MAP_solutions_supershapes[argmax(MAP_performances_supershapes)]
+		
+		a = s_me[1]
+		b = s_me[2]
+		m = s_me[3]
+		n1 = s_me[4]
+		n2 = s_me[5]
+		n3 = s_me[6]
+		parameter1 =  s_me[7]
+		parameter2 =  s_me[8]
+		parameter3 =  s_me[9]
+		parameter4 =  s_me[10]
+		parameter5 =  s_me[11]
+		parameter6 =  s_me[12]
+	
+	
+		rnew = fill(0.0, length(phi))
+		x = fill(0.0, length(phi))
+		y = fill(0.0, length(phi))
+		
+		for (num, i) in enumerate(phi)
+			
+			rnew[num] =  round(superformula(a= a, b = b, m = m, n1 = n1, n2 = n2, n3 = n3, i), digits=8)
+	
+			x[num] = rnew[num] .* cos(i+parameter1)*parameter3 + parameter5
+	  
+			y[num] = rnew[num] .* sin(i+parameter2)*parameter4 + parameter6
+	
+		end
+		
+
+	plot(phi, image, proj=:polar, label="Original shape",  border=:none, fg_legend = :transparent, aspect_ratio = :equal,  axis=nothing)
+
+	plot!(phi, rnew, proj=:polar, label="Approximation with ME",  border=:none, fg_legend = :transparent, aspect_ratio = :equal,  axis=nothing)
+	
+	end
+end
 
 # ╔═╡ c1951364-2447-4d05-b71b-bbab2d49a11e
 
@@ -1278,7 +1462,7 @@ md"""
 """
 
 # ╔═╡ 72ec6f6c-9855-4522-9d44-b040d3ad5989
-Diatom3 = Images.load(Images.download("https://github.com/shvhoye/SuperEvolution.jl/blob/master/Figures/Diatom3.jpeg?raw=true"))
+Diatom3 = Images.load(Images.download("https://github.com/shvhoye/SuperEvolution.jl/blob/master/figures/Diatom3.jpeg?raw=true"))
 
 # ╔═╡ 52aaa3a3-b1b0-42a4-b768-b02a6bb99fbd
 let
@@ -1317,11 +1501,11 @@ end
 # ╔═╡ 7de6279b-0149-4817-985e-fe653bb593d9
 triangle = plotsuperformula(ϕ; a = 1, b = 1, m = 3, n1 = 4.5, n2 = 10, n3 = 10)
 
-# ╔═╡ f31785eb-845f-4853-a559-1a3952aadb92
-triangle2 = Images.load(Images.download("https://github.com/shvhoye/SuperEvolution.jl/blob/master/Figures/triangle2.png?raw=true"));
+# ╔═╡ 23d7bef1-b585-4723-b734-b69841ec700c
+triangle2 = Images.load(Images.download("https://github.com/shvhoye/SuperEvolution.jl/blob/master/figures/triangle0.png?raw=true"));
 
 # ╔═╡ 770ecee0-c0cc-4aaf-80bb-b976faa2de96
-Flower1 = Images.load(Images.download("https://github.com/shvhoye/SuperEvolution.jl/blob/master/Figures/Flower1.jpeg?raw=true"))
+Flower1 = Images.load(Images.download("https://github.com/shvhoye/SuperEvolution.jl/blob/master/figures/Flower1.jpeg?raw=true"))
 
 # ╔═╡ 9fdfb04a-fcec-41cf-a9a2-289c29cebfdd
 let
@@ -1363,7 +1547,7 @@ end
 
 
 # ╔═╡ 62635ead-576e-448a-bf03-9095488bf70c
-md"""**f. Segementation and contours of images**"""
+md"""**f. Segmentation and contours of images**"""
 
 # ╔═╡ 3b6a8b5f-a309-4c7c-a93c-cee4b08c43ae
 md"""
@@ -1385,7 +1569,7 @@ segmented_flower = seeded_region_growing(Flower1, seeds_flower)
 plot(map(i->segment_mean(segmented_flower,i), labels_map(segmented_flower)),  border=:none, fg_legend = :transparent)
 
 # ╔═╡ 7f4e7d1a-6bf6-43c6-84fc-419fd89ac4c8
-SF1 =  Images.load(Images.download("https://github.com/shvhoye/SuperEvolution.jl/blob/master/Figures/SF1.jpeg?raw=true"));
+SF1 =  Images.load(Images.download("https://github.com/shvhoye/SuperEvolution.jl/blob/master/figures/SF1.jpeg?raw=true"));
 
 # ╔═╡ 4a3d0e1d-94cd-4628-8bd1-d48714470bf7
 md"""The Diatom"""
@@ -1400,7 +1584,7 @@ segmented_diatom = seeded_region_growing(Diatom3, seeds_diatom)
 plot(map(i->segment_mean(segmented_diatom,i), labels_map(segmented_diatom)),axis = nothing)
 
 # ╔═╡ 473e5515-823a-404a-a06c-ddea91c39e7c
-SD1 = Images.load(Images.download("https://github.com/shvhoye/SuperEvolution.jl/blob/master/Figures/SD3.jpeg?raw=true"));
+SD1 = Images.load(Images.download("https://github.com/shvhoye/SuperEvolution.jl/blob/master/figures/SD3.jpeg?raw=true"));
 
 # ╔═╡ e43b4647-1a48-4583-8529-80dcf25d5604
 md"""
@@ -1605,42 +1789,6 @@ begin
 
 end
 
-# ╔═╡ 2e7e2497-b719-490b-872b-a69f1cde6fe8
-let
-
-	p = 0:.001:2
-	phi = p.* pi
-
-	a = 1
-	b = 1
-	m = 40
-	n1 = 13
-	n2 = -4
-	n3 = 17
-
-
-	rnew = fill(0.0, length(phi))
-	x = fill(0.0, length(phi))
-	y = fill(0.0, length(phi))
-	
-	for (num, i) in enumerate(phi)
-		
-		rnew[num] =  round(superformula(a= a, b = b, m = m, n1 = n1, n2 = n2, n3 = n3, i), digits=8)
-
-		x[num] = rnew[num] .* cos(i+0.5)*280 + 360
-  
-		y[num] = rnew[num] .* sin(i+0.5)*280 + 340
-
-	end
-	
-	
-	plot(x, y, w = 5,  color = "blue", label = false, border=:none, fg_legend = :transparent)
-
-	plot!(x_flower1, y_flower1,  border=:none, legend = false)
-
-
-end
-
 # ╔═╡ 42688611-ec9c-4984-b00d-8c1c513dc750
 plot(x_flower1, y_flower1,  border=:none, legend = false)
 
@@ -1671,6 +1819,8 @@ img2
 
 # ╔═╡ 7f359853-1c99-43f3-a16e-472238cd63a4
 begin
+
+	# Extracting the x y coordinates of the contour
 	
 	x_diatom3 = []
 	y_diatom3 = []
@@ -1685,99 +1835,29 @@ begin
 
 end
 
-# ╔═╡ cf2ae45e-be02-44ae-9b20-57107bf9ed16
-if SA > 0
+# ╔═╡ 69457c79-b895-424d-aebb-3e54c9e5f04c
+if ME2 > 0
 	begin
-		
-		# Stores the objective through the iterations
-		
-		sa_tracker = TrackObj(Float64) 
-	
-		# An initial solution
-	
-		image = [copy(x_diatom3), copy(y_diatom3)]
-	
-		s_sa, obj_sa = simulated_annealing(supershapes_objective,  initial_supershape, image,
-				sa_tracker, Tmin=10^logTmin, Tmax=10^logTmax; r, kT)
-	
 
+		image2 = [copy(x_diatom3), copy(y_diatom3)]
+
+		N2 = 6
+		
+		MAP_solutions_supershapes2, MAP_performances_supershapes2 = 
+		MAP_Elites(initial_supershape, random_selection, random_neighbor, supershapes_objective2, niche_supershapes, N2, image2; max_iteration = 10000)
+	
+	
 	end
 end
 
-# ╔═╡ 3189cc45-66b8-4e54-a813-e5d0dcc9c2a0
-if SA > 0
-	plot(sa_tracker, title="Simulated annealing")
-end
-
-# ╔═╡ 280a3ca4-a519-4e8b-90bc-69c636f8f012
-if SA > 0
+# ╔═╡ 69ebef0f-bb9d-4f28-b20a-824e341117d1
+if ME2 > 0
 	let
 	
-		p = 0:.001:2
+		p = range(start = 0, stop = 2, length = 1999)
 		phi = p.* pi
 	
-		a = s_sa[1]
-		b = s_sa[2]
-		m = s_sa[3]
-		n1 = s_sa[4]
-		n2 = s_sa[5]
-		n3 = s_sa[6]
-		parameter1 =  s_sa[7]
-		parameter2 =  s_sa[8]
-		parameter3 =  s_sa[9]
-		parameter4 =  s_sa[10]
-		parameter5 =  s_sa[11]
-		parameter6 =  s_sa[12]
-	
-	
-		rnew = fill(0.0, length(phi))
-		x = fill(0.0, length(phi))
-		y = fill(0.0, length(phi))
-		
-		for (num, i) in enumerate(phi)
-			
-			rnew[num] =  round(superformula(a= a, b = b, m = m, n1 = n1, n2 = n2, n3 = n3, i), digits=8)
-	
-			x[num] = rnew[num] .* cos(i+parameter1)*parameter3 + parameter5
-	  
-			y[num] = rnew[num] .* sin(i+parameter2)*parameter4 + parameter6
-	
-		end
-		
-		
-	
-		#plot(Diatom3)
-		
-		plot(x_diatom3, y_diatom3, label = false)
-		
-		plot!(x, y, w = 5,  color = "blue", label = false, border=:none, fg_legend = :transparent, title = "The solution plot over the original figure")
-	
-	end
-end
-
-# ╔═╡ 82be1c86-69c8-4a64-aa34-3fbf2bf0033f
-if ME > 0
-	begin
-	
-		image_ME = [copy(x_diatom3), copy(y_diatom3)]
-	
-		N = 3
-		
-		MAP_solutions_supershapes, MAP_performances_supershapes = 
-		MAP_Elites(initial_supershape, random_selection, random_neighbor, supershapes_objective, niche_supershapes, N, image_ME; max_iteration = 10000)
-	
-	
-	end
-end
-
-# ╔═╡ 44266510-8c64-429b-925b-901293e3c033
-if ME > 0
-	let
-	
-		p = 0:.001:2
-		phi = p.* pi
-	
-		s_me = MAP_solutions_supershapes[argmax(MAP_performances_supershapes)]
+		s_me = MAP_solutions_supershapes2[argmax(MAP_performances_supershapes2)]
 		
 		a = s_me[1]
 		b = s_me[2]
@@ -1807,72 +1887,72 @@ if ME > 0
 	
 		end
 		
-		
+
+	plot(image2[1], image2[2], label="Extracted contour of the diatom image",  border=:none, fg_legend = :transparent, aspect_ratio = :equal,  axis=nothing)
+
+	plot!(x, y, label="Approximation with ME",  border=:none, fg_legend = :transparent, aspect_ratio = :equal,  axis=nothing)
 	
-		#plot(Diatom3)
-		
-		plot(x_diatom3, y_diatom3, label = false)
-		
-		plot!(x, y, w = 5,  color = "blue", label = false, border=:none, fg_legend = :transparent, title = "The solution plot over the original figure")
 	
 	end
 end
 
-# ╔═╡ 6c563e30-f4e1-4391-bf8b-b586594215f3
-let
+# ╔═╡ 3e86b5e3-690d-4a9b-b42d-d68f43a264cc
+if ME2 > 0
+	begin
 
-	p = 0:.001:2
-	phi = p.* pi
-
-	a = 1
-	b = 1
-	m = 3
-	n1 = 5
-	n2 = 8
-	n3 = 8
-
-
-	rnew = fill(0.0, length(phi))
-	x = fill(0.0, length(phi))
-	y = fill(0.0, length(phi))
-	
-	for (num, i) in enumerate(phi)
+		image3 = [copy(x_flower1), copy(y_flower1)]
 		
-		rnew[num] =  round(superformula(a= a, b = b, m = m, n1 = n1, n2 = n2, n3 = n3, i), digits=8)
-
-		x[num] = rnew[num] .* cos(i+1.08)*220 + 280
-  
-		y[num] = rnew[num] .* sin(i+1.08)*220 + 380
-
+		MAP_solutions_supershapes3, MAP_performances_supershapes3 = 
+		MAP_Elites(initial_supershape, random_selection, random_neighbor, supershapes_objective2, niche_supershapes, N2, image2; max_iteration = 10000)
+	
+	
 	end
+end
+
+# ╔═╡ 76013394-1595-47bb-b41b-5414f1975fbb
+if ME2 > 0
+	let
+	
+		p = range(start = 0, stop = 2, length = 1999)
+		phi = p.* pi
+	
+		s_me = MAP_solutions_supershapes3[argmax(MAP_performances_supershapes3)]
+		
+		a = s_me[1]
+		b = s_me[2]
+		m = s_me[3]
+		n1 = s_me[4]
+		n2 = s_me[5]
+		n3 = s_me[6]
+		parameter1 =  s_me[7]
+		parameter2 =  s_me[8]
+		parameter3 =  s_me[9]
+		parameter4 =  s_me[10]
+		parameter5 =  s_me[11]
+		parameter6 =  s_me[12]
 	
 	
-	p = plot(x, y, w = 5,  color = "blue", label = false, border=:none, fg_legend = :transparent)
-
-	plot!(x_diatom3, y_diatom3,  border=:none, legend = false)
-
+		rnew = fill(0.0, length(phi))
+		x = fill(0.0, length(phi))
+		y = fill(0.0, length(phi))
+		
+		for (num, i) in enumerate(phi)
+			
+			rnew[num] =  round(superformula(a= a, b = b, m = m, n1 = n1, n2 = n2, n3 = n3, i), digits=8)
 	
-	x_d3 = sort(copy(x_diatom3))
-	y_d3 = sort(copy(y_diatom3))
-	x2 = sort(copy(x))
-	y2 = sort(copy(y))
+			x[num] = rnew[num] .* cos(i+parameter1)*parameter3 + parameter5
+	  
+			y[num] = rnew[num] .* sin(i+parameter2)*parameter4 + parameter6
 	
-	global MSE_test = 0
+		end
+		
+
+	plot(image3[1], image3[2], label="Extracted contour of the flower image",  border=:none, fg_legend = :transparent, aspect_ratio = :equal,  axis=nothing)
+
+	plot!(x, y, label="Approximation with ME",  border=:none, fg_legend = :transparent, aspect_ratio = :equal,  axis=nothing)
 	
-	for i in 1:minimum([length(x_d3) length(x2)])
-
-
-		MSE_test += (x_d3[i] - x2[i])^2 + (y_d3[i] - y2[i])^2
-
-
+	
 	end
-
-	MSE_test = MSE_test/minimum([length(x_d3) length(x2)]) # Higher is worse 
-
-
-
-
-	
 end
 
 # ╔═╡ 696b1296-9f5d-4390-b30f-40900e6e22bc
@@ -1928,9 +2008,9 @@ version = "0.2.0"
 
 [[ArrayInterface]]
 deps = ["Compat", "IfElse", "LinearAlgebra", "Requires", "SparseArrays", "Static"]
-git-tree-sha1 = "265b06e2b1f6a216e0e8f183d28e4d354eab3220"
+git-tree-sha1 = "1ee88c4c76caa995a885dc2f22a5d548dfbbc0ba"
 uuid = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
-version = "3.2.1"
+version = "3.2.2"
 
 [[Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
@@ -2165,9 +2245,9 @@ version = "3.3.10+0"
 
 [[FileIO]]
 deps = ["Pkg", "Requires", "UUIDs"]
-git-tree-sha1 = "2db648b6712831ecb333eae76dbfd1c156ca13bb"
+git-tree-sha1 = "67551df041955cc6ee2ed098718c8fcd7fc7aebe"
 uuid = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
-version = "1.11.2"
+version = "1.12.0"
 
 [[FillArrays]]
 deps = ["LinearAlgebra", "Random", "SparseArrays", "Statistics"]
@@ -2979,9 +3059,9 @@ version = "0.4.1"
 
 [[StaticArrays]]
 deps = ["LinearAlgebra", "Random", "Statistics"]
-git-tree-sha1 = "3c76dde64d03699e074ac02eb2e8ba8254d428da"
+git-tree-sha1 = "de9e88179b584ba9cf3cc5edbb7a41f26ce42cda"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "1.2.13"
+version = "1.3.0"
 
 [[Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
@@ -3046,9 +3126,9 @@ uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [[TiffImages]]
 deps = ["ColorTypes", "DataStructures", "DocStringExtensions", "FileIO", "FixedPointNumbers", "IndirectArrays", "Inflate", "OffsetArrays", "PkgVersion", "ProgressMeter", "UUIDs"]
-git-tree-sha1 = "c342ae2abf4902d65a0b0bf59b28506a6e17078a"
+git-tree-sha1 = "991d34bbff0d9125d93ba15887d6594e8e84b305"
 uuid = "731e570b-9d59-4bfa-96dc-6df516fadf69"
-version = "0.5.2"
+version = "0.5.3"
 
 [[TiledIteration]]
 deps = ["OffsetArrays"]
@@ -3280,9 +3360,9 @@ version = "1.6.38+0"
 
 [[libvorbis_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Ogg_jll", "Pkg"]
-git-tree-sha1 = "c45f4e40e7aafe9d086379e5578947ec8b95a8fb"
+git-tree-sha1 = "b910cb81ef3fe6e78bf6acee440bda86fd6ae00c"
 uuid = "f27f6e37-5d2b-51aa-960f-b287f2bc3b7a"
-version = "1.3.7+0"
+version = "1.3.7+1"
 
 [[nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -3317,9 +3397,11 @@ version = "0.9.1+5"
 # ╟─06fe0d51-26b1-4ea7-b789-985964f7b110
 # ╟─e2357883-94f7-42c9-8bef-6644af323c7b
 # ╟─cead5325-a013-4151-8cb2-486147e9066f
-# ╟─d9d39127-135a-4c39-a5fc-c81e56c0c0a8
+# ╠═7aa5ebe5-4207-4caf-8e85-fbd56e26c52d
+# ╠═bc4c4e75-e7a9-4da4-82b3-3ca74a72df4a
+# ╟─4524e200-ae4e-41c8-b06b-a41b7e39f899
+# ╟─1e12714b-1860-47d4-a098-946ccb38a526
 # ╟─69f12062-cf39-4f57-b2ea-24e25b41ddd5
-# ╟─1764540c-9cfd-46cc-969f-5defaf467072
 # ╟─93880c6b-a27e-4f7d-a5d9-74b5e5d363fc
 # ╟─bb587364-5a3a-41f1-9e57-87facbc21181
 # ╟─4b0cfe82-aa8f-4f67-bb44-b3486ef8a5cf
@@ -3359,29 +3441,32 @@ version = "0.9.1+5"
 # ╠═a47999e1-9415-492d-8784-4ced249a1b79
 # ╠═36b88a3b-b8d9-452d-b5c4-bb30aced0b4b
 # ╠═85a9b84f-a9d1-4532-ba58-ac0eaa978af0
-# ╠═368f2043-6505-4c48-801e-aad1537e7b30
+# ╟─a64106b2-e70c-4eb5-967f-ab0e9994b2c3
+# ╟─368f2043-6505-4c48-801e-aad1537e7b30
 # ╟─4938804e-3f04-4821-847d-4bdb9c24d78b
 # ╠═cf2ae45e-be02-44ae-9b20-57107bf9ed16
-# ╠═3189cc45-66b8-4e54-a813-e5d0dcc9c2a0
+# ╟─3189cc45-66b8-4e54-a813-e5d0dcc9c2a0
 # ╟─280a3ca4-a519-4e8b-90bc-69c636f8f012
 # ╟─eab12a20-28a1-47c4-9d46-0a8b2ed6d870
 # ╟─24159b9c-d157-40cd-9539-3855101c2b73
-# ╠═219b169c-6b41-4981-b5bc-7fa7241326c7
+# ╟─219b169c-6b41-4981-b5bc-7fa7241326c7
 # ╟─28c31d86-816b-48c3-bf67-1734a8002d57
 # ╠═82be1c86-69c8-4a64-aa34-3fbf2bf0033f
 # ╟─44266510-8c64-429b-925b-901293e3c033
-# ╟─73de15fd-7da9-45f3-b8a3-d60c3ee897f4
-# ╟─631043ae-f3f9-48bb-8a79-724a8c577f0d
-# ╠═920d7be1-0bda-41cd-9b17-25ecded09bf2
+# ╟─f88a733a-6bb2-4d0d-8c52-cef4498a5754
+# ╟─ebf8ad58-30fa-4a2d-b3d1-a008cca30d22
+# ╠═69457c79-b895-424d-aebb-3e54c9e5f04c
+# ╟─69ebef0f-bb9d-4f28-b20a-824e341117d1
+# ╟─36b314bf-e3d6-4f73-be03-81d140723f86
+# ╠═3e86b5e3-690d-4a9b-b42d-d68f43a264cc
+# ╟─76013394-1595-47bb-b41b-5414f1975fbb
+# ╟─81e5f62c-e7f5-4782-b555-19ec870ab2ef
 # ╟─99a9bc93-2942-4e32-96b8-369649c0148b
 # ╟─070fa6ac-91dd-48a1-b905-27aa6f2c272e
-# ╠═a0d11014-cd58-44f0-9b71-cb12d3dbbed0
 # ╟─194351eb-bf39-428f-aae1-d2501bf4384b
 # ╟─8d8f3a18-c4ed-444a-b947-773e7f6384ef
 # ╟─14120ff1-56e8-41d2-b3eb-8fb95a6b3290
-# ╟─6715d27c-e5bf-482d-8665-6c5f991291cc
 # ╟─0034ac1f-9e7f-4ee1-b894-edf8c22ab1db
-# ╟─39906aa0-dfcf-47a1-889c-b7eabfb85d89
 # ╟─ab23b27d-2ece-4e90-b560-863be9610a57
 # ╟─cbdff552-ca0d-4b89-918c-bb926a03a975
 # ╟─71d54c27-eddc-4638-b5c8-dfa7698d4856
@@ -3393,9 +3478,7 @@ version = "0.9.1+5"
 # ╟─d789ad4e-eb5f-486c-bd88-967601b5afdb
 # ╟─9cfdaff3-5abf-4784-815f-4530b71a60e5
 # ╟─ba135607-b5e3-45ea-8ebe-b445c160f327
-# ╟─200e9dd0-60af-41d1-949e-0d6994e76ee1
-# ╟─2e7e2497-b719-490b-872b-a69f1cde6fe8
-# ╟─6c563e30-f4e1-4391-bf8b-b586594215f3
+# ╟─da39722f-4691-4166-8f5c-5df999f2e797
 # ╟─32cfb418-4c52-47ae-a720-cbfea2f30c18
 # ╟─e2b34380-c4f0-45f4-a5eb-a305b49247c8
 # ╟─b6d736e6-c0db-4807-9f76-44a5d7e8990d
@@ -3416,7 +3499,7 @@ version = "0.9.1+5"
 # ╟─93bb040b-9cab-4fe6-947d-f084609ef0a6
 # ╟─72ec6f6c-9855-4522-9d44-b040d3ad5989
 # ╟─7de6279b-0149-4817-985e-fe653bb593d9
-# ╟─f31785eb-845f-4853-a559-1a3952aadb92
+# ╟─23d7bef1-b585-4723-b734-b69841ec700c
 # ╟─770ecee0-c0cc-4aaf-80bb-b976faa2de96
 # ╟─dc92872c-24e6-48f3-8d64-5ae124334858
 # ╟─62635ead-576e-448a-bf03-9095488bf70c
