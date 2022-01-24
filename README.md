@@ -21,4 +21,4 @@ Heesoo Song (01514152)
 
 ![Gradient_vs_sampling.png](https://github.com/HeesooSong/STMOZOO/blob/master/notebook/Figures/Gradient_vs_sampling.png?raw=true)
 
-The original paper (https://arxiv.org/abs/2005.05955) showed that sampling method could be compatible to the traditional back-propagation method (e.g. SGD) which gives very close classification accuracy in a very few rounds of updates. In this project, I tried to reproduce the result from the paper with simpler convolutional neural network (2 CNN layers). Therefore the RSO function is constructed and its optimization efficiency/classification accuracy are compared to backpropagation method in the notebook. 
+The original paper (https://arxiv.org/abs/2005.05955) showed that sampling method could be compatible to the traditional back-propagation method (e.g. SGD) which gives very close classification accuracy in a very few rounds of updates. In this project, I tried to reproduce the result from the paper with simpler convolutional neural network (2 CNN layers). Therefore the RSO function is constructed and its classification accuracy is compared to backpropagation method in the notebook. 
