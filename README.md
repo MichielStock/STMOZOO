@@ -20,4 +20,10 @@ All the necessary codes are in **notebook/colortransfer.jl** (Stand-alone pluto 
 
 ![alt text](https://github.com/juhlee/ColorTransfer.jl/blob/master/figs/nutshell.png)
 
+If you run the notebooks/colortransfer.jl code, you will see how the two images in the figure above swap the color schemes!
+Of course, you have an option to use images of your own preference (There is a file upload button in the notebook).
+
+Throughout the notebook, there are several Sliders to try out different parameter values to see how they affect the outcome of the color transfer.
+Except for the clustering, all of the functions are blazing-fast, so feel free to move around the sliders!
+
 [![Build Status](https://travis-ci.org/MichielStock/STMOZOO.svg?branch=master)](https://travis-ci.org/MichielStock/STMOZOO)[![Coverage Status](https://coveralls.io/repos/github/MichielStock/STMOZOO/badge.svg?branch=master)](https://coveralls.io/github/MichielStock/STMOZOO?branch=master) 
