@@ -1,17 +1,18 @@
-using Documenter
-
-using STMOZOO
+using Documenter, STMOZOO
 using STMOZOO.Fridge
 
 makedocs(sitename="Fridge.jl",
     format = Documenter.HTML(),
     modules=[Fridge], # add your module
     pages=Any[
-        "scrapeRecipe"=> "man/scrapeRecipe.md",  # add the page to your documentation
+        "index.md",
+        "main function" => "man/mainFunction.md",
+        "search algorithms" => "man/searchAlgorithms",
+        "recipe webscraper"=> "man/recipeWebscraper.md",
     ])
 
 #=
 deploydocs(
-            repo = "github.com/michielstock/STMOZOO.jl.git",
+            repo = "github.com/wardvanbelle/Fridge.jl",
         )
 =#

@@ -4,7 +4,7 @@ include("recipewebscraper.jl")
 
 using .recipeWebscraper, JLD2
 
-export checkIngredients, greedyFindCombo, findBestRecipe, removeRecipe, SAFindCombo
+export checkIngredients, greedyFindCombo, findBestRecipe, RandomCombo, removeRecipe, SAFindCombo
 
 #==================================================
           CHECK INGREDIENTS FUNCTIONS
