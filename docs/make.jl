@@ -1,13 +1,13 @@
 using Documenter
 
 using STMOZOO
-using STMOZOO.Example
+using STMOZOO.Fridge
 
-makedocs(sitename="STMO ZOO",
+makedocs(sitename="Fridge.jl",
     format = Documenter.HTML(),
-    modules=[Example], # add your module
+    modules=[Fridge], # add your module
     pages=Any[
-        "Example"=> "man/example.md",  # add the page to your documentation
+        "scrapeRecipe"=> "man/scrapeRecipe.md",  # add the page to your documentation
     ])
 
 #=

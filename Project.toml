@@ -1,6 +1,7 @@
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 Cascadia = "54eefc05-d75b-58de-a785-1a3403f0919f"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 Gumbo = "708ec375-b3d6-5a57-a7ce-8257bf98657a"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
