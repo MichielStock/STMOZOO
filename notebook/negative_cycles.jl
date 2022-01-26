@@ -7,20 +7,14 @@ using InteractiveUtils
 # ╔═╡ 50860473-05c4-4382-8586-b10499b64e81
 using Graphs
 
+# ╔═╡ 3431f10d-db18-43f7-a358-25eee5b260b4
+using Plots
+
 # ╔═╡ 649b4f1c-ad90-4277-b53c-15bf6072c292
 using GraphRecipes
 
 # ╔═╡ 29842740-7b8b-11ec-2e6c-35c7be96ae3f
 using CoinbasePro
-
-# ╔═╡ 8c2008e6-405c-4261-9251-078f496051a5
-using BenchmarkTools
-
-# ╔═╡ f4195aa2-532e-4538-91bb-1b989b7056b5
-using GraphPlot
-
-# ╔═╡ a29dafe9-4916-4956-b492-144343178fa5
-using Plots
 
 # ╔═╡ a888a245-08ba-4fcd-8f19-52a810f4f725
 md"# Finding negative cycles using the Bellman–Ford algorithm
@@ -162,13 +156,19 @@ function plot_graph(graph, node_value, title, color, updated_edges)
 				edge_width[(v_ind, n_ind)] = 1
 			end
 		end
+		
 		#add a node label
-		push!(node_label, v * ": " * string(node_value[v]))
+		if node_value[v] != ""
+			push!(node_label, v * ": " * string(node_value[v]))
+		else
+			push!(node_label, v)
+		end
 	end
 
 	#create a plot of the graph
 	p = graphplot(g, names = node_label, edgelabel = edge_weight, edgewidth = 
-        edge_width, title = title, edgecolor = edge_color, method = :spectral)
+        edge_width, title = title, edgecolor = edge_color, method = :spectral, 
+        nodesize = 0.1)
 	return p
 end
 
@@ -235,8 +235,7 @@ function bellman_ford_animated(graph, start_node)
 					push!(updated_edges, (v, n))
 
 					#add a frame to the animation
-					p = plot_graph(graph, distance, "iteration: " * string(i), 
-                        colorant"red", 
+					p = plot_graph(graph, distance, "iteration: " * string(i), :red, 
                         updated_edges)
 					frame(animation, p)
 
@@ -367,14 +366,16 @@ end
 test_arbitrage_graph = create_currency_graph(test_pairs)
 
 # ╔═╡ 6907ccbe-95a6-4cd5-8bcb-33464b808f1f
-begin
-	node_value_arbitrage = Dict{String, Float64}(v => 0 for v in keys(test_arbitrage_graph))
-	#node_value_arbitrage["D"] = 0
-	node_value_arbitrage
-end
+node_value_arbitrage = Dict(v => "" for v in keys(test_arbitrage_graph))
 
 # ╔═╡ ffe2b3ff-2af6-4ddd-b8dc-692a115d221c
 plot_graph(test_arbitrage_graph, node_value_arbitrage, "currencies", :black, [])
+
+# ╔═╡ 4cc9ad91-71c5-4aa9-8971-f880bf6dbfcb
+test_arbitrage_graph_animation = bellman_ford_animated(test_arbitrage_graph, "EUR")
+
+# ╔═╡ 4a327ae9-5a2f-42a2-bb7b-827fdcc6d634
+gif(test_arbitrage_graph_animation, "test_arbitrage_graph_animation.gif", fps = 1)
 
 # ╔═╡ 77cb62fd-94f5-4eed-8d53-2bcc854bebbd
 #basic bellman ford algorithm
@@ -462,9 +463,6 @@ function bellman_ford_trace(graph, start_node)
 	return distance, predecessor
 end
 
-# ╔═╡ d79a0c46-cba0-4678-84d2-06b7b799a312
-#dist12, pred12 = bellman_ford_trace_test(graph, "EUR")
-
 # ╔═╡ 2408e409-24d1-4ae7-8dd3-a2349b573363
 #basic bellman ford algorithm
 function bellman_ford_all_cycles(graph, start_node)
@@ -513,72 +511,6 @@ function cycle_cost(path, graph)
 		end
 	end
 	return cost
-end
-
-# ╔═╡ ca95a5ce-8222-496b-b29a-65b0cf991e8e
-#basic bellman ford algorithm
-function bellman_ford_trace_test(graph, start_node)
-	
-	#initialize distance of source to every node as inf
-	distance = Dict{String, Float64}(v => Inf for v in keys(graph)) #look from all vertices simultaneously, for disconnected graphs
-	distance[start_node] = 0
-	predecessor = Dict{String, String}(v => "" for v in keys(graph))
-	N = length(distance)
-	x = -1
-	
-	#update distance n - 1 times
-	for _ in 1:N
-		x = -1
-		#iterate over all nodes
-		for v in keys(graph)
-			#iterate over all neighbors of the current node
-			for (w, n) in graph[v]
-				#update distance if needed
-				if distance[v] + w < distance[n]
-					predecessor[n] = v
-					x = n
-				end
-				distance[n] = min(distance[n], distance[v] + w)
-			end
-		end
-	end
-	
-	if x == -1
-		println("no negative cycles found from " * start_node)
-	else
-		for i in keys(graph)
-			if distance[i] < 0
-				y = i #lies in negative cycle or is reachable from it
-				#println(i)
-				for j in 1:N
-					y = predecessor[y] #find the cycle
-				end
-				cur = y
-				path = []
-				for k in 1:N
-					push!(path, cur)
-					cur = predecessor[cur]
-					if (cur == y) & (size(path)[1] > 1)
-						break
-					end
-				end
-
-				path = reverse(path)
-				cost = cycle_cost(path, graph)
-				if cost >= 0
-					break
-				end
-
-				println(cost)
-				println("negative cycle")
-				for p in path
-					println(p)
-					
-				end
-			end
-		end
-	end
-	return distance, predecessor
 end
 
 # ╔═╡ 63afbb82-509e-4eda-802b-f54349bc1e6b
@@ -635,64 +567,11 @@ function find_cycles(graph, start_node)
 	return predecessor
 end
 
-# ╔═╡ 675f2a2d-dd00-425c-81b0-4a56e5083ce6
-println("bbbbbbbbbbbbbbbbbbbbbbbb")
-
 # ╔═╡ 7092ab9c-0859-4600-aedb-e07b17df78e8
 pred11 = find_cycles(deepcopy(graph), "EUR")
 
 # ╔═╡ 5e7dd95e-16cf-4c42-be62-823e13e13f45
 bellman_ford_trace(graph, "EUR")
-
-# ╔═╡ 3c78187a-bbb2-4946-920c-d283cca74d75
-function plot_prep_pred(graph)
-	#generate random coordinates for all nodes for plotting.
-	graph_nodes_coordinates = Dict()
-	for key in keys(graph)
-		graph_nodes_coordinates[key] = (rand(), rand())
-	end
-	
-	#generate tuples with weight and involved nodes for every edge
-	graph_edges = []
-	for v in keys(graph)
-		push!(graph_edges, (graph[v], v))
-	end
-	return graph_nodes_coordinates, graph_edges
-end
-
-# ╔═╡ 2f6a1958-6493-4d7f-b616-d27f7a73eac8
-#gnc, ge = plot_prep_pred(pred)
-
-# ╔═╡ eda2f2b8-5212-42ee-ab63-c968adf64eef
-#ge
-
-# ╔═╡ bb3a6807-64b3-4af0-809d-18c1ecda5c63
-function plot_graph_pred(graph_nodes_coordinates, graph_edges)
-	p = plot()
-
-	# add edges
-	for (n1, n2) in graph_edges
-		x1, y1 = graph_nodes_coordinates[n1]
-		x2, y2 = graph_nodes_coordinates[n2]
-		plot!(p, [x1, x2], [y1, y2], color = "lightgrey", alpha = 0.8,
-			lw = 1, label = "")
-	end
-	
-	# plot nodes
-	for (node, (x, y)) in graph_nodes_coordinates
-		w = node
-		scatter!(p, [x], [y], label="", color="orange", markersize=10, alpha=0.8
-		, annotations=[(x, y, w, 8)]  # comment this for clarity
-		)
-	end
-	p
-end
-
-# ╔═╡ 614cfaa5-ba7e-48fb-b6b5-24e8bead37de
-#plot_graph_pred(gnc, ge)
-
-# ╔═╡ e4a05662-7d9a-467b-a977-0eb71804b56e
-#println("aaaaaaaaaaaaaaaaaaaaaa")
 
 # ╔═╡ 7ea182b8-ec17-40c1-bd7b-3f3d4582ec9f
 for v in keys(pred)
@@ -700,50 +579,6 @@ for v in keys(pred)
 		println(v)
 	end
 end
-
-# ╔═╡ 892542d6-ffab-4baf-9d5f-01d2510db4be
-#pred["EUR"]
-
-# ╔═╡ dc9b4758-cb05-4bfa-9371-73c1ee138b59
-#dist, pred = bellman_ford_trace(graph, "EUR")
-
-# ╔═╡ 647e1572-45e2-4746-9121-a9216395b0a7
-#pred
-
-# ╔═╡ 97f4a31e-309e-42f9-9ce1-f68cde992a2e
-#t1, dist1 = bellman_ford(graph, "BTC")
-
-# ╔═╡ 32f11375-155d-43d3-a44a-6721a6c69fe0
-#a, b = plot_prep(graph)
-
-# ╔═╡ f8e3458c-de9b-42e1-834d-6ae9a19a7bfd
-function plot_graph_test(iteration, graph_nodes_coordinates, graph_edges, dist)
-	p = plot(title = iteration)
-
-	# add edges
-	for (w, n1, n2) in graph_edges
-		x1, y1 = graph_nodes_coordinates[n1]
-		x2, y2 = graph_nodes_coordinates[n2]
-		plot!(p, [x1, x2], [y1, y2], color = "lightgrey", alpha = 0.8,
-			lw = 1, label = "")
-	end
-	
-	# plot nodes
-	for (node, (x, y)) in graph_nodes_coordinates
-		w = dist[node]
-		#println("$city: $x, $y")
-		scatter!(p, [x], [y], label="", color="orange", markersize=10, alpha=0.8
-		, annotations=[(x, y, round(w, digits = 2), 8)]  # comment this for clarity
-		)
-	end
-	p
-end
-
-# ╔═╡ e23e09c9-ff7c-434c-ae75-a1cb72f45a45
-#plot_graph(1, a, b, dist)
-
-# ╔═╡ ed73b80e-97c8-4b24-b96e-85210dcdf5e7
-#println("aaaaaaaa")
 
 # ╔═╡ b7a1c927-4c10-4c1d-add1-a7e32a0204bc
 begin
@@ -754,9 +589,6 @@ begin
 	println(price_2)
 	print(price_1 + price_2)
 end
-
-# ╔═╡ 5b310a9a-e104-45f7-af0d-93ea45921e96
-#static_complete_graph(n[!, is_directed=true])
 
 # ╔═╡ 35529827-5ee3-465d-b055-3345b761ab07
 #a4, dist4, pre4, final_node4 = Shortest_Path_Faster_Algorithm_early_termination(graph, "BTC")
@@ -873,20 +705,16 @@ end
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
-BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 CoinbasePro = "3632ec16-99db-4259-aa88-30b9105699f8"
-GraphPlot = "a2cc645c-3eea-5389-862e-a155d0052231"
 GraphRecipes = "bd48cda9-67a9-57be-86fa-5b3c104eda73"
 Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 
 [compat]
-BenchmarkTools = "~1.2.2"
 CoinbasePro = "~0.1.3"
-GraphPlot = "~0.5.0"
 GraphRecipes = "~0.5.9"
 Graphs = "~1.5.1"
-Plots = "~1.25.6"
+Plots = "~1.25.7"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -924,12 +752,6 @@ version = "1.0.1"
 
 [[Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
-
-[[BenchmarkTools]]
-deps = ["JSON", "Logging", "Printf", "Profile", "Statistics", "UUIDs"]
-git-tree-sha1 = "940001114a0147b6e4d10624276d56d531dd9b49"
-uuid = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
-version = "1.2.2"
 
 [[Bzip2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -988,12 +810,6 @@ version = "3.41.0"
 [[CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
-
-[[Compose]]
-deps = ["Base64", "Colors", "DataStructures", "Dates", "IterTools", "JSON", "LinearAlgebra", "Measures", "Printf", "Random", "Requires", "Statistics", "UUIDs"]
-git-tree-sha1 = "9a2695195199f4f20b94898c8a8ac72609e165a4"
-uuid = "a81c6b42-2e10-5240-aca2-a61377ecd94b"
-version = "0.9.3"
 
 [[CompoundPeriods]]
 deps = ["Dates"]
@@ -1160,12 +976,6 @@ deps = ["Artifacts", "Gettext_jll", "JLLWrappers", "Libdl", "Libffi_jll", "Libic
 git-tree-sha1 = "a32d672ac2c967f3deb8a81d828afc739c838a06"
 uuid = "7746bdde-850d-59dc-9ae8-88ece973131d"
 version = "2.68.3+2"
-
-[[GraphPlot]]
-deps = ["ArnoldiMethod", "ColorTypes", "Colors", "Compose", "DelimitedFiles", "Graphs", "LinearAlgebra", "Random", "SparseArrays"]
-git-tree-sha1 = "5e51d9d9134ebcfc556b82428521fe92f709e512"
-uuid = "a2cc645c-3eea-5389-862e-a155d0052231"
-version = "0.5.0"
 
 [[GraphRecipes]]
 deps = ["AbstractTrees", "GeometryTypes", "Graphs", "InteractiveUtils", "Interpolations", "LinearAlgebra", "NaNMath", "NetworkLayout", "PlotUtils", "RecipesBase", "SparseArrays", "Statistics"]
@@ -1502,9 +1312,9 @@ version = "1.1.3"
 
 [[Plots]]
 deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "GeometryBasics", "JSON", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "PlotThemes", "PlotUtils", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "UUIDs", "UnicodeFun", "Unzip"]
-git-tree-sha1 = "db7393a80d0e5bef70f2b518990835541917a544"
+git-tree-sha1 = "7e4920a7d4323b8ffc3db184580598450bde8a8e"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-version = "1.25.6"
+version = "1.25.7"
 
 [[PooledArrays]]
 deps = ["DataAPI", "Future"]
@@ -1527,10 +1337,6 @@ version = "1.3.1"
 [[Printf]]
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
-
-[[Profile]]
-deps = ["Printf"]
-uuid = "9abbd945-dff8-562f-b5e8-e1ebf5ef1b79"
 
 [[Qt5Base_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Fontconfig_jll", "Glib_jll", "JLLWrappers", "Libdl", "Libglvnd_jll", "OpenSSL_jll", "Pkg", "Xorg_libXext_jll", "Xorg_libxcb_jll", "Xorg_xcb_util_image_jll", "Xorg_xcb_util_keysyms_jll", "Xorg_xcb_util_renderutil_jll", "Xorg_xcb_util_wm_jll", "Zlib_jll", "xkbcommon_jll"]
@@ -1927,6 +1733,7 @@ version = "0.9.1+5"
 # ╔═╡ Cell order:
 # ╟─a888a245-08ba-4fcd-8f19-52a810f4f725
 # ╠═50860473-05c4-4382-8586-b10499b64e81
+# ╠═3431f10d-db18-43f7-a358-25eee5b260b4
 # ╠═649b4f1c-ad90-4277-b53c-15bf6072c292
 # ╠═29842740-7b8b-11ec-2e6c-35c7be96ae3f
 # ╟─c00e89d3-e0e5-455f-b5fe-2b7c037d14f7
@@ -1959,47 +1766,28 @@ version = "0.9.1+5"
 # ╟─c9bc2ab3-8809-4360-883a-228c886c296f
 # ╟─5afabab9-9cd6-4cf7-a165-664ca5d622af
 # ╟─abdd08ef-0627-4bb6-b814-6daa70a531e2
-# ╠═6907ccbe-95a6-4cd5-8bcb-33464b808f1f
-# ╠═ffe2b3ff-2af6-4ddd-b8dc-692a115d221c
-# ╟─f01c84aa-395e-4aca-baee-6098916f76c5
+# ╟─6907ccbe-95a6-4cd5-8bcb-33464b808f1f
+# ╟─ffe2b3ff-2af6-4ddd-b8dc-692a115d221c
+# ╠═4cc9ad91-71c5-4aa9-8971-f880bf6dbfcb
+# ╠═4a327ae9-5a2f-42a2-bb7b-827fdcc6d634
+# ╠═f01c84aa-395e-4aca-baee-6098916f76c5
 # ╟─7838c794-88e0-4d8a-9ab5-7f90bc3a7293
 # ╠═37caed42-b495-403a-929f-1515a6acf1c5
-# ╠═8c2008e6-405c-4261-9251-078f496051a5
 # ╠═0fbf0be0-12b7-47e5-9d9c-e7fd57549f77
 # ╠═77cb62fd-94f5-4eed-8d53-2bcc854bebbd
 # ╠═d29c9bc1-b915-4ac1-b026-431b84be96ee
-# ╟─ca95a5ce-8222-496b-b29a-65b0cf991e8e
-# ╠═d79a0c46-cba0-4678-84d2-06b7b799a312
 # ╠═2408e409-24d1-4ae7-8dd3-a2349b573363
 # ╠═63afbb82-509e-4eda-802b-f54349bc1e6b
 # ╠═5c61831e-122d-4a68-b16e-c674d9aa6e36
-# ╠═675f2a2d-dd00-425c-81b0-4a56e5083ce6
 # ╠═7092ab9c-0859-4600-aedb-e07b17df78e8
 # ╠═5e7dd95e-16cf-4c42-be62-823e13e13f45
-# ╠═3c78187a-bbb2-4946-920c-d283cca74d75
-# ╠═2f6a1958-6493-4d7f-b616-d27f7a73eac8
-# ╠═eda2f2b8-5212-42ee-ab63-c968adf64eef
-# ╠═bb3a6807-64b3-4af0-809d-18c1ecda5c63
-# ╠═614cfaa5-ba7e-48fb-b6b5-24e8bead37de
-# ╠═e4a05662-7d9a-467b-a977-0eb71804b56e
 # ╠═7ea182b8-ec17-40c1-bd7b-3f3d4582ec9f
-# ╠═892542d6-ffab-4baf-9d5f-01d2510db4be
-# ╠═dc9b4758-cb05-4bfa-9371-73c1ee138b59
-# ╠═647e1572-45e2-4746-9121-a9216395b0a7
-# ╠═97f4a31e-309e-42f9-9ce1-f68cde992a2e
-# ╠═f4195aa2-532e-4538-91bb-1b989b7056b5
-# ╠═a29dafe9-4916-4956-b492-144343178fa5
-# ╠═32f11375-155d-43d3-a44a-6721a6c69fe0
-# ╠═f8e3458c-de9b-42e1-834d-6ae9a19a7bfd
-# ╠═e23e09c9-ff7c-434c-ae75-a1cb72f45a45
-# ╠═ed73b80e-97c8-4b24-b96e-85210dcdf5e7
 # ╠═b7a1c927-4c10-4c1d-add1-a7e32a0204bc
-# ╠═5b310a9a-e104-45f7-af0d-93ea45921e96
 # ╠═35529827-5ee3-465d-b055-3345b761ab07
 # ╠═b1c22cb4-6397-40a9-a5a3-e7fe83fdc15a
 # ╠═591d1263-c1dc-4a73-921e-83ab648d85d3
 # ╠═be68a22a-4f99-4dd0-bbfb-09f7940aaa23
-# ╟─c5468105-63e9-481c-9880-b4117f3365ca
-# ╟─03f7d857-e1a2-4b21-bb3d-ee7db73d4e7b
+# ╠═c5468105-63e9-481c-9880-b4117f3365ca
+# ╠═03f7d857-e1a2-4b21-bb3d-ee7db73d4e7b
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
