@@ -1,3 +1,10 @@
+# Cross-Entropy method
+By Ceri-Anne Laureyssens
+
+The notebook gives an introduction to cross-entropy and its use in the cross-entropy method. Cross-entropy is a metric used to measure the Kullback-Leibler (KL) distance between two probability distributions (f and g). The cross-entropy method is a Monte Carlo method for importance sampling and optimization and is found by minimizing the previously called KL distance in between distribution f and g (parameterized by θ). This is equivalent to choosing θ that minimizes the cross-entropy.
+
+The method itself is implemented in the Pluto notebook and gives you an optimized distribution based on an objective function (S) and the originally entered distribution d_in.
+
 # STMO-ZOO
 
 Welcome to the STMO zoo! This is your final assignment for the course Selected Topics in Mathematical Optimization. Your goal is to implement an optimization method in Julia and contribute this to this repository. To pass, you have to:
