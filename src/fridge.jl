@@ -1,9 +1,10 @@
-# A package that optimizes your fridge use!!
-# concept: Maximize amount of fridge used. Minimize amount of recipes used, minimize amount of extra ingredients needed
+module Fridge
 
-include("../src/recipeWebscraper.jl")
+include("recipewebscraper.jl")
 
 using .recipeWebscraper, JLD2
+
+export checkIngredients, greedyFindCombo, findBestRecipe, removeRecipe, SAFindCombo
 
 #==================================================
           CHECK INGREDIENTS FUNCTIONS
@@ -73,7 +74,7 @@ fridgeObjective(x) = compatible(x) ? sum(sum(x) .== 0)*6 + sum(x)[end]*2 : Inf #
                 GREEDY ALGORITHM
 ==================================================#
 
-function GreedyFindCombo(fridgeList, recipeDict, numRecipes)
+function greedyFindCombo(fridgeList, recipeDict, numRecipes)
 
     bestCombo = Dict()
     ingredientsArray = []
@@ -113,14 +114,39 @@ end
                 NEIGBOURHOODS
 ==================================================#
 
-#=
-IDEETJES
+function RandomCombo(fridgeList, recipeDict, numRecipes)
+    randCombo = Dict()
+    ingredientsArray = []
+    namesArray = []
 
-1) verwijder 1 ingredient en kijk of je dan een andere combinatie kan vormen met mindere score
-2) verwijder een recept en kijk of je een combo kan vinden van recepten die een betere score geven dan de huidige versie
-=#
+    for (name,ingredients) in recipeDict
+        push!(namesArray,name)
+        push!(ingredientsArray, recipeToNumVector(fridgeList, ingredients))
+    end
 
-function removeRecipe(curSolution, fridgeList, recipeDict, numRecipes, tabuList)
+    for i = 1:numRecipes
+
+        randIndex = rand(1:length(namesArray))
+        tempRecipeName = namesArray[randIndex]
+        randCombo[tempRecipeName] = ingredientsArray[randIndex]
+
+        if all(isone.(sum(values(randCombo))))
+            break
+        end
+
+        namesArray = [name for (name, ingredientList) in zip(namesArray, ingredientsArray) if sum(ingredientList[1:end-1] .& randCombo[tempRecipeName][1:end-1] ) == 0]
+        ingredientsArray = [ingredientList for ingredientList in ingredientsArray if sum(ingredientList[1:end-1] .& randCombo[tempRecipeName][1:end-1] ) == 0]
+
+        if isempty(namesArray)
+            break
+        end
+
+    end
+
+    return randCombo
+end
+
+function removeRecipe(curSolution, fridgeList, recipeDict, numRecipes, tabuList, randRecipe)
     toRemove = rand(curSolution)[1]
     # adapt the fridgeList so that only ingredients from the removed ingredient are available
     tempFridgeList = copy(fridgeList)
@@ -142,7 +168,11 @@ function removeRecipe(curSolution, fridgeList, recipeDict, numRecipes, tabuList)
         end
     end
 
-    neighbour = GreedyFindCombo(tempFridgeList, tempRecipeDict, numRecipes)
+    if randRecipe
+        neighbour = RandomCombo(tempFridgeList, tempRecipeDict, numRecipes)
+    else
+        neighbour = GreedyFindCombo(tempFridgeList, tempRecipeDict, numRecipes)
+    end
 
     # correct recipe vectors
     for recipe in keys(neighbour)
@@ -161,7 +191,7 @@ end
         SIMULATED ANNEALING ALGORITHM
 ==================================================#
 
-function SAFindCombo(curSolution,  fridgeList, recipeDict, numRecipes;
+function SAFindCombo(curSolution,  fridgeList, recipeDict, numRecipes, randRecipe;
     kT=100, # repetitions per temperature
     r=0.75, # cooling rate
     Tmax=4, # maximal temperature to start
@@ -180,8 +210,8 @@ function SAFindCombo(curSolution,  fridgeList, recipeDict, numRecipes;
 	while T > Tmin
         print("T = $T \n")
 		# repeat kT times
-		for _ in 1:kT
-			sn = removeRecipe(solution, fridgeList, recipeDict, numRecipes, tabuList)  # random neighbor
+		for i in 1:kT
+			sn = removeRecipe(solution, fridgeList, recipeDict, numRecipes, tabuList, randRecipe)  # random neighbor
 			obj_sn = fridgeObjective([i for i in values(sn)])
 			# if the neighbor improves the solution, keep it
 			# otherwise accept with a probability determined by the
@@ -189,7 +219,6 @@ function SAFindCombo(curSolution,  fridgeList, recipeDict, numRecipes;
 			if obj_sn < obj || rand() < exp(-(obj_sn-obj)/T)
 				solution = sn
 				obj = obj_sn
-                print("solution = $solution\n")
 			end
 
             for recipe in keys(sn)
@@ -216,7 +245,7 @@ end
                 OVERVIEW FUNCTION
 ==================================================#
 
-function findBestRecipe(fridgeList, csvPath; numRecipes=3)
+function findBestRecipe(fridgeList, csvPath; numRecipes=3, randRecipe=false)
     # load the recipe dictionary from the db file
     recipeDict = csvPath[end-3:end] == ".csv" ? loadRecipeDBCSV(csvPath) : load(csvPath)
 
@@ -228,9 +257,10 @@ function findBestRecipe(fridgeList, csvPath; numRecipes=3)
 
     # find the best greedy recipe
     greedySolution = GreedyFindCombo(fridgeList, recipeDict, numRecipes)
+    print("greedySolution = $greedySolution\n")
 
     # find the best recipe with SA
-    SASolution = SAFindCombo(greedySolution,  fridgeList, recipeDict, numRecipes)
+    SASolution = SAFindCombo(greedySolution,  fridgeList, recipeDict, numRecipes, randRecipe)
 
     # print the solution 
     print("The best recipes to make are:\n\n")
@@ -256,13 +286,4 @@ end
 
 compatible(x) = !any(sum(x)[1:end-1] .>= 2)
 
-
-#==================================================
-     TEST CORNER - MOVE LATER TO fridgeTest.jl
-==================================================#
-
-
-testList = ["cheese","potato","tomato","cabbage","beetroot","cauliflower"]
-testList2 = ["cheese","potato","tomato","cabbage"]
-
-test = findBestRecipe(testList, "./data/recipeDB.jld2", numRecipes=10)
+end # module

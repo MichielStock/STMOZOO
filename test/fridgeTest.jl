@@ -1,25 +1,4 @@
-include("../src/recipeWebscraper.jl")
+testList = ["cheese","potato","tomato","cabbage","beetroot","cauliflower"]
+testList2 = ["cheese","potato","tomato","cabbage"]
 
-using .recipeWebscraper
-
-recipeDict = loadRecipeDBCSV("./docs/recipeDB-small.csv")
-ingredientList = []
-
-for ingredients in values(recipeDict)
-    append!(ingredientList,ingredients)
-end
-
-ingredientList = unique(ingredientList)
-
-testList = ["cheese","potato"]
-
-for testProd in testList
-    if testProd in ingredientList
-        print("found $testProd in the ingredientlist")
-    else
-        print("did not find $testProd in the ingredientlist")
-    end
-    print("\n")
-end
-
-print(ingredientList[occursin.("cheese",ingredientList)])
+test = findBestRecipe(testList, "./data/recipeDB.jld2", numRecipes=10, randRecipe=true)
