@@ -4,17 +4,21 @@
 using Markdown
 using InteractiveUtils
 
+# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
+macro bind(def, element)
+    quote
+        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
+        el
+    end
+end
+
 # ╔═╡ 50860473-05c4-4382-8586-b10499b64e81
-using Graphs
+using Graphs, Plots, GraphRecipes, CoinbasePro
 
-# ╔═╡ 3431f10d-db18-43f7-a358-25eee5b260b4
-using Plots
-
-# ╔═╡ 649b4f1c-ad90-4277-b53c-15bf6072c292
-using GraphRecipes
-
-# ╔═╡ 29842740-7b8b-11ec-2e6c-35c7be96ae3f
-using CoinbasePro
+# ╔═╡ 5e406e5d-5240-4226-93b7-0d44b6e4d49f
+using DataFrames
 
 # ╔═╡ a888a245-08ba-4fcd-8f19-52a810f4f725
 md"# Finding negative cycles using the Bellman–Ford algorithm
@@ -25,18 +29,6 @@ In this notebook, i will explain how the Bellman-Ford algorithm works and how it
 # ╔═╡ c00e89d3-e0e5-455f-b5fe-2b7c037d14f7
 md"## Bellman-Ford algorithm
 The Bellman-Ford algorithm is a single-source shortest path algorithm that can detect negative cyles."
-
-# ╔═╡ ec6b3904-1ff2-46e1-a6ea-7822b9a2fc6c
-#an illustrative, small graph with a negative cycle (D-E-C)
-#every node is a key, the values (w, n) represent the weight and second node of every edge that departs from the first node
-test_graph = Dict{String, Vector{Tuple{Float16, String}}}("A" => [(10, "B"), (2, "C")], "B" => [(6, "A"), (3, "C")], "C" => [(1, "A"), (3, "B"), (-2, "D")], "D" => [(2, "E"), (4, "B")], "E" => [(1, "C"), (7, "A")])
-
-# ╔═╡ 13e6bb3e-57c5-496a-b3b0-5484d0e410c3
-begin
-	node_value = Dict{String, Float64}(v => Inf for v in keys(test_graph))
-	node_value["D"] = 0
-	node_value
-end
 
 # ╔═╡ 2340a1ea-ff3e-40a2-b12c-b7d73199c573
 md"This is a directed graph with 5 nodes and 11 edges. The cost of moving from one node to another is displayed on the edges. Now we want to calculate the shortest distance from node D to all other nodes. One of the costs (node C -> node D) is negative, so the Dijkstra algorithm can't be used."
@@ -60,16 +52,6 @@ md"As you can see in the animation above, the algorithm has already found the sh
 md"## Negative cycles
 The Bellman-Ford algorithm can also be used to find negative cycles in graphs. By changing the weight of the D -> E edge to -2, a negative cycle has emerged D -> E -> C."
 
-# ╔═╡ 19b7a29a-6bf8-4f1b-923c-ed1d55ebb075
-test_graph_neg_cycle =  Dict{String, Vector{Tuple{Float16, String}}}("A" => [(10, "B"), (2, "C")], "B" => [(6, "A"), (3, "C")], "C" => [(1, "A"), (3, "B"), (-2, "D")], "D" => [(-2, "E"), (4, "B")], "E" => [(1, "C"), (7, "A")])
-
-# ╔═╡ a5a053b7-9f5d-4e4e-995d-98cf2a796c4c
-begin
-	node_value_neg_cycle = Dict{String, Float64}(v => Inf for v in keys(test_graph))
-	node_value_neg_cycle["D"] = 0
-	node_value_neg_cycle
-end
-
 # ╔═╡ 499a3ea5-a8b7-40a3-a757-6799910c23bd
 md"This makes it impossible to calculate the shortest distance from the source to all the nodes, because the negative cycle will keep decreasing the distances. This means that the distances will keep getting updated, even after N - 1 iterations. So if there is still an update to the distances after N - 1 iterations, we know that a negative cycle is present."
 
@@ -82,29 +64,55 @@ md"When tracing back the predecessors, the nodes will start repeating themselves
 # ╔═╡ ab50352f-d01b-4070-bcc5-423f21eeb191
 md"This animation shows how a negative cycle can be found using the Bellman-Ford algorithm."
 
-# ╔═╡ b617a37b-7736-4ddc-a1d9-a17605245734
-md"## Arbitrage opportunities
-In finance, arbitrage involves the simultaneous purchase and sale of equivalent assets or of the same asset in multiple markets in order to exploit a temporary discrepancy in prices."
+# ╔═╡ c967f6e2-6d46-47ce-8b68-435c09a970a0
+md"Below, you see a small graph with only a few currencies. As you can see, the sum of the edge weights between any two currencies is close to zero, but always positive. The bid price is always slightly higher than the ask price, so there will be no negative cycles with only two nodes."
 
-# ╔═╡ 5cc2ab81-a7c3-43b6-910c-5ae76c97d117
-md"An example of this can be found on foreign exchange markets. On these markets, currencies can be traded. Because of slight inefficiencies in these markets, it's possible to, for example, trade euros for dollars, then trade those dollars for yen and trade the yen back for euros (almost) simultaneously and make a profit."
+# ╔═╡ 54b0d0c7-c341-41fe-97bb-d87f038a076e
+dropdown menu
 
-# ╔═╡ b4b2ffd2-f5f3-46a5-80b8-6d56ac95e143
-md"These kinds of opportunities can be found as negative cycles in a graph, so they can be found with the Bellman-Ford algorithm. This will be demonstrated with cryptocurrencies on the CoinbasePro exchange."
+# ╔═╡ 94e22e01-fd02-49b9-865f-42e224c3c38a
+currency_1_ui @bind currency_1 Select["BTC", "EUR", "USD", "ETH"]
 
-# ╔═╡ 7e474187-8f39-4d41-9c74-ea5848b6a688
-md"On CoinbasePro, there are over 400 pairs of (crypto)currencies that can be traded. To find these arbitrage opportunities, these currency pairs have to be represented in a graph. Every currency gets a node. The weight of the edges depends on the exchange rate between the currencies."
+# ╔═╡ 63fff09f-f83b-4f1a-a7a7-72d6ce049a87
+md"We can look for a negative cycle in this graph to find an arbitrage opportunity. "
 
-# ╔═╡ 3d40c32f-b9da-4d31-b7e6-a9e2eab4f441
-md"Below you see some information about the bitcoin-euro exchange. The ask column shows the current lowest price (in euros per bitcoin) someone is willing to sell bitcoin at. The bid price is the current highest price (in euros per bitcoin) someone is willing to buy bitcoin at. So if you want to instantly buy bitcoin, you have to match the ask price, if you want to instantly sell bitcoin, you have to match the bid price."
+# ╔═╡ de497cc3-51f4-40a7-9dc7-ba9c39801221
+md"If we make a graph with all the available currencies, it's possible that there are multiple negative cycles. To find multiple negative cycles, we can apply the Bellman-Ford algorithm multiple times. Every time a negative cycle is found one of the edges of the cycle gets removed."
 
-# ╔═╡ 4c2ef9fd-0520-47de-b542-232328a266f2
-ticker_example = ticker("BTC-EUR")
+# ╔═╡ 28800b41-7055-4111-8ab5-36cefff9a9b0
+exp(-cost)
 
-# ╔═╡ f240e4d2-1eab-4c83-885d-d97650ed3426
-md"So the exchange rate from euro to bitcoin is 1/ask = " * 1/ticker_example[!, "ask"] * "(this is the amount of bitcoin you buy with 1 euro) and the exchange rate from bitcoin to euro is bid = " * ticker_example[!, "bid"] * "(this is the amount of euro you buy with 1 bitcoin.
+# ╔═╡ 2cf6976f-f448-47db-ac22-2a396cb17259
+md"## Appendix"
 
-In this graph, the weight of an edge is the logarithm of 1 over the exchange rate. So for edge A -> B, the weight is log(A/B)."
+# ╔═╡ 31b058ab-a816-43ea-b50f-ea85ee05546e
+md"The graph to demonstrate the Bellman-Ford algorithm."
+
+# ╔═╡ ec6b3904-1ff2-46e1-a6ea-7822b9a2fc6c
+#an illustrative, small graph
+#every node is a key, the values (w, n) represent the weight and second node of every edge that departs from the first node
+test_graph = Dict{String, Vector{Tuple{Float16, String}}}("A" => [(10, "B"), (2, "C")], "B" => [(6, "A"), (3, "C")], "C" => [(1, "A"), (3, "B"), (-2, "D")], "D" => [(2, "E"), (4, "B")], "E" => [(1, "C"), (7, "A")])
+
+# ╔═╡ 13e6bb3e-57c5-496a-b3b0-5484d0e410c3
+begin
+	node_value = Dict{String, Float64}(v => Inf for v in keys(test_graph))
+	node_value["D"] = 0
+end
+
+# ╔═╡ 6dd7e865-3931-4d81-9eae-bf300a611554
+md"The graph to demonstrate how negative cycles are found."
+
+# ╔═╡ 19b7a29a-6bf8-4f1b-923c-ed1d55ebb075
+test_graph_neg_cycle =  Dict{String, Vector{Tuple{Float16, String}}}("A" => [(10, "B"), (2, "C")], "B" => [(6, "A"), (3, "C")], "C" => [(1, "A"), (3, "B"), (-2, "D")], "D" => [(-2, "E"), (4, "B")], "E" => [(1, "C"), (7, "A")])
+
+# ╔═╡ a5a053b7-9f5d-4e4e-995d-98cf2a796c4c
+begin
+	node_value_neg_cycle = Dict{String, Float64}(v => Inf for v in keys(test_graph))
+	node_value_neg_cycle["D"] = 0
+end
+
+# ╔═╡ 2be70005-1eca-4ab7-863b-9c626a2ae454
+md"The currency pairs for the arbitrage example."
 
 # ╔═╡ c9bc2ab3-8809-4360-883a-228c886c296f
 #get all pairs with enough information
@@ -113,11 +121,53 @@ pairs = filter(row -> (row.status == "online") & (row.status_message == ""), pro
 # ╔═╡ 5afabab9-9cd6-4cf7-a165-664ca5d622af
 test_pairs = ["BTC-EUR", "ETH-EUR", "BTC-USD", "ETH-USD", "ETH-BTC"]
 
-# ╔═╡ c967f6e2-6d46-47ce-8b68-435c09a970a0
-md"Below, you see a small graph with only a few currencies. As you can see, the sum of the edge weights between any two currencies is close to zero, but always positive. The bid price is always slightly higher than the ask price, so there will be no negative cycles with only two nodes."
+# ╔═╡ e8547de6-23ef-4fb5-8fad-623ba8abb11a
+md"The small currency graph." 
 
-# ╔═╡ 63fff09f-f83b-4f1a-a7a7-72d6ce049a87
-md"The animation above looks for a negative cycle in this small graph. The prices change constantly, so it's impossible to "
+# ╔═╡ a9feff06-a530-4dbe-a115-884895dd10b8
+ticker_example = ticker("BTC-EUR")
+
+# ╔═╡ c0aab0cc-6770-415b-b3a7-910780be1a3d
+exchange_rates = DataFrame(from_currency = ["A", "B", "C"], to_currency = ["B", "C", "A"], exchange_rate = ["a = 0.83", "b = 0.52", "c = 2.37"])
+
+# ╔═╡ 7575beac-392b-45d5-b097-de806d45fa25
+begin
+	er_btc_eur = round(1/ticker_example[!, "ask"][], digits = 8)
+	er_eur_btc = round(ticker_example[!, "bid"][], digits = 8)
+end
+
+# ╔═╡ b617a37b-7736-4ddc-a1d9-a17605245734
+md"## Arbitrage opportunities
+In finance, arbitrage involves the simultaneous purchase and sale of equivalent assets or of the same asset in multiple markets in order to exploit a temporary discrepancy in prices.
+
+An example of this can be found on foreign exchange markets. On these markets, currencies can be traded. Because of slight inefficiencies in these markets, it's sometimes possible to, for example, trade euros for dollars, then trade those dollars for yen and trade the yen back for euros (almost) simultaneously and make a profit.
+
+These kinds of opportunities can be found as negative cycles in a graph, so they can be found with the Bellman-Ford algorithm. This will be demonstrated with cryptocurrencies on the CoinbasePro exchange.
+
+First we have to turn the asset information in a graph. Every currency gets a node. The weight of the edges depends on the exchange rate between the currencies.
+
+Below you see some information about the bitcoin-euro exchange. The ask column shows the current lowest price (in euros per bitcoin) someone is willing to sell bitcoin at. The bid price is the current highest price (in euros per bitcoin) someone is willing to buy bitcoin at. So if you want to instantly buy bitcoin, you have to match the ask price, if you want to instantly sell bitcoin, you have to match the bid price.
+
+$ticker_example
+
+So the exchange rate from euro to bitcoin is 1/ask = $er_btc_eur (this is the amount of bitcoin you buy with 1 euro) and the exchange rate from bitcoin to euro is bid = $er_eur_btc (this is the amount of euro you buy with 1 bitcoin).
+
+Imagine the following exchange rates:
+
+$exchange_rates
+
+If we start with one unit of currency A, then trade it for B, then for C and back to A, we can calculate how much of currency A we end up with. By multiplying these exchange rates: ``a*b*c = 1.02 > 1``. We see that this cycle yields a profit.
+
+Now we want to convert this multiplication to an addition, because that is easier to represent in a graph. We can use a logarithmic function for this, because ``log(a*b*c) = log(a) + log(b) + log(c)``. So this inequality: ``a*b*c > 1`` can be rewritten as ``log(a) + log(b) + log(c) > log(1)``. 
+
+With the Bellman-Ford algorithm, we can find negative cycles, so we need to modify the inequality so that an arbitrage opportunity is negative. This is easily done by multiplying both sides with -1. This results in the following inequality: ``- log(a) - log(b) - log(c) < 0`` which is equivalent to: ``log(1/a) + log(1/b) + log(1/c) < 0``. 
+
+So in this example, the edge weight of edge A -> B would be ``log(1/a)``."
+
+
+
+# ╔═╡ 24801a5a-313d-4311-952d-bd714121ac59
+md"The full arbitrage graph."
 
 # ╔═╡ f01c84aa-395e-4aca-baee-6098916f76c5
 """
@@ -378,7 +428,7 @@ test_arbitrage_graph = create_currency_graph(test_pairs)
 node_value_arbitrage = Dict(v => "" for v in keys(test_arbitrage_graph))
 
 # ╔═╡ ffe2b3ff-2af6-4ddd-b8dc-692a115d221c
-plot_graph(test_arbitrage_graph, node_value_arbitrage, "currencies", :black, [])
+plot_graph(test_arbitrage_graph, node_value_arbitrage, "currency graph", :black, [])
 
 # ╔═╡ 4cc9ad91-71c5-4aa9-8971-f880bf6dbfcb
 test_arbitrage_graph_animation = bellman_ford_animated(test_arbitrage_graph, "EUR")
@@ -444,33 +494,35 @@ function bellman_ford_all_cycles(graph, start_node)
 end
 		
 
-# ╔═╡ 37caed42-b495-403a-929f-1515a6acf1c5
-#explain stuff like what's different for disconnected graphs, use graph.jl
-
 # ╔═╡ 5c61831e-122d-4a68-b16e-c674d9aa6e36
 """
-    find_cycles(graph, start_node)
+    cycle_cost(graph, graph)
 
-find as many negative cycles in a graph as possible
+Calculate the cost of a cycle
 
 Inputs:
+	- path: a vector with nodes of a cycle
     - graph: a dictionary representing a directed graph on which the Bellman-Ford 
              algorithm will be applied 
-    - start_node: starting point
 
 Outputs:
-    - paths: a vector of vectors that contain the nodes of negative cycles
+    - cost: the cost of the cycle
 """
 function cycle_cost(path, graph)
 	cost = 0
+	
+	#iterate over the first l-1 nodes, with l the amount of nodes in the cycle
 	for l in 1:length(path) - 1
+		#find the correct edge
 		for (w, n) in graph[path[l]]
 			if n == path[l + 1]
+				#add the cost of the edge
 				cost += w
 			end
 		end
 	end
 
+	#find the cost of the edge between the last and the first node of the cycle
 	for (w, n) in graph[path[length(path)]]
 		if n == path[1]
 			cost += w
@@ -500,33 +552,44 @@ function find_cycles(graph, start_node)
 	paths = []
 	
 	while cycles
-		cycles = false
-		
-		x, N, predecessor = bellman_ford_all_cycles(graph, start_node)
-		
+		#use the Bellman-Ford algorithm to look for a cycle
+		last_updated, N, predecessor = bellman_ford_all_cycles(graph, start_node)
+
+		#if there were no updates in the last iteration, there are no cycles
 		if x == ""
 			cycles = false
+
+		#if there are updates in the last iteration, find the cycle
 		else
+			#the last updated node lies in the negative cycle or can be reached by it
+			y = last_updated
 			cost = 0
-			y = x #lies in negative cycle or is reachable from it
+
+			#find a node that's definitaly in the cycle by moving back 
 			for j in 1:N
-				y = predecessor[y] #find the cycle
+				y = predecessor[y] 
 			end
-			cur = y
+			
+			current_node = y
 			path = []
+			#store nodes as part of the cycle untill a node is encountered twice
 			for k in 1:N
-				cur = predecessor[cur]
-				push!(path, cur)
-				
+				current_node = predecessor[current_node]
+				push!(path, current_node)
+
+				#if a node is encountered twice, break the loop
 				if (cur == y) & (size(path)[1] > 1)
 					path = reverse(path)
+					#calculate the cost of the cycle
 					cost = cycle_cost(path, graph)
-					cycles = true
+
+					#remove one of the edges of the negative cycle
 					neighbours = graph[predecessor[cur]]
 					for (w, n) in graph[predecessor[cur]]
 						if n == cur
-							neighbours = deleteat!(neighbours, findall(x->x==(w, n), neighbours))
-							push!(neighbours, (Inf, n))
+							neighbours = deleteat!(neighbours, findall(x->x==(w, n), 
+                                         neighbours))
+							#push!(neighbours, (Inf, n))
 							graph[predecessor[cur]] = neighbours
 						end
 					end
@@ -534,7 +597,7 @@ function find_cycles(graph, start_node)
 				end
 			end
 
-
+			#store the negative cycle
 			if cost >= 0
 				cycles = false
 			else
@@ -552,12 +615,14 @@ paths = find_cycles(deepcopy(arbitrage_graph), "EUR")
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 CoinbasePro = "3632ec16-99db-4259-aa88-30b9105699f8"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 GraphRecipes = "bd48cda9-67a9-57be-86fa-5b3c104eda73"
 Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 
 [compat]
 CoinbasePro = "~0.1.3"
+DataFrames = "~1.3.2"
 GraphRecipes = "~0.5.9"
 Graphs = "~1.5.1"
 Plots = "~1.25.7"
@@ -637,9 +702,9 @@ version = "3.16.0"
 
 [[ColorTypes]]
 deps = ["FixedPointNumbers", "Random"]
-git-tree-sha1 = "32a2b8af383f11cbb65803883837a149d10dfe8a"
+git-tree-sha1 = "024fe24d83e4a5bf5fc80501a314ce0d1aa35597"
 uuid = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
-version = "0.10.12"
+version = "0.11.0"
 
 [[Colors]]
 deps = ["ColorTypes", "FixedPointNumbers", "Reexport"]
@@ -681,9 +746,9 @@ version = "1.9.0"
 
 [[DataFrames]]
 deps = ["Compat", "DataAPI", "Future", "InvertedIndices", "IteratorInterfaceExtensions", "LinearAlgebra", "Markdown", "Missings", "PooledArrays", "PrettyTables", "Printf", "REPL", "Reexport", "SortingAlgorithms", "Statistics", "TableTraits", "Tables", "Unicode"]
-git-tree-sha1 = "cfdfef912b7f93e4b848e80b9befdf9e331bc05a"
+git-tree-sha1 = "ae02104e835f219b8930c7664b8012c93475c340"
 uuid = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-version = "1.3.1"
+version = "1.3.2"
 
 [[DataStructures]]
 deps = ["Compat", "InteractiveUtils", "OrderedCollections"]
@@ -1577,14 +1642,10 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╟─a888a245-08ba-4fcd-8f19-52a810f4f725
 # ╠═50860473-05c4-4382-8586-b10499b64e81
-# ╠═3431f10d-db18-43f7-a358-25eee5b260b4
-# ╠═649b4f1c-ad90-4277-b53c-15bf6072c292
-# ╠═29842740-7b8b-11ec-2e6c-35c7be96ae3f
+# ╠═5e406e5d-5240-4226-93b7-0d44b6e4d49f
+# ╟─a888a245-08ba-4fcd-8f19-52a810f4f725
 # ╟─c00e89d3-e0e5-455f-b5fe-2b7c037d14f7
-# ╟─ec6b3904-1ff2-46e1-a6ea-7822b9a2fc6c
-# ╟─13e6bb3e-57c5-496a-b3b0-5484d0e410c3
 # ╟─2340a1ea-ff3e-40a2-b12c-b7d73199c573
 # ╟─9a77b32f-6cdf-4193-810f-236a84493390
 # ╟─5837516e-a034-4739-95a9-15a5d46d9d8f
@@ -1592,43 +1653,51 @@ version = "0.9.1+5"
 # ╟─04cb87db-08bf-4969-acd1-ad0aceefdb66
 # ╟─e8758cb2-f0e1-4725-83e1-557a1bb50980
 # ╟─c2c1802c-aeed-4fd1-b0e6-902e66e3a008
-# ╟─de0d3f38-1486-4453-9df5-85c1463b81d3
 # ╟─9ff259ee-8ad7-4ac0-b9c5-8fc2aff0c498
 # ╟─eb204bf2-68fe-42cf-b5a1-6688315e0982
 # ╟─140f6c46-75f9-49d1-a7bf-9d2c53c182bf
-# ╟─19b7a29a-6bf8-4f1b-923c-ed1d55ebb075
-# ╟─a5a053b7-9f5d-4e4e-995d-98cf2a796c4c
 # ╟─72710e96-8a46-46cf-b7bc-66cf68483f18
 # ╟─499a3ea5-a8b7-40a3-a757-6799910c23bd
 # ╟─619d3b48-4104-4485-a294-c60b76416e4a
 # ╟─8b09540f-f6c6-4eac-839b-8b1d306cb891
-# ╟─5dd79310-d64c-4d18-b594-a2e4c1cf9b8b
 # ╟─e68ff2ee-98a0-4189-83b1-5cbd7ef84450
 # ╟─ab50352f-d01b-4070-bcc5-423f21eeb191
 # ╟─b617a37b-7736-4ddc-a1d9-a17605245734
-# ╟─5cc2ab81-a7c3-43b6-910c-5ae76c97d117
-# ╟─b4b2ffd2-f5f3-46a5-80b8-6d56ac95e143
-# ╟─7e474187-8f39-4d41-9c74-ea5848b6a688
-# ╟─3d40c32f-b9da-4d31-b7e6-a9e2eab4f441
-# ╟─4c2ef9fd-0520-47de-b542-232328a266f2
-# ╠═f240e4d2-1eab-4c83-885d-d97650ed3426
+# ╟─c967f6e2-6d46-47ce-8b68-435c09a970a0
+# ╠═54b0d0c7-c341-41fe-97bb-d87f038a076e
+# ╠═94e22e01-fd02-49b9-865f-42e224c3c38a
+# ╟─ffe2b3ff-2af6-4ddd-b8dc-692a115d221c
+# ╠═63fff09f-f83b-4f1a-a7a7-72d6ce049a87
+# ╟─4a327ae9-5a2f-42a2-bb7b-827fdcc6d634
+# ╟─de497cc3-51f4-40a7-9dc7-ba9c39801221
+# ╟─08fb2d9d-7402-493c-be73-893318adec4d
+# ╠═28800b41-7055-4111-8ab5-36cefff9a9b0
+# ╟─2cf6976f-f448-47db-ac22-2a396cb17259
+# ╟─31b058ab-a816-43ea-b50f-ea85ee05546e
+# ╟─ec6b3904-1ff2-46e1-a6ea-7822b9a2fc6c
+# ╟─13e6bb3e-57c5-496a-b3b0-5484d0e410c3
+# ╟─de0d3f38-1486-4453-9df5-85c1463b81d3
+# ╟─6dd7e865-3931-4d81-9eae-bf300a611554
+# ╟─19b7a29a-6bf8-4f1b-923c-ed1d55ebb075
+# ╟─a5a053b7-9f5d-4e4e-995d-98cf2a796c4c
+# ╟─5dd79310-d64c-4d18-b594-a2e4c1cf9b8b
+# ╟─2be70005-1eca-4ab7-863b-9c626a2ae454
 # ╟─c9bc2ab3-8809-4360-883a-228c886c296f
 # ╟─5afabab9-9cd6-4cf7-a165-664ca5d622af
+# ╟─e8547de6-23ef-4fb5-8fad-623ba8abb11a
+# ╟─a9feff06-a530-4dbe-a115-884895dd10b8
+# ╟─c0aab0cc-6770-415b-b3a7-910780be1a3d
+# ╟─7575beac-392b-45d5-b097-de806d45fa25
 # ╟─abdd08ef-0627-4bb6-b814-6daa70a531e2
 # ╟─6907ccbe-95a6-4cd5-8bcb-33464b808f1f
-# ╟─c967f6e2-6d46-47ce-8b68-435c09a970a0
-# ╟─ffe2b3ff-2af6-4ddd-b8dc-692a115d221c
 # ╟─4cc9ad91-71c5-4aa9-8971-f880bf6dbfcb
-# ╟─4a327ae9-5a2f-42a2-bb7b-827fdcc6d634
-# ╠═63fff09f-f83b-4f1a-a7a7-72d6ce049a87
+# ╟─24801a5a-313d-4311-952d-bd714121ac59
 # ╟─ca6c579e-0ae2-46b7-af08-9b26958c19ee
-# ╟─08fb2d9d-7402-493c-be73-893318adec4d
 # ╟─f01c84aa-395e-4aca-baee-6098916f76c5
 # ╟─7838c794-88e0-4d8a-9ab5-7f90bc3a7293
 # ╟─0fbf0be0-12b7-47e5-9d9c-e7fd57549f77
 # ╟─2408e409-24d1-4ae7-8dd3-a2349b573363
-# ╠═63afbb82-509e-4eda-802b-f54349bc1e6b
-# ╠═37caed42-b495-403a-929f-1515a6acf1c5
-# ╠═5c61831e-122d-4a68-b16e-c674d9aa6e36
+# ╟─63afbb82-509e-4eda-802b-f54349bc1e6b
+# ╟─5c61831e-122d-4a68-b16e-c674d9aa6e36
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
