@@ -92,8 +92,19 @@ md"An example of this can be found on foreign exchange markets. On these markets
 # ╔═╡ b4b2ffd2-f5f3-46a5-80b8-6d56ac95e143
 md"These kinds of opportunities can be found as negative cycles in a graph, so they can be found with the Bellman-Ford algorithm. This will be demonstrated with cryptocurrencies on the CoinbasePro exchange."
 
-# ╔═╡ dd886054-be32-4d17-8467-8f158b17c0ad
-md"On CoinbasePro, there are over 400 pairs of (crypto)currencies that can be traded."
+# ╔═╡ 7e474187-8f39-4d41-9c74-ea5848b6a688
+md"On CoinbasePro, there are over 400 pairs of (crypto)currencies that can be traded. To find these arbitrage opportunities, these currency pairs have to be represented in a graph. Every currency gets a node. The weight of the edges depends on the exchange rate between the currencies."
+
+# ╔═╡ 3d40c32f-b9da-4d31-b7e6-a9e2eab4f441
+md"Below you see some information about the bitcoin-euro exchange. The ask column shows the current lowest price (in euros per bitcoin) someone is willing to sell bitcoin at. The bid price is the current highest price (in euros per bitcoin) someone is willing to buy bitcoin at. So if you want to instantly buy bitcoin, you have to match the ask price, if you want to instantly sell bitcoin, you have to match the bid price."
+
+# ╔═╡ 4c2ef9fd-0520-47de-b542-232328a266f2
+ticker_example = ticker("BTC-EUR")
+
+# ╔═╡ f240e4d2-1eab-4c83-885d-d97650ed3426
+md"So the exchange rate from euro to bitcoin is 1/ask = " * 1/ticker_example[!, "ask"] * "(this is the amount of bitcoin you buy with 1 euro) and the exchange rate from bitcoin to euro is bid = " * ticker_example[!, "bid"] * "(this is the amount of euro you buy with 1 bitcoin.
+
+In this graph, the weight of an edge is the logarithm of 1 over the exchange rate. So for edge A -> B, the weight is log(A/B)."
 
 # ╔═╡ c9bc2ab3-8809-4360-883a-228c886c296f
 #get all pairs with enough information
@@ -101,6 +112,12 @@ pairs = filter(row -> (row.status == "online") & (row.status_message == ""), pro
 
 # ╔═╡ 5afabab9-9cd6-4cf7-a165-664ca5d622af
 test_pairs = ["BTC-EUR", "ETH-EUR", "BTC-USD", "ETH-USD", "ETH-BTC"]
+
+# ╔═╡ c967f6e2-6d46-47ce-8b68-435c09a970a0
+md"Below, you see a small graph with only a few currencies. As you can see, the sum of the edge weights between any two currencies is close to zero, but always positive. The bid price is always slightly higher than the ask price, so there will be no negative cycles with only two nodes."
+
+# ╔═╡ 63fff09f-f83b-4f1a-a7a7-72d6ce049a87
+md"The animation above looks for a negative cycle in this small graph. The prices change constantly, so it's impossible to "
 
 # ╔═╡ f01c84aa-395e-4aca-baee-6098916f76c5
 """
@@ -145,7 +162,7 @@ function plot_graph(graph, node_value, title, color, updated_edges)
 			add_edge!(g, v_ind, n_ind)
 
 			#add the weight
-			edge_weight[(v_ind, n_ind)] = w
+			edge_weight[(v_ind, n_ind)] = round(w, digits = 4)
 
 			#if the edge is an updated edge, add a different color and edge width
 			if (v, n) in updated_edges
@@ -159,7 +176,7 @@ function plot_graph(graph, node_value, title, color, updated_edges)
 		
 		#add a node label
 		if node_value[v] != ""
-			push!(node_label, v * ": " * string(node_value[v]))
+			push!(node_label, v * ": " * string(round(node_value[v], digits = 1)))
 		else
 			push!(node_label, v)
 		end
@@ -218,7 +235,7 @@ function bellman_ford_animated(graph, start_node)
 	p = plot_graph(graph, distance, "start", :black, [])
 	frame(animation, p)
 	
-	#update distance n - 1 times
+	#update distance N - 1 times
 	for i in 1:N - 1
 		#store edges that get updated this iteration
 		updated_edges = []
@@ -298,11 +315,6 @@ function bellman_ford_animated(graph, start_node)
 				break
 			end
 		end
-
-		println("negative cycle")
-		for p in path
-			println(p)
-		end
 	end
 	return animation
 end
@@ -318,9 +330,6 @@ test_graph_neg_cycle_animation = bellman_ford_animated(test_graph_neg_cycle, "D"
 
 # ╔═╡ e68ff2ee-98a0-4189-83b1-5cbd7ef84450
 gif(test_graph_neg_cycle_animation, "test_graph_neg_cycle_animation.gif", fps = 1)
-
-# ╔═╡ 37caed42-b495-403a-929f-1515a6acf1c5
-#explain stuff like what's different for disconnected graphs, use graph.jl
 
 # ╔═╡ 0fbf0be0-12b7-47e5-9d9c-e7fd57549f77
 """
@@ -341,8 +350,8 @@ function create_currency_graph(pairs)
 		prices = ticker(pair)
 
 		#get prices for both currencies and turn it into an edge weight
-		weight_1 = round(log(1/prices[!, "bid"][]), digits = 4)
-		weight_2 = round(log(prices[!, "ask"][]), digits = 4)
+		weight_1 = log(1/prices[!, "bid"][])
+		weight_2 = log(prices[!, "ask"][])
 
 		#split the pair to get separate ticker symbols
 		ticker_symbol_1, ticker_symbol_2 = split(pair, "-")
@@ -377,124 +386,81 @@ test_arbitrage_graph_animation = bellman_ford_animated(test_arbitrage_graph, "EU
 # ╔═╡ 4a327ae9-5a2f-42a2-bb7b-827fdcc6d634
 gif(test_arbitrage_graph_animation, "test_arbitrage_graph_animation.gif", fps = 1)
 
-# ╔═╡ 77cb62fd-94f5-4eed-8d53-2bcc854bebbd
-#basic bellman ford algorithm
-function bellman_ford(graph, start_node)
-	a = 0
-	
-	#initialize distance of source to every node as inf
-	distance = Dict{String, Float64}(v => Inf for v in keys(graph))
-	distance[start_node] = 0
-	N = length(distance)
-	
-	#update distance n - 1 times
-	for _ in 1:N - 1
-		#iterate over all nodes
-		for v in keys(graph)
-			#iterate over all neighbors of the current node
-			for (w, n) in graph[v]
-				#update distance if needed
-				distance[n] = min(distance[n], distance[v] + w)
-			end
-		end
-	end
-	
-	for v in keys(graph)
-		for (w, n) in graph[v]
-			#if improvement is still possible, there's a negative cycle
-			if distance[v] + w < distance[n]
-				a += 1
-			end
-		end
-	end
-	return a, distance
-end
-
-# ╔═╡ d29c9bc1-b915-4ac1-b026-431b84be96ee
-#basic bellman ford algorithm
-function bellman_ford_trace(graph, start_node)
-	
-	#initialize distance of source to every node as inf
-	distance = Dict{String, Float64}(v => 0 for v in keys(graph)) #look from all vertices simultaneously, for disconnected graphs
-	distance[start_node] = 0
-	predecessor = Dict{String, String}(v => "" for v in keys(graph))
-	N = length(distance)
-	x = -1
-	
-	#update distance n - 1 times
-	for _ in 1:N
-		x = -1
-		#iterate over all nodes
-		for v in keys(graph)
-			#iterate over all neighbors of the current node
-			for (w, n) in graph[v]
-				#update distance if needed
-				if distance[v] + w < distance[n]
-					predecessor[n] = v
-					x = n
-				end
-				distance[n] = min(distance[n], distance[v] + w)
-			end
-		end
-	end
-	
-	if x == -1
-		println("no negative cycles found from " * start_node)
-	else
-		y = x #lies in negative cycle or is reachable from it
-		for j in 1:N
-			y = predecessor[y] #find the cycle
-		end
-		cur = y
-		path = []
-		for k in 1:N
-			push!(path, cur)
-			cur = predecessor[cur]
-			if (cur == y) & (size(path)[1] > 1)
-				break
-			end
-		end
-
-		println("negative cycle")
-		for p in path
-			println(p)
-		end
-	end
-	return distance, predecessor
-end
+# ╔═╡ ca6c579e-0ae2-46b7-af08-9b26958c19ee
+arbitrage_graph = create_currency_graph(pairs)
 
 # ╔═╡ 2408e409-24d1-4ae7-8dd3-a2349b573363
-#basic bellman ford algorithm
+"""
+    bellman_ford_all_cycles(graph, start_node)
+
+The Bellman-Ford algorithm adapted to return the necessary information to find a negative cycle
+
+Inputs:
+    - graph: a dictionary representing a directed graph on which the Bellman-Ford 
+             algorithm will be applied 
+    - start_node: starting point
+
+Outputs:
+    - last_updated: the last updated node in the nth iteration, returns "" if no node 
+                    was updated
+	- N: the amount of nodes
+	- predecessor: a dictionary where the value of each key is its predecessor
+"""
 function bellman_ford_all_cycles(graph, start_node)
 	
-	#initialize distance of source to every node as inf
-	distance = Dict{String, Float64}(v => Inf for v in keys(graph)) #look from all vertices simultaneously, for disconnected graphs
+	#initialize distance from start node to every other node as inf
+	distance = Dict{String, Float64}(v => Inf for v in keys(graph))
+	#distance of the start node is 0
 	distance[start_node] = 0
-	predecessor = Dict{String, String}(v => "" for v in keys(graph))
+	#amount of nodes
 	N = length(distance)
-	x = -1
+
+	#initialize predecessors, keeps track of the predecessor of every node
+	predecessor = Dict{String, String}(v => "" for v in keys(graph))
+	#the last updated node
+	last_updated = ""
 	
-	#update distance n - 1 times
+	#update distance N times
 	for _ in 1:N
-		x = -1
+		last_updated = ""
+		
 		#iterate over all nodes
 		for v in keys(graph)
 			#iterate over all neighbors of the current node
 			for (w, n) in graph[v]
+				
 				#update distance if needed
 				if distance[v] + w < distance[n]
+					distance[n] = min(distance[n], distance[v] + w)
+
+					#update predecessor and last updated
 					predecessor[n] = v
-					x = n
+					last_updated = n
 				end
-				distance[n] = min(distance[n], distance[v] + w)
 			end
 		end
 	end
-	return x, N, predecessor
+	return last_updated, N, predecessor
 end
 		
 
+# ╔═╡ 37caed42-b495-403a-929f-1515a6acf1c5
+#explain stuff like what's different for disconnected graphs, use graph.jl
+
 # ╔═╡ 5c61831e-122d-4a68-b16e-c674d9aa6e36
+"""
+    find_cycles(graph, start_node)
+
+find as many negative cycles in a graph as possible
+
+Inputs:
+    - graph: a dictionary representing a directed graph on which the Bellman-Ford 
+             algorithm will be applied 
+    - start_node: starting point
+
+Outputs:
+    - paths: a vector of vectors that contain the nodes of negative cycles
+"""
 function cycle_cost(path, graph)
 	cost = 0
 	for l in 1:length(path) - 1
@@ -514,16 +480,32 @@ function cycle_cost(path, graph)
 end
 
 # ╔═╡ 63afbb82-509e-4eda-802b-f54349bc1e6b
+"""
+    find_cycles(graph, start_node)
+
+find as many negative cycles in a graph as possible
+
+Inputs:
+    - graph: a dictionary representing a directed graph on which the Bellman-Ford 
+             algorithm will be applied 
+    - start_node: starting point
+
+Outputs:
+    - paths: a vector of vectors that contain the nodes of negative cycles
+"""
 function find_cycles(graph, start_node)
+	#a boolean to keep the search for cycles going as long as there are cycles to be 
+    #found
 	cycles = true
-	predecessor = []
+	paths = []
+	
 	while cycles
 		cycles = false
 		
 		x, N, predecessor = bellman_ford_all_cycles(graph, start_node)
 		
-		if x == -1
-			println("no negative cycles found from " * start_node)
+		if x == ""
+			cycles = false
 		else
 			cost = 0
 			y = x #lies in negative cycle or is reachable from it
@@ -555,152 +537,16 @@ function find_cycles(graph, start_node)
 
 			if cost >= 0
 				cycles = false
-			end
-
-			println(cost)
-			println("negative cycle")
-			for p in path
-				println(p)
+			else
+				push!(paths, path)
 			end
 		end
 	end
-	return predecessor
+	return paths
 end
 
-# ╔═╡ 7092ab9c-0859-4600-aedb-e07b17df78e8
-pred11 = find_cycles(deepcopy(graph), "EUR")
-
-# ╔═╡ 5e7dd95e-16cf-4c42-be62-823e13e13f45
-bellman_ford_trace(graph, "EUR")
-
-# ╔═╡ 7ea182b8-ec17-40c1-bd7b-3f3d4582ec9f
-for v in keys(pred)
-	if pred[v] == ""
-		println(v)
-	end
-end
-
-# ╔═╡ b7a1c927-4c10-4c1d-add1-a7e32a0204bc
-begin
-	prices = ticker("ANKR-GBP")
-	price_1 = log(1/prices[!, "bid"][])
-	price_2 = log(prices[!, "ask"][])
-	println(price_1)
-	println(price_2)
-	print(price_1 + price_2)
-end
-
-# ╔═╡ 35529827-5ee3-465d-b055-3345b761ab07
-#a4, dist4, pre4, final_node4 = Shortest_Path_Faster_Algorithm_early_termination(graph, "BTC")
-
-# ╔═╡ b1c22cb4-6397-40a9-a5a3-e7fe83fdc15a
-#trace(pre4, final_node4)
-
-# ╔═╡ 591d1263-c1dc-4a73-921e-83ab648d85d3
-#trace function to find a negative circle
-function trace(pre, n)
-	S = []
-    while !(n in S)
-        push!(S, n)
-        n = pre[n]
-	end
-    cycle = [n]
-    while last(S) != n
-        push!(cycle, last(S))
-		deleteat!(S, findall(x -> x == last(S), S))
-	end
-    push!(cycle, n)
-    return cycle
-end
-
-# ╔═╡ c5468105-63e9-481c-9880-b4117f3365ca
-#recursion part of depth first search
-function recursion_part(v, visited, rec_stack, pre)
-	visited[v] = true
-	rec_stack[v] = true
-	
-	#next line needs to be generalized #for n in pre[v]
-	n = pre[v]
-	if visited[n] == false
-		if recursion_part(n, visited, rec_stack, pre) == true
-			return true
-		end
-	elseif rec_stack[n] == true
-		return true
-	end
-	rec_stack[v] = false
-	return false
-end
-
-# ╔═╡ be68a22a-4f99-4dd0-bbfb-09f7940aaa23
-#depth first search for detecting if a cycle is present
-function detect_cycle(pre)
-	visited = Dict{String, Bool}(v => false for v in keys(pre))
-	rec_stack = Dict{String, Bool}(v => false for v in keys(pre))
-
-	for v in keys(pre)
-		if visited[v] == false
-			if recursion_part(v, visited, rec_stack, pre) == true
-				return true
-			end
-		end
-	end
-    return False
-end
-
-# ╔═╡ 03f7d857-e1a2-4b21-bb3d-ee7db73d4e7b
-#The improvement over the bellman ford algorithm is that instead of trying all vertices blindly, SPFA maintains a queue of candidate vertices and adds a vertex to the queue only if that vertex is relaxed. This process repeats until no more vertex can be relaxed.
-
-#with early termination, makes it faster than previous implementation
-
-function Shortest_Path_Faster_Algorithm_early_termination(graph, start_node)
-	a = 0
-	final_node = start_node
-	
-	#initialize distance of source to every node as inf
-	distance = Dict{String, Float64}(v => Inf for v in keys(graph))
-	pre = Dict{String, String}(v => start_node for v in keys(graph))
-	distance[start_node] = 0
-	N = length(distance)
-	Q = []
-	iter = 0
-
-	#create a queue of nodes that are processed in a first in first out manner
-	push!(Q, start_node)
-	
-    while length(Q) != 0
-		#select the first node in the queue
-		v = Q[1]
-		deleteat!(Q, findall(x -> x == v, Q))
-		for (w, n) in graph[v]
-			#update distance if needed
-			if distance[n] > distance[v] + w
-				distance[n] = distance[v] + w
-				iter += 1
-				if iter == N
-                    iter = 0
-                    if detect_cycle(pre)
-						final_node = n
-						a += 1
-                        Q = []
-					end
-				end
-				pre[n] = v
-				#add n to the queue if it's not in  there yet
-				if !(n in Q)
-                    push!(Q, n)
-				end
-			end
-		end
-	end
-
-	if detect_cycle(pre)
-		#################################final_node = n
-		a += 1
-    end
-	
-	return a, distance, pre, final_node
-end
+# ╔═╡ 08fb2d9d-7402-493c-be73-893318adec4d
+paths = find_cycles(deepcopy(arbitrage_graph), "EUR")
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1762,32 +1608,27 @@ version = "0.9.1+5"
 # ╟─b617a37b-7736-4ddc-a1d9-a17605245734
 # ╟─5cc2ab81-a7c3-43b6-910c-5ae76c97d117
 # ╟─b4b2ffd2-f5f3-46a5-80b8-6d56ac95e143
-# ╟─dd886054-be32-4d17-8467-8f158b17c0ad
+# ╟─7e474187-8f39-4d41-9c74-ea5848b6a688
+# ╟─3d40c32f-b9da-4d31-b7e6-a9e2eab4f441
+# ╟─4c2ef9fd-0520-47de-b542-232328a266f2
+# ╠═f240e4d2-1eab-4c83-885d-d97650ed3426
 # ╟─c9bc2ab3-8809-4360-883a-228c886c296f
 # ╟─5afabab9-9cd6-4cf7-a165-664ca5d622af
 # ╟─abdd08ef-0627-4bb6-b814-6daa70a531e2
 # ╟─6907ccbe-95a6-4cd5-8bcb-33464b808f1f
+# ╟─c967f6e2-6d46-47ce-8b68-435c09a970a0
 # ╟─ffe2b3ff-2af6-4ddd-b8dc-692a115d221c
-# ╠═4cc9ad91-71c5-4aa9-8971-f880bf6dbfcb
-# ╠═4a327ae9-5a2f-42a2-bb7b-827fdcc6d634
-# ╠═f01c84aa-395e-4aca-baee-6098916f76c5
+# ╟─4cc9ad91-71c5-4aa9-8971-f880bf6dbfcb
+# ╟─4a327ae9-5a2f-42a2-bb7b-827fdcc6d634
+# ╠═63fff09f-f83b-4f1a-a7a7-72d6ce049a87
+# ╟─ca6c579e-0ae2-46b7-af08-9b26958c19ee
+# ╟─08fb2d9d-7402-493c-be73-893318adec4d
+# ╟─f01c84aa-395e-4aca-baee-6098916f76c5
 # ╟─7838c794-88e0-4d8a-9ab5-7f90bc3a7293
-# ╠═37caed42-b495-403a-929f-1515a6acf1c5
-# ╠═0fbf0be0-12b7-47e5-9d9c-e7fd57549f77
-# ╠═77cb62fd-94f5-4eed-8d53-2bcc854bebbd
-# ╠═d29c9bc1-b915-4ac1-b026-431b84be96ee
-# ╠═2408e409-24d1-4ae7-8dd3-a2349b573363
+# ╟─0fbf0be0-12b7-47e5-9d9c-e7fd57549f77
+# ╟─2408e409-24d1-4ae7-8dd3-a2349b573363
 # ╠═63afbb82-509e-4eda-802b-f54349bc1e6b
+# ╠═37caed42-b495-403a-929f-1515a6acf1c5
 # ╠═5c61831e-122d-4a68-b16e-c674d9aa6e36
-# ╠═7092ab9c-0859-4600-aedb-e07b17df78e8
-# ╠═5e7dd95e-16cf-4c42-be62-823e13e13f45
-# ╠═7ea182b8-ec17-40c1-bd7b-3f3d4582ec9f
-# ╠═b7a1c927-4c10-4c1d-add1-a7e32a0204bc
-# ╠═35529827-5ee3-465d-b055-3345b761ab07
-# ╠═b1c22cb4-6397-40a9-a5a3-e7fe83fdc15a
-# ╠═591d1263-c1dc-4a73-921e-83ab648d85d3
-# ╠═be68a22a-4f99-4dd0-bbfb-09f7940aaa23
-# ╠═c5468105-63e9-481c-9880-b4117f3365ca
-# ╠═03f7d857-e1a2-4b21-bb3d-ee7db73d4e7b
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
