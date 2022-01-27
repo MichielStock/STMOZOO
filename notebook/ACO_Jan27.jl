@@ -5,13 +5,13 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ 45160a1e-cb93-48bf-b2b9-35c337780a73
-using ShortCodes
-
-# ╔═╡ a3a91caa-db4a-49da-bda9-1fffd9498ce8
-using LinearAlgebra # to use Symmetric matrix 
+using ShortCodes # to use YouTube()
 
 # ╔═╡ 82d25b0c-f900-4996-99c9-fdb1bbe7cae4
-using Random # to make random matrix 
+using Random # to use rand() 
+
+# ╔═╡ a3a91caa-db4a-49da-bda9-1fffd9498ce8
+using LinearAlgebra # to use Symmetric)
 
 # ╔═╡ 69899fd8-3b3f-4220-8997-88208c6177ca
 md"""
@@ -26,11 +26,15 @@ md"""
 
 #### Prerequisite terminology:
 
-**Metaheuristics**: to escape a local optima the algorithm adds some element (e.g. heuristic) to begin from a null solution and strategically build toward a complete solution ; could also be a local search that begins with a complete solution and iteratively modifies it to find a better one. Meta = above ; heurisein = to find.
+**Heuristic**: A problem-solving approach that does not guarantee an optimal solution but returns a sufficient enough approximation; typically employed when finding the optimal solution is impossible or inefficient.
 
-**NP-hard problem**: meaning that there is no known way to solve it in polynomial time
+**Metaheuristic**: From "meta" (above) and "heurisein" (to find). These methods begin from a null solution and build toward a complete solution, the goal being to escape being trapped in local optima. These methods could also comprise of a local search beginning with a complete solution and iteratively modifying it to search for a better one. 
 
-**Pheromone**: a chemical substance produced and released into the environment by an animal, especially a mammal or an insect, affecting the behaviour or physiology of others of its species. Pheromones are chemicals that ants secrete and can be smelled by other community memoirs and trigger a social response ; 
+**NP-problem**: A nondeterministic polynomial time problem. A solution for this problem can be reduced to a polynomial-time verification. A problem is NP-hard its algorithm can be translated into another algorithm for any other NP-hard problem. The optimum solution of NP-problem often (but not always) requires an exhaustive search. 
+
+**NP-hard problem**: A class of problem that is translatable into an NP-problem; it is at least as hard as an NP-problem. A problem is NP-hard if its algorithm can be translated into another algorithm for any other NP-hard problem.
+
+**Pheromone**: A chemical produced and secreted into the environment by an animal that affects the behavior or physiology of others of its species. Pheromones can encode many different signals and may be smelled by other community memoirs and (for example) trigger a social response. 
 
 
 ## The Travelling Salesman Problem
@@ -47,49 +51,117 @@ There are many flavors of optimization algorithms that give heuristic solutions 
 
 # ╔═╡ 6608e84a-fb31-492a-aced-70b32e3c6a14
 md""" 
-## Ant foraging behavior: the inspiration behind ACO
+## Inspiration for ACO: ant foraging behavior
 
 Ant Colony Optimization is a term for a group of metaheuristics that solve the TSP. It is based on ant foraging behavior. Simulates the process of any colony foraging and is established using the “internal information transmission mechanism of ant colony”.
 
-Ants live in community nests or colonies. When a forager ant leaves its colony and finds a food source, it carries as much food as possible back to its colony. Along the way, it deposits pheromones. Pheromones faciliate indirect communication to other ants and conveys information about the food the ant is carrying. Other ants can smell the pheromones and retrace the ant's path to the food. The higher the pheromone level, the greater probability that proceeding ants choose that path. This results in a positive-feedback loop: as more ants choose a particular path, they will in turn deposit more pheromones, ultimately converging on an optimal path between the food and the colony. 
+Ants live in community nests or colonies. When a forager ant leaves its colony, it travels randomly until it finds a food source, then it carries as much food as possible back to its colony. Along the way, it deposits pheromones. Pheromones faciliate indirect communication to other ants and conveys information about the food the ant is carrying. Other ants can smell the pheromones and retrace the ant's path to the food. The higher the pheromone level, the greater probability that proceeding ants choose that path. This results in a positive-feedback loop: as more ants choose a particular path, they will in turn deposit more pheromones, ultimately converging on an optimal path between the food and the colony. 
 
-### For example:
+#### Any colony simulation
+The YouTube video below shows an ant colony foraging simulation. Pheromone trails are shown in white.
+"""
 
+# ╔═╡ 249340e4-c31a-46a3-a620-ceef9abaadb5
+YouTube("3YXikOL_3l0", 0, 15) 
+
+# ╔═╡ 533aad3f-fd08-4004-b93f-60f056d05791
+md"""
+*Reflect on the video*:
+- How do the paths converge (or not) over time?
+- Does the path convergence rate seem to be steady, grow, or decay over time?
+- Do the pheromone trails stay steady or fade over time?
+- Why do some ants seem to ignore the pheromone trail all together?
 
 """
 
 # ╔═╡ 67d95176-fc53-4daa-931f-1a7baa29e888
 md"""
-### Noteworthy properties of ACO
+### ACO algorithm
+"Ants" are agents that locate solutions by moving through a parameter space representative of all possible solutions. To begin, ants traverse the space randomly and individually. Each ant's solution is scored (i.e. it's path length is calculated). The shorter the path, the higher the solution quality. Ants lay down pheromones along their paths that are proportional to the quality of their respective solutions. 
 
-- Probabilistic technique for optimization: Use of a priori information about the structure of a possible good solution ; posterior information about the structure of previously obtained good solutions 
-- Explicit use of previous solutions to build new ones
-- Swarm system
+After initial (random) paths and path scores are calculated, the ants are deployed again. This time, pheromone information informs path decisions taken by the ants. After each successive run (or iteration), path scores are re-calculated and pheromones are adjusted accordingly. The algorithm stops after a fixed number of iterations. 
+
+#### Important features of ACO:
+- ACO is a **probabilistic** technique in that it makes use of *a priori* information about the structure of possible good solutions to produce new ones. This is communicated by pheromones, which attract ants to more attractive paths.  
+- ACO has an element of **randomness** or stochasticity. Path decisions are made by randomly selecting a value from a cumulative probability array constructed according to pheromone information (the selected value corresponds to deciding where to go next). This means ants retain some "individualism" and can forge or follow a path that does not adhere to the (current) best solution. 
+- **Pheromones evaporate** over time, which helps avoid getting stuck in local optima.
+- ACO can run **continuously** and can therefore adadpt to environmental conditions in real time. 
 
 """
 
 # ╔═╡ 4d3e3f09-ee88-47b5-a03f-93d034cbee45
 md"""
-### ACO: parameters and the algorithm
+## ACO parameters 
 
-- Can be thought of as a parallel search over several threads based on problem data and a memory structure with information about the quality of a previously obtained result 
-- When an ant completes a solution (colony → food → colony) it evaluates the solution dn modifies the trail value on the components used in its solution. This pheromone information informs the decision and thus the path taken by future ants
+- numCities
+- numAnts
+- maxTime
+- α
+- β
+- MaxValue
+- ρ
 
 """
-
-# ╔═╡ 249340e4-c31a-46a3-a620-ceef9abaadb5
-using ShortCodesYouTube("3YXikOL_3l0", 0, 15) 
 
 # ╔═╡ bc7b209a-32e9-4e60-a79b-46a404cc2a7e
 md"""
-### pseudocode
+#### Pseudocode
+
+>*input* number of ants **numAnts** and number of cities **numCities** (both integers)\
+>\
+>*initialize* **start, dists, ants, bestTrail, bestLength, pheromones**\
+>\
+> **repeat**\
+>
+>> 1. generate ant paths\
+>> 2. calculate path scores\
+>> 3. find best solution\
+>> 4. update pheromone trail\
+>**output bestPath, bestPathLength**
 """
 
-# ╔═╡ ac1fb55f-709d-44dd-952d-b1d2d8deb817
-md"""
-list of functions    
+# ╔═╡ 2395128d-9af8-460e-a36f-05b3aeb00afb
+md" ### initialize the run"
 
-Initialition:
+# ╔═╡ 02cdf94d-d9b5-4767-89a0-89d927e899fb
+md" ### run optimization"
+
+# ╔═╡ 9c76a78c-7718-44a8-9399-f66c8683e97b
+#SOLUTION
+
+# ╔═╡ 64dae470-6b3b-487f-b663-25f10b7b9567
+md"""
+### Different flavors of ACO & limitations
+
+Actually not as good as other state-of-the-art solutions for TSP but can possibly drive the search of always better solutions for such problems. It is an ongoing method of research and teh journals.plot.ios (3rd reference) was only published in Sept 2021 on yet another possible improvement to APO  
+
+Limitations
+- Lack of pheromone in the initial stage
+- Slow evolution speed
+- May prematurely converge
+"""
+
+# ╔═╡ 31e6f16e-e12e-474f-9c27-5bff01c53310
+md"""
+![](https://github.com/natclaret/Ant_Colony_Optimization.jl/blob/master/notebook/ACO_images/Elettes_cartoon.png?raw=true)
+Cartoon by Elette, age 8
+"""
+
+# ╔═╡ 40785798-1223-4efe-870e-e37b0b761af1
+md""" ### Under the hood"""
+
+# ╔═╡ 7a01418b-2543-433b-942e-92ce38a29496
+md"""
+
+A list of functions and their parameters is given below. Indention denotes function calling. For example:
+	
+	function1(A,B)
+	
+		function2(C,D)
+
+... means funtion1 calls function2. 
+
+Initialization functions:
 
 	InitColonyOptimization(numCities::Int=10, numAnts::Int=4)
 
@@ -106,10 +178,11 @@ Initialition:
 		trailSum(trail, dists) #Length()
 
 		bestTrail(ants, dists)
-    
-Run the optimization:
-    
-    AntColonyOptimization(start, dists, ants, bestTrail, bestLength, pheromones, numCities, numAnts, maxTime::Int=10)
+
+
+Main functions:
+
+	AntColonyOptimization(start, dists, ants, bestTrail, bestLength, pheromones, numCities, numAnts, maxTime::Int=10)
 
 	updateAnts(ants, pheromones, dists)
 
@@ -126,39 +199,7 @@ Run the optimization:
 		updatePheromones(pheromones, ants, dists)
 
 			edgeInTrail(nodeX, nodeY, trail) 
-
 """
-
-# ╔═╡ 2395128d-9af8-460e-a36f-05b3aeb00afb
-md" ### initialize the run"
-
-# ╔═╡ 02cdf94d-d9b5-4767-89a0-89d927e899fb
-md" ### run optimization"
-
-# ╔═╡ 9c76a78c-7718-44a8-9399-f66c8683e97b
-#SOLUTION
-
-# ╔═╡ 64dae470-6b3b-487f-b663-25f10b7b9567
-md"""
-### At the end... different flavors & limitations
-
-- Actually not as good as other state-of-the-art solutions for TSP but can possibly drive the search of always better solutions for such problems. It is an ongoing method of research and teh journals.plot.ios (3rd reference) was only published in Sept 2021 on yet another possible improvement to APO  
-
-Limitations
-- Lack of pheromone in the initial stage
-- Slow evolution speed
-- May prematurely converge
-
-"""
-
-# ╔═╡ 31e6f16e-e12e-474f-9c27-5bff01c53310
-md"""
-![](https://github.com/natclaret/Ant_Colony_Optimization.jl/blob/master/notebook/ACO_images/Elettes_cartoon.png?raw=true)
-Cartoon by Elette, age 8
-"""
-
-# ╔═╡ 40785798-1223-4efe-870e-e37b0b761af1
-md""" ### Under the hood"""
 
 # ╔═╡ 3fc17fc7-e345-4e3d-8e77-78e374dd0bfc
 """
@@ -852,17 +893,19 @@ uuid = "83775a58-1f1d-513f-b197-d71354ab007a"
 
 # ╔═╡ Cell order:
 # ╟─69899fd8-3b3f-4220-8997-88208c6177ca
+# ╠═45160a1e-cb93-48bf-b2b9-35c337780a73
+# ╠═82d25b0c-f900-4996-99c9-fdb1bbe7cae4
+# ╠═a3a91caa-db4a-49da-bda9-1fffd9498ce8
 # ╟─3a5e53ea-b36d-4e97-af88-75bee3180b2a
 # ╟─6608e84a-fb31-492a-aced-70b32e3c6a14
+# ╟─249340e4-c31a-46a3-a620-ceef9abaadb5
+# ╟─533aad3f-fd08-4004-b93f-60f056d05791
 # ╟─67d95176-fc53-4daa-931f-1a7baa29e888
-# ╟─4d3e3f09-ee88-47b5-a03f-93d034cbee45
-# ╟─45160a1e-cb93-48bf-b2b9-35c337780a73
-# ╠═249340e4-c31a-46a3-a620-ceef9abaadb5
+# ╠═4d3e3f09-ee88-47b5-a03f-93d034cbee45
 # ╟─bc7b209a-32e9-4e60-a79b-46a404cc2a7e
-# ╟─ac1fb55f-709d-44dd-952d-b1d2d8deb817
 # ╟─2395128d-9af8-460e-a36f-05b3aeb00afb
 # ╠═206fc0de-a6d3-4597-9ce3-f63bdd853d1c
-# ╠═c8d9c937-e531-4e11-a58b-82120cbd924b
+# ╟─c8d9c937-e531-4e11-a58b-82120cbd924b
 # ╟─02cdf94d-d9b5-4767-89a0-89d927e899fb
 # ╠═e05ce658-cbaf-4ac2-a426-c9741fbc37d2
 # ╠═88706d87-5a3b-454a-a1eb-f1b110246a28
@@ -876,11 +919,10 @@ uuid = "83775a58-1f1d-513f-b197-d71354ab007a"
 # ╠═e3e2ca54-c6c6-4a84-a70f-2d5cfaefd9ba
 # ╠═a2aba49e-809f-4cdd-9bd5-d10b854a6628
 # ╠═d12126fd-c9a3-4dbf-b9ea-866db0b26ab7
-# ╟─64dae470-6b3b-487f-b663-25f10b7b9567
+# ╠═64dae470-6b3b-487f-b663-25f10b7b9567
 # ╟─31e6f16e-e12e-474f-9c27-5bff01c53310
 # ╟─40785798-1223-4efe-870e-e37b0b761af1
-# ╠═a3a91caa-db4a-49da-bda9-1fffd9498ce8
-# ╠═82d25b0c-f900-4996-99c9-fdb1bbe7cae4
+# ╟─7a01418b-2543-433b-942e-92ce38a29496
 # ╠═3fc17fc7-e345-4e3d-8e77-78e374dd0bfc
 # ╠═c8de83fa-1519-48d0-b257-97bfeb4952ad
 # ╠═edf145a2-ae6f-4e01-beb1-5be1d5c1250d
