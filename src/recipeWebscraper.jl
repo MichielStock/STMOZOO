@@ -53,7 +53,12 @@ julia> scrapeRecipe(2700,2702,"./recipedb.csv")
         end
 
         # write the data to the DB
-        CSV.write(csvPath, Dict(recipeTitle => ingredientList), append = true)  
+        if isfile(csvPath)
+            CSV.write(csvPath, Dict(recipeTitle => ingredientList), append = true) 
+        else
+            CSV.write(csvPath, Dict(recipeTitle => ingredientList), append = false) 
+        end
+         
     end
     print("done")
 end
