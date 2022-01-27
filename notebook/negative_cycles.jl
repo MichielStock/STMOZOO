@@ -15,42 +15,39 @@ macro bind(def, element)
 end
 
 # ╔═╡ 50860473-05c4-4382-8586-b10499b64e81
-using Graphs, Plots, GraphRecipes, CoinbasePro
-
-# ╔═╡ 5e406e5d-5240-4226-93b7-0d44b6e4d49f
-using DataFrames
+using Graphs, Plots, GraphRecipes, CoinbasePro, DataFrames, PlutoUI
 
 # ╔═╡ a888a245-08ba-4fcd-8f19-52a810f4f725
 md"# Finding negative cycles using the Bellman–Ford algorithm
 By Yari Van Laere
 ## Introduction
-In this notebook, i will explain how the Bellman-Ford algorithm works and how it can be used to find negative cycles. At the end, it will be used to find arbitrage opportunities."
+This notebook will explain how the Bellman-Ford algorithm works and how it can be used to find negative cycles. At the end, it will be used to find arbitrage opportunities."
 
 # ╔═╡ c00e89d3-e0e5-455f-b5fe-2b7c037d14f7
 md"## Bellman-Ford algorithm
 The Bellman-Ford algorithm is a single-source shortest path algorithm that can detect negative cyles."
 
 # ╔═╡ 2340a1ea-ff3e-40a2-b12c-b7d73199c573
-md"This is a directed graph with 5 nodes and 11 edges. The cost of moving from one node to another is displayed on the edges. Now we want to calculate the shortest distance from node D to all other nodes. One of the costs (node C -> node D) is negative, so the Dijkstra algorithm can't be used."
+md"Below, you see a directed graph with 5 nodes and 11 edges. The cost of moving from one node to another is displayed on the edges. Now we want to calculate the shortest distance from node D to all other nodes. One of the costs (node C -> node D) is negative, so the Dijkstra algorithm can't be used."
 
 # ╔═╡ 9a77b32f-6cdf-4193-810f-236a84493390
-md"The Bellman-Ford algorithm can be used instead. Set the distance initially to infinity for every node, except the source, where the distance is zero."
+md"The Bellman-Ford algorithm can be used instead. Set the initial distance to infinity for every node, except the source, where the distance is zero."
 
 # ╔═╡ 2e77f688-9fef-45cf-9b7a-076b70a1df8d
-md"Next, iterate through all nodes and relax all their outgoing edges. For any edge n -> v, with weight w, this means that if the sum of the distance value of node n and the weight of the edge is smaller than the distance value of the neighboring node v, the distance value of the neighboring node gets updated. So distance[v] = min(distance[v], distance[n] + weight[n][v])"
+md"Next, iterate through all nodes and relax all their outgoing edges. For any edge n -> v, with weight w, this means that if the sum of the distance value of node n and the weight of the edge is smaller than the distance value of the neighboring node v, the distance value of the neighboring node gets updated. So distance[v] = minimum(distance[v], distance[n] + weight[n][v])"
 
 # ╔═╡ e8758cb2-f0e1-4725-83e1-557a1bb50980
 md"In the above figure edge D -> E gets relaxed. As a result, the distance value of node E was updated."
 
 # ╔═╡ c2c1802c-aeed-4fd1-b0e6-902e66e3a008
-md"All edges need to get relaxed at most N - 1 times, with N the amount of nodes. After these N - 1 iterations, the shortest distance from the source to every node is calculated."
+md"All edges need to get relaxed at most N - 1 times, with N being the amount of nodes. After these N - 1 iterations, the shortest distance from the source to every node is calculated."
 
 # ╔═╡ eb204bf2-68fe-42cf-b5a1-6688315e0982
-md"As you can see in the animation above, the algorithm has already found the shortest paths after 2 iterations."
+md"In the animation above, you can see how the Bellman-Ford algorithm finds the shortest distances from node D to all other nodes. The red node is the node that is currently selected, the algorithm tries to update the neighbors of the red node. If an update is possible, the edge between them becomes red as well. As you can see, the algorithm has already found the shortest paths after 2 iterations."
 
 # ╔═╡ 140f6c46-75f9-49d1-a7bf-9d2c53c182bf
 md"## Negative cycles
-The Bellman-Ford algorithm can also be used to find negative cycles in graphs. By changing the weight of the D -> E edge to -2, a negative cycle has emerged D -> E -> C."
+The Bellman-Ford algorithm can also be used to find negative cycles in graphs. By changing the weight of the D -> E edge to -2, a negative cycle has emerged: D -> E -> C."
 
 # ╔═╡ 499a3ea5-a8b7-40a3-a757-6799910c23bd
 md"This makes it impossible to calculate the shortest distance from the source to all the nodes, because the negative cycle will keep decreasing the distances. This means that the distances will keep getting updated, even after N - 1 iterations. So if there is still an update to the distances after N - 1 iterations, we know that a negative cycle is present."
@@ -59,7 +56,7 @@ md"This makes it impossible to calculate the shortest distance from the source t
 md"Updates in iteration N (here N = 5) happen in nodes that are part of a negative cycle or that are reacheable from a negative cycle. So, by keeping track of the predecessors of all nodes, the negative cycle can be found. The predecessors are the previous nodes in the path from the source to a specific node. So if node v gets updated because distance[v] > distance[n] + weight[n][v], then the predecessor of node v is node n."
 
 # ╔═╡ 8b09540f-f6c6-4eac-839b-8b1d306cb891
-md"When tracing back the predecessors, the nodes will start repeating themselves, these nodes make up the negative cycle."
+md"When tracing back the predecessors of the last updated node, the nodes will start repeating themselves, these repeating nodes make up the negative cycle."
 
 # ╔═╡ ab50352f-d01b-4070-bcc5-423f21eeb191
 md"This animation shows how a negative cycle can be found using the Bellman-Ford algorithm."
@@ -67,23 +64,23 @@ md"This animation shows how a negative cycle can be found using the Bellman-Ford
 # ╔═╡ c967f6e2-6d46-47ce-8b68-435c09a970a0
 md"Below, you see a small graph with only a few currencies. As you can see, the sum of the edge weights between any two currencies is close to zero, but always positive. The bid price is always slightly higher than the ask price, so there will be no negative cycles with only two nodes."
 
-# ╔═╡ 54b0d0c7-c341-41fe-97bb-d87f038a076e
-dropdown menu
-
-# ╔═╡ 94e22e01-fd02-49b9-865f-42e224c3c38a
-currency_1_ui @bind currency_1 Select["BTC", "EUR", "USD", "ETH"]
-
 # ╔═╡ 63fff09f-f83b-4f1a-a7a7-72d6ce049a87
-md"We can look for a negative cycle in this graph to find an arbitrage opportunity. "
+md"We can look for a negative cycle in this graph to find an arbitrage opportunity. Whether there is one or not depends on the moment you opened the notebook, because these exchange rates constantly change."
 
 # ╔═╡ de497cc3-51f4-40a7-9dc7-ba9c39801221
 md"If we make a graph with all the available currencies, it's possible that there are multiple negative cycles. To find multiple negative cycles, we can apply the Bellman-Ford algorithm multiple times. Every time a negative cycle is found one of the edges of the cycle gets removed."
 
-# ╔═╡ 28800b41-7055-4111-8ab5-36cefff9a9b0
-exp(-cost)
+# ╔═╡ d63dc65a-f615-4ba9-80e7-c91207d60957
+md"To see which cycle is the most lucrative, we can calculate the percentage of increase on the initial investment. As mentioned before, the cost of a cycle is: ``cost = log(1/a) + log(1/b) + log(1/c)``, which is equivalent to: ``-cost = log(a*b*c)``. The percentage increase on the initial investment is then: ``(a*b*c - 1)*100 = (exp(-cost) - 1)*100``"
+
+# ╔═╡ 34c5254a-b160-42e3-97b8-d0c7f5c88ad2
+md"This notebook won't make you rich. It takes multiple seconds to get all the exchange rates. By the time the last ones are requisted, the first ones are already no longer correct. So the arbitrage opportunities that are calculated here possibly never actually existed."
 
 # ╔═╡ 2cf6976f-f448-47db-ac22-2a396cb17259
 md"## Appendix"
+
+# ╔═╡ f338eeb1-2912-4b45-b898-a39d2344faa4
+md"### Variables"
 
 # ╔═╡ 31b058ab-a816-43ea-b50f-ea85ee05546e
 md"The graph to demonstrate the Bellman-Ford algorithm."
@@ -162,12 +159,15 @@ Now we want to convert this multiplication to an addition, because that is easie
 
 With the Bellman-Ford algorithm, we can find negative cycles, so we need to modify the inequality so that an arbitrage opportunity is negative. This is easily done by multiplying both sides with -1. This results in the following inequality: ``- log(a) - log(b) - log(c) < 0`` which is equivalent to: ``log(1/a) + log(1/b) + log(1/c) < 0``. 
 
-So in this example, the edge weight of edge A -> B would be ``log(1/a)``."
+So in this example, the edge weight of edge A -> B would be ``log(1/a)``. Which means the cost of the full cycle is: ``cost = log(1/a) + log(1/b) + log(1/c)``"
 
 
 
 # ╔═╡ 24801a5a-313d-4311-952d-bd714121ac59
 md"The full arbitrage graph."
+
+# ╔═╡ e31936be-b9fd-41c8-87c0-513aded62e83
+md"### Functions"
 
 # ╔═╡ f01c84aa-395e-4aca-baee-6098916f76c5
 """
@@ -186,7 +186,7 @@ Inputs:
 Outputs:
     - p: a plot of the graph
 """
-function plot_graph(graph, node_value, title, color, updated_edges)
+function plot_graph(graph, node_value, title, color, updated_edges; current_node = "")
 	
 	#get the nodes
 	nodes = collect(keys(graph))
@@ -196,6 +196,7 @@ function plot_graph(graph, node_value, title, color, updated_edges)
 	edge_color = Dict()
 	edge_width = Dict()
 	node_label = []
+	node_color = []
 
 	#create a directed graph with the required amount of nodes
 	g = SimpleDiGraph(length(nodes))
@@ -230,12 +231,19 @@ function plot_graph(graph, node_value, title, color, updated_edges)
 		else
 			push!(node_label, v)
 		end
+		
+		#add a colored node
+		if v == current_node
+			push!(node_color, :red)
+		else
+			push!(node_color, :lightblue)
+		end
 	end
 
 	#create a plot of the graph
 	p = graphplot(g, names = node_label, edgelabel = edge_weight, edgewidth = 
         edge_width, title = title, edgecolor = edge_color, method = :spectral, 
-        nodesize = 0.1)
+        nodesize = 0.1, nodeshape = :circle, nodecolor = node_color)
 	return p
 end
 
@@ -301,14 +309,14 @@ function bellman_ford_animated(graph, start_node)
 					distance[n] = distance[v] + w
 					push!(updated_edges, (v, n))
 
-					#add a frame to the animation
-					p = plot_graph(graph, distance, "iteration: " * string(i), :red, 
-                        updated_edges)
-					frame(animation, p)
-
 					#update predecessor
 					predecessor[n] = v
 				end
+
+				#add a frame to the animation
+				p = plot_graph(graph, distance, "iteration: " * string(i), :red, 
+					updated_edges, current_node = v)
+				frame(animation, p)
 			end
 		end
 	end
@@ -324,7 +332,8 @@ function bellman_ford_animated(graph, start_node)
 				push!(updated_edges, (v, n))
 
 				#add a frame to the animation
-				p = plot_graph(graph, distance, "iteration: N", :blue, updated_edges)
+				p = plot_graph(graph, distance, "iteration: N", :blue, updated_edges, 
+                    current_node = v)
 				frame(animation, p)
 
 				#update predecessor and last updated node
@@ -351,7 +360,7 @@ function bellman_ford_animated(graph, start_node)
 
 			#add a frame to the animation
 			p = plot_graph(graph, distance, "trace back", :green, 
-                trace_edges)
+                trace_edges, current_node = y)
 			frame(animation, p)
 		end
 
@@ -425,10 +434,10 @@ end
 test_arbitrage_graph = create_currency_graph(test_pairs)
 
 # ╔═╡ 6907ccbe-95a6-4cd5-8bcb-33464b808f1f
-node_value_arbitrage = Dict(v => "" for v in keys(test_arbitrage_graph))
+node_value_test_arbitrage = Dict(v => "" for v in keys(test_arbitrage_graph))
 
 # ╔═╡ ffe2b3ff-2af6-4ddd-b8dc-692a115d221c
-plot_graph(test_arbitrage_graph, node_value_arbitrage, "currency graph", :black, [])
+plot_graph(test_arbitrage_graph, node_value_test_arbitrage, "currency graph", :black, [])
 
 # ╔═╡ 4cc9ad91-71c5-4aa9-8971-f880bf6dbfcb
 test_arbitrage_graph_animation = bellman_ford_animated(test_arbitrage_graph, "EUR")
@@ -438,6 +447,52 @@ gif(test_arbitrage_graph_animation, "test_arbitrage_graph_animation.gif", fps = 
 
 # ╔═╡ ca6c579e-0ae2-46b7-af08-9b26958c19ee
 arbitrage_graph = create_currency_graph(pairs)
+
+# ╔═╡ 604bf714-e7ac-4100-8a57-fb421392a7d1
+nodes = collect(keys(arbitrage_graph))
+
+# ╔═╡ 4385445e-642f-4880-bc14-3ea464302982
+@bind currency_1 Select(nodes, default = "EUR")
+
+# ╔═╡ aa7a4c7a-dfdc-403e-a274-6f8e951bd7d6
+@bind currency_2 Select(nodes, default = "BTC")
+
+# ╔═╡ 7a1db177-da08-4b6a-a85c-d1cf96e189b4
+@bind currency_3 Select(nodes, default = "ETH")
+
+# ╔═╡ 39c8f61d-c93c-4bd0-b823-c392b9c5dcfe
+@bind currency_4 Select(nodes, default = "USD")
+
+# ╔═╡ bb11b734-2e81-41c5-bde2-c7876d39f7c3
+@bind currency_5 Select(nodes, default = "DOGE")
+
+# ╔═╡ a335f698-5b54-4dae-8d7d-0be483753a3d
+begin
+	source = currency_1
+	
+	currencies = [currency_1, currency_2, currency_3, currency_4, currency_5]
+	custom_pairs = []
+	
+	for pair in pairs
+		ticker_symbol_1, ticker_symbol_2 = split(pair, "-")
+		if (ticker_symbol_1 in currencies) & (ticker_symbol_2 in currencies)
+			push!(custom_pairs, pair)
+		end
+	end
+	
+end
+
+# ╔═╡ b62558b6-a7e4-40fd-8778-df5e9c6c0823
+custom_pairs
+
+# ╔═╡ 1d92af95-bf4c-427d-80e5-a6eb36d83667
+custom_arbitrage_graph = create_currency_graph(custom_pairs)
+
+# ╔═╡ ab872dd6-c7c9-4ef2-96d2-0350ff38211d
+custom_arbitrage_graph_animation = bellman_ford_animated(custom_arbitrage_graph, source)
+
+# ╔═╡ 24cc281e-0fc6-4871-9717-d9b211f5b9d9
+gif(custom_arbitrage_graph_animation, "custom_arbitrage_graph_animation.gif", fps = 3)
 
 # ╔═╡ 2408e409-24d1-4ae7-8dd3-a2349b573363
 """
@@ -556,7 +611,7 @@ function find_cycles(graph, start_node)
 		last_updated, N, predecessor = bellman_ford_all_cycles(graph, start_node)
 
 		#if there were no updates in the last iteration, there are no cycles
-		if x == ""
+		if last_updated == ""
 			cycles = false
 
 		#if there are updates in the last iteration, find the cycle
@@ -578,19 +633,19 @@ function find_cycles(graph, start_node)
 				push!(path, current_node)
 
 				#if a node is encountered twice, break the loop
-				if (cur == y) & (size(path)[1] > 1)
+				if (current_node == y) & (size(path)[1] > 1)
 					path = reverse(path)
 					#calculate the cost of the cycle
 					cost = cycle_cost(path, graph)
 
 					#remove one of the edges of the negative cycle
-					neighbours = graph[predecessor[cur]]
-					for (w, n) in graph[predecessor[cur]]
-						if n == cur
+					neighbours = graph[predecessor[current_node]]
+					for (w, n) in graph[predecessor[current_node]]
+						if n == current_node
 							neighbours = deleteat!(neighbours, findall(x->x==(w, n), 
                                          neighbours))
 							#push!(neighbours, (Inf, n))
-							graph[predecessor[cur]] = neighbours
+							graph[predecessor[current_node]] = neighbours
 						end
 					end
 					break
@@ -601,7 +656,7 @@ function find_cycles(graph, start_node)
 			if cost >= 0
 				cycles = false
 			else
-				push!(paths, path)
+				push!(paths, (path, cost))
 			end
 		end
 	end
@@ -611,6 +666,28 @@ end
 # ╔═╡ 08fb2d9d-7402-493c-be73-893318adec4d
 paths = find_cycles(deepcopy(arbitrage_graph), "EUR")
 
+# ╔═╡ 96dc52a4-ba0e-44ae-be76-1efaa57e07fb
+custom_paths = find_cycles(deepcopy(custom_arbitrage_graph), source)
+
+# ╔═╡ ae283746-5474-4fb5-a871-2559b112e496
+begin
+	best_cost = 0
+	best_path = []
+	for (path, cost) in custom_paths
+		if cost < best_cost
+			best_cost = cost
+			best_path = path
+		end
+	end
+	best_path = join(best_path, "-")
+end
+
+# ╔═╡ 15e2111a-f5b4-4c0e-b0aa-b25304233b8c
+profit_percentage = round((exp(-best_cost) - 1)*100, digits = 6)
+
+# ╔═╡ eefb7444-f586-48b0-9c98-b9b6c78371c7
+md"There is/are $(length(custom_paths)) arbitrage opportunity/apportunities in this subgraph. The highest percentage increase on investment is $profit_percentage% in this cycle: $best_path."
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
@@ -619,6 +696,7 @@ DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 GraphRecipes = "bd48cda9-67a9-57be-86fa-5b3c104eda73"
 Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 
 [compat]
 CoinbasePro = "~0.1.3"
@@ -626,11 +704,18 @@ DataFrames = "~1.3.2"
 GraphRecipes = "~0.5.9"
 Graphs = "~1.5.1"
 Plots = "~1.25.7"
+PlutoUI = "~0.7.32"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
+
+[[AbstractPlutoDingetjes]]
+deps = ["Pkg"]
+git-tree-sha1 = "8eaf9f1b4921132a4cff3f36a1d9ba923b14a481"
+uuid = "6e696c72-6542-2067-7265-42206c756150"
+version = "1.1.4"
 
 [[AbstractTrees]]
 git-tree-sha1 = "03e0550477d86222521d254b741d470ba17ea0b5"
@@ -922,6 +1007,23 @@ deps = ["Artifacts", "Cairo_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll",
 git-tree-sha1 = "129acf094d168394e80ee1dc4bc06ec835e510a3"
 uuid = "2e76f6c2-a576-52d4-95c1-20adfe4de566"
 version = "2.8.1+1"
+
+[[Hyperscript]]
+deps = ["Test"]
+git-tree-sha1 = "8d511d5b81240fc8e6802386302675bdf47737b9"
+uuid = "47d2ed2b-36de-50cf-bf87-49c2cf4b8b91"
+version = "0.0.4"
+
+[[HypertextLiteral]]
+git-tree-sha1 = "2b078b5a615c6c0396c77810d92ee8c6f470d238"
+uuid = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
+version = "0.9.3"
+
+[[IOCapture]]
+deps = ["Logging", "Random"]
+git-tree-sha1 = "f7be53659ab06ddc986428d3a9dcc95f6fa6705a"
+uuid = "b5f81e59-6552-4d32-b1f0-c071b021bf89"
+version = "0.2.2"
 
 [[Inflate]]
 git-tree-sha1 = "f5fc07d4e706b84f72d54eedcc1c13d92fb0871c"
@@ -1226,6 +1328,12 @@ deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers"
 git-tree-sha1 = "7e4920a7d4323b8ffc3db184580598450bde8a8e"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 version = "1.25.7"
+
+[[PlutoUI]]
+deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
+git-tree-sha1 = "ae6145ca68947569058866e443df69587acc1806"
+uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+version = "0.7.32"
 
 [[PooledArrays]]
 deps = ["DataAPI", "Future"]
@@ -1643,7 +1751,6 @@ version = "0.9.1+5"
 
 # ╔═╡ Cell order:
 # ╠═50860473-05c4-4382-8586-b10499b64e81
-# ╠═5e406e5d-5240-4226-93b7-0d44b6e4d49f
 # ╟─a888a245-08ba-4fcd-8f19-52a810f4f725
 # ╟─c00e89d3-e0e5-455f-b5fe-2b7c037d14f7
 # ╟─2340a1ea-ff3e-40a2-b12c-b7d73199c573
@@ -1664,15 +1771,30 @@ version = "0.9.1+5"
 # ╟─ab50352f-d01b-4070-bcc5-423f21eeb191
 # ╟─b617a37b-7736-4ddc-a1d9-a17605245734
 # ╟─c967f6e2-6d46-47ce-8b68-435c09a970a0
-# ╠═54b0d0c7-c341-41fe-97bb-d87f038a076e
-# ╠═94e22e01-fd02-49b9-865f-42e224c3c38a
 # ╟─ffe2b3ff-2af6-4ddd-b8dc-692a115d221c
-# ╠═63fff09f-f83b-4f1a-a7a7-72d6ce049a87
+# ╟─63fff09f-f83b-4f1a-a7a7-72d6ce049a87
 # ╟─4a327ae9-5a2f-42a2-bb7b-827fdcc6d634
 # ╟─de497cc3-51f4-40a7-9dc7-ba9c39801221
 # ╟─08fb2d9d-7402-493c-be73-893318adec4d
-# ╠═28800b41-7055-4111-8ab5-36cefff9a9b0
+# ╟─d63dc65a-f615-4ba9-80e7-c91207d60957
+# ╟─604bf714-e7ac-4100-8a57-fb421392a7d1
+# ╟─4385445e-642f-4880-bc14-3ea464302982
+# ╟─aa7a4c7a-dfdc-403e-a274-6f8e951bd7d6
+# ╟─7a1db177-da08-4b6a-a85c-d1cf96e189b4
+# ╟─39c8f61d-c93c-4bd0-b823-c392b9c5dcfe
+# ╟─bb11b734-2e81-41c5-bde2-c7876d39f7c3
+# ╟─a335f698-5b54-4dae-8d7d-0be483753a3d
+# ╟─b62558b6-a7e4-40fd-8778-df5e9c6c0823
+# ╟─1d92af95-bf4c-427d-80e5-a6eb36d83667
+# ╟─96dc52a4-ba0e-44ae-be76-1efaa57e07fb
+# ╟─ae283746-5474-4fb5-a871-2559b112e496
+# ╟─15e2111a-f5b4-4c0e-b0aa-b25304233b8c
+# ╟─ab872dd6-c7c9-4ef2-96d2-0350ff38211d
+# ╟─24cc281e-0fc6-4871-9717-d9b211f5b9d9
+# ╟─eefb7444-f586-48b0-9c98-b9b6c78371c7
+# ╟─34c5254a-b160-42e3-97b8-d0c7f5c88ad2
 # ╟─2cf6976f-f448-47db-ac22-2a396cb17259
+# ╟─f338eeb1-2912-4b45-b898-a39d2344faa4
 # ╟─31b058ab-a816-43ea-b50f-ea85ee05546e
 # ╟─ec6b3904-1ff2-46e1-a6ea-7822b9a2fc6c
 # ╟─13e6bb3e-57c5-496a-b3b0-5484d0e410c3
@@ -1682,17 +1804,18 @@ version = "0.9.1+5"
 # ╟─a5a053b7-9f5d-4e4e-995d-98cf2a796c4c
 # ╟─5dd79310-d64c-4d18-b594-a2e4c1cf9b8b
 # ╟─2be70005-1eca-4ab7-863b-9c626a2ae454
-# ╟─c9bc2ab3-8809-4360-883a-228c886c296f
-# ╟─5afabab9-9cd6-4cf7-a165-664ca5d622af
+# ╠═c9bc2ab3-8809-4360-883a-228c886c296f
+# ╠═5afabab9-9cd6-4cf7-a165-664ca5d622af
 # ╟─e8547de6-23ef-4fb5-8fad-623ba8abb11a
 # ╟─a9feff06-a530-4dbe-a115-884895dd10b8
 # ╟─c0aab0cc-6770-415b-b3a7-910780be1a3d
 # ╟─7575beac-392b-45d5-b097-de806d45fa25
-# ╟─abdd08ef-0627-4bb6-b814-6daa70a531e2
-# ╟─6907ccbe-95a6-4cd5-8bcb-33464b808f1f
-# ╟─4cc9ad91-71c5-4aa9-8971-f880bf6dbfcb
+# ╠═abdd08ef-0627-4bb6-b814-6daa70a531e2
+# ╠═6907ccbe-95a6-4cd5-8bcb-33464b808f1f
+# ╠═4cc9ad91-71c5-4aa9-8971-f880bf6dbfcb
 # ╟─24801a5a-313d-4311-952d-bd714121ac59
 # ╟─ca6c579e-0ae2-46b7-af08-9b26958c19ee
+# ╟─e31936be-b9fd-41c8-87c0-513aded62e83
 # ╟─f01c84aa-395e-4aca-baee-6098916f76c5
 # ╟─7838c794-88e0-4d8a-9ab5-7f90bc3a7293
 # ╟─0fbf0be0-12b7-47e5-9d9c-e7fd57549f77
