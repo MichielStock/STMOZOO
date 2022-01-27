@@ -8,7 +8,6 @@ export scrapeRecipe, loadRecipeDBCSV
 # recipe number goes from 2610 to 149191
 # downloaded everything until 18788
 
-function scrapeRecipe(scrapeBegin,scrapeEnd,csvPath)
 """
     scrapeRecipe(scrapeBegin,scrapeEnd,csvPath)
 
@@ -33,6 +32,8 @@ stores them in the csv file 'recipedb.csv' in the current folder.
 julia> scrapeRecipe(2700,2702,"./recipedb.csv")
 ```
 """
+function scrapeRecipe(scrapeBegin,scrapeEnd,csvPath)
+
     for i = scrapeBegin:scrapeEnd
         # get the webpage
         htmlText = HTTP.request("GET","https://cosylab.iiitd.edu.in/recipedb/search_recipeInfo/$i")

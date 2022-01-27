@@ -4,7 +4,7 @@ include("recipewebscraper.jl")
 
 using .recipeWebscraper, JLD2
 
-export checkIngredients, greedyFindCombo, findBestRecipe, RandomCombo, removeRecipe, SAFindCombo
+export checkIngredients, greedyFindCombo, findBestRecipe, RandomCombo, removeRecipe, SAFindCombo, scrapeRecipe, loadRecipeDBCSV
 
 #==================================================
           CHECK INGREDIENTS FUNCTIONS
@@ -21,9 +21,8 @@ function createIngredientDatabase(recipeDict)
     return ingredientList
 end
 
-function checkIngredients(fridgeList,ingredientList)
 """
-    checkIngredients(fridgeList,ingredientList)
+    checkIngredients(fridgeList, ingredientList)
 
 This function checks if the foods in your fridge are also found in the ingredient overview 
 of the recipe database. If they are not found in the database, regex is used to find possible alternatives.
@@ -35,8 +34,8 @@ For instance cheese may be replaced by swiss cheese.
 
 ## Output:
 - fridgeList: The (adapted) given fridgeList
-
 """
+function checkIngredients(fridgeList,ingredientList)
 
 
     print("Checking if the food in your fridge is found in our database.\n\n")
@@ -93,7 +92,6 @@ fridgeObjective(x) = compatible(x) ? sum(sum(x) .== 0)*6 + sum(x)[end]*2 : Inf
                 GREEDY ALGORITHM
 ==================================================#
 
-function greedyFindCombo(fridgeList, recipeDict, numRecipes)
 """
     greedyFindCombo(fridgeList, recipeDict, numRecipes)
 
@@ -111,6 +109,7 @@ It ranks all recipes based on the following formula
 - bestCombo: A dictionary containing the best found combination of recipes.
 
 """
+function greedyFindCombo(fridgeList, recipeDict, numRecipes)
 
     bestCombo = Dict()
     ingredientsArray = []
@@ -150,7 +149,6 @@ end
                 NEIGBOURHOODS
 ==================================================#
 
-function RandomCombo(fridgeList, recipeDict, numRecipes)
 """
     randomCombo(fridgeList, recipeDict, numRecipes)
 
@@ -164,6 +162,8 @@ This function gives a random combination of recipes from the provided recipe dic
 ## Output:
 - randCombo: A dictionary containing a random combination of recipes.
 """
+function RandomCombo(fridgeList, recipeDict, numRecipes)
+
     randCombo = Dict()
     ingredientsArray = []
     namesArray = []
@@ -195,7 +195,6 @@ This function gives a random combination of recipes from the provided recipe dic
     return randCombo
 end
 
-function removeRecipe(curSolution, fridgeList, recipeDict, numRecipes, tabuList, randRecipe)
 """
     removeRecipe(curSolution, fridgeList, recipeDict, numRecipes, tabuList, randRecipe)
 
@@ -214,6 +213,8 @@ It also uses a tabulist to stimulate the use of new solutions.
 - neighbour: A dictionary containing a combination of recipes.
 
 """
+function removeRecipe(curSolution, fridgeList, recipeDict, numRecipes, tabuList, randRecipe)
+
     toRemove = rand(curSolution)[1]
     # adapt the fridgeList so that only ingredients from the removed ingredient are available
     tempFridgeList = copy(fridgeList)
@@ -258,13 +259,6 @@ end
         SIMULATED ANNEALING ALGORITHM
 ==================================================#
 
-function SAFindCombo(curSolution,  fridgeList, recipeDict, numRecipes, randRecipe;
-    kT=100, # repetitions per temperature
-    r=0.75, # cooling rate
-    Tmax=4, # maximal temperature to start
-    Tmin=1, # minimal temperature to end
-    tabuLength=3) # number of cycli that recipe needs to be blocked
-
 """
     SAFindCombo(curSolution,  fridgeList, recipeDict, numRecipes, randRecipe; kT=100, r=0.75, Tmax=4, Tmin=1, tabuLength=3)
 
@@ -290,6 +284,12 @@ It starts with the current solution and tries to improve this.
 - solution: A dictionary containing the best found combination of recipes.
 
 """
+function SAFindCombo(curSolution,  fridgeList, recipeDict, numRecipes, randRecipe;
+    kT=100, # repetitions per temperature
+    r=0.75, # cooling rate
+    Tmax=4, # maximal temperature to start
+    Tmin=1, # minimal temperature to end
+    tabuLength=3) # number of cycli that recipe needs to be blocked
     
     @assert 0 < Tmin < Tmax "Temperatures should be positive"
 	@assert 0 < r < 1 "cooling rate is between 0 and 1"
@@ -337,7 +337,6 @@ end
                 OVERVIEW FUNCTION
 ==================================================#
 
-function findBestRecipe(fridgeList, dataPath; numRecipes=3, randRecipe=false)
 """
     findBestRecipe(fridgeList, csvPath; numRecipes=3, randRecipe=false)
 
@@ -356,6 +355,8 @@ if not it offers possible alternatives. Next it uses simulated annealing to find
 - SASolution: A dictionary containing the best found combination of recipes.
 
 """
+function findBestRecipe(fridgeList, dataPath; numRecipes=3, randRecipe=false)
+
 
     # load the recipe dictionary from the db file
     recipeDict = dataPath[end-3:end] == ".csv" ? loadRecipeDBCSV(dataPath) : load(dataPath)
@@ -386,7 +387,6 @@ end
             SUPPORTING FUNCTIONS
 ==================================================#
 
-function recipeToNumVector(fridgeList,ingredientList)
 """
     recipeToNumVector(fridgeList,ingredientList)
 
@@ -403,6 +403,8 @@ If not it is a 0. The last index of the vector contains the amount of extra ingr
 that position in the vector is a 1. If not it is a 0. The last index of the vector contains the amount of extra ingredients needed.
 
 """
+function recipeToNumVector(fridgeList,ingredientList)
+
     numVector = zeros(Int64,length(fridgeList)+1)
     for i in 1:length(fridgeList)
         numVector[i] = fridgeList[i] in ingredientList ? 1 : 0

@@ -1,13 +1,15 @@
-using Documenter, STMOZOO
+using Documenter
+
+using STMOZOO
 using STMOZOO.Fridge
 
 makedocs(sitename="Fridge.jl",
     format = Documenter.HTML(),
     modules=[Fridge], # add your module
-    pages=Any[
+    pages=[
         "index.md",
         "main function" => "man/mainFunction.md",
-        "search algorithms" => "man/searchAlgorithms",
+        "search algorithms" => "man/searchAlgorithms.md",
         "recipe webscraper"=> "man/recipeWebscraper.md",
     ])
 
