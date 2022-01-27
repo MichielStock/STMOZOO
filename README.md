@@ -1,6 +1,6 @@
 
 # Fridge.jl
-<img align="right" width="100" height="100" src="FridgeLogo.png">
+<img align="right" width="150" height="150" src="FridgeLogo.png">
 by <i>Ward Van Belle</i>
 
 A package that optimizes your fridge use while reducing your waste pile!!
