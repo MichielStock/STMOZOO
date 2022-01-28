@@ -1,6 +1,8 @@
 
 # PeptFold2D.jl
 
+[alternative text](notebook/PeptFold2D_v2.jl)
+
 **PeptFold2D** provides a simplified off-lattice model for peptide folding in 2D space. Using an off-lattice model allows to fully query the available geometric space.
 - A peptide structure is generated based on an amino acid (AA) sequence and a (random) vector θ of bond angles. Starting from a specified coordinate (e.g. [0,0]), the bond angle in combination with a fixed bond length is sufficient to position an amino acid in relation to the previous amino acid.
 - To optimize the position of the amino acids in the peptide based on this initial structure, their potential energy is evaluated as the sum of pairwise interactions with all other non-bonded amino acids. The potential energy function is defined by a coulomb electrostatic interaction term and a Lennard-Jones vanderwaals interaction term between non-bonded AAs.
