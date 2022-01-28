@@ -63,8 +63,8 @@ md"### Step 1: Initial optimization
 
 Number of steps:"
 
-# ╔═╡ a37ad329-09bf-43d4-8f9a-f5fd17531518
-@bind rand_steps confirm(Slider(1:1000:1000000,default=100000, show_value=true))
+# ╔═╡ 63177b37-498f-4f0d-b3a8-1623799236f0
+steps_random=100000
 
 # ╔═╡ ca93f680-2ab9-44a5-9f6a-25f57e6a7410
 md"### Step 2: Apply simulated annealing to the structure optimized in step 1
@@ -75,25 +75,25 @@ taking into account interactions between AAs and box size*"
 md"T min:"
 
 # ╔═╡ 960e0f1a-7291-4cb1-aa5d-70852be2fc05
-@bind Tmin_1 confirm(Slider(0.00001:1:1.0,default=0.001, show_value=true))
+Tmin_1=0.001
 
 # ╔═╡ 49baefa8-79d0-4699-b6f3-2bbe3d45210a
 md"T max:"
 
 # ╔═╡ 50010973-8120-4c67-adbb-9352cd046d46
-@bind Tmax_1 confirm(Slider(1.0:10:1000.0,default=1.0, show_value=true))
+Tmax_1=1.0
 
 # ╔═╡ 593b4459-5f98-4eb0-a57d-0842112f8538
 md"number of iterations kT:"
 
 # ╔═╡ cabef5ee-b955-4ff7-a1bd-d935f496f2e1
-@bind kT_1 confirm(Slider(1:100:100000,default=100, show_value=true))
+kT_1=100
 
 # ╔═╡ 620a7fd5-99ff-44b3-914b-1483a9479bd2
 md"Cooling rate r:"
 
 # ╔═╡ 893ac506-163f-4ddf-8259-fe87f47cf616
-@bind r_1 confirm(Slider(0.0:0.01:1.0,default=0.95, show_value=true))
+r_1=0.95
 
 # ╔═╡ a259f48c-da82-4aa8-976e-512dd7cd5569
 md"### Conclusion"
@@ -438,7 +438,7 @@ function random_opt(peptide::String,loss_θ::Function,n::Int64)
 end
 
 # ╔═╡ 69a138ef-7862-44c2-866e-b07eeb425d58
-opt_str_rand,obj_tracker_rand=random_opt(peptide,loss_θ,100000)
+opt_str_rand,obj_tracker_rand=random_opt(peptide,loss_θ,steps_random)
 
 # ╔═╡ 5650e4ca-2078-4f29-842b-fe0b88a50e6a
 #Generate coordinates for plotting
@@ -535,7 +535,7 @@ function sim_anneal_opt(structure::Vector{Vector{Float64}}, loss_θ::Function; T
 end
 
 # ╔═╡ cc445666-794a-49f8-a6b9-861adfc68696
-opt_str_good,obj_tracker_good=sim_anneal_opt(opt_str_rand, loss_θ,Tmin=0.001, Tmax=1.0, kT=100, r=0.95)
+opt_str_good,obj_tracker_good=sim_anneal_opt(opt_str_rand, loss_θ,Tmin=Tmin_1, Tmax=Tmax_1, kT=kT_1, r=r_1)
 
 # ╔═╡ 2b701598-4417-40ad-bf45-0bc2535481c5
 #Generate coordinates for plotting
@@ -1547,7 +1547,7 @@ version = "0.9.1+5"
 # ╟─e41723bc-b953-4f06-b81a-f0d8168431b5
 # ╟─8934a844-db04-4d1f-bdc6-e5edc6b2c41b
 # ╟─40ea5ed6-86b5-4ac3-b79a-bfd0864b76c0
-# ╟─a37ad329-09bf-43d4-8f9a-f5fd17531518
+# ╠═63177b37-498f-4f0d-b3a8-1623799236f0
 # ╠═69a138ef-7862-44c2-866e-b07eeb425d58
 # ╟─e3896e61-8321-4e49-ae5b-054e465c5e8a
 # ╟─5650e4ca-2078-4f29-842b-fe0b88a50e6a
