@@ -11,32 +11,32 @@ The user can play around with peptide sequence, length, charge and size of the s
 
 ## Generating an initial peptide structure
 
-A 2D peptide is represented as a string of AAs in which each AA is simplified as a single charged body. Peptides are created as a vector of charges using $$create\_peptide()$$. From this peptide, a structure is generated using $$generate\_structure()$$, taking a vector of charges and a vector of bond angles $$θ$$ as arguments (bond length is an optional argument). A vector of n random bond angles can be generated using $$θ\_generator()$$. The function $$structure\_to\_peptide()$$ is a wrapper for these functions taking only a peptide string as argument. To visualize the structure $$plot\_structure()$$ is used.
+A 2D peptide is represented as a string of AAs in which each AA is simplified as a single charged body. Peptides are created as a vector of charges using *create\_peptide()*. From this peptide, a structure is generated using *generate\_structure()*, taking a vector of charges and a vector of bond angles $$θ$$ as arguments (bond length is an optional argument). A vector of n random bond angles can be generated using *θ\_generator()*. The function *structure\_to\_peptide()* is a wrapper for these functions taking only a peptide string as argument. To visualize the structure *plot\_structure()* is used.
 
 `peptide="DNKFREFPEWTHILKDMSFEDAKGR"`
 
 `structure,coords=structure_from_peptide(peptide)`
 
-[![alt text](https://github.com/vandeveldet/PeptFold2D.jl/blob/tree/master/notebook/peptide_start.png?raw=true)]
+![alt text](https://github.com/vandeveldet/PeptFold2D.jl/blob/tree/master/notebook/peptide_start.png?raw=true)
 
 ## Optimizing potential energy of the peptide structure within box constraint
 
-Geometric optimization is minimizing a potential energy function. The potential energy function is the sum of 2 interaction terms over all non-bonded AAs. Electrostatic  interaction is calculated based on the coulomb law in $$pot\_coulomb()$$, while vanderwaals interaction is calculated based on Lennard-Jones interaction in $$pot\_LJ()$$ as the sum of pairwise interactions. To constrain the optimization within a certain simulation box, $$loss\_θ()$$ applies a penalty on top of the total potential energy for exceeding the box limits (box size is an optional argument).
+Geometric optimization is minimizing a potential energy function. The potential energy function is the sum of 2 interaction terms over all non-bonded AAs. Electrostatic  interaction is calculated based on the coulomb law in *pot\_coulomb()*, while vanderwaals interaction is calculated based on Lennard-Jones interaction in *pot\_LJ()* as the sum of pairwise interactions. To constrain the optimization within a certain simulation box, *loss\_θ()* applies a penalty on top of the total potential energy for exceeding the box limits (box size is an optional argument).
 
-A two step geometric optimization is applied. First, $$random\_opt()$$ generates an initial solution from n random bond angle vectors.
+A two step geometric optimization is applied. First, *random\_opt()* generates an initial solution from n random bond angle vectors.
 
 `opt_str_rand,obj_tracker_rand=random_opt(peptide,loss_θ,100000)`
 
-[![alt text](https://github.com/vandeveldet/PeptFold2D.jl/blob/tree/master/notebook/peptide_init.png?raw=true)]
+![alt text](https://github.com/vandeveldet/PeptFold2D.jl/blob/tree/master/notebook/peptide_init.png?raw=true)
 
-[![alt text](https://github.com/vandeveldet/PeptFold2D.jl/blob/tree/master/notebook/track_step1.png?raw=true)]
+![alt text](https://github.com/vandeveldet/PeptFold2D.jl/blob/tree/master/notebook/track_step1.png?raw=true)
 
-Next, $$sim\_anneal\_opt()$$ takes the best solution into a simulated annealing method to further reduce the loss objective. This method generates \"good\" neighbors by selecting 1 residue and evaluating the objective for the full [-π,π] range of bond angles.
+Next, *sim\_anneal\_opt()* takes the best solution into a simulated annealing method to further reduce the loss objective. This method generates \"good\" neighbors by selecting 1 residue and evaluating the objective for the full [-π,π] range of bond angles.
 
 `opt_str_good,obj_tracker_good=sim_anneal_opt(opt_str_rand, loss_θ,Tmin=0.001, Tmax=1.0, kT=100, r=0.95)`
 
-[![alt text](https://github.com/vandeveldet/PeptFold2D.jl/blob/tree/master/notebook/peptide_opt.png?raw=true)]
+![alt text](https://github.com/vandeveldet/PeptFold2D.jl/blob/tree/master/notebook/peptide_opt.png?raw=true)
 
-[![alt text](https://github.com/vandeveldet/PeptFold2D.jl/blob/tree/master/notebook/track_step2.png?raw=true)]
+![alt text](https://github.com/vandeveldet/PeptFold2D.jl/blob/tree/master/notebook/track_step2.png?raw=true)
 
 [![Build Status](https://travis-ci.org/MichielStock/STMOZOO.svg?branch=master)](https://travis-ci.org/MichielStock/STMOZOO)[![Coverage Status](https://coveralls.io/repos/github/MichielStock/STMOZOO/badge.svg?branch=master)](https://coveralls.io/github/MichielStock/STMOZOO?branch=master)
