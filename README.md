@@ -18,7 +18,7 @@ peptide="DNKFREFPEWTHILKDMSFEDAKGR"
 
 structure,coords=structure_from_peptide(peptide)
 ```
-![alternative text](https://github.com/vandeveldet/PeptFold2D.jl/blob/tree/master/notebook/peptide_start.png)
+![alternative text](notebook/peptide_start.png)
 
 ## Optimizing potential energy of the peptide structure within box constraint
 
@@ -29,17 +29,17 @@ A two step geometric optimization is applied. First, *random\_opt()* generates a
 ```julia
 opt_str_rand,obj_tracker_rand=random_opt(peptide,loss_θ,100000)
 ```
-![alternative text](https://github.com/vandeveldet/PeptFold2D.jl/blob/tree/master/notebook/peptide_init.png)
+![alternative text](notebook/peptide_init.png)
 
-![alternative text](https://github.com/vandeveldet/PeptFold2D.jl/blob/tree/master/notebook/track_step1.png)
+![alternative text](notebook/track_step1.png)
 
 Next, *sim\_anneal\_opt()* takes the best solution into a simulated annealing method to further reduce the loss objective. This method generates \"good\" neighbors by selecting 1 residue and evaluating the objective for the full [-π,π] range of bond angles.
 
 ```julia
 opt_str_good,obj_tracker_good=sim_anneal_opt(opt_str_rand, loss_θ,Tmin=0.001, Tmax=1.0, kT=100, r=0.95)
 ```
-![alternative text](https://github.com/vandeveldet/PeptFold2D.jl/blob/tree/master/notebook/peptide_opt.png)
+![alternative text](notebook/peptide_opt.png)
 
-![alternative text](https://github.com/vandeveldet/PeptFold2D.jl/blob/tree/master/notebook/track_step2.png)
+![alternative text](notebook/track_step2.png)
 
 [![Build Status](https://travis-ci.org/MichielStock/STMOZOO.svg?branch=master)](https://travis-ci.org/MichielStock/STMOZOO)[![Coverage Status](https://coveralls.io/repos/github/MichielStock/STMOZOO/badge.svg?branch=master)](https://coveralls.io/github/MichielStock/STMOZOO?branch=master)
