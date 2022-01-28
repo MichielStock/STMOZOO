@@ -5,7 +5,7 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ 90b57e7c-71bf-4290-905c-a2ae677d7635
-using BioAlignments, FASTX, PlutoUI
+using BioAlignments, FASTX, PlutoUI, HTTP
 
 # ╔═╡ e4971d8d-b844-4cef-bf33-fdb97d52a6ca
 md"""
@@ -52,7 +52,7 @@ This function works as follows:
 
 # ╔═╡ be483eee-04dc-45eb-b827-b3701f11facb
 function read_file(file)
-	reader = FASTA.Reader(open(file, "r"))
+	reader = FASTA.Reader(open(download(file), "r"))
 	protein = Dict()
 	all_seq = []
 	for record in reader
@@ -71,13 +71,13 @@ function read_file(file)
 end
 
 # ╔═╡ fb3685bf-3690-415a-88e5-ea838840d635
-proteins_pseudo = collect(values(read_file("pseudomonas_phages_lytic_enzyme.txt")))
+proteins_pseudo = collect(values(read_file(("https://github.com/EngelsI/STMOZOO/blob/master/notebook/pseudomonas_phages_lytic_enzyme.txt?raw=true"))))
 
 # ╔═╡ 062e799c-37ae-4404-adf2-4c3ce2cc62b1
-proteins_coccus = collect(values(read_file("phage_lytic_proteins.txt")))
+proteins_coccus = collect(values(read_file("https://github.com/EngelsI/STMOZOO/blob/master/notebook/phage_lytic_proteins.txt?raw=true")))
 
 # ╔═╡ 525d4410-7c73-11ec-1a29-d3c07c314af3
-proteins_random = collect(values(read_file("random_phage_lytic.txt")))
+proteins_random = collect(values(read_file("https://github.com/EngelsI/STMOZOO/blob/master/notebook/random_phage_lytic.txt?raw=true")))
 
 # ╔═╡ e4137347-bc1b-4e06-a4f7-c5662fb92aa3
 md"""
@@ -397,11 +397,13 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 BioAlignments = "00701ae9-d1dc-5365-b64a-a3a3ebf5695e"
 FASTX = "c2308a5c-f048-11e8-3e8a-31650f418d12"
+HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 
 [compat]
 BioAlignments = "~2.0.0"
 FASTX = "~1.2.0"
+HTTP = "~0.9.17"
 PlutoUI = "~0.7.32"
 """
 
@@ -485,6 +487,12 @@ git-tree-sha1 = "335bfdceacc84c5cdf16aadc768aa5ddfc5383cc"
 uuid = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
 version = "0.8.4"
 
+[[HTTP]]
+deps = ["Base64", "Dates", "IniFile", "Logging", "MbedTLS", "NetworkOptions", "Sockets", "URIs"]
+git-tree-sha1 = "0fa77022fe4b511826b39c894c90daf5fce3334a"
+uuid = "cd3eb016-35fb-5094-929b-558a96fad6f3"
+version = "0.9.17"
+
 [[Hyperscript]]
 deps = ["Test"]
 git-tree-sha1 = "8d511d5b81240fc8e6802386302675bdf47737b9"
@@ -507,6 +515,12 @@ deps = ["Random", "Test"]
 git-tree-sha1 = "b7f5e42dc867b8a8654a5f899064632dac05bc82"
 uuid = "1cb3b9ac-1ffd-5777-9e6b-a3d42300664d"
 version = "1.0.0"
+
+[[IniFile]]
+deps = ["Test"]
+git-tree-sha1 = "098e4d2c533924c921f9f9847274f2ad89e018b8"
+uuid = "83e8ac13-25f8-5344-8a64-a9f2b223428f"
+version = "0.5.0"
 
 [[InteractiveUtils]]
 deps = ["Markdown"]
@@ -553,6 +567,12 @@ uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
 [[Markdown]]
 deps = ["Base64"]
 uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
+
+[[MbedTLS]]
+deps = ["Dates", "MbedTLS_jll", "Random", "Sockets"]
+git-tree-sha1 = "1c38e51c3d08ef2278062ebceade0e46cefc96fe"
+uuid = "739be429-bea8-5141-9913-cc70e7f3736d"
+version = "1.0.3"
 
 [[MbedTLS_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -660,6 +680,11 @@ version = "0.9.6"
 git-tree-sha1 = "29509c4862bfb5da9e76eb6937125ab93986270a"
 uuid = "7200193e-83a8-5a55-b20d-5d36d44a0795"
 version = "1.1.2"
+
+[[URIs]]
+git-tree-sha1 = "97bbe755a53fe859669cd907f2d96aee8d2c1355"
+uuid = "5c2747f8-b7ea-4ff2-ba2e-563bfd36b1d4"
+version = "1.3.0"
 
 [[UUIDs]]
 deps = ["Random", "SHA"]
