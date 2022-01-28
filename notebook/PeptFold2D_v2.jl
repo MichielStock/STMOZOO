@@ -30,7 +30,9 @@ md"**PeptFold2D** provides a simplified off-lattice model for peptide folding in
 - A peptide structure is generated based on an amino acid (AA) sequence and a (random) vector θ of bond angles. Starting from a specified coordinate (e.g. [0,0]), the bond angle in combination with a fixed bond length is sufficient to position an amino acid in relation to the previous amino acid.
 - To optimize the position of the amino acids in the peptide based on this initial structure, their potential energy is evaluated as the sum of pairwise interactions with all other non-bonded amino acids. The potential energy function is defined by a coulomb electrostatic interaction term and a Lennard-Jones vanderwaals interaction term between non-bonded AAs. 
 - To constrain the simulation space, the potential energy function is fed to a loss function. This loss function adds a penalty for exceeding the limits of the simulation box. The size of the box is set by the user.
-- A 2 step optimization (initial solution + simulated annealing) is applied to this structure to minimize its potential energy by optimizing the bond angles between the peptide AAs. "
+- A 2 step optimization (initial solution + simulated annealing) is applied to this structure to minimize its potential energy by optimizing the bond angles between the peptide AAs. 
+
+PeptFold2D is showcased below using an example peptide. The user can play around with peptide sequence, length, charge and size of the simulation box. To optimize the structure, the user can set the number of iterations for the initial optimization and can adapt the parameters for simulated annealing (Tmin, Tmax, number of iterations kT and cooling r)."
 
 # ╔═╡ 83705cac-b851-4c6e-bd7a-72f9c5a08553
 md"## Part 1: Generate initial peptide structure"
@@ -57,12 +59,41 @@ A two step geometric optimization is applied. First, $$random\_opt()$$ generates
 
 # ╔═╡ 40ea5ed6-86b5-4ac3-b79a-bfd0864b76c0
 md"### Step 1: Initial optimization
-*Finding an initial structure for the peptide by random sampling of the 2D space*"
+*Finding an initial structure for the peptide by random sampling of the 2D space*
+
+Number of steps:"
+
+# ╔═╡ a37ad329-09bf-43d4-8f9a-f5fd17531518
+@bind rand_steps confirm(Slider(1:1000:1000000,default=100000, show_value=true))
 
 # ╔═╡ ca93f680-2ab9-44a5-9f6a-25f57e6a7410
 md"### Step 2: Apply simulated annealing to the structure optimized in step 1
 *Applying simulated annealing to optimize the initial structure using a loss function 
 taking into account interactions between AAs and box size*"
+
+# ╔═╡ 96bff7cf-b4c3-4c85-a101-1901d5ab9ee7
+md"T min:"
+
+# ╔═╡ 960e0f1a-7291-4cb1-aa5d-70852be2fc05
+@bind Tmin confirm(Slider(0.00001:1:1.0,default=0.001, show_value=true))
+
+# ╔═╡ 49baefa8-79d0-4699-b6f3-2bbe3d45210a
+md"T max:"
+
+# ╔═╡ 50010973-8120-4c67-adbb-9352cd046d46
+@bind Tmax confirm(Slider(1.0:10:1000.0,default=1.0, show_value=true))
+
+# ╔═╡ 593b4459-5f98-4eb0-a57d-0842112f8538
+md"number of iterations kT:"
+
+# ╔═╡ cabef5ee-b955-4ff7-a1bd-d935f496f2e1
+@bind kT confirm(Slider(1:100:100000,default=100, show_value=true))
+
+# ╔═╡ 620a7fd5-99ff-44b3-914b-1483a9479bd2
+md"Cooling rate r:"
+
+# ╔═╡ 893ac506-163f-4ddf-8259-fe87f47cf616
+@bind r confirm(Slider(0.0:0.01:1.0,default=0.95, show_value=true))
 
 # ╔═╡ a259f48c-da82-4aa8-976e-512dd7cd5569
 md"### Conclusion"
@@ -407,9 +438,10 @@ function random_opt(peptide::String,loss_θ::Function,n::Int64)
 end
 
 # ╔═╡ 69a138ef-7862-44c2-866e-b07eeb425d58
-opt_str_rand,obj_tracker_rand=random_opt(peptide,loss_θ,100000)
+opt_str_rand,obj_tracker_rand=random_opt(peptide,loss_θ,rand_steps)
 
 # ╔═╡ 5650e4ca-2078-4f29-842b-fe0b88a50e6a
+#Generate coordinates for plotting
 structure2,coords2=generate_structure([opt_str_rand[i][1] for i in 1:length(opt_str_rand)],[opt_str_rand[i][2] for i in 1:length(opt_str_rand)])
 
 # ╔═╡ e3896e61-8321-4e49-ae5b-054e465c5e8a
@@ -503,9 +535,10 @@ function sim_anneal_opt(structure::Vector{Vector{Float64}}, loss_θ::Function; T
 end
 
 # ╔═╡ cc445666-794a-49f8-a6b9-861adfc68696
-opt_str_good,obj_tracker_good=sim_anneal_opt(opt_str_rand, loss_θ,Tmin=0.001, Tmax=1.0, kT=100, r=0.95)
+opt_str_good,obj_tracker_good=sim_anneal_opt(opt_str_rand, loss_θ,Tmin=Tmin, Tmax=Tmax, kT=kT, r=r)
 
 # ╔═╡ 2b701598-4417-40ad-bf45-0bc2535481c5
+#Generate coordinates for plotting
 structure3,coords3=generate_structure([opt_str_good[i][1] for i in 1:length(opt_str_good)],[opt_str_good[i][2] for i in 1:length(opt_str_good)])
 
 # ╔═╡ a1db0450-0b17-4402-993a-5565eb817405
@@ -1514,14 +1547,23 @@ version = "0.9.1+5"
 # ╟─e41723bc-b953-4f06-b81a-f0d8168431b5
 # ╟─8934a844-db04-4d1f-bdc6-e5edc6b2c41b
 # ╟─40ea5ed6-86b5-4ac3-b79a-bfd0864b76c0
+# ╟─a37ad329-09bf-43d4-8f9a-f5fd17531518
 # ╠═69a138ef-7862-44c2-866e-b07eeb425d58
-# ╟─5650e4ca-2078-4f29-842b-fe0b88a50e6a
 # ╟─e3896e61-8321-4e49-ae5b-054e465c5e8a
+# ╟─5650e4ca-2078-4f29-842b-fe0b88a50e6a
 # ╟─f8b90343-aab7-4859-88d9-9934d4ce8739
 # ╟─ca93f680-2ab9-44a5-9f6a-25f57e6a7410
+# ╟─96bff7cf-b4c3-4c85-a101-1901d5ab9ee7
+# ╟─960e0f1a-7291-4cb1-aa5d-70852be2fc05
+# ╟─49baefa8-79d0-4699-b6f3-2bbe3d45210a
+# ╟─50010973-8120-4c67-adbb-9352cd046d46
+# ╟─593b4459-5f98-4eb0-a57d-0842112f8538
+# ╟─cabef5ee-b955-4ff7-a1bd-d935f496f2e1
+# ╟─620a7fd5-99ff-44b3-914b-1483a9479bd2
+# ╟─893ac506-163f-4ddf-8259-fe87f47cf616
 # ╠═cc445666-794a-49f8-a6b9-861adfc68696
-# ╟─2b701598-4417-40ad-bf45-0bc2535481c5
 # ╟─a1db0450-0b17-4402-993a-5565eb817405
+# ╟─2b701598-4417-40ad-bf45-0bc2535481c5
 # ╟─3a784b01-b37e-4472-a815-2c41812b8c87
 # ╟─a259f48c-da82-4aa8-976e-512dd7cd5569
 # ╟─7f365bd7-e407-4d59-a70e-2639aee0a4f4
