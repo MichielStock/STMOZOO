@@ -73,6 +73,9 @@ md"If we make a graph with all the available currencies, it's possible that ther
 # ╔═╡ d63dc65a-f615-4ba9-80e7-c91207d60957
 md"To see which cycle is the most lucrative, we can calculate the percentage of increase on the initial investment. As mentioned before, the cost of a cycle is: ``cost = log(1/a) + log(1/b) + log(1/c)``, which is equivalent to: ``-cost = log(a*b*c)``. The percentage increase on the initial investment is then: ``(a*b*c - 1)*100 = (exp(-cost) - 1)*100``"
 
+# ╔═╡ f0e5f865-2a80-409b-9095-6de71b886706
+md"Below, you can test a subgraph and see if there is a negative cycle and how lucrative it is."
+
 # ╔═╡ 34c5254a-b160-42e3-97b8-d0c7f5c88ad2
 md"This notebook won't make you rich. It takes multiple seconds to get all the exchange rates. By the time the last ones are requisted, the first ones are already no longer correct. So the arbitrage opportunities that are calculated here possibly never actually existed."
 
@@ -165,6 +168,9 @@ So in this example, the edge weight of edge A -> B would be ``log(1/a)``. Which 
 
 # ╔═╡ 24801a5a-313d-4311-952d-bd714121ac59
 md"The full arbitrage graph."
+
+# ╔═╡ 32af74c5-0f0c-4147-8a70-b4ff50399044
+md"custom arbitrage graph."
 
 # ╔═╡ e31936be-b9fd-41c8-87c0-513aded62e83
 md"### Functions"
@@ -1775,21 +1781,14 @@ version = "0.9.1+5"
 # ╟─63fff09f-f83b-4f1a-a7a7-72d6ce049a87
 # ╟─4a327ae9-5a2f-42a2-bb7b-827fdcc6d634
 # ╟─de497cc3-51f4-40a7-9dc7-ba9c39801221
-# ╟─08fb2d9d-7402-493c-be73-893318adec4d
 # ╟─d63dc65a-f615-4ba9-80e7-c91207d60957
-# ╟─604bf714-e7ac-4100-8a57-fb421392a7d1
+# ╟─f0e5f865-2a80-409b-9095-6de71b886706
 # ╟─4385445e-642f-4880-bc14-3ea464302982
 # ╟─aa7a4c7a-dfdc-403e-a274-6f8e951bd7d6
 # ╟─7a1db177-da08-4b6a-a85c-d1cf96e189b4
 # ╟─39c8f61d-c93c-4bd0-b823-c392b9c5dcfe
 # ╟─bb11b734-2e81-41c5-bde2-c7876d39f7c3
 # ╟─a335f698-5b54-4dae-8d7d-0be483753a3d
-# ╟─b62558b6-a7e4-40fd-8778-df5e9c6c0823
-# ╟─1d92af95-bf4c-427d-80e5-a6eb36d83667
-# ╟─96dc52a4-ba0e-44ae-be76-1efaa57e07fb
-# ╟─ae283746-5474-4fb5-a871-2559b112e496
-# ╟─15e2111a-f5b4-4c0e-b0aa-b25304233b8c
-# ╟─ab872dd6-c7c9-4ef2-96d2-0350ff38211d
 # ╟─24cc281e-0fc6-4871-9717-d9b211f5b9d9
 # ╟─eefb7444-f586-48b0-9c98-b9b6c78371c7
 # ╟─34c5254a-b160-42e3-97b8-d0c7f5c88ad2
@@ -1804,17 +1803,26 @@ version = "0.9.1+5"
 # ╟─a5a053b7-9f5d-4e4e-995d-98cf2a796c4c
 # ╟─5dd79310-d64c-4d18-b594-a2e4c1cf9b8b
 # ╟─2be70005-1eca-4ab7-863b-9c626a2ae454
-# ╠═c9bc2ab3-8809-4360-883a-228c886c296f
-# ╠═5afabab9-9cd6-4cf7-a165-664ca5d622af
+# ╟─c9bc2ab3-8809-4360-883a-228c886c296f
+# ╟─5afabab9-9cd6-4cf7-a165-664ca5d622af
 # ╟─e8547de6-23ef-4fb5-8fad-623ba8abb11a
 # ╟─a9feff06-a530-4dbe-a115-884895dd10b8
 # ╟─c0aab0cc-6770-415b-b3a7-910780be1a3d
 # ╟─7575beac-392b-45d5-b097-de806d45fa25
-# ╠═abdd08ef-0627-4bb6-b814-6daa70a531e2
-# ╠═6907ccbe-95a6-4cd5-8bcb-33464b808f1f
-# ╠═4cc9ad91-71c5-4aa9-8971-f880bf6dbfcb
+# ╟─abdd08ef-0627-4bb6-b814-6daa70a531e2
+# ╟─6907ccbe-95a6-4cd5-8bcb-33464b808f1f
+# ╟─4cc9ad91-71c5-4aa9-8971-f880bf6dbfcb
 # ╟─24801a5a-313d-4311-952d-bd714121ac59
 # ╟─ca6c579e-0ae2-46b7-af08-9b26958c19ee
+# ╟─32af74c5-0f0c-4147-8a70-b4ff50399044
+# ╟─08fb2d9d-7402-493c-be73-893318adec4d
+# ╟─604bf714-e7ac-4100-8a57-fb421392a7d1
+# ╟─b62558b6-a7e4-40fd-8778-df5e9c6c0823
+# ╟─1d92af95-bf4c-427d-80e5-a6eb36d83667
+# ╟─96dc52a4-ba0e-44ae-be76-1efaa57e07fb
+# ╟─ae283746-5474-4fb5-a871-2559b112e496
+# ╟─15e2111a-f5b4-4c0e-b0aa-b25304233b8c
+# ╟─ab872dd6-c7c9-4ef2-96d2-0350ff38211d
 # ╟─e31936be-b9fd-41c8-87c0-513aded62e83
 # ╟─f01c84aa-395e-4aca-baee-6098916f76c5
 # ╟─7838c794-88e0-4d8a-9ab5-7f90bc3a7293
