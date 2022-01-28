@@ -1,7 +1,7 @@
 
 # PeptFold2D.jl
 
-[alternative text](notebook/PeptFold2D_v2.jl)
+![alternative text](notebook/PeptFold2D_v2.jl)
 
 **PeptFold2D** provides a simplified off-lattice model for peptide folding in 2D space. Using an off-lattice model allows to fully query the available geometric space.
 - A peptide structure is generated based on an amino acid (AA) sequence and a (random) vector θ of bond angles. Starting from a specified coordinate (e.g. [0,0]), the bond angle in combination with a fixed bond length is sufficient to position an amino acid in relation to the previous amino acid.
