@@ -9,6 +9,9 @@ using Plots
 
 export plot_train_and_test_data, plot_loss_and_accuracy, plot_decision_boundary
 
+title_font_size = 18
+tick_font_size = 16
+
 function plot_train_and_test_data(train_loader::Flux.Data.DataLoader, test_loader::Flux.Data.DataLoader)
 	# plot train and test data sets next to each other
 	p_train = Plots.scatter(
@@ -29,13 +32,21 @@ function plot_loss_and_accuracy(loss, accuracy; args...)
 		PlotlyJS.scatter(y = accuracy, x = 1:args.epochs, mode = "lines", name = "accuracy")
 		],
 		Layout(
-			title = "Loss and Accuracy",
-			width = 500, height = 500, autosize = true,
-			xaxis_showgrid = false,
-			yaxis = attr(range = [0, 1], dtick = 0.1, showgrid = false),
-			legend = attr(x = -1, y = -1, bgcolor = "rgba(0, 0, 0, 0)"),
+			title = attr(text = "Loss and Accuracy", font = attr(size = title_font_size)),
+			width = 1000, height = 1000, autosize = false,
+			xaxis = attr(
+				showgrid = false, 
+				ticks = "outside",
+				tickfont = attr(size = tick_font_size)),
+			yaxis = attr(
+				range = [0, 1], dtick = 0.1, showgrid = false,
+				ticks = "outside",
+				tickfont = attr(size = tick_font_size)),
+			legend = attr(font = attr(size = tick_font_size)),
+			automargin = false,
 			margin = attr(l = 0, r = 0, b = 0, t = 0, pad = 0),
-			plot_bgcolor = "rgba(0, 0, 0, 0)"
+			plot_bgcolor = "rgba(0, 0, 0, 0)",
+			paper_bgcolor = "rgba(0, 0, 0, 0)"
 		)
 	)
 end
@@ -77,7 +88,8 @@ function plot_decision_boundary(loader, model; title = "")
 			x = r_x, y = r_y, z = gr_pred, 
 			contours_start = -10, contours_end = 10, contours_size = 1, 
 			contours_coloring = "heatmap", colorscale = PlotUtils.get_custom_rdbu_scale(opacity), 
-			colorbar = attr(orientation = "h"), opacity = opacity, showlegend = false
+			colorbar = attr(thickness = 25, len = 0.9, y = 0.425), 
+			opacity = opacity, showlegend = false
 		),
 		# highlight decision boundary line
 		PlotlyJS.contour(
@@ -87,14 +99,22 @@ function plot_decision_boundary(loader, model; title = "")
 			showscale = false, showlegend = false, line = attr(width = 3)
 		)],
 		Layout(
-			title = title,
-			width = 500, height = 500, autosize = true,
-			xaxis_showgrid = false, yaxis_showgrid = false,
-			xaxis_range = [x_min, x_max], yaxis_range = [y_min, y_max],
-			xaxis = attr(zeroline = true, zerolinewidth = 1, zerolinecolor = "black", automargin = true),
-			yaxis = attr(zeroline = true, zerolinewidth = 1, zerolinecolor = "black", automargin = true),
+			title = attr(text = title, font = attr(size = title_font_size)),
+			width = 1000, height = 1000, autosize = false,
+			xaxis = attr(
+				range = [x_min, x_max],
+				zeroline = true, zerolinewidth = 1, zerolinecolor = "black", 
+				automargin = false, showgrid = false,
+				tickfont = attr(size = tick_font_size)),
+			yaxis = attr(
+				range = [y_min, y_max],
+				zeroline = true, zerolinewidth = 1, zerolinecolor = "black", 
+				automargin = false, showgrid = false,
+				tickfont = attr(size = tick_font_size)),
+			legend = attr(font = attr(size = tick_font_size)),
 			margin = attr(l = 0, r = 0, b = 0, t = 0, pad = 0),
-			plot_bgcolor = "rgba(0, 0, 0, 0)"
+			plot_bgcolor = "rgba(0, 0, 0, 0)",
+			paper_bgcolor = "rgba(0, 0, 0, 0)"
 		),
 		config = PlotConfig(
 			scrollZoom = false

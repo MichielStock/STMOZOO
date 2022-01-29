@@ -4,11 +4,10 @@ export get_custom_rdbu_scale, map_bool_to_color
 
 function get_custom_rdbu_scale(opacity::Union{Float32, Float64})
 	@assert opacity >= 0 || opacity <= 1 "Opacity must be in [0, 1]"
-	white = "rgba(255, 255, 255, $opacity)"
 	return [
 		[0, "rgba(255, 0, 0, $opacity)"],
 		[0.45, "rgb(255, 200, 100, $opacity)"],
-		[0.5, white],
+		[0.5, "rgba(255, 255, 255, $opacity)"],
 		[0.55, "rgb(100, 200, 255, $opacity)"],
 		[1, "rgba(0, 0, 255, $opacity)"]
 	]
