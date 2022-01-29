@@ -8,13 +8,11 @@ makedocs(sitename="Fridge.jl",
     modules=[Fridge], # add your module
     pages=[
         "index.md",
-        "main function" => "man/mainFunction.md",
-        "search algorithms" => "man/searchAlgorithms.md",
-        "recipe webscraper"=> "man/recipeWebscraper.md",
+        "main function" => "mainFunction.md",
+        "search algorithms" => "searchAlgorithms.md",
+        "recipe webscraper"=> "recipeWebscraper.md",
     ])
 
-#=
 deploydocs(
             repo = "github.com/wardvanbelle/Fridge.jl",
         )
-=#
