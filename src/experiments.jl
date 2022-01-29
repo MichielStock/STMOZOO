@@ -7,9 +7,9 @@ include("neuralnetwork.jl")
 include("plotlib.jl")
 include("structs.jl")
 
-function run_experiments(experiments; prefix = "exp", show_plots = true, save_plots = true, plot_size = "medium")
+function run_experiments(experiments; prefix = "", show_plots = true, save_plots = true, plot_size = "medium")
     plot_width, plot_height = get_plot_resolution(plot_size)
-	
+
     for (name, def) in experiments
         # load data
         train_loader = Data.get_moon_data_loader(offset = def.offset)
