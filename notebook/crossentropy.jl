@@ -21,7 +21,7 @@ STMO Exam Project by **Ceri-Anne Laureyssens**
 md"""
 ### Cross-entropy
 
-As the title states the method has to do with the cross-entropy. It's a metric used to measure the Kullback-Leibler (KL) distance between two probability distributions. These two distributions, as you will read later on, are in fact the original distribution (f) and the *upgraded* distribution based on elite samples (g). This KL distance or relative entropy can be easily used to derive the cross-entropy itself and is defined as follows:
+As the title states the method has to do with the cross-entropy. It's a metric used to measure the distance between two probability distributions. These two distributions, as you will read later on, are in fact the original distribution (f) and the optimized distribution based on elite samples (g). The distance used to define cross-entropy is called the Kullback-Leibler (KL) distance and measures how one probability distribution is different from a second, reference probability distribution. This KL distance or relative entropy can be easily used to derive the cross-entropy itself and is defined as follows:
 
 ```math 
 \begin{equation}
@@ -90,7 +90,27 @@ The grey dots indicate the elite samples. One becomes the elite samples by sorti
 
 # ╔═╡ aba389ff-77b4-4683-9e41-35e8dc429797
 md"""
-*θ gstar* is estimated iteratively via the algorithm underneath which runs *max_iter* times. The parameters *θ iteration'* are defined based on the parameter *θ iteration*. The threshold *γ iteration* becomes smaller than its initial value, artificially making events less rare under X ~ g(x|*θ iteration*).
+The optimized distribution parameter *θ gstar* is estimated iteratively via the algorithm underneath which runs *max_iter* times. The parameters *θ iteration'* are defined based on the parameter *θ iteration*. The threshold *γ iteration* becomes smaller than its initial value, artificially making events less rare under X ~ g(x|*θ iteration*).
+"""
+
+# ╔═╡ cb36a92a-0888-4993-ba11-ebbc7b05a3f9
+md"""
+The `cross_entropy_method` function takes the following input:
+- `loss`: The loss or objective function.
+- `d_in`: The starting sampling distribution.
+- `max_iter`: Maximum number of iterations.
+- `N`: Population size (number of samples).
+- `elite_thresh`: The threshold below which a sample will be considered elite. To have a fixed number of elite samples set this to `-Inf` and use the `min_elite_samples`.
+- `min_elite_samples`: The minimum number of elite samples.
+- `max_elite_samples`: The maximum number of allowed elite samples.
+- `weight_fn`: A function that specifies the weight of each sample. Use the likelihood ratio when trying to perform importance sampling.
+- `rng::AbstractRNG`: The random number generator used.
+- `verbose`: Whether or not to print progress.
+- `show_progress`: Whether or not to show the progress meter.
+- `batched`: Indicates batched loss evaluation (loss function must return an array containing loss values for each sample).
+- `add_entropy`: A function that transforms the sampling distribution after fitting. Use it to enforce a maximum level of entropy if converging too quickly.
+
+And provides you with an output `d`, which is the optimized distribution.
 """
 
 # ╔═╡ 4115dcd8-9931-4871-bc32-5e6e08450242
@@ -102,6 +122,13 @@ Now the CE method itself is implemented we will try it out on the importance sam
 **Importance sampling**
 
 Importance sampling is a general technique for estimating properties of a particular distribution, while only having samples generated from a different distribution than the distribution of interest.
+
+We start off with choosing a base distribution and a starting sampling distribution. Following this a random time series is sampled from the starting distribution.
+"""
+
+# ╔═╡ d799b586-f338-4614-9799-89ad9d04e695
+md"""
+The next two code chunks provide the functions for determining the loss function and determining the likelihood ratio weighting function. In the third code chunk underneath you can see the output of the weighting funtion.
 """
 
 # ╔═╡ d77ca772-6b3b-43fb-a3a1-459e04bc37fc
@@ -111,9 +138,16 @@ function l(d, s)
     -(v in [3,4,5])
 end
 
+# ╔═╡ f9a0105c-b570-46b2-93a6-af1982fd4966
+md"""
+Now we can run the `cross_entropy_method` function with the determined loss function on the sampling distribution. This will return the optimized distribution and can then be plotted in the second code chunk underneath. The plot contains both the base distribution, from which we started, and the optimal distribution as the `cross_entropy_method` funtion returned. Random.seed!(1234) is used so the results stay the same each time the code is run. This is done because the CE method uses randomness as underlying concept and thus might provide slightly different results each time its run (sometimes even a vector with different length in comparison to the base distribution, which will provide problems in the underlying plot).
+"""
+
 # ╔═╡ 04ef2558-ff4b-4a2d-9f59-2f8b6edde3f0
 md"""
 # Appendices
+
+Underneath you can find all functions this notebook relies on. Please leave these as they are ☺.
 """
 
 # ╔═╡ abb2b875-0439-49f8-accd-5475ae388a67
@@ -263,6 +297,8 @@ end
 
 # ╔═╡ 06af1708-5e0a-4c5c-a8a5-6d3ba97f2690
 begin
+	Random.seed!(1234)
+	
 	# Run the optimization
 	is_dist_opt = cross_entropy_method(l, is_dist_0; max_iter = 4, N=10000, weight_fn = w, verbose = true)
 	
@@ -1239,12 +1275,15 @@ version = "0.9.1+5"
 # ╟─2588e834-f2ee-41d1-b2c3-dbc43a0cda63
 # ╟─9b4da26a-6136-4be7-b3d8-ad573a89c7f9
 # ╟─aba389ff-77b4-4683-9e41-35e8dc429797
+# ╟─cb36a92a-0888-4993-ba11-ebbc7b05a3f9
 # ╠═6259dd44-2c35-4faf-b340-c69070e7fc48
 # ╟─4115dcd8-9931-4871-bc32-5e6e08450242
 # ╠═b0054103-d45f-401c-ba20-7b36729fc53e
+# ╟─d799b586-f338-4614-9799-89ad9d04e695
 # ╠═d77ca772-6b3b-43fb-a3a1-459e04bc37fc
 # ╠═7427a6ac-44f1-4fe6-8d0d-e16088391764
 # ╠═0160a7ed-7418-4061-bb80-cac0d93c0ac8
+# ╟─f9a0105c-b570-46b2-93a6-af1982fd4966
 # ╠═06af1708-5e0a-4c5c-a8a5-6d3ba97f2690
 # ╠═0902be86-d083-4c30-815b-f1aed4e92102
 # ╟─04ef2558-ff4b-4a2d-9f59-2f8b6edde3f0
