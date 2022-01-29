@@ -9,43 +9,30 @@ using Plots
 using ScikitLearn
 @sk_import datasets: make_moons
 
-export get_moon_data_loader, get_nmist_data_loader, plot_train_and_test_data
+export get_moon_data_loader, get_nmist_data_loader
 
-function get_moon_data_loader(; args...)
+function get_moon_data_loader(; n = 300, offset = 0.5, shuffle = true, args...)
     args = Args(; args...)
 
-	x_train, y_train = generate_moons(300, offset = 0.5)
-	x_test, y_test = generate_moons(300, offset = 0.5, seed = 0)
+    # offset: linearly separable => 1.0; not lin. sep. => 0.5
+	x, y = generate_moons(n, offset = offset)
+	x, y = transpose(x), onehotbatch(y, 0:1)
 
-	x_train, x_test = transpose(x_train), transpose(x_test)
-	y_train, y_test = onehotbatch(y_train, 0:1), onehotbatch(y_test, 0:1)
-
-	# create data loaders
-	train_loader = DataLoader((x_train, y_train), batchsize = args.batchsize, shuffle = true)
-	test_loader = DataLoader((x_test, y_test), batchsize = args.batchsize)
-
-	return train_loader, test_loader
+	# create data loader
+	return DataLoader((x, y), batchsize = args.batchsize, shuffle = shuffle)
 end
 
-function get_nmist_data_loader(; args...)
+function get_nmist_data_loader(; shuffle = true, args...)
     args = Args(; args...)
 
-	# Loading Dataset	
-	xtrain, ytrain = MLDatasets.MNIST.traindata(Float32)
-	xtest, ytest = MLDatasets.MNIST.testdata(Float32)
+	x, y = MLDatasets.MNIST.traindata(Float32)
 	
-	# Reshape Data in order to flatten each image into a linear array
-	xtrain = Flux.flatten(xtrain)
-	xtest = Flux.flatten(xtest)
+	# reshape Data in order to flatten each image into a linear array
+    # encode labels with one-hot
+	x, y = Flux.flatten(x), onehotbatch(y, 0:9)
 
-	# One-hot-encode the labels
-	ytrain, ytest = onehotbatch(ytrain, 0:9), onehotbatch(ytest, 0:9)
-
-	# Create DataLoaders (mini-batch iterators)
-	train_loader = DataLoader((xtrain, ytrain), batchsize=args.batchsize, shuffle=true)
-	test_loader = DataLoader((xtest, ytest), batchsize=args.batchsize)
-
-	return train_loader, test_loader
+	# create data loader
+	return DataLoader((x, y), batchsize = args.batchsize, shuffle = shuffle)
 end
 
 function generate_moons_from_publication(; offset = 0.0, coord_down_scale = 1, show_plot = false)
@@ -721,19 +708,6 @@ function moon_class_2(offset = 0.0, coord_down_scale = 1)
         0.2317409067300455
     ] 
     return vcat(transpose.((x, y))...) / coord_down_scale
-end
-
-function plot_train_and_test_data(train_loader::Flux.Data.DataLoader, test_loader::Flux.Data.DataLoader)
-	# plot train and test data sets
-	p_train = Plots.scatter(
-		train_loader.data[1][1,:], train_loader.data[1][2,:],
-			c = PlotUtils.map_bool_to_color(train_loader.data[2][1,:], "blue", "red")
-	)
-	p_test = Plots.scatter(
-		test_loader.data[1][1,:], test_loader.data[1][2,:],
-		c = PlotUtils.map_bool_to_color(test_loader.data[2][1,:], "blue", "red")
-	)
-	display(Plots.plot(p_train, p_test, layout = (1, 2)))
 end
 
 end

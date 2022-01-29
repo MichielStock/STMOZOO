@@ -6,37 +6,29 @@ if isfile("Project.toml") && isfile("Manifest.toml")
     Pkg.activate(".")
 end
 
-include("args.jl")
+using DataStructures
+using PlotlyJS
+
 include("data.jl")
 include("neuralnetwork.jl")
+include("plotlib.jl")
 include("structs.jl")
 
-train_loader, test_loader = Data.get_moon_data_loader()
+experiments = OrderedDict(
+    "Δ1.0" => Experiment("SGD", 1.0, false),
+    "Δ0.5" => Experiment("SGD", 0.5, false),
+    "Δ0.5 + SD" => Experiment("SGD", 0.5, true),
+)
 
-m_gd = NeuralNetwork.train(train_loader, test_loader, "GD", false)
+plots = []
+for (name, def) in experiments
+    train_loader = Data.get_moon_data_loader(offset = def.offset)
+    model, stats = NeuralNetwork.train(train_loader, def.optimizer, def.sd)
 
-p1 = NeuralNetwork.plot_decision_boundary(train_loader, m_gd, title = "GD Train")
-p2 = NeuralNetwork.plot_decision_boundary(test_loader, m_gd, title = "GD Test")
+    p = PlotLib.plot_decision_boundary(train_loader, model, title = name)
+    p_stats = PlotLib.plot_loss_and_accuracy(stats["loss"], stats["accuracy"])
+    global plots = push!(plots, p, p_stats)
+end
 
-m_sgd = NeuralNetwork.train(train_loader, test_loader, "SGD", false)
-
-p3 = NeuralNetwork.plot_decision_boundary(train_loader, m_sgd, title = "SGD Train")
-p4 = NeuralNetwork.plot_decision_boundary(test_loader, m_sgd, title = "SGD Test")
-
-# same with SD
-m_gd_sd = NeuralNetwork.train(train_loader, test_loader, "GD", true)
-
-p5 = NeuralNetwork.plot_decision_boundary(train_loader, m_gd_sd, title = "GD + SD Train")
-p6 = NeuralNetwork.plot_decision_boundary(test_loader, m_gd_sd, title = "GD + SD Test")
-
-m_sgd_sd = NeuralNetwork.train(train_loader, test_loader, "SGD", true)
-
-p7 = NeuralNetwork.plot_decision_boundary(train_loader, m_sgd_sd, title = "SGD + SD Train")
-p8 = NeuralNetwork.plot_decision_boundary(test_loader, m_sgd_sd, title = "SGD + SD Test")
-
-display([p1 p2
-p3 p4
-p5 p6
-p7 p8])
-
+display([plots[1] plots[2]; plots[3] plots[4]; plots[5] plots[6]])
 end
