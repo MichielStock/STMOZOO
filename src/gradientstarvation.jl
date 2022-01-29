@@ -9,6 +9,7 @@ end
 include("args.jl")
 include("data.jl")
 include("neuralnetwork.jl")
+include("structs.jl")
 
 train_loader, test_loader = Data.get_moon_data_loader()
 

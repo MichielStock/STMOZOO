@@ -1,7 +1,6 @@
 module NeuralNetwork
 
-include("args.jl")
-include("plotutils.jl")
+include("structs.jl")
 include("regularization.jl")
 
 using Flux

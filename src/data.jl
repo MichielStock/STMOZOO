@@ -1,6 +1,6 @@
 module Data
 
-include("args.jl")
+include("structs.jl")
 
 using Flux
 using Flux: onehotbatch
