@@ -9,26 +9,27 @@ end
 using DataStructures
 using PlotlyJS
 
-include("data.jl")
-include("neuralnetwork.jl")
-include("plotlib.jl")
+include("experiments.jl")
 include("structs.jl")
 
 experiments = OrderedDict(
-    "Δ1.0" => Experiment("SGD", 1.0, false),
-    "Δ0.5" => Experiment("SGD", 0.5, false),
-    "Δ0.5 + SD" => Experiment("SGD", 0.5, true),
+    "GD Δ1.0" => Experiment("GD", 1.0, false),
+    "GD Δ0.5" => Experiment("GD", 0.5, false),
+    "GD Δ0.5 + SD" => Experiment("GD", 0.5, true),
+
+    "SGD Δ1.0" => Experiment("SGD", 1.0, false),
+    "SGD Δ0.5" => Experiment("SGD", 0.5, false),
+    "SGD Δ0.5 + SD" => Experiment("SGD", 0.5, true),
+
+    "WD Δ1.0" => Experiment("WD", 1.0, false),
+    "WD Δ0.5" => Experiment("WD", 0.5, false),
+    "WD Δ0.5 + SD" => Experiment("WD", 0.5, true),
+
+    "ADAM Δ1.0" => Experiment("ADAM", 1.0, false),
+    "ADAM Δ0.5" => Experiment("ADAM", 0.5, false),
+    "ADAM Δ0.5 + SD" => Experiment("ADAM", 0.5, true),
 )
 
-plots = []
-for (name, def) in experiments
-    train_loader = Data.get_moon_data_loader(offset = def.offset)
-    model, stats = NeuralNetwork.train(train_loader, def.optimizer, def.sd)
+Experiments.run_experiments(experiments)
 
-    p = PlotLib.plot_decision_boundary(train_loader, model, title = name)
-    p_stats = PlotLib.plot_loss_and_accuracy(stats["loss"], stats["accuracy"])
-    global plots = push!(plots, p, p_stats)
-end
-
-display([plots[1] plots[2]; plots[3] plots[4]; plots[5] plots[6]])
 end
