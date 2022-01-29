@@ -1,5 +1,7 @@
 
 # Fridge.jl
+[![](https://img.shields.io/badge/docs-latest-blue)](https://wardvanbelle.github.io/Fridge.jl/) \
+\
 <img align="right" width="150" height="150" src="FridgeLogo.png">
 by <i>Ward Van Belle</i>
 
