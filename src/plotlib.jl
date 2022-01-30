@@ -40,6 +40,7 @@ function plot_train_and_test_data(train_loader::Flux.Data.DataLoader, test_loade
 	), layout)
 
 	# adjust common layout with individual titles
+	# does not work for some reason :/
 	PlotlyJS.relayout!(p_train, title = attr(text = train_title, font = attr(size = title_font_size)))
 	PlotlyJS.relayout!(p_test, title = attr(text = test_title, font = attr(size = title_font_size)))
 
