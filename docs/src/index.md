@@ -4,6 +4,7 @@ This is the documentation page for the STMO ZOO packages (edition 2021-2022). Th
 of two functions, Newtonsmethod and next_guess_zygote.
 
 1. Newtonsmethod
+This function will apply the Newton's method to the real point until the difference between two consecutive guesses smaller than ϵ. Some points won't converge, when 100000 steps are made the function stops running.
 
 ```@contents
 function Newtonsmethod(f, x₀, ϵ = 0.00001)
@@ -20,7 +21,7 @@ function Newtonsmethod(f, x₀, ϵ = 0.00001)
 		x -= Δx 
 		steps = steps + 1
 		
-		if steps == 100
+		if steps == 100000
 			break 
 		end 
 	
@@ -32,6 +33,7 @@ end
 ```
 
 2. next_guess_zygote
+This function will apply the Newton's method to the real and the complex points the algorithm stops running after n steps. The default is n = 100.
 
 ```@contents
 function next_guess_zygote(f, x₀, n = 100)
