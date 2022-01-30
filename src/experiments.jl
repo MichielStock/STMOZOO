@@ -38,23 +38,4 @@ function run_experiments(experiments; prefix = "", show_plots = true, save_plots
 	@info "Finished $(length(experiments)) experiments."
 end
 
-function get_plot_resolution(size)
-	size = lowercase(size)
-	@assert size in ["small", "medium", "large", "xlarge"] "Requested plot size '$size' is not supported."
-
-	if size == "small"
-		# 16:9 360p
-		return 640, 360
-	elseif size == "medium"
-		# 16:9 480p
-		return 854, 480
-	elseif size == "large"
-		# 16:9 720p
-		return 1280, 720
-	elseif size == "xlarge"
-		# 16:9 1080p
-		return 1920, 1080
-	end
-end
-
 end
