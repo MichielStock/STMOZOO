@@ -34,6 +34,7 @@ For instance cheese may be replaced by swiss cheese.
 
 ## Output:
 - fridgeList: The (adapted) given fridgeList
+
 """
 function checkIngredients(fridgeList,ingredientList)
 
