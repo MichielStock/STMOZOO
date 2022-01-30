@@ -116,16 +116,10 @@ function train(data_loader::Flux.Data.DataLoader, optimizer::String = "SGD", spe
 			# U = U of singular value decomposition
 
 			# workaround
-			# can only be done if hidden_dim = batchsize
+			# can only be done if hidden_dim == batchsize
 			if (size(model.layers[1].W, 1) == size(x, 2))
 				U = transpose(model.layers[1].W) .* model.layers[2].W
 				zs = U .* model(x)
-				# U1 = transpose(model.layers[1].W)
-				# U2 = model.layers[2].W
-				# z1 = U1 .* model(x)
-				# z2 = U2 .* model(x)
-				# push!(z1_prog, sum(abs.(z1)))
-				# push!(z2_prog, sum(abs.(z2)))
 				push!(z1_prog, sum(abs.(zs[1,:])))
 				push!(z2_prog, sum(abs.(zs[2,:])))
 			end
