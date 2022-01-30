@@ -28,3 +28,28 @@ function Newtonsmethod(f, x₀, ϵ = 0.00001)
 	
 end 
 ```
+
+```@contents
+function next_guess_zygote(f, x₀, n = 100)
+	
+	@variables z
+	fr(z) = real(f(z))
+	
+	x = x₀
+	
+	for i = 1:n
+		df = gradient(fr, x)[1] |> conj
+		x = x - f(x) / df
+	end 
+	
+	return x
+	
+end 
+```
+
+```@contents
+
+```
+```@contents
+
+```
