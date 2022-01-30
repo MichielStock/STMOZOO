@@ -14,11 +14,8 @@ macro bind(def, element)
     end
 end
 
-# ╔═╡ 12967f8b-1933-4376-b9c4-5092b41b935a
-using PlutoUI
-
 # ╔═╡ dba46e66-8704-42de-938c-d576a1336398
-using Plots, Graphs, GraphMakie, CairoMakie, NetworkLayout
+using PlutoUI, Plots, Graphs, GraphMakie, CairoMakie, NetworkLayout
 
 # ╔═╡ 4b3e86ea-6973-11ec-014f-9f2708ba86cf
 md"""
@@ -28,7 +25,13 @@ md"""
 
 **Menno Van Damme**
 
-This pluto notebook contains the code for a simple RNA secondary structure prediction tool and some illustrated examples on how to use it.
+This pluto notebook contains the code for a simple RNA secondary structure prediction tool.
+
+This tool uses an algorithm called Nussinov's algorithm. This is a basepair maximization algorithm, it predicts the optimal structure by trying to maximize the amount of paired nucleotides in the sequence. This was one of the first ever algorithms to be used in RNA folding but sadly this algorithm is often to simple to get realistic results. 
+
+Other algorithms like energy minimization algorithms try to achieve the same thing but does this by taking base pairing energies, the stacking of certain types of basepairs and the size of different structures into account and by calculating the total minimum free energy of the folded RNA. However, implementeing these is a lot more complicated and out of the scope of a project like this.
+
+You can either choose an example sequence or input you own (DNA sequences are also allowed).
 
 """
 
@@ -54,10 +57,41 @@ end
 # ╔═╡ 3c7f1384-33ac-4b2d-9a63-4bf412bfa685
 RNA = replace(uppercase(rna), 'T' => 'U')
 
-# ╔═╡ 3ea557f6-a3bd-4d73-99ef-10fc69024fca
-n = length(RNA)
+# ╔═╡ 42921538-4ff4-4902-aefa-d958f41d1404
+md"""
+
+Below you can see the dotbracket strucure of the RNA. This is a representation of the secondary structure by using dots and brackets. Each character represents a nuceleotide in the sequence. Opening and closing brackets indicate two nucleotides that basepair. Dots represent unpaired nucleotides. Since guanine (G) and uracil (U) can also pair in RNA, GU pairs are allowed.
+
+"""
+
+# ╔═╡ fd14341c-f195-4b86-9f9c-379477eed4af
+md"""
+
+Here is the visualization of the secondary structure:
+
+"""
+
+# ╔═╡ ca99ac1a-e4da-41fe-8ab6-834e2b7134b7
+md"""
+
+Sadly there are no RNA visualization packages for Julia so I've had to use graph visualization libraries, these aren't ideal for this task so the structure might not look entirely correct. If you want a better view of the structure you can copy the following link. It will take you to a ViennaRNA webpage especially designed for displaying secondary RNA structures based on the sequence and dotbracket structure embedded in the link.
+
+"""
+
+# ╔═╡ 2fbe430d-ab80-406e-aa87-c377d6ed30c2
+md"""
+
+## Functions
+
+"""
 
 # ╔═╡ e5650185-a6bc-488c-a02b-3c1363c52b8c
+"""
+	basepair(i, j, RNA)
+
+Returns a the logical value true if 2 nucleotides can basepair, else false.
+
+"""
 function basepair(i, j, RNA)
 	pair = string(RNA[i], RNA[j])
 	# all possible pairs (GU is also possible in RNA):
@@ -70,56 +104,29 @@ function basepair(i, j, RNA)
 	return bp
 end
 
-# ╔═╡ dc573955-b679-4fdc-aeba-7001ea8f7a4c
-function calculate_S_first(RNA)
-	n = length(RNA)
-	S = zeros(n,n)
-	Events = []
-	# recursion happens from smaller to larger distancs between i and j,
-	# from the diagonal towards the upper right corner in the matrix
-	for d in 1:n-1
-		for i in 1:n-d
-			j = i + d
-			# i and j basepair
-			if basepair(i, j, RNA) # and i <= j-4
-				bp_score = S[i+1,j-1] + 1
-			else
-				bp_score = 0
-			end
-			# i unpaired
-			iup_score = S[i+1,j]
-			# j unpaired
-			jup_score = S[i,j-1]
-			# bifurcation between i and j
-			K = [k for k in i+1:j-1]
-			if !isempty(K)
-				bf_score = maximum([S[i,k] + S[k+1,j] for k in K])
-			else
-				bf_score = 0
-			end
-			# the actual score is the maximum of these scores
-			S[i,j] = max(bp_score, 
-						 iup_score, 
-						 jup_score,
-						 bf_score)
-			if bp_score == S[i,j]
-				push!(Events, "bp")
-			end
-			if iup_score == S[i,j]
-				push!(Events, "iup")
-			end
-			if jup_score == S[i,j]
-				push!(Events, "jup")
-			end
-			if bf_score == S[i,j]
-				push!(Events, "bf")
-			end
-		end
-	end
-	return S, Events
-end
+# ╔═╡ 35ab76cf-16d5-432a-a185-960c69829b27
+md"""
+
+Nussinov's algorithm tries to maximize the amount of paired bases in the structure. It does this using the following formula:
+
+$$S(i,j) = \max_{i\leq k<j} \begin{cases} S(i,j-1) \qquad\qquad\qquad\qquad\qquad\quad\; \text{if i unpaired} \\S(i,k-1)+S(k+1,j-1)+1 \qquad \text{if i, k complementary} \end{cases}$$
+
+Here $$i$$, $$j$$, and $$k$$ are three positions in the RNA sequence with $$k$$ being equal to $$i$$ or in between $$i$$ and $$j$$. And $$S(i,j)$$ is the score of the subsequence from $$i$$ to $$j$$ given by the aglorithm, this score is equal to the amount of basepairs in the subsequence.
+
+This formula is used to recursively fill in a dynamic programming matrix $$(S)$$ starting from smaller distances between $$i$$ and $$j$$ to larger ones, thus from smaller to larger subsequences, until $$i = 1$$ and $$j = n$$ (the length of the sequence). $$S(1,n)$$ then represents the score of the entire sequence.
+
+If position $$j$$ is not paired to any nucleotide, the score does not change. So the score remains the same as the score of the subsequence one nucleotide smaller $$S(i,j-1). If $$\; j$$ can basepair with a nucleotide $$k$$ in the range $$i:j-1$$ then the sequence is split into two subsequence $$i...k-1$$ and $$k+1...j-1$$, if we add their scores together with a $$+1$$ for the new basepair $$(k,j)$$ we get the score of the entire subsequence. if $$k=i$$ than we have a special case where $$S(i,k-1)=S(i,i-1)$$ this is why S(i,i-1) is set to be equal to zero.
+
+The matrix $$S$$ is initialized by all zeros and new values are only added to the upper right side of the matrix. Note that for two nucleotides to be able to basepair at least three other nucleotides need to be between them, otherwise there is not enough space for them to pair.
+"""
 
 # ╔═╡ 2d83c447-1d33-496a-8a39-75d1cb9b2de1
+"""
+	Nussinov(RNA)
+
+Returns the Nussinov dynamic programming matrix of the RNA sequence.
+
+"""
 function Nussinov(RNA)
 	n = length(RNA)
 	S = zeros(n,n)
@@ -130,7 +137,7 @@ function Nussinov(RNA)
 			j = i + d
 			# j doesn't basepair
 			nobp_score = S[i,j-1]
-			# j basepairs with i
+			# j basepairs with i (same as with k but S[i,k-1] = 0)
 			if basepair(i,j,RNA)
 				bpi_score = S[i+1,j-1] + 1
 			else
@@ -158,7 +165,21 @@ end
 # ╔═╡ 0a20eddd-24f7-43c6-a0f3-6c1c138fb90a
 S = Nussinov(RNA)
 
+# ╔═╡ a455cfa0-ee29-4a4e-8b26-cf91c36985ec
+md"""
+
+To retrieve the basepairs which form the optimally scoring secondary structure we have to perform a backtracking procedure. This procedure starts in the upper right corner of the dynamic programming matrix where $$i=1$$ and $$j=n$$ and continues towards smaller subsequences. If $$S(i,j)$$ is equal to $$S(i,j-1)$$ we can say that $$j$$ is unpaired and we can continue the traceback from $$(i,j-1)$$. Else $$j$$ is paired to a $$k$$. If $$k=i$$ then $$S(i,j)=S(i+1,j-1)+1$$ and we can continue the traceback from $$(i+1,j-1)$$. If $$k \neq i$$ then $$S(i,j)=S(i,k-1)+S(i+1,j-1)+1$$ and the traceback splits up in the two substructures that were formed $$(i,k-1)$$ and $$(k+1,j-1)$$.
+
+Since the rules of the Nussinov algorithm are simple there are most of the time many roads that lead to the same optimal score for a structure and thus many optimal ways to fold the RNA. This is because score for pairing $$j$$ with $$i$$ might give you the same score as pairing $$j$$ with $$k \; (\neq i)$$ or even the same as leaving $$j$$ unpaired.
+"""
+
 # ╔═╡ 463d18c3-e155-4b73-896f-2bbcdb71bbd2
+"""
+	traceback(RNA, S, i, j; pairs = [])
+
+Performs a backtracking trhrough the Nussinov dynamic programming matrix starting from position (i,j). Outputs a list of tuples with all the pairs in the sequence.
+
+"""
 function traceback(RNA, S, i, j; pairs = [])
 	if i < j
 		if  S[i,j] == S[i,j-1] 
@@ -181,9 +202,15 @@ function traceback(RNA, S, i, j; pairs = [])
 end
 
 # ╔═╡ 43f97b8d-cd9c-4b8f-8821-68542488e49d
-pairs = traceback(RNA, S, 1, n)
+pairs = traceback(RNA, S, 1, length(RNA))
 
 # ╔═╡ b156a4c7-6ed9-4a4d-b3c9-d3c06fbc1faf
+"""
+	dotbracket(RNA, pairs)
+
+Returns the dotbracket structure of the RNA, given a list of pairs.
+
+"""
 function dotbracket(RNA, pairs)
 	n = length(RNA)
 	db = collect('.' ^ n)
@@ -195,53 +222,35 @@ function dotbracket(RNA, pairs)
 	return db
 end
 
-# ╔═╡ 0d5440c3-23f8-4718-b68e-852c7600cf5b
-db = dotbracket(RNA, pairs)
+# ╔═╡ f66956d6-6d0d-42d1-b210-4bdf23ccd0b8
+structure = dotbracket(RNA, pairs)
 
-# ╔═╡ 2c5e005a-7b42-4ae8-8865-585faa7b46de
-"http://nibiru.tbi.univie.ac.at/forna/forna.html?id=url/name&sequence=$RNA&structure=$db"
+# ╔═╡ c86cc53d-4675-4cd1-af75-ec4a717fd7fa
+link = "http://nibiru.tbi.univie.ac.at/forna/forna.html?id=url/name&sequence=$RNA&structure=$structure"
 
-# ╔═╡ b5ed3265-3276-41b8-be2d-e9b8f03fe3f0
-#using GraphRecipes
+# ╔═╡ e25d53b9-0096-4b6c-85cb-fcae261fabcb
+md""" $link """
 
-# ╔═╡ b3e65e30-be3b-4ae5-af26-2329eb882577
-function plotstructure2(RNA, pairs)
-	n = length(RNA)
-	edges = [(i,i+1) for i in 1:n-1]
-	append!(edges, pairs)
-	G = SimpleGraph(Edge.(edges))
+# ╔═╡ f4e866fc-8e18-4917-b515-9cc00175a7a4
+begin
 	myblue = "#304da5"
 	mygreen = "#2a9d8f"
 	myyellow = "#e9c46a"
 	myred = "#e76f51"
-	colors = [mygreen, myblue, myyellow, myred]
-	members = replace(collect(RNA), 'A' => 1, 'U' => 2, 'G' => 3, 'C' => 4)
-	nodecolors = colors[members]
-	graphplot(G, 
-			curves = false, 
-			names = collect(RNA), 
-			nodecolor = nodecolors,
-			nodeshape = :circle,
-			linealpha = 0.3,
-			linewidth = 4,
-			markersize = 0.25,
-			fontsize = 6,
-			method = :stress)
 end
 
-# ╔═╡ 6fbe81e6-326c-466c-a7af-3d9e4afffde8
-#plotstructure2(RNA, pairs)
-
 # ╔═╡ 2e8fb274-0658-43f8-bfa0-40f2f1daf6f3
-function plotstructure3(RNA, pairs)
+"""
+	plotstructure(RNA, pairs)
+
+Plots the secondary structure of the RNA, given a list of pairs.
+
+"""
+function plotstructure(RNA, pairs)
 	n = length(RNA)
 	edges = [(i,i+1) for i in 1:n-1]
 	append!(edges, pairs)
 	G = SimpleGraph(Edge.(edges))
-	myblue = "#304da5"
-	mygreen = "#2a9d8f"
-	myyellow = "#e9c46a"
-	myred = "#e76f51"
 	colors = [mygreen, myblue, myyellow, myred]
 	members = replace(collect(RNA), 'A' => 1, 'U' => 2, 'G' => 3, 'C' => 4)
 	nodecolors = colors[members]
@@ -271,8 +280,8 @@ function plotstructure3(RNA, pairs)
 	return f	
 end
 
-# ╔═╡ 5e397f0a-7bdd-4db9-9acf-5781951897f6
-plotstructure3(RNA, pairs)
+# ╔═╡ 06983a7b-efca-4167-be5d-a158a4e0858d
+plotstructure(RNA, pairs)
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1636,25 +1645,27 @@ version = "0.9.1+5"
 
 # ╔═╡ Cell order:
 # ╟─4b3e86ea-6973-11ec-014f-9f2708ba86cf
-# ╠═12967f8b-1933-4376-b9c4-5092b41b935a
 # ╟─59108cf2-d8a5-4c16-b373-bb6a23d13735
 # ╟─ed0a3dc5-99d3-4628-ad5c-7d13e699b353
 # ╟─3c7f1384-33ac-4b2d-9a63-4bf412bfa685
-# ╠═3ea557f6-a3bd-4d73-99ef-10fc69024fca
+# ╟─42921538-4ff4-4902-aefa-d958f41d1404
+# ╟─f66956d6-6d0d-42d1-b210-4bdf23ccd0b8
+# ╟─fd14341c-f195-4b86-9f9c-379477eed4af
+# ╟─06983a7b-efca-4167-be5d-a158a4e0858d
+# ╟─ca99ac1a-e4da-41fe-8ab6-834e2b7134b7
+# ╟─e25d53b9-0096-4b6c-85cb-fcae261fabcb
+# ╟─2fbe430d-ab80-406e-aa87-c377d6ed30c2
+# ╠═dba46e66-8704-42de-938c-d576a1336398
 # ╠═e5650185-a6bc-488c-a02b-3c1363c52b8c
-# ╟─dc573955-b679-4fdc-aeba-7001ea8f7a4c
+# ╟─35ab76cf-16d5-432a-a185-960c69829b27
 # ╠═2d83c447-1d33-496a-8a39-75d1cb9b2de1
 # ╠═0a20eddd-24f7-43c6-a0f3-6c1c138fb90a
+# ╟─a455cfa0-ee29-4a4e-8b26-cf91c36985ec
 # ╠═463d18c3-e155-4b73-896f-2bbcdb71bbd2
 # ╠═43f97b8d-cd9c-4b8f-8821-68542488e49d
 # ╠═b156a4c7-6ed9-4a4d-b3c9-d3c06fbc1faf
-# ╠═0d5440c3-23f8-4718-b68e-852c7600cf5b
-# ╟─2c5e005a-7b42-4ae8-8865-585faa7b46de
-# ╠═b5ed3265-3276-41b8-be2d-e9b8f03fe3f0
-# ╟─b3e65e30-be3b-4ae5-af26-2329eb882577
-# ╠═6fbe81e6-326c-466c-a7af-3d9e4afffde8
-# ╠═dba46e66-8704-42de-938c-d576a1336398
+# ╠═c86cc53d-4675-4cd1-af75-ec4a717fd7fa
 # ╠═2e8fb274-0658-43f8-bfa0-40f2f1daf6f3
-# ╠═5e397f0a-7bdd-4db9-9acf-5781951897f6
+# ╠═f4e866fc-8e18-4917-b515-9cc00175a7a4
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
