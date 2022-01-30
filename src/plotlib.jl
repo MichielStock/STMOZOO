@@ -12,17 +12,41 @@ export plot_train_and_test_data, plot_loss_and_accuracy, plot_features, plot_dec
 title_font_size = 18
 tick_font_size = 16
 
-function plot_train_and_test_data(train_loader::Flux.Data.DataLoader, test_loader::Flux.Data.DataLoader)
-	# plot train and test data sets next to each other
-	p_train = Plots.scatter(
-		train_loader.data[1][1,:], train_loader.data[1][2,:],
-			c = PlotUtils.map_bool_to_color(train_loader.data[2][1,:], "blue", "red")
+function plot_train_and_test_data(train_loader::Flux.Data.DataLoader, test_loader::Flux.Data.DataLoader; train_title = "", test_title = "")
+	# define common layout
+	layout = Layout(
+		width = 1000, height = 1000, autosize = false,
+		plot_bgcolor = "rgba(0, 0, 0, 0)", paper_bgcolor = "rgba(0, 0, 0, 0)",
+		xaxis = attr(
+			showgrid = true, gridcolor = "#e2e2e2",
+			ticks = "outside", zeroline = false,
+			tickfont = attr(size = tick_font_size)),
+		yaxis = attr(
+			showgrid = true, gridcolor = "#e2e2e2",
+			ticks = "outside", zeroline = false,
+			tickfont = attr(size = tick_font_size)),
 	)
-	p_test = Plots.scatter(
-		test_loader.data[1][1,:], test_loader.data[1][2,:],
-		c = PlotUtils.map_bool_to_color(test_loader.data[2][1,:], "blue", "red")
-	)
-	display(Plots.plot(p_train, p_test, layout = (1, 2)))
+
+	# create two independent plots
+	p_train = PlotlyJS.plot(PlotlyJS.scatter(
+		x = train_loader.data[1][1,:], y = train_loader.data[1][2,:], mode = "markers",
+		marker_color = PlotUtils.map_bool_to_color(train_loader.data[2][1,:], "red", "blue"),
+		showlegend = false
+	), layout)
+	p_test = PlotlyJS.plot(PlotlyJS.scatter(
+		x = test_loader.data[1][1,:], y = test_loader.data[1][2,:], mode = "markers",
+		marker_color = PlotUtils.map_bool_to_color(test_loader.data[2][1,:], "red", "blue"),
+		showlegend = false, showgrid = true
+	), layout)
+
+	# adjust common layout with individual titles
+	PlotlyJS.relayout!(p_train, title = attr(text = train_title, font = attr(size = title_font_size)))
+	PlotlyJS.relayout!(p_test, title = attr(text = test_title, font = attr(size = title_font_size)))
+
+	# combine plots into one
+	p = [p_train p_test]
+	PlotlyJS.relayout!(p, plot_bgcolor = "rgba(0, 0, 0, 0)", paper_bgcolor = "rgba(0, 0, 0, 0)")
+	p
 end
 
 function plot_loss_and_accuracy(loss, accuracy; args...)
@@ -126,12 +150,12 @@ function plot_decision_boundary(loader, model; title = "")
 			width = 1000, height = 1000, autosize = false,
 			xaxis = attr(
 				range = [x_min, x_max],
-				zeroline = true, zerolinewidth = 1, zerolinecolor = "black", 
+				zeroline = false, zerolinewidth = 1, zerolinecolor = "black", 
 				automargin = false, showgrid = false,
 				tickfont = attr(size = tick_font_size)),
 			yaxis = attr(
 				range = [y_min, y_max],
-				zeroline = true, zerolinewidth = 1, zerolinecolor = "black", 
+				zeroline = false, zerolinewidth = 1, zerolinecolor = "black", 
 				automargin = false, showgrid = false,
 				tickfont = attr(size = tick_font_size)),
 			legend = attr(font = attr(size = tick_font_size)),
