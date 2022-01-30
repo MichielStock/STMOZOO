@@ -95,6 +95,20 @@ Despite its popularity, gradient descent learning in NNs can come with some unwa
 Another not yet published but currently in preprint described observation is the effect of [**_Gradient Starvation_ (GS)**](https://arxiv.org/abs/2011.09468). Pezeshki et al. coined and formalized this phenomenon of over-parameterized NNs in their work. According to them, _Gradient Starvation_ is a predisposition of NNs learned by cross-entropy, which occurs when the loss minimization is driven by only a feature subset regardless of the presence of other meaningful features. Thus, the NN becomes biased towards superficial features. Beyond demonstrating the effects of GS, Pezeshki et al. introduce **_Spectral Decoupling_ (SD)** regularization as a means to counteract gradient starvation.
 """
 
+# ╔═╡ 60905936-9373-44de-96e6-cb5d6dd72d33
+md"""
+### Spectral Decoupling
+Proceeding from the popular "ridge-regularized cross entropy":
+
+$\mathcal{L}(\boldsymbol{θ}) = \boldsymbol{1} \cdot log(1 + exp(-\boldsymbol{Y}\boldsymbol{ŷ})) + \frac{λ}{2} ||\boldsymbol{θ}||^2$
+
+with $\boldsymbol{Y}$ the diagonal matrix of $y$ and $\boldsymbol{θ}$ the concatenation of all layer's weights, SD is a variation where the L2 regularization term is replaced by a penalty on the raw predictions $\boldsymbol{ŷ}$:
+
+$\mathcal{L}(\boldsymbol{θ}) = \boldsymbol{1} \cdot log(1 + exp(-\boldsymbol{Y}\boldsymbol{ŷ})) + \frac{λ}{2} ||\boldsymbol{ŷ}||^2$
+
+This, as stated by the Pezeshki et al., uncouples the learning of multiple features. According to their work, a feature trained close to its optimum inhibits (starves) the training of other features which is thus prevented by SD.
+"""
+
 # ╔═╡ 00d4161d-6f8f-42d6-8f13-7d5aa7e70ab3
 md"""
 ### Objective
@@ -111,29 +125,28 @@ The first topology allows to draw a line by a very small margin between the two 
 
 # ╔═╡ 2f766a9c-de6e-4f95-aa73-aacb486aaf61
 md"""
-$(LocalResource("../plots/figure_1.png"))
+$(LocalResource("../plots/figure_1_edited.png"))
 Figure 1: Two moons topologies; one linear separable (offset Δ1.0), the other separable by a curved boundary (offset Δ0.5).
 """
 
 # ╔═╡ 7f7ed965-fa08-4d6f-8908-dfc8876bdd02
 md"""
-The idea of Pezeshki et al. was that in the linear separable case the NN is not encouraged to learn a curved decision boundary because the loss becomes neglibile by only discriminating the two moons along one axis, therefore learning only one feature and neglecting the other. In contrast to that, the interleaved moons can only be separated by learning both features which better accommodates the data structure in general.
-They observed that a different choice of regularization and optimization methods like Weight Decay (WD) and Adaptive Moment Estimation (ADAM) among others are not able to 
-stimulate the NN to learn a curved decision boundary.
-Moreover, Pezeshki et al. explain that circumstance by cross-entropy loss learning which starves the gradients from the other feature, only reinforcing the superficial one.
+The reasoning of the researchers was that in the linear separable case the NN is not encouraged to learn a curved decision boundary because the loss becomes negligible by only discriminating the two moons along one axis, therefore learning only one feature and neglecting the other. In contrast to that, the interleaved moons can only be separated by learning both features which better accommodates the curvatures of the data structure in general.
+They observed that a different choice of regularization and optimization methods like weight decay (WD) and _Adaptive Moment Estimation_ (ADAM), among others, are not able to stimulate the NN to learn a curved decision boundary.
+Moreover, Pezeshki et al. explained that circumstance by cross-entropy loss learning which starves the gradients from the other feature, only reinforcing the superficial one.
 
 #### Repercussions of Gradient Starvation
-Why does the shape of the decision boundary even matter as long as it discriminates the data points confidently? As stated by the authors, GS results in a very small distance between the data points and the boundary which translates into a lack of robustness when generalizing to new data. Contrarily, GS could also have the positive effect of the prevention of overfitting by not learning non-dominant features. Pezeshki et al. make the comparison to the aformentioned Ockham's razor: GS leads to simpler decision boundaries and hence NNs that generalize better, thus being a form of implicit regularization.
+Why does the shape of the decision boundary even matter as long as it discriminates the data points confidently? As stated by the authors, GS results in a very small distance between the data points and the boundary which translates into a lack of robustness when generalizing to new data. Contrarily, GS could also have a positive effect in terms of preventing overfitting by not learning non-dominant features. The authors made the comparison to the aformentioned Ockham's razor: GS leads to simpler decision boundaries and hence NNs that generalize better, thus GS being a form of implicit regularization.
 
 #### Implementation
-The implementation is based on [Flux](https://fluxml.ai/), a ML framework for Julia. The NN consists of two hidden layers with 500 nodes each. Rectified Linear Unit (ReLu) is used as an activation function and learning is facilitated with cross-entropy loss for 1000 epochs on a data set with 300 observations (150 blue and 150 red points). In contrast to Pezeshki et al., I opted to train in batches of 50 (6 batches in total) since this is a common practice for training NNs.
+The implementation is based on [Flux](https://fluxml.ai/), a ML framework for Julia. The NN consists of two hidden layers with 500 nodes each. Rectified Linear Unit (ReLu) is used as an activation function and learning is facilitated by cross-entropy loss for 1000 epochs on a data set with 300 observations (150 blue and 150 red points). In contrast to Pezeshki et al., I've opted to train in batches of 50 (6 batches in total) since this is a common practice for training NNs.
 All networks are trained with gradient descent but with different regularization and optimization approaches. This yields the following different setups:
-- Gradient descent (GD; no regularization)
+- Gradient descent (GD; no regularization/optimization)
 - Gradient descent with momentum (stochastic gradient descent (SGD); no regularization)
-- Gradient descent with weight decay (WD; λ⋅L2 regularization)
+- Gradient descent with weight decay (WD; L2 regularization)
 - Gradient descent with _Adaptive Moment Estimation_ (ADAM; no regularization)
 
-Different sets of hyper parameters were evaluated. However, since the main objective is to reproduce the research conducted by Pezeshki et al., their set of hyperparameters were used:
+Different sets of hyperparameters were evaluated while tinkering with the NNs. However, since the main objective is to reproduce the research conducted by Pezeshki et al., their set of hyperparameters were used:
 - learning rate = 0.01
 - weight decay coefficient = 0.01
 - spectral decoupling coefficient = 0.003
@@ -148,21 +161,21 @@ md"""
 md"""
 ##### Linear separable case
 $(LocalResource("../plots/GD_Δ1.0.png"))
-Figure 2: Gradient descent (GD) on the moons with offset = Δ1.0. The decision boundary is almost linear and the loss continuously falls while training. Accuracy reaches 100%.
+Figure 2: GD, moon offset = Δ1.0. The decision boundary is almost linear and the loss continuously falls while training. Accuracy reaches 100%.
 
 $(LocalResource("../plots/SGD_Δ1.0.png"))
-Figure 3: Stochastic gradient descent (SGD) on the moons with offset = Δ1.0. The decision boundary is similar to the one learned with GD but equally distant from both classes. Loss declines quicker and reaches an overall lower level compared to GD. Accuracy reaches 100% after less training.
+Figure 3: SGD, moon offset = Δ1.0. The decision boundary is similar to the one learned with GD but equally distant from both classes. Loss declines quicker and reaches an overall lower level compared to GD. Accuracy reaches 100% after less training.
 
 $(LocalResource("../plots/WD_Δ1.0.png"))
-Figure 4: Gradient descent with weight decay (WD) on the moons with offset = Δ1.0. Decay coefficient = 0.01. The boundary is similar to GD without WD.
+Figure 4: WD, moon offset = Δ1.0, WD coefficient = 0.01. The boundary is similar to GD without WD.
 
 $(LocalResource("../plots/ADAM_Δ1.0.png"))
-Figure 5: Gradient descent with Adaptive Moment Estimation (ADAM) on the moons with offset = Δ1.0. The decision boundary is slightly curved around the data points closest to the boundary. Loss converges to zero almost immediately while full accuracy is attained. 
+Figure 5: ADAM, moon offset = Δ1.0. The decision boundary is slightly curved around the data points closest to the boundary. Loss converges to zero almost immediately while full accuracy is attained. 
 """
 
 # ╔═╡ ac453412-0f71-45ee-aefb-0cc519467c6c
 md"""
-As we can see from figures 2-5, the decision boundaries of all networks exhibit some specificites. The GD network learned an almost linear decision boundary which appears to be closer to the blue-labeled moon. The boundary looks similar with SGD, but the distance to both moons is equal. Only the network with ADAM optimization learns a slight curvature around the points closest to the boundary. Furthermore, the ADAM classification learned the fastest as can be seen from the rapid decrease in loss and increase in accuracy. At the same time, the contour lines all closely condense around the decision boundary which indicates that the ADAM network is most confident in discriminating both classes.
+As we can see from figures 2 to 5, the decision boundaries of all networks exhibit some specificities. The GD network learned an almost linear decision boundary which appears to be closer to the blue-labeled moon. The boundary looks similar with SGD, but its distance to both moons is equal. Only the network with ADAM optimization learns a slight curvature around the points closest to the boundary. Furthermore, the ADAM classification learned the fastest as can be seen from the rapid decrease in loss and increase in accuracy. At the same time, the contour lines all closely condense around the decision boundary which indicates that the ADAM network is most confident in discriminating both classes.
 """
 
 # ╔═╡ 5e282e1a-62fc-4911-9b7e-f2631eeb2669
@@ -170,21 +183,21 @@ md"""
 ##### Linear inseparable case
 
 $(LocalResource("../plots/GD_Δ0.5.png"))
-Figure 6: GD on the moons with offset = Δ0.5. The network fails to learn a decision boundary to separate the two classes.
+Figure 6: GD, moon offset = Δ0.5. The network fails to learn a decision boundary to separate the two classes within the 1000 training iterations.
 
 $(LocalResource("../plots/SGD_Δ0.5.png"))
-Figure 7: SGD on the moons with offset = Δ0.5. The network learns a curved decision boundary which is very close to the interleaving data points. Loss becomes negligible during learning.
+Figure 7: SGD, moon offset = Δ0.5. The network learns a curved decision boundary which is very close to the interleaving data points. Loss becomes negligible during learning.
 
 $(LocalResource("../plots/WD_Δ0.5.png"))
-Figure 8: WD on the moons with offset = Δ0.5. The network fails to learn a decision boundary to separate the two classes. Again, similar result compared to GD.
+Figure 8: WD, moon offset = Δ0.5. The network fails to learn a decision boundary to separate the two classes. Again, similar result compared to GD.
 
 $(LocalResource("../plots/ADAM_Δ0.5.png"))
-Figure 9: ADAM on the moons with offset = Δ0.5. The network learns a curved decision boundary. Loss fluctuates especially during the early iterations of training.
+Figure 9: ADAM, moon offset = Δ0.5. The network learns a curved decision boundary. Loss fluctuates especially during the early iterations of training.
 """
 
 # ╔═╡ f7bae71f-885a-404d-985b-92d612e1f3d6
 md"""
-SGD and ADAM are able to learn a curved decision boundary (fig. 7 and 9) while GD and WD fail to do so (fig. 6 and 8). Moreover, the decision boundary learned by ADAM better resembles the data structure.
+SGD and ADAM are able to learn a curved decision boundary (fig. 7 and 9) while GD and WD fail to do so (fig. 6 and 8). Moreover, the decision boundary learned by ADAM better resembles the data structure. The contours of the ADAM network show a very strong confidence on the networks classification. This contrasts the results from the GS paper, where ADAM was not able to learn a decision boundary as curved and well-fitting the data structure as shown in fig. 9.
 """
 
 # ╔═╡ 2bfb5f10-cb87-41a4-9dca-f3f0b1157c6f
@@ -192,21 +205,21 @@ md"""
 #### Spectral Decoupling
 
 $(LocalResource("../plots/GD_Δ0.5_+_SD.png"))
-Figure 10: GD with SD on the moons with offset = Δ0.5. No curved decision boundary is learned but the loss also did not converge.
+Figure 10: GD with SD, moon offset = Δ0.5. No curved decision boundary is learned but the loss also did not converge.
 
 $(LocalResource("../plots/SGD_Δ0.5_+_SD.png"))
-Figure 11: SGD with SD on the moons with offset = Δ0.5. The network learns a curved decision boundary which greatly resembles the moon data structure. Loss converges to ~15%.
+Figure 11: SGD with SD, moon offset = Δ0.5. The network learns a curved decision boundary which greatly resembles the moon data structure and shows invaginations at the data points of both moons closest to the boundary. Loss converges to ~15%.
 
 $(LocalResource("../plots/WD_Δ0.5_+_SD.png"))
-Figure 12: WD with SD on the moons with offset = Δ0.5 fails to separate the two data classes.
+Figure 12: WD with SD, moon offset = Δ0.5. NN fails to separate the two data classes. Similar to GD with SD, loss could still be lowered with further training.
 
 $(LocalResource("../plots/ADAM_Δ0.5_+_SD.png"))
-Figure 13: ADAM with SD on the moons with offset = Δ0.5 learns a curved decision boundary which greatly resembles the data structure. Loss heavily oscillates and steadily increases with longer training.
+Figure 13: ADAM with SD, moon offset = Δ0.5. The network learns a curved decision boundary which greatly resembles the data structure. Loss heavily oscillates and steadily increases with longer training. Interestingly, all data points of each respective class belong to the same contour.
 """
 
 # ╔═╡ 7460f609-c32b-4704-a361-71c98bb626cd
 md"""
-Spectral decoupling, originally applied as a regularization by Pezeshki et al. only with SGD, is able to yield curved decision boundaries which greatly resemble the data structure of the two moons (SGD and ADAM). While SGD learns a more angular boundary with low loss, ADAM learns a smoother one but exhibits a high loss with strong oscillations. Interestingly, ADAM learns to group all data points of a class within the same contour (fig. 13). GD and WD do not profit from SD regularization and don't learn a curved boundary.
+SD, originally applied as a regularization by Pezeshki et al. only with SGD, is able to yield curved decision boundaries which greatly resemble the data structure of the two moons in combination with SGD and ADAM optimization. While SGD learns a more angular boundary with low loss, ADAM learns a smoother one but exhibits a high loss with strong oscillations. Interestingly, ADAM learns to group all data points of a class within the same contour (fig. 13). GD and WD do not profit from SD regularization and don't learn a curved boundary. However, their loss profiles suggest improvement with further learning.
 """
 
 # ╔═╡ 87cc8172-d5cc-49ff-9a0e-fa734e1010c1
@@ -215,38 +228,45 @@ md"""
 Given that the loss did not converge for GD + SD after 1000 epochs, the network was trained for 10000 iterations.
 
 $(LocalResource("../plots/GD_Δ0.5_+_SD_10000.png"))
-Figure 14: GD with SD on the moons with offset = Δ0.5 trained 10 times longer (10000 iterations). The learned curved decision boundary resembles the result obtained with SGD + SD.
+Figure 14: GD with SD, moon offset = Δ0.5. NN was trained 10 times longer (10000 iterations). The learned curved decision boundary resembles the result obtained with SGD + SD.
 
 To conquer the overfitting observed with ADAM + SD lower learning rates were evaluated.
 
 $(LocalResource("../plots/1e-3_ADAM_Δ0.5_+_SD.png"))
-Figure 15: ADAM with SD on the moons with offset = Δ0.5 and a learning rate of 0.001 still suffers from severe overfitting.
+Figure 15: ADAM with SD on the moons with offset = Δ0.5 and a learning rate of 0.001 still suffers from severe overfitting. Nonetheless, oscillations in loss are dampened.
 
 $(LocalResource("../plots/1e-4_ADAM_Δ0.5_+_SD.png"))
-Figure 16: ADAM with SD on the moons with offset = Δ0.5 and a learning rate of 0.0001 shows lower loss but a decision boundary with a smaller margin.
+Figure 16: ADAM with SD on the moons with offset = Δ0.5 and a learning rate of 0.0001 shows lower loss compared to 0.001 but a decision boundary with a smaller margin.
+
+The additional experiments show that GD with SD performs equally well compared to SGD with SD but needs much more training for that.
+The overfitting problem with ADAM + SD can be successfully conquered with lower learning rates. However, the shape of the decision boundary suffers with learning rates as low as 0.0001. From all three ADAM + SD experiments, the one learning at a rate of 0.001 performed best.
 """
 
 # ╔═╡ bd4f515c-1e41-48bc-8c36-233535a3022c
 md"""
-### Summary
+### Plot Summary
 This section summarizes the decision boundaries of all figures from above for easier visual comparison in one plot.
 
 
-Figure 14:
+Figure 17:
 """
 
 # ╔═╡ 2c740919-1fd4-45c4-91d1-ef3d3e081139
 md"""
 ## Discussion
-Pezeshki et al. described gradient starvation as a learning proclivity that can exhibit both negative and positive effects on neural network learning. Considering the 2D classification exmample discussed in this notebook, the effect of learning a decision boundary with a small margin, thus hardly robust, could be exemplified for stochastic gradient descent. Combining SGD with spectral decoupling regularization was greatly able to enlarge the margin, therefore yielding a more robust network that not only focussed on a single dominant feature. On the other hand, the potential negative effect of overfitting by precisely learning less dominant features, as well became evident through higher losses (SGD: 8.61% without vs. 13.37% with SD; ADAM: 2.00% without vs. 68.16%).
-Contrarily to the results from Pezeshki et al., the here used neural network was perfectly able to learn curved decision boundaries featuring a large margin between the data points using ADAM without SD. This result could potentially be explained by the differing learning rates. While Pezeshki et al. trained their ADAM network with 0.0001 and 0.001, I trained all networks under the same conditions, hence both SGD and ADAM with a learning rate of 0.01. Despite the higher learning rate, ADAM showed no sign of overfitting without SD. However, with SD the overfitting was extreme but ADAM with SD was also a combination of methods not assessed by the researchers.
-Regarding the same matter, my approach to apply SD not only to SGD but all other optimizers simultaneously offered only limited insight. First of all, the combination of WD (L2 regularization) and SD was expected to not work well since both methods are somewhat conflicting. ADAM performed well with SD but suffered from overfitting which can be conquered by a lower learning rate as demonstrated in fig. 16. Nontheless, the network with purportedly lower loss learns a boundary with a smaller margin.
+Pezeshki et al. described gradient starvation as a learning proclivity that can exhibit both negative and positive effects on neural network learning. Considering the 2D classification task discussed in this notebook, the effect of learning a decision boundary with a small margin, thus supposedly hardly robust, could be exemplified for stochastic gradient descent. Combining SGD with spectral decoupling regularization was greatly able to enlarge the margin, therefore yielding a more robust network that not only focussed on a single dominant feature. On the other hand, the potential negative effect of overfitting by precisely learning less dominant features as well became evident through higher losses (SGD: 8.61% without vs. 13.37% with SD; ADAM: 2.00% without vs. 68.16%).
+Contrarily to the results from Pezeshki et al., the here used neural network was perfectly able to learn curved decision boundaries featuring a large margin between the data points using ADAM without SD. While Pezeshki et al. trained their ADAM network with rates of 0.0001 and 0.001, I trained all networks under the same conditions, hence both SGD and ADAM with a learning rate of 0.01. Despite the higher learning rate, ADAM showed no sign of overfitting without SD. However, with SD the overfitting was extreme but ADAM coupled with SD regularization was also a combination of methods not assessed by the researchers.
+Regarding the same matter, my approach to apply SD not only to SGD but all other optimizers simultaneously offered limited insight. First of all, the combination of WD (L2 regularization) and SD was expected to not work well since both methods are somewhat conflicting. ADAM performed well with SD but suffered from overfitting which can be conquered by a lower learning rate as demonstrated. Nonetheless, the network with purportedly lower loss learns a boundary with a smaller margin.
+
+All in all, the results of Pezeshki et al. could be reproduced with the exception of the network using ADAM, which was able to learn decision boundaries with similar characteristics as the ones learned by SGD with SD.
+
+Finally, it must be mentioned that Pezeshki et al. not only exemplified GS on the rather synthetical moon classification task but showed GS ramifications and the potential of SD as a regularization technique on more complex, well-established datasets like CIFAR, colored MNIST and CelebA which was sadly out of scope of this project.
 """
 
-# ╔═╡ 92cca2d8-c2b6-4046-9b86-26c5c9d64ee3
+# ╔═╡ 21854d7b-13ce-477c-bc61-1cb15536e24f
 md"""
-## Conclusion
-
+### Conclusion
+Gradient starvation is another relevant side effect of gradient descent-learned neural networks that may be worth the attention in the optimization process of NNs. However, if GS is a blessing or a curse depends on the use case. Starved models, i.e. models concentrating on superficial features during learning, can be less prone to overfitting while adressing GS promises to increase robustness.
 """
 
 # ╔═╡ c95db58c-9d47-4ef0-9ede-234d7a693f41
@@ -266,6 +286,7 @@ Kingma, D. P., & Ba, J. (2014). Adam: A method for stochastic optimization. arXi
 # ╔═╡ 9441b599-cb0d-4892-8151-4c40125214be
 md"""
 ### Appendix
+To foster the understanding of interested reader on the mentioned regularization and optimization approaches,
 """
 
 # ╔═╡ c7331867-28b5-4a3f-b95c-926a3639dad9
@@ -492,24 +513,25 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─8f0cdbf1-0174-4d18-9072-2a8c5f015177
 # ╟─6a79cfe1-12f9-4ae0-a917-14b4f3a1b31b
 # ╟─512e6240-76e7-11ec-2511-07ffc4b74d27
-# ╠═93bc80a8-673d-457b-96d8-e1bb0b09682e
-# ╠═66a3b5cb-a465-42fb-a8c8-404d574312d2
-# ╠═4a14831d-7736-4af5-875f-05ae6e3cf7c4
-# ╠═00d4161d-6f8f-42d6-8f13-7d5aa7e70ab3
-# ╠═ac02597f-a7ca-4ede-ab8a-c0739c60d0d5
-# ╠═2f766a9c-de6e-4f95-aa73-aacb486aaf61
-# ╠═7f7ed965-fa08-4d6f-8908-dfc8876bdd02
+# ╟─93bc80a8-673d-457b-96d8-e1bb0b09682e
+# ╟─66a3b5cb-a465-42fb-a8c8-404d574312d2
+# ╟─4a14831d-7736-4af5-875f-05ae6e3cf7c4
+# ╟─60905936-9373-44de-96e6-cb5d6dd72d33
+# ╟─00d4161d-6f8f-42d6-8f13-7d5aa7e70ab3
+# ╟─ac02597f-a7ca-4ede-ab8a-c0739c60d0d5
+# ╟─2f766a9c-de6e-4f95-aa73-aacb486aaf61
+# ╟─7f7ed965-fa08-4d6f-8908-dfc8876bdd02
 # ╟─88ddf822-622b-4d46-a0a4-a7d749c8bc48
 # ╟─884bc572-9daa-40ad-8d76-56ec58728f63
 # ╟─ac453412-0f71-45ee-aefb-0cc519467c6c
 # ╟─5e282e1a-62fc-4911-9b7e-f2631eeb2669
-# ╠═f7bae71f-885a-404d-985b-92d612e1f3d6
-# ╠═2bfb5f10-cb87-41a4-9dca-f3f0b1157c6f
-# ╠═7460f609-c32b-4704-a361-71c98bb626cd
-# ╠═87cc8172-d5cc-49ff-9a0e-fa734e1010c1
+# ╟─f7bae71f-885a-404d-985b-92d612e1f3d6
+# ╟─2bfb5f10-cb87-41a4-9dca-f3f0b1157c6f
+# ╟─7460f609-c32b-4704-a361-71c98bb626cd
+# ╟─87cc8172-d5cc-49ff-9a0e-fa734e1010c1
 # ╠═bd4f515c-1e41-48bc-8c36-233535a3022c
-# ╠═2c740919-1fd4-45c4-91d1-ef3d3e081139
-# ╠═92cca2d8-c2b6-4046-9b86-26c5c9d64ee3
+# ╟─2c740919-1fd4-45c4-91d1-ef3d3e081139
+# ╟─21854d7b-13ce-477c-bc61-1cb15536e24f
 # ╟─c95db58c-9d47-4ef0-9ede-234d7a693f41
 # ╠═9441b599-cb0d-4892-8151-4c40125214be
 # ╠═c7331867-28b5-4a3f-b95c-926a3639dad9
