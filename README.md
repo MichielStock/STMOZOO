@@ -1,6 +1,6 @@
 # Levenberg-Marquardt algorithm
 
-By Thiemen Mussche
+By Thiemen Mussche.
 The notebook is the main material.
 
 Levenberg-Marquardt is a numerical algorithm specifically made as an improvement to the Gauss-Newton method. 
