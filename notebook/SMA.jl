@@ -15,16 +15,22 @@ macro bind(def, element)
 end
 
 # ╔═╡ 0efef0ae-1de8-40e0-b689-e473ef9183e8
-using Random, Distributions, PlutoUI, StatsBase, Plots
+using Random, Distributions, PlutoUI, StatsBase, Plots, StatsPlots
 
 # ╔═╡ 40272dcb-7ff1-4a5d-b201-9dc548d81d8c
 md"""
 # Slime Mould Algorithm
+**Natan Tourne**\
+**STMO 2021-2022**\
+**Final Project**
+
+**Note: This notebook takes a few minutes to fully initialize. Some cells have been disabled by default and some values have been lowered to ease this process.**
+
 ## The Slime Mold
 ### Background
 Slime Molds are a group of **Amoebozoa** (protists) classified under the infraphylum **Mycetozoa**, although the term has been used less strictly in the past. Within this group, there are three classes: **Myxogastria, Dictyosteliida, and Protosteloids**. (This classification is still disputed and likely to change.)
 
-Slime molds are noted because of their special characteristics. Slime molds from the Protosteloids group are amoebae capable of making fruiting bodies and spores. Species from the group Dicotyosteliida are referred to as **cellular** slime molds. When food is available they feed and divide as normal unicellular amoebae. However, when food becomes limited these individuals aggregate to form a **pseudoplasmodium** or **grex**. This multicellular complex can then move like a slug with a greatly increases capacity to migrate. When conditions are suitable this grex differentiates further into a **sorocarp** or fruiting body used to spread spores. This unique life cycle (shown in the figure) challenges the concepts of unicellularity, multicellularity, and what makes up an individual.
+Slime molds are noted because of their special characteristics. Slime molds from the Protosteloids group are amoebae capable of making fruiting bodies and spores. Species from the group Dicotyosteliida are referred to as **cellular** slime molds. When food is available they feed and divide as normal unicellular amoebae. However, when food becomes limited these individuals aggregate to form a **pseudoplasmodium** or **grex**. This multicellular complex can then move like a slug with a greatly increased capacity to migrate. When conditions are suitable this grex differentiates further into a **sorocarp** or fruiting body used to spread spores. This unique life cycle (shown in the figure) challenges the concepts of unicellularity, multicellularity, and what makes up an individual.
 
 
 ![Dictyostelium Life Cycle](https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Dicty_Life_Cycle_H01.svg/1024px-Dicty_Life_Cycle_H01.svg.png)
@@ -35,40 +41,60 @@ Lastly, the species in the group of Myxogastria are known as **acellular** slime
 ![slime](https://upload.wikimedia.org/wikipedia/commons/6/6d/Physarum_polycephalum_plasmodium.jpg)
 
 ### Problem Solving
-**Physarum polycephalum**  has complex behavior and seems to be able to solve complex problems despite being only a single cell and lacking any kind of neurons let alone a brain. 
+**Physarum polycephalum**  has complex behavior and seems to be able to solve complex problems despite being only a single cell and lacking any kind of neurons let alone a brain. This behavior has been studied thoroughly and has been used to solve multiple real-world problems. A well-known example is the use of P. polycephalum to plan an optimal rail network for Tokyo. 
+![Tokyo1](https://i.natgeofe.com/n/2ae10c00-c10d-40d4-bfd9-57e1c5f2d12d/Slime_mould-Tokyo.jpg?w=795&h=602.5)
+![Tokyo2](https://i.natgeofe.com/n/845a27dc-d800-4998-b0a5-4ff406a5611b/Mould_Tokyo.jpg?w=795&h=473.75)
+(**Reference:** Tero et al. 2010. Rules for Biologically Inspired Adaptive Network Design. Science 10.1126/science.1177894)
 
-VOORBEELDEN VAN PROBLEMEN OPGELOST DOOR SLIME MOLD
+This complex behavior seems to be mostly possible because of the oscillating behavior of the slime mold's plasma membrane. The organism has rhythmic contractions that are synchronized over the entire organism. This causes streaming of the protoplasm which seems to be the main form of signal transduction. Complex modifications to the oscillating pattern at the periphery when interacting with the environment (for instance food or a harmful chemical) seem to direct the behavior. This system is especially able to deal with multiple food sources and will allocate resources according to food quality. Furthermore, the organism has a form of memory and is able to learn and anticipate periodic events.
 
-VOORBEELD HET PULSEREND GEDRAG
+![slime2](https://biohaviour.com/wp-content/uploads/2020/11/SlimeMold.gif)
 
+**Further reading and sources:** 
+
+**-**Saigusa et al. 2008. **Amoebae Anticipate Periodic Events.** Phys. Rev. Lett.
+10.1103/PhysRevLett.100.018101 
+
+**-**Beekman et al. 2015. **Brainless but Multi-Headed: Decision Making by the Acellular Slime Mould Physarum polycephalum.** Journal of Molecular Biology. 10.1016/j.jmb.2015.07.007 
+
+**-**Shirakawa et al. 2011. **An associative learning experiment using the plasmodium of Physarum polycephalum.** Nano Communication Networks. 10.1016/j.nancom.2011.05.002 
+
+**-**Kobayashi et al. 2006. **Mathematical Model for Rhythmic Protoplasmic Movement in the True Slime Mold.** J. Math. Biol. 10.1007/s00285-006-0007-0 
+
+**-**Tero et al. 2005. **A coupled-oscillator model with a conservation law for the rhythmic amoeboid movements of plasmodial slime molds.** Physica D: Nonlinear Phenomena. 10.1016/j.physd.2005.01.010 
+
+**-**Takagi et al. 2008. **Emergence and transitions of dynamic patterns of thickness oscillation of the plasmodium of the true slime mold Physarum polycephalum.** Physica D: Nonlinear Phenomena. 10.1016/j.physd.2007.09.012 
+
+"""
+
+# ╔═╡ facf73a4-255a-4bf3-baa0-ef20f692e0bd
+md"""
 ## Slime Mold Algorithm
+In this notebook, we will explore the concept of a smile mold (or mould) algorithm (**SMA**). Using **Physarum polycephalum** itself to solve problems has already proven useful. The SMA attempts to incorporate some of the defining characteristics of P. polycephalum, in the hope of harnassing the organism's problem-solving prowess to solve a wider field of problems. 
+
 ### Algorithms Inspired By Biology
+As discussed in the course material closed-form solutions, gradient descent algorithms, deterministic algorithms, etc are very useful and efficient in solving a certain set of problems. These are mostly linear problems with a known solution space. However, when confronted with complex non-linear real-world challenges where the solutions space and gradient information is unknown these algorithms can struggle. Finding a deterministic answer to these problems is often impossible or can take unrealistic amounts of computation. An example is the graph coloring problem from the course. The only way to truly verify which answer is the global optimum is by testing all possible combinations. This quickly becomes unmanageable for complex problems. Consequently, metaheuristic algorithms are often used instead. These algorithms can not guarantee that they find the global optimum, however, they are able to quickly find good solutions. These algorithms often have stochastic elements that provide randomness that can be used to escape local optima and increase the chance of finding the global optimum. Inspiration for such algorithms can often be found in nature. 
 
-UITLEGGEN WANNEER NORMALE ALGORITHME FALEN EN WAAROM DAN NATUUR GEINSPIEERDE DINGEN HANDIG KUNNEN ZIJN!
+Organisms in nature have been finding solutions to complex problems for millions of years without the use of deterministic algorithms and complex mathematics. These solutions in nature can sometimes be used directly as is the case in biomimicry. Well-known examples include the shape of high-speed trains inspired by the king fishers' beak and velcro inspired by the seed dispersion mechanism of plants like Arctium lappa ("grote klis" a common plant in Belgium). 
 
-Closed-form solutions, gradient descent algorithms, deterministic algorithms, etc are very useful and efficient in solving a certain set of problems. These are mostly linear problems with a known solution space. However, when confronted with non-linear real-world challenges where the solutions space and gradient information is unknown these algorithms struggle. Organisms in nature have been solving complex problems for millions of years without the use of complex mathematics, closed-form solutions, or deterministic algorithms. Consequently, many metaheuristic algorithms have been created that are inspired by natural phenomena. Examples include: genetic algorithms, neural networks, evolutionary programming, etc however the focus of this work will be on intelligent swarm-based techniques. These techniques rely on the collective behavior of multiple intelligent entities for problem-solving. Some examples include:
+Similarly, some algorithms are created by mimicking the behavior of natural species. Mostly swarm-based techniques are used where many individuals interact both with their environment and with the other individuals in the swarm. 
+These techniques are often inspired by social insects. 
+Some examples include:\
+	-Particle Swarm Optimization\
+	-Fruit Fly Optimization\
+	-Ant Colony Optimization\
+	-Artificial Bee Colony
 
--Particle Swarm Optimization
+SMA is such an algorithm. Uniquely, as described above, Physarum polycephalum is actually a single cell despite its sometimes impressive size. Despite this, a swarm-based technique is still used to mimic its behavior. This is actually pretty natural as the slime mold does not possess a central brain. Its intelligence arises in a similar way to the swarm intelligence of social insect species. The different "individuals" in the "population" can actually be understood as different parts of the same slime mold. 
 
--Fruit Fly Optimization
-
--Ant Colony Optimization
-
--Artificial Bee Colony
-
-DAT VAN DIE TWEE FASES
-
-+ GEWOON ALGEMEEN VEEL BETER UITLEGGEN....................
-
-
-
-
+(Finally, for completeness, the natural concept of evolution is also used as inspiration for genetic algorithms.)
 """
 
 # ╔═╡ 55d82d37-b380-44a5-a234-504329b58e3f
 md"""
 ### Mathematical Basis
-NOG ZEGGEN OP WELKE PAPER GEBASSEERD ENZO
+**The algorithm discussed in this notebook was developed by Li et al in 2020. (Reference: Li et al. 2020. Slime mould algorithm: A new method for stochastic optimization. Future Generation Computer Systems. 10.1016/j.future.2020.03.055) This algorithm was implemented in Python by the original authors. However, because of the different design philosophies of Python (object-oriented) and Julia, the implementation is quite different.**
+
 
 The main principles of the SMA are shown in the following figure (From the original paper):
 ![SMA](https://upload.wikimedia.org/wikipedia/commons/1/13/Slime_mould_algorithm_logic.png)
@@ -112,9 +138,24 @@ Where S(i) is the fitness of the individual and DF is the best fitness over all 
 
 # ╔═╡ fb5e61c6-aae4-42c1-a088-ce87afe3ea01
 begin
-	plot(-10:0.1:10, [tanh(i) for i in -10:0.1:10], lw = 2, label = "tanh()")
-	plot!(-10:0.1:10, [tanh(abs(i)) for i in -10:0.1:10], lw = 2, line=([:dot],5), 
-	label = "tanh(abs())")
+	# tanh()
+	plot(
+		-10:0.1:10, 
+		[tanh(i) for i in -10:0.1:10], 
+		lw = 2, 
+		label = "tanh()"
+	)
+
+	# tanh(abs())
+	plot!(
+		-10:0.1:10, 
+		[tanh(abs(i)) for i in -10:0.1:10], 
+		lw = 2, 
+		line=([:dot],5), 
+		label = "tanh(abs())",
+		xlabel = "x",
+		ylabel = "y"
+	)
 end
 
 # ╔═╡ f614543b-ccea-401e-a0ad-a74eb9076b40
@@ -132,16 +173,11 @@ begin
 	s_slider = @bind d_s Slider(-100:100, default = 2, show_value=true)
 	
 	md"""
-	z: $(z_slider)
-	
-	Lower Bound: $(lb_slider)
-	
-	Upper Bound: $(ub_slider)
-	
-	DF: $(s_slider)
-	
-	"""
-	
+	z: $(z_slider)\
+	Lower Bound: $(lb_slider)\
+	Upper Bound: $(ub_slider)\
+	DF: $(s_slider)\
+	"""	
 end
 
 # ╔═╡ 8b78148a-2dbb-49c1-830c-1d770514a10e
@@ -218,7 +254,7 @@ plot(
 	], 
 	label = ["vb" "vc"], 
 	xlabel = "Generation", 
-	ylabel = "variation", 
+	ylabel = "Variation", 
 	title = "Oscillating functions"
 )
 
@@ -265,7 +301,7 @@ I was confused that the original paper uses the above formulas to calculate the 
 -Second, the formula used in *Approaching food* uses the *W*eight (related to fitness) of the individual in the formula. However, the original location, for which the weight was calculated, is not used. Instead, the fitness of the location is used to modulate how far from the location with the best fitness the new location is.
 
 **Modifications:**
-The first (and main) problem could be solved by changing the formula for *Wrapping Food* to the following:
+The first point could be solved by changing the formula for *Wrapping Food* to the following:
 
 $\overrightarrow{X(t+1)} = \overrightarrow{X(t)} + \overrightarrow{vc} \times \overrightarrow{X(t)}$
 
@@ -285,6 +321,8 @@ rand(UB-LB) + LB & \quad \text{$rand < z$}\\
 ```
 Finally, the last modification is the use of the same behavioral mode for every dimension of an individual instead of evaluating the condition for each dimension separately.
 
+The two versions of this algorithm are first visually compared. Later, a simulation study is done to compare the performance and see if these modifications lead to better results. 
+
 
 
 """
@@ -299,28 +337,136 @@ The implementation of the SMA is provided in a hidden cell below. (Expand to vie
 # ╔═╡ 2cb438ee-ae5e-4421-bf5c-369154aaef81
 md"""
 ### Results
+First, we will look at the behavior of the algorithm in a one-dimensional setting. Working in one dimension makes it easier to visualize the behavior and reduces the computation need, however, the algorithm itself does not have a limit for the dimensions. Later we will also see a two-dimensional example.
+
+The following fitness functions were used to test the behavior.
+
+**Ackley Function:**
+
+$$f(x_0 \cdots x_n) = -20 exp(-0.2 \sqrt{\frac{1}{n} \sum_{i=1}^n x_i^2}) - exp(\frac{1}{n} \sum_{i=1}^n cos(2\pi x_i)) + 20 + e$$
+
+With n the amount of dimensions. This function was only used for the 1D setting.
+
+**$f_8$:**
+
+$$f_8(x_0 \cdots x_n) = \sum_{i=1}^n ( −x_i \times sin(\sqrt{| x_i |}))$$
+
+With n the mount of dimensions. This function was used for both the 1D and 2D settings. This function is called $f_8$ according to the name used in the original paper. This function was selected because it has many local minima and because the global minimum is not located at the origin. This latter characteristic is usefull to show the problem with the original implementation. 
+
+Note that these two fitness functions are symmetric in the dimensions. This is not a requirement and different dimensions can be evaluated using different functions as long as the end procuct of the method is a single fitness value. 
 #### 1D Ackley Function
+
+"""
+
+# ╔═╡ 0f532a5b-741e-4c7c-8742-6108859ebd58
+md"""
+**NOTE: The figures are generated based on a random run of the algorithm. A new solution can be generated by re-running cells like the one below! The results will be slightly different. Running the algorithm multiple times will show the true range of possible behavior.**
 """
 
 # ╔═╡ daf5a973-e73e-4a2b-8c6a-15a60f461a07
 md"""
-#### More Complex 1D Fitness Function
-"""
-
-# ╔═╡ 787210f9-0ead-481d-a1ba-cc91cc7347cc
-md"""
-##### My version
-
+#### 1D F8 - with the modified algorithm
 """
 
 # ╔═╡ ab416867-38df-466f-a7bf-e36d74070e32
 md"""
-##### Original Implementation
+#### 1D F8 - with the original implementation
 """
 
 # ╔═╡ af816df6-6212-44bf-9301-a3dc4e7bf764
 md"""
-The problem with the original algorithm can be seen very clearly in the bottom two figures for the later generations. A population near 400 is formed where the true optimum lies, however an additional population around 0 can also be seen.
+The problem with the original algorithm becomes very clear when you compare these results with the results of the modified algorithm. Both manage to find the true optimum but for the original implementation, there is an additional population around 0 for later generations. This means that the performance of the algorithm is dependent on the exact fitness function. Simply translating the function along one of the dimensions will cause a different fitness at the origin and change the behavior of the original implementation. It is important to note that it is not necessarily a problem that not all individuals end up in the same local (or global) optimum, only the lowest fitness value for the entire population dictates the performance. We will later look at a simulation study to investigate global performance.
+
+"""
+
+# ╔═╡ d0170f42-ce09-41c6-a7e4-86fbca1749ab
+md"""
+#### 2D F8 - With the modified algorithm
+"""
+
+# ╔═╡ 306f5d53-df88-4af3-bbec-25c947c0cb9f
+md"""
+Despite the oscillating and stochastic nature of the algorithm, it does sometimes get stuck in local optima. It is advised to look at different runs (by re-running the cell below) to see the full range of behavior. Changing the number of iterations and the population size help avoid this behavior.
+
+**Note: While the algorithm is very fast, creating the figures takes around 3 minutes on my machine.**
+"""
+
+# ╔═╡ ea6fb2f4-6455-44af-a574-3768bad151a9
+md"""
+**The following figures take around 2 minutes to generate each so one has been disable by default to save time.**
+"""
+
+# ╔═╡ bad4cc28-ad6a-4d1e-9b72-642f394f2374
+md"""
+#### Comparing performance
+In addition to the original implementation and the modified algorithm, a third algorithm was also included in this comparison. This version indicated as "Modified_2" only includes the change to the *Wrapping Food* function without the other modifications.
+
+**Note: Running these simulations is time-consuming so the default number of iterations is kept very low. This makes loading the notebook easier, however, the results are not representative. Please increase the number of iterations (to at least 1000) for accurate results.**
+
+"""
+
+# ╔═╡ c2e2ec60-4433-43b9-b08e-ecb577900bc4
+begin
+	#@bind SIM1_max_iter NumberField(25:10000, default=25)
+	SIM1_max_iter_button = @bind SIM1_max_iter_run Button("rerun")
+	
+	md"""
+	##### Simulation 1
+	
+	**Design Space:** 2D \
+	**Range:** -500, 500 \
+	**Fitness Function:** F8 \
+	**Population:** 50 \
+	**Generations:** 50 \
+	**Iterations:** $(@bind SIM1_max_iter NumberField(25:10000, default=25)) $(SIM1_max_iter_button) (Only use whole numbers)
+	"""
+end
+
+# ╔═╡ 6583d269-9eab-4a0c-b81e-a25d18b3a5c8
+SIM1_max_iter[1]
+
+# ╔═╡ 6fb1c386-ef44-458e-b3f5-8929309758eb
+begin
+	SIM2_max_iter_button = @bind SIM2_max_iter_run Button("rerun")
+	
+	md"""
+	##### Simulation 2
+	
+	**Design Space:** 15D \
+	**Range:** 100, 10000 \
+	**Fitness Function:** F8 \
+	**Population:** 50 \
+	**Generations:** 50 \
+	**Iterations:** $(@bind SIM2_max_iter NumberField(25:10000, default=25)) $(SIM2_max_iter_button) (Only use whole numbers)
+	"""
+end
+
+# ╔═╡ 1b5114d9-37b0-469a-ab16-02574a5803a0
+begin
+	SIM3_max_iter_button = @bind SIM3_max_iter_run Button("rerun")
+	
+	md"""
+	##### Simulation 3
+	
+	**Design Space:** 5D \
+	**Range:** 100, 1000 \
+	**Fitness Function:** F8 \
+	**Population:** 50 \
+	**Generations:** 500 \
+	**Iterations:** $(@bind SIM3_max_iter NumberField(25:10000, default=25)) $(SIM3_max_iter_button) (Only use whole numbers)
+	"""
+end
+
+# ╔═╡ bfef39eb-e71f-4342-b0b8-6357d00f96c6
+md"""
+To further investigate the effect of maxt and the population size, the median fitness was generated for 25 algorithm runs for a number of different maxt and population sizes. **These cells are disabled by default because of the long run time.**
+
+"""
+
+# ╔═╡ 67ded75a-be8a-4989-976b-d0d9e6b1a3e1
+md"""
+##### Conclusion:
+Despite the strange behavior of the original algorithm, it does perform better than the modified version especially when using a large number of generations. The population size seems to have less of an impact. Likely the less erratic behavior of the modified version makes it more likely to get stuck in a local minimum. This is supported by the fact that the performance of the version of the algorithm where only the *Wrapping Food* behavior is modified does not seem to be impacted in a similar way. When fitness is very high (local optimum) the modified version impacts the movement for all behavioral modes. Consequently, the *Searching Food* mode is not allowing a full exploration of the design space. When the amount of generations increases the chance for the original algorithm to escape the local minimum because of this mechanism increases as well. For the modified version, on the other hand, this mechanism is suppressed. It would be interesting to further test the modified version with different modulation of the movement vector. (for instance a different function or excluding *Searching Food* mode from the modulation) It would also be interesting to create a version of the modified algorithm where the behavior decision is made for each dimension separate (as is the case for the other two versions) as this might have an impact as well.
 
 """
 
@@ -328,197 +474,6 @@ The problem with the original algorithm can be seen very clearly in the bottom t
 md"""
 ## Appendix
 """
-
-# ╔═╡ 16a13599-bdef-4d23-82e9-905fff10dccc
-md"""
-### One Dimentional Implementation:
-#### Datastructures
-"""
-
-# ╔═╡ d56b8eda-3629-4ed3-9960-0ff1dbf713de
-begin
-	# This structure holds the information of a single generation
-	struct IterationRecord
-		iteration::Int
-		slimes::Vector{Float64}
-		fitness::Vector{Float64}
-		DF::Float64
-		DF_value::Float64
-		bF::Float64
-		wF::Float64
-		Xb::Float64
-	end
-
-	# This structure hold the information of the full algorithm run
-	struct SolutionRecord
-		iteration::Vector{Float64}
-		slimes::Vector{Vector{Float64}}
-		fitness::Vector{Vector{Float64}}
-		mean_fitness::Vector{Float64}
-		DF::Vector{Float64}
-		DF_value::Vector{Float64}
-		bF::Vector{Float64}
-		wF::Vector{Float64}
-		Xb::Vector{Float64}
-	end
-
-end
-
-# ╔═╡ a2da2e63-26af-4e86-b968-674727484e47
-md"""
-#### One Dimentional SMA
-"""
-
-# ╔═╡ f7c5026a-0bd0-428b-a339-dfff7865997d
-md"""
-#### Help Functions
-"""
-
-# ╔═╡ 280122cc-54ec-4235-821d-815f7ab4f1cc
-function ProcessRecordVector(RecordVector)
-	iterations = [i for i in 1:length(RecordVector)]
-	DF_vector = []
-	DF_value_vector = []
-	slimes_vector = []
-	fitness_vector = []
-	mean_fitness_vector = []
-	bF_vector = []
-	wF_vector = []
-	Xb_vector = []
-	for i in 1:length(RecordVector)
-		push!(DF_vector, RecordVector[i].DF)
-		push!(DF_value_vector, RecordVector[i].DF_value)
-		append!(slimes_vector, [RecordVector[i].slimes])
-		append!(fitness_vector, [RecordVector[i].fitness])
-		push!(mean_fitness_vector, mean(RecordVector[i].fitness))
-		push!(bF_vector, RecordVector[i].bF)
-		push!(wF_vector, RecordVector[i].wF)
-		push!(Xb_vector, RecordVector[i].Xb)
-	end
-    return SolutionRecord(iterations, slimes_vector, fitness_vector, mean_fitness_vector, DF_vector, DF_value_vector, bF_vector, wF_vector, Xb_vector)
-end
-
-# ╔═╡ 5e62b60e-6c00-11ec-34fa-4b57e5168947
-# fitness weight of slime mold
-function W(fitness, bF, wF, condition, iteration, max_iteration)
-	if condition
-		output = 1 + rand(Uniform(0, 1)) * log10(((bF - fitness)/(bF-wF + 10e-100)) + 1)
-	else
-		output = 1 - rand(Uniform(0, 1)) * log10(((bF - fitness)/(bF-wF + 10e-100)) + 1)
-	end
-	return output
-end
-
-# ╔═╡ 96233615-fe85-40cf-8a76-303cc67338c4
-function SMA_1D(fitness_function, lb, ub, maxt, N; z=0.03)
-	slime_list = [rand(lb[1]:ub[1]) for k in 1:N] # initialize slimes with random positions
-	DF::Float64 = 10e100
-	DF_value::Float64 = 1
-	iteration_history = Vector{IterationRecord}(undef, maxt) # initialize result vector
-	for current_iteration in 1:maxt
-		# calculate fitness
-		fitness_list = [fitness_function(s) for s in slime_list]
-
-		# update bestFitness Xb, worstFitness and DF
-		bF, Xb = (findmin(fitness_list)[1], slime_list[findmin(fitness_list)[2]])
-		wF = maximum(fitness_list)
-		if bF < DF
-			DF = bF
-			DF_value = Xb
-		end
-		
-		# Calculate the weights
-		boundary = N/2
-		weight_list = []
-		for (rank,s) in enumerate(sortperm(fitness_list))
-			push!(weight_list, W(fitness_list[s], bF, wF, (rank < boundary), current_iteration, maxt))
-		end
-
-		# update p, vb and vc
-		a = max(atanh(-(current_iteration / maxt) + 1), 10e-100)
-		b = max((1 - (current_iteration)/maxt), 10e-100)
-		vb = Uniform(-a,a)
-		vc = Uniform(-b,b)
-
-		slime_list_temp = []
-		for s in 1:N
-			if rand(Uniform(0, 1)) < z
-				push!(slime_list_temp, rand(Uniform(lb[1],ub[1])))
-			else
-				if rand(Uniform(0, 1)) < tanh(fitness_list[s] - DF)
-					Xa, Xb = sample(slime_list, 2, replace = false)
-					push!(slime_list_temp, clamp(Xb + rand(vb)*(weight_list[s]*Xa - Xb), lb[1], ub[1]))
-				else
-					push!(slime_list_temp, clamp(slime_list[s] * rand(vc), lb[1], ub[1]))
-				end
-			end
-		end
-		iteration_history[current_iteration] = IterationRecord(current_iteration, slime_list, fitness_list, DF, DF_value, bF, wF, Xb)
-		slime_list = deepcopy(slime_list_temp)
-	end
-	
-	return iteration_history
-end
-
-# ╔═╡ 0762d6d0-31c1-4ae3-b76f-0f6aeb5ed27b
-function fitness(solution)
-	a, b, c = 20, 0.2, 2 * pi
-    d = length(solution)
-    sum_1 = -a * exp(-b * sqrt(sum(solution^2) / d))
-    sum_2 = exp(sum(cos(c * solution)) / d)
-    return sum_1 - sum_2 + a + exp(1)
-end
-
-# ╔═╡ a965ba28-6a8a-48a3-a298-db151b7af80b
-function fitness_2(solution)
-    return -solution*sin(sqrt(abs(solution)))
-end
-
-# ╔═╡ 0ab5423b-3e36-4226-a690-e129aaa0f8c8
-begin
-	local d_lb
-	local d_ub
-	local d_s
-	d_lb = -200
-	d_ub = 150
-	d_s = fitness_2(0)
-	p_ex2_1 = plot(d_lb:((d_ub-d_lb)/1000):d_ub, 
-		[1 for i in d_lb:((d_ub-d_lb)/1000):d_ub], 
-		ylims= (0,1),
-		xlims= (d_lb,d_ub),
-		fill = (0, :green), 
-		label = "Finding Food")
-		
-	p_ex2_1 = plot!(d_lb:((d_ub-d_lb)/1000):d_ub, 
-		[(1 - d_z/1000) for i in d_lb:((d_ub-d_lb)/1000):d_ub], 
-		ylims= (0,1),
-		xlims= (d_lb,d_ub),
-		fill = (0, :lightblue), 
-		label = "Wrapping Food")
-		
-	p_ex2_1 = plot!(d_lb:((d_ub-d_lb)/1000):d_ub, 
-		[tanh(abs(fitness_2(i)-d_s))*(1-(d_z/1000)) for i in d_lb:((d_ub-d_lb)/1000):d_ub], 
-		ylims= (0,1),
-		xlims= (d_lb,d_ub),
-		fill = (0, :orange), 
-		label = "Approaching Food",
-		title = "Chance Of Behavior",
-		xlabel = "Location", 
-		ylabel = "Chance")
-
-
-	p_ex2_2 = plot(
-	d_lb:d_ub, 
-	[abs(fitness_2(s)) for s in d_lb:d_ub], 
-	title = "Fitness Function",
-	xlims= (d_lb,d_ub),
-	xlabel = "Location", 
-	ylabel = "Fitness")
-
-
-	plot(p_ex2_2, p_ex2_1,
-		layout = (2, 1))
-end
 
 # ╔═╡ f6e1875e-8780-457b-b7bc-beff24c5ceb9
 md"""
@@ -556,79 +511,82 @@ begin
 
 end
 
-# ╔═╡ 4862cfb9-364b-4d34-9a30-38ce48ce069d
-function SMA(fitness_function, lb, ub, maxt, N; z=0.03)
-	slime_array = [rand(lb[d]:ub[d]) for k = 1:N, d = 1:length(lb)] # initialize slimes with random positions
-	slime_list = [slime_array[i,:] for i in 1:N] # put in list
-	DF::Float64 = 10e100
-	DF_value = [float(1) for i in 1:length(lb)]
-	iteration_history = Vector{IterationRecordMulti}(undef, maxt) # initialize result vector
-	for current_iteration in 1:maxt
-		# calculate fitness
-		fitness_list = [fitness_function(slime_list[s]) for s in 1:N]
-
-		# update bestFitness Xb, worstFitness and DF
-		bF, Xb = (findmin(fitness_list)[1], slime_list[findmin(fitness_list)[2]])
-		wF = maximum(fitness_list)
-		if bF < DF
-			DF = bF
-			DF_value = Xb
-		end
-		
-		# Calculate the weights
-		boundary = N/2
-		weight_list = []
-		for (rank,s) in enumerate(sortperm(fitness_list))
-			push!(weight_list, W(fitness_list[s], bF, wF, (rank < boundary), current_iteration, maxt))
-		end
-
-		# update p, vb and vc
-		a = max(atanh(-(current_iteration / maxt) + 1), 10e-100)
-		b = max((1 - (current_iteration)/maxt), 10e-100)
-		vb = Uniform(-a,a)
-		vc = Uniform(-b,b)
-
-
-		slime_list_temp = []
-		for s in 1:N
-			if rand(Uniform(0, 1)) < z
-				push!(slime_list_temp, [rand(Uniform(lb[i],ub[i])) for i in 1:length(lb)])
-			else
-				p = tanh(fitness_list[s] - DF)
-				temp_individual = []
-				if rand(Uniform(0, 1)) < p
-					XA_ID, XB_ID = sample(1:N, 2, replace = false)
-					temp_individual = clamp(Xb .+ rand(vb, length(ub)).*(weight_list[s] .* slime_list[XA_ID] .- slime_list[XB_ID]), lb, ub)
-
-				else
-					temp_individual = clamp(slime_list[s] .+ slime_list[s] .* rand(vc, length(ub)), lb, ub)
-
-				end
-				#(slime_list[s].+tanh(fitness_list[s] - bF).*rand(Uniform(0, 1)).*(temp_individual .- slime_list[s]))
-				push!(slime_list_temp, slime_list[s].+tanh(fitness_list[s] - bF).*(temp_individual .- slime_list[s]))
-			end
-		end
-		iteration_history[current_iteration] = IterationRecordMulti(current_iteration, slime_list, fitness_list, DF, DF_value, bF, wF, Xb)
-		#slime_list = slime_list .+ 0.5(slime_list .- slime_list_temp)
-		slime_list = deepcopy(slime_list_temp)
-	end
-	
-	return iteration_history
-end
-
 # ╔═╡ f13d0c05-44bc-41aa-9476-3f8cd74200f1
 md"""
 #### Multi Dimentional SMA
 
 """
 
-# ╔═╡ 5856285d-12a2-40f5-b321-034174ef7e6d
-function SMA_Appendix(fitness_function, lb, ub, maxt, N; z=0.03)
+# ╔═╡ 1a2cc51d-b97f-4192-9284-f94eff0853ba
+md"""
+The function below is the original implementation according to the paper. This is not the same as the final version used above!
+
+"""
+
+# ╔═╡ 3f9ee27d-f128-4d42-a144-d3f8856de4d3
+md"""
+#### Help Functions
+"""
+
+# ╔═╡ 5e62b60e-6c00-11ec-34fa-4b57e5168947
+"""
+    W(fitness, bF, wF, condition, iteration, max_iteration)
+
+Calculates the weight of the current individual
+
+Inputs:
+
+	- fitness: Fitness of the current individual
+	- bF: best fitness in the generation
+	- wF: worst fitness in the generation
+	- condition: If the individual is in the best or worst halve of the population in terms of fitness
+	- iteration: the current iteration
+	- max_iteration: the maximum amount of iterations
+
+Outputs:
+
+	- output: The weight of the current individual
+
+"""
+function W(fitness, bF, wF, condition, iteration, max_iteration)
+	if condition
+		output = 1 + rand(Uniform(0, 1)) * log10(((bF - fitness)/(bF-wF + 10e-100)) + 1)
+	else
+		output = 1 - rand(Uniform(0, 1)) * log10(((bF - fitness)/(bF-wF + 10e-100)) + 1)
+	end
+	return output
+end
+
+# ╔═╡ 4862cfb9-364b-4d34-9a30-38ce48ce069d
+"""
+    SMA(fitness_function, lb, ub, maxt, N; z=0.03)
+
+The modified Slime Mould Algorithm
+
+Inputs:
+
+	- fitness_function: The fitness function (takes single coordinate as input with no limit on dimentions)
+	- lb: lower bound: vector of lower bounds for each dimention
+	- ub: upper bound: vector of upper bounds for each dimention (should match lb)
+	- maxt: Maximum number of generations
+	- N: Population size
+	- z: Change of searching food behavior (0.03 by default)
+
+Outputs:
+
+	- iteration_history: contains information on iteration, location of individuals, fitness of individuals, best fitness, worst fitness, best overall fitness for each iteration of the algorithm.
+
+"""
+function SMA(fitness_function, lb, ub, maxt, N; z=0.03)
+
+	# Initialize vectors
 	slime_array = [rand(lb[d]:ub[d]) for k = 1:N, d = 1:length(lb)] # initialize slimes with random positions
-	slime_list = [slime_array[i,:] for i in 1:N] # put in list
-	DF::Float64 = 10e100
-	DF_value = [float(1) for i in 1:length(lb)]
+	slime_list = [slime_array[i,:] for i in 1:N] # change to a vector of vectors
+	DF::Float64 = 10e100 # initialize the best fitness
+	DF_value = [float(1) for i in 1:length(lb)] # Initilize DF result vector
 	iteration_history = Vector{IterationRecordMulti}(undef, maxt) # initialize result vector
+
+	# cycle through all the generations
 	for current_iteration in 1:maxt
 		# calculate fitness
 		fitness_list = [fitness_function(slime_list[s]) for s in 1:N]
@@ -645,7 +603,17 @@ function SMA_Appendix(fitness_function, lb, ub, maxt, N; z=0.03)
 		boundary = N/2
 		weight_list = []
 		for (rank,s) in enumerate(sortperm(fitness_list))
-			push!(weight_list, W(fitness_list[s], bF, wF, (rank < boundary), current_iteration, maxt))
+			push!(
+				weight_list, 
+				W(
+					fitness_list[s], 
+					bF, 
+					wF, 
+					(rank < boundary), 
+					current_iteration, 
+					maxt
+				)
+			)
 		end
 
 		# update p, vb and vc
@@ -654,27 +622,161 @@ function SMA_Appendix(fitness_function, lb, ub, maxt, N; z=0.03)
 		vb = Uniform(-a,a)
 		vc = Uniform(-b,b)
 
+
 		slime_list_temp = []
 		for s in 1:N
 			if rand(Uniform(0, 1)) < z
-				push!(slime_list_temp, [rand(Uniform(lb[i],ub[i])) for i in 1:length(lb)])
+				# Searching Food behavior
+				push!(
+					slime_list_temp, 
+					[rand(Uniform(lb[i],ub[i])) for i in 1:length(lb)]
+				)
 			else
-				if rand(Uniform(0, 1)) < tanh(fitness_list[s] - DF)
-					Xa, Xb = sample(slime_list, 2, replace = false)
-					push!(slime_list_temp, clamp.(Xb .+ rand(vb,length(lb)).*(weight_list[s] .* Xa .- Xb), lb, ub))
+				p = tanh(fitness_list[s] - DF)
+				temp_individual = []
+				if rand(Uniform(0, 1)) < p
+					# Approaching Food behavior
+					XA_ID, XB_ID = sample(1:N, 2, replace = false)
+					temp_individual = clamp.(Xb .+ rand(vb, length(ub)).*(weight_list[s] .* slime_list[XA_ID] .- slime_list[XB_ID]), lb, ub)
 				else
-					push!(slime_list_temp, clamp.(slime_list[s] .* rand(vc,length(lb)), lb, ub))
+					# Wrapping Food behavior
+					temp_individual = clamp.(slime_list[s] .+ slime_list[s] .* rand(vc, length(ub)), lb, ub)
 				end
+				push!(slime_list_temp, slime_list[s].+tanh(fitness_list[s] - bF).*(temp_individual .- slime_list[s]))
 			end
 		end
-		iteration_history[current_iteration] = IterationRecordMulti(current_iteration, slime_list, fitness_list, DF, DF_value, bF, wF, Xb)
+		iteration_history[current_iteration] = IterationRecordMulti(
+			current_iteration, 
+			slime_list, 
+			fitness_list, 
+			DF, DF_value, 
+			bF, wF, Xb
+		)
 		slime_list = deepcopy(slime_list_temp)
 	end
-	
+	return iteration_history
+end
+
+# ╔═╡ af296256-6662-49e9-b24d-c8550ce39c8d
+"""
+    SMA_APPENDIX_1(fitness_function, lb, ub, maxt, N; z=0.03)
+
+A copy of the modified Slime Mould Algorithm
+
+Inputs:
+
+	- fitness_function: The fitness function (takes single coordinate as input with no limit on dimentions)
+	- lb: lower bound: vector of lower bounds for each dimention
+	- ub: upper bound: vector of upper bounds for each dimention (should match lb)
+	- maxt: Maximum number of generations
+	- N: Population size
+	- z: Change of searching food behavior (0.03 by default)
+
+Outputs:
+
+	- iteration_history: contains information on iteration, location of individuals, fitness of individuals, best fitness, worst fitness, best overall fitness for each iteration of the algorithm.
+
+"""
+function SMA_APPENDIX_1(fitness_function, lb, ub, maxt, N; z=0.03)
+
+	# Initialize vectors
+	slime_array = [rand(lb[d]:ub[d]) for k = 1:N, d = 1:length(lb)] # initialize slimes with random positions
+	slime_list = [slime_array[i,:] for i in 1:N] # change to a vector of vectors
+	DF::Float64 = 10e100 # initialize the best fitness
+	DF_value = [float(1) for i in 1:length(lb)] # Initilize DF result vector
+	iteration_history = Vector{IterationRecordMulti}(undef, maxt) # initialize result vector
+
+	# cycle through all the generations
+	for current_iteration in 1:maxt
+		# calculate fitness
+		fitness_list = [fitness_function(slime_list[s]) for s in 1:N]
+
+		# update bestFitness Xb, worstFitness and DF
+		bF, Xb = (findmin(fitness_list)[1], slime_list[findmin(fitness_list)[2]])
+		wF = maximum(fitness_list)
+		if bF < DF
+			DF = bF
+			DF_value = Xb
+		end
+		
+		# Calculate the weights
+		boundary = N/2
+		weight_list = []
+		for (rank,s) in enumerate(sortperm(fitness_list))
+			push!(
+				weight_list, 
+				W(
+					fitness_list[s], 
+					bF, 
+					wF, 
+					(rank < boundary), 
+					current_iteration, 
+					maxt
+				)
+			)
+		end
+
+		# update p, vb and vc
+		a = max(atanh(-(current_iteration / maxt) + 1), 10e-100)
+		b = max((1 - (current_iteration)/maxt), 10e-100)
+		vb = Uniform(-a,a)
+		vc = Uniform(-b,b)
+
+
+		slime_list_temp = []
+		for s in 1:N
+			if rand(Uniform(0, 1)) < z
+				# Searching Food behavior
+				push!(
+					slime_list_temp, 
+					[rand(Uniform(lb[i],ub[i])) for i in 1:length(lb)]
+				)
+			else
+				p = tanh(fitness_list[s] - DF)
+				temp_individual = []
+				if rand(Uniform(0, 1)) < p
+					# Approaching Food behavior
+					XA_ID, XB_ID = sample(1:N, 2, replace = false)
+					temp_individual = clamp.(Xb .+ rand(vb, length(ub)).*(weight_list[s] .* slime_list[XA_ID] .- slime_list[XB_ID]), lb, ub)
+				else
+					# Wrapping Food behavior
+					temp_individual = clamp.(slime_list[s] .+ slime_list[s] .* rand(vc, length(ub)), lb, ub)
+				end
+				push!(slime_list_temp, slime_list[s].+tanh(fitness_list[s] - bF).*(temp_individual .- slime_list[s]))
+			end
+		end
+		iteration_history[current_iteration] = IterationRecordMulti(
+			current_iteration, 
+			slime_list, 
+			fitness_list, 
+			DF, DF_value, 
+			bF, wF, Xb
+		)
+		slime_list = deepcopy(slime_list_temp)
+	end
 	return iteration_history
 end
 
 # ╔═╡ 0cebe58b-f1b2-4220-b15c-0f844cf22057
+"""
+    SMA_APPENDIX_2(fitness_function, lb, ub, maxt, N; z=0.03)
+
+The original Slime Mould Algorithm
+
+Inputs:
+
+	- fitness_function: The fitness function (takes single coordinate as input with no limit on dimentions)
+	- lb: lower bound: vector of lower bounds for each dimention
+	- ub: upper bound: vector of upper bounds for each dimention (should match lb)
+	- maxt: Maximum number of generations
+	- N: Population size
+	- z: Change of searching food behavior (0.03 by default)
+
+Outputs:
+
+	- iteration_history: contains information on iteration, location of individuals, fitness of individuals, best fitness, worst fitness, best overall fitness for each iteration of the algorithm.
+
+"""
 function SMA_APPENDIX_2(fitness_function, lb, ub, maxt, N; z=0.03)
 	slime_array = [rand(lb[d]:ub[d]) for k = 1:N, d = 1:length(lb)] # initialize slimes with random positions
 	slime_list = [slime_array[i,:] for i in 1:N] # put in list
@@ -709,16 +811,19 @@ function SMA_APPENDIX_2(fitness_function, lb, ub, maxt, N; z=0.03)
 		slime_list_temp = []
 		for s in 1:N
 			if rand(Uniform(0, 1)) < z
+				# Searching Food
 				push!(slime_list_temp, [rand(Uniform(lb[i],ub[i])) for i in 1:length(lb)])
 			else
 				p = tanh(fitness_list[s] - DF)
 				temp_individual = []
 				for dim in 1:length(ub)
 					if rand(Uniform(0, 1)) < p
+						# Approaching Food
 						XA_ID, XB_ID = sample(1:N, 2, replace = false)
 						push!(temp_individual, clamp(Xb[dim] + rand(vb)*(weight_list[s] * slime_list[XA_ID][dim] - slime_list[XB_ID][dim]), lb[dim], ub[dim]))
 
 					else
+						# Wrapping Food
 						push!(temp_individual, clamp(slime_list[s][dim] * rand(vc), lb[dim], ub[dim]))
 
 					end
@@ -733,12 +838,102 @@ function SMA_APPENDIX_2(fitness_function, lb, ub, maxt, N; z=0.03)
 	return iteration_history
 end
 
-# ╔═╡ 3f9ee27d-f128-4d42-a144-d3f8856de4d3
-md"""
-#### Help Functions
+# ╔═╡ 0241a8e7-2810-488e-bbc2-38c3da9a431e
 """
+    SMA_APPENDIX_3(fitness_function, lb, ub, maxt, N; z=0.03)
+
+A modified version of the SMA where only the Wrapping Food formula was changed
+
+Inputs:
+
+	- fitness_function: The fitness function (takes single coordinate as input with no limit on dimentions)
+	- lb: lower bound: vector of lower bounds for each dimention
+	- ub: upper bound: vector of upper bounds for each dimention (should match lb)
+	- maxt: Maximum number of generations
+	- N: Population size
+	- z: Change of searching food behavior (0.03 by default)
+
+Outputs:
+
+	- iteration_history: contains information on iteration, location of individuals, fitness of individuals, best fitness, worst fitness, best overall fitness for each iteration of the algorithm.
+
+"""
+function SMA_APPENDIX_3(fitness_function, lb, ub, maxt, N; z=0.03)
+	slime_array = [rand(lb[d]:ub[d]) for k = 1:N, d = 1:length(lb)] # initialize slimes with random positions
+	slime_list = [slime_array[i,:] for i in 1:N] # put in list
+	DF::Float64 = 10e100
+	DF_value = [float(1) for i in 1:length(lb)]
+	iteration_history = Vector{IterationRecordMulti}(undef, maxt) # initialize result vector
+	for current_iteration in 1:maxt
+		# calculate fitness
+		fitness_list = [fitness_function(slime_list[s]) for s in 1:N]
+
+		# update bestFitness Xb, worstFitness and DF
+		bF, Xb = (findmin(fitness_list)[1], slime_list[findmin(fitness_list)[2]])
+		wF = maximum(fitness_list)
+		if bF < DF
+			DF = bF
+			DF_value = Xb
+		end
+		
+		# Calculate the weights
+		boundary = N/2
+		weight_list = []
+		for (rank,s) in enumerate(sortperm(fitness_list))
+			push!(weight_list, W(fitness_list[s], bF, wF, (rank < boundary), current_iteration, maxt))
+		end
+
+		# update p, vb and vc
+		a = max(atanh(-(current_iteration / maxt) + 1), 10e-100)
+		b = max((1 - (current_iteration)/maxt), 10e-100)
+		vb = Uniform(-a,a)
+		vc = Uniform(-b,b)
+
+		slime_list_temp = []
+		for s in 1:N
+			if rand(Uniform(0, 1)) < z
+				# Searching Food
+				push!(slime_list_temp, [rand(Uniform(lb[i],ub[i])) for i in 1:length(lb)])
+			else
+				p = tanh(fitness_list[s] - DF)
+				temp_individual = []
+				for dim in 1:length(ub)
+					if rand(Uniform(0, 1)) < p
+						# Approaching Food
+						XA_ID, XB_ID = sample(1:N, 2, replace = false)
+						push!(temp_individual, clamp(Xb[dim] + rand(vb)*(weight_list[s] * slime_list[XA_ID][dim] - slime_list[XB_ID][dim]), lb[dim], ub[dim]))
+
+					else
+						# MODIFIED Wrapping Food
+						push!(temp_individual, clamp(slime_list[s][dim] * (1+rand(vc)), lb[dim], ub[dim]))
+
+					end
+				end
+				push!(slime_list_temp, temp_individual)
+			end
+		end
+		iteration_history[current_iteration] = IterationRecordMulti(current_iteration, slime_list, fitness_list, DF, DF_value, bF, wF, Xb)
+		slime_list = deepcopy(slime_list_temp)
+	end
+	
+	return iteration_history
+end
 
 # ╔═╡ d1dca62c-788e-4d20-a528-dcb8f39a3d53
+"""
+    ProcessRecordVectorMulti(RecordVector)
+
+Process the results from being a list of structs containing information about each iteration to a struct with information on location, fitness, and generation for the total algorithm run
+
+Inputs:
+
+	- RecordVector: a vector of IterationRecordMulti for each iteration
+
+Outputs:
+
+	- output: SolutionRecordMulti struct with information for the whole algorithm run
+
+"""
 function ProcessRecordVectorMulti(RecordVector)
 	iterations = [i for i in 1:length(RecordVector)]
 	DF_vector = []
@@ -763,6 +958,20 @@ function ProcessRecordVectorMulti(RecordVector)
 end
 
 # ╔═╡ a48e1156-fc46-4b58-b971-9b65b348d64b
+"""
+    fitness_multi(solution)
+
+Multidimentional Ackley fitness function
+
+Inputs:
+
+	- solution: The coordinate for an individual
+
+Outputs:
+
+	- The fitness for these coordinates
+
+"""
 function fitness_multi(solution)
 	a, b, c = 20, 0.2, 2 * pi
     d = length(solution)
@@ -781,7 +990,9 @@ end
 begin
 	gen_slider = @bind d_gen Slider(1:length(Ackley_1D_results.iteration), default = 5, show_value = true)
 	md"""
-	Below is an interactive version of this plot.
+	The figure above shows 4 plots. The **first figure** (top left) shows the evolution of the best fitness and the mean fitness throughout the generations. The lowest fitness quickly reaches its minimum value, however, there are still fluctuations in the mean fitness because of the oscillating character of the algorithm. The **second figure** (top right) shows the location of the population at a specific generation (the x-axis does not have meaning, the points were spread for better visualization). The **third figure** (bottom left) shows the fitness function. In this case the 1D Ackley function. The points on this figure show where the population of a certain generation is located on this fitness function. Finally, the **last figure** (bottom right) shows the locations of the individuals over all generations. This figure shows that initially the individuals are randomly spread out but quickly converge on the optimal position. In later generations, some individuals still deviate. These are likely the few individuals that display *searching food* behavior. This can help the SMA get out of local optima.
+	
+	**Below is an interactive version of this plot.**
 	
 	Generation: $(gen_slider)	
 	"""
@@ -793,7 +1004,7 @@ begin
 	local results
 	local record
 	local p1, p2, p3, p4
-	
+
 	results = Ackley_1D_results
 	record = Ackley_1D_record
 	
@@ -801,13 +1012,14 @@ begin
 		p1 = plot(
 			results.iteration[1:i], 
 			[results.mean_fitness[1:i], results.DF[1:i]],  
-			title ="Fitness Function", 
+			title ="Fitness", 
 			label = ["Mean" "Lowest"], 
 			ylims=(-1, maximum(results.mean_fitness)), 
 			xlims=(0, length(results.iteration)), 
 			lw = 2, 
 			xlabel = "Generation", 
-			ylabel = "Fitness")
+			ylabel = "Fitness"
+		)
 		
 	    p2 = scatter(
 			[rand() for j in 1:length(record[1].slimes)], 
@@ -817,7 +1029,8 @@ begin
 			title ="Locations in Gen: "*string(i), 
 			xticks = false, 
 			ylabel= "Location",
-			legend = false)
+			legend = false
+		)
 
 		p3 = plot(
 			-100:100, 
@@ -826,11 +1039,11 @@ begin
 			xlabel = "Location", 
 			ylabel = "Fitness",
 			ylim = (-1,20),
-			legend = false)
+			legend = false
+		)
 		p3 = scatter!(
 			reduce(vcat,Ackley_1D_record[i].slimes),
-			[fitness_multi(Ackley_1D_record[i].slimes[s]) for s in 1:length(Ackley_1D_record[i].slimes)]
-			
+			[fitness_multi(Ackley_1D_record[i].slimes[s]) for s in 1:length(Ackley_1D_record[i].slimes)]		
 		)
 
 		p4 = scatter(
@@ -840,14 +1053,12 @@ begin
 			markercolor = [(s == i ? :red : :green) for s in results.iteration], 
 			xlabel = "Generation", 
 			ylabel = "Location", 
-			title = "All Locations")
+			title = "All Locations"
+		)
 		p4 = vline!([i], lw = 1, color = [:red])
 
-		plot(p1, p2, p3, p4, 
-			layout = (2, 2)) #"Generation: " * string(i)
-		
+		plot(p1, p2, p3, p4, layout = (2, 2))	
 	end
-	 
 	gif(Ackley_1D, fps = 5)
 end
 
@@ -857,19 +1068,22 @@ begin
 	local record
 	local p1, p2, p3, p4
 	local i
+	
 	i = d_gen
 	results = Ackley_1D_results
 	record = Ackley_1D_record
+	
 		p1 = plot(
 			results.iteration[1:length(results.iteration)], 
 			[results.mean_fitness[1:length(results.iteration)], results.DF[1:length(results.iteration)]],  
-			title ="Fitness Function", 
+			title ="Fitness", 
 			label = ["Mean" "Lowest"], 
 			ylims=(-1, maximum(results.mean_fitness)), 
 			xlims=(0, length(results.iteration)), 
 			lw = 2, 
 			xlabel = "Generation", 
-			ylabel = "Fitness")
+			ylabel = "Fitness"
+		)
 		p1 = vline!([i], lw = 1, color = [:red], label = false)
 		
 	    p2 = scatter(
@@ -880,7 +1094,8 @@ begin
 			title ="Locations in Gen: "*string(i), 
 			xticks = false, 
 			ylabel= "Location",
-			legend = false)
+			legend = false
+		)
 
 		p3 = plot(
 			-100:100, 
@@ -889,7 +1104,8 @@ begin
 			xlabel = "Location", 
 			ylabel = "Fitness",
 			ylim = (-1,21),
-			legend = false)
+			legend = false
+		)
 		p3 = scatter!(
 			reduce(vcat,Ackley_1D_record[i].slimes),
 			[fitness_multi(Ackley_1D_record[i].slimes[s]) for s in 1:length(Ackley_1D_record[i].slimes)]
@@ -903,18 +1119,86 @@ begin
 			markercolor = [(s == i ? :red : :green) for s in results.iteration], 
 			xlabel = "Generation", 
 			ylabel = "Location", 
-			title = "All Locations")
+			title = "All Locations"
+		)
 		p4 = vline!([i], lw = 1, color = [:red])
 
-		plot(p1, p2, p3, p4, 
-			layout = (2, 2)) #"Generation: " * string(i)
-
-
+		plot(p1, p2, p3, p4, layout = (2, 2))
 end
 
 # ╔═╡ e6a3536e-dfc1-494b-9b46-c33e22ed79f0
+"""
+    fitness_2_multi(solution)
+
+Multidimentional f8 function
+
+Inputs:
+
+	- solution: The coordinate for an individual
+
+Outputs:
+
+	- The fitness for these coordinates
+
+"""
 function fitness_2_multi(solution)
     return sum(-solution .* sin.(sqrt.(abs.(solution))))
+end
+
+# ╔═╡ 0ab5423b-3e36-4226-a690-e129aaa0f8c8
+begin
+	local d_lb
+	local d_ub
+	local d_s
+
+	# settings
+	d_lb = -200 # lower bound
+	d_ub = 150 # upper bound
+	d_s = fitness_2_multi([0]) # best fitness
+
+	
+	p_ex2_1 = plot(
+		d_lb:((d_ub-d_lb)/1000):d_ub, 
+		[1 for i in d_lb:((d_ub-d_lb)/1000):d_ub], 
+		ylims= (0,1),
+		xlims= (d_lb,d_ub),
+		fill = (0, :green), 
+		label = "Finding Food"
+	)
+		
+	p_ex2_1 = plot!(
+		d_lb:((d_ub-d_lb)/1000):d_ub, 
+		[(1 - d_z/1000) for i in d_lb:((d_ub-d_lb)/1000):d_ub], 
+		ylims= (0,1),
+		xlims= (d_lb,d_ub),
+		fill = (0, :lightblue), 
+		label = "Wrapping Food"
+	)
+		
+	p_ex2_1 = plot!(
+		d_lb:((d_ub-d_lb)/1000):d_ub, 
+		[tanh(abs(fitness_2_multi([i])-d_s))*(1-(d_z/1000)) for i in d_lb:((d_ub-d_lb)/1000):d_ub], 
+		ylims= (0,1),
+		xlims= (d_lb,d_ub),
+		fill = (0, :orange), 
+		label = "Approaching Food",
+		title = "Chance Of Behavior",
+		xlabel = "Location", 
+		ylabel = "Chance"
+	)
+
+
+	p_ex2_2 = plot(
+	d_lb:d_ub, 
+	[abs(fitness_2_multi([s])) for s in d_lb:d_ub], 
+	title = "Fitness Function",
+	xlims= (d_lb,d_ub),
+	xlabel = "Location", 
+	ylabel = "Fitness"
+	)
+
+
+	plot(p_ex2_2, p_ex2_1, layout = (2, 1))
 end
 
 # ╔═╡ 72b1f589-cae8-4ffb-a4d7-a50aeb1898ce
@@ -927,7 +1211,9 @@ end
 begin
 	gen_slider2 = @bind d_gen2 Slider(1:length(f8_1D_results.iteration), default = 5, show_value = true)
 	md"""
-	Below is an interactive version of this plot.
+	This fitness function is much harder than the Ackly function. There are many local optima where an algorithm might get stuck. 
+	
+	**Below is an interactive version of this plot.**
 	
 	Generation: $(gen_slider2)	
 	"""
@@ -947,13 +1233,14 @@ begin
 		p1 = plot(
 			results.iteration[1:i], 
 			[results.mean_fitness[1:i], results.DF[1:i]],  
-			title ="Fitness Function", 
+			title ="Fitness", 
 			label = ["Mean" "Lowest"], 
 			ylims=(-500, 500), 
 			xlims=(0, length(results.iteration)), 
 			lw = 2, 
 			xlabel = "Generation", 
-			ylabel = "Fitness")
+			ylabel = "Fitness"
+		)
 		
 	    p2 = scatter(
 			[rand() for j in 1:length(record[1].slimes)], 
@@ -963,7 +1250,8 @@ begin
 			title ="Locations in Gen: "*string(i), 
 			xticks = false, 
 			ylabel= "Location",
-			legend = false)
+			legend = false
+		)
 
 		p3 = plot(
 			-500:500, 
@@ -972,7 +1260,8 @@ begin
 			xlabel = "Location", 
 			ylabel = "Fitness",
 			ylim = (-500,500),
-			legend = false)
+			legend = false
+		)
 		p3 = scatter!(
 			reduce(vcat,record[i].slimes),
 			[fitness_2_multi(record[i].slimes[s]) for s in 1:length(record[i].slimes)]
@@ -986,14 +1275,12 @@ begin
 			markercolor = [(s == i ? :red : :green) for s in results.iteration], 
 			xlabel = "Generation", 
 			ylabel = "Location", 
-			title = "All Locations")
+			title = "All Locations"
+		)
 		p4 = vline!([i], lw = 1, color = [:red])
 
-		plot(p1, p2, p3, p4, 
-			layout = (2, 2)) #"Generation: " * string(i)
-		
+		plot(p1, p2, p3, p4, layout = (2, 2))
 	end
-	 
 	gif(f8_1D, fps = 5)
 end
 
@@ -1003,19 +1290,22 @@ begin
 	local record
 	local p1, p2, p3, p4
 	local i
+	
 	i = d_gen2
 	results = f8_1D_results
 	record = f8_1D_record
+	
 		p1 = plot(
 			results.iteration[1:length(results.iteration)], 
 			[results.mean_fitness[1:length(results.iteration)], results.DF[1:length(results.iteration)]],  
-			title ="Fitness Function", 
+			title ="Fitness", 
 			label = ["Mean" "Lowest"], 
 			ylims=(-500, 500), 
 			xlims=(0, length(results.iteration)), 
 			lw = 2, 
 			xlabel = "Generation", 
-			ylabel = "Fitness")
+			ylabel = "Fitness"
+		)
 		p1 = vline!([i], lw = 1, color = [:red], label = false)
 		
 	    p2 = scatter(
@@ -1026,7 +1316,8 @@ begin
 			title ="Locations in Gen: "*string(i), 
 			xticks = false, 
 			ylabel= "Location",
-			legend = false)
+			legend = false
+		)
 
 		p3 = plot(
 			-500:500, 
@@ -1035,7 +1326,8 @@ begin
 			xlabel = "Location", 
 			ylabel = "Fitness",
 			ylim = (-500,500),
-			legend = false)
+			legend = false
+		)
 		p3 = scatter!(
 			reduce(vcat,record[i].slimes),
 			[fitness_2_multi(record[i].slimes[s]) for s in 1:length(record[i].slimes)]
@@ -1049,13 +1341,11 @@ begin
 			markercolor = [(s == i ? :red : :green) for s in results.iteration], 
 			xlabel = "Generation", 
 			ylabel = "Location", 
-			title = "All Locations")
+			title = "All Locations"
+		)
 		p4 = vline!([i], lw = 1, color = [:red])
 
-		plot(p1, p2, p3, p4, 
-			layout = (2, 2)) #"Generation: " * string(i)
-
-
+		plot(p1, p2, p3, p4, layout = (2, 2))
 end
 
 # ╔═╡ d8497cde-7c0c-4e7e-91e0-6afb8d8cb411
@@ -1077,13 +1367,14 @@ begin
 		p1 = plot(
 			results.iteration[1:i], 
 			[results.mean_fitness[1:i], results.DF[1:i]],  
-			title ="Fitness Function", 
+			title ="Fitness", 
 			label = ["Mean" "Lowest"], 
 			ylims=(-500, 500), 
 			xlims=(0, length(results.iteration)), 
 			lw = 2, 
 			xlabel = "Generation", 
-			ylabel = "Fitness")
+			ylabel = "Fitness"
+		)
 		
 	    p2 = scatter(
 			[rand() for j in 1:length(record[1].slimes)], 
@@ -1093,7 +1384,8 @@ begin
 			title ="Locations in Gen: "*string(i), 
 			xticks = false, 
 			ylabel= "Location",
-			legend = false)
+			legend = false
+		)
 
 		p3 = plot(
 			-500:500, 
@@ -1102,11 +1394,11 @@ begin
 			xlabel = "Location", 
 			ylabel = "Fitness",
 			ylim = (-500,500),
-			legend = false)
+			legend = false
+		)
 		p3 = scatter!(
 			reduce(vcat,record[i].slimes),
-			[fitness_2_multi(record[i].slimes[s]) for s in 1:length(record[i].slimes)]
-			
+			[fitness_2_multi(record[i].slimes[s]) for s in 1:length(record[i].slimes)]		
 		)
 
 		p4 = scatter(
@@ -1116,216 +1408,492 @@ begin
 			markercolor = [(s == i ? :red : :green) for s in results.iteration], 
 			xlabel = "Generation", 
 			ylabel = "Location", 
-			title = "All Locations")
+			title = "All Locations"
+		)
 		p4 = vline!([i], lw = 1, color = [:red])
 
-		plot(p1, p2, p3, p4, 
-			layout = (2, 2)) #"Generation: " * string(i)
-		
+		plot(p1, p2, p3, p4, layout = (2, 2))	
 	end
-	 
 	gif(f8_1D_OG, fps = 5)
 end
 
-# ╔═╡ 61b48e5d-5be4-4f03-9c5e-c2bfc5b6419a
-md"""
-# HIER ONDER MOET NOG WEG!!
-
-"""
-
-# ╔═╡ b29ce423-a267-4290-b31b-e5ef4f64a56d
-plot(Test2_results.iteration, [Test2_results.mean_fitness, Test2_results.DF], title = "Fitness", label = ["Mean Fitness of generation" "Lowest Fitness"], lw = 2)
-
-# ╔═╡ f9548ad3-ce2e-413a-a548-bfe35b7e811f
+# ╔═╡ 6600061c-d18e-4699-beec-adb58de12f41
 begin
-	anim = @animate for i = 1:length(Test2_results.iteration)
-	    plot(Test2_results.iteration[1:i], [Test2_results.mean_fitness[1:i], Test2_results.DF[1:i]],  title ="Fitness", label = ["Mean Fitness of generation" "Lowest Fitness"], ylims=(-1, maximum(Test2_results.mean_fitness)), xlims=(0, length(Test2_results.iteration)), lw = 2, xlabel = "Generation", ylabel = "Fitness")
-	end
-	 
-	gif(anim, "anim_fps30.gif", fps = 20)
+	f8_2D_record = SMA(fitness_2_multi, [-500, -500], [500, 500], 50, 50; z=0.03)
+	f8_2D_results = ProcessRecordVectorMulti(f8_2D_record)
 end
 
-# ╔═╡ 192e8eeb-0514-4792-ba60-90f1f3207c0a
+# ╔═╡ 49a07a3d-51fa-4f38-b33d-e5127e744b04
 begin
-	anim2 = @animate for i = 1:length(Test2_results.iteration)
-		scatter([rand() for i in 1:length(Test2_record[1].slimes)], sort(Test2_record[i].slimes), ylims=(-100, 100), xlims=(0, 1), title ="Generation: " * string(i), xticks = false, ylabel= "Location")
-	end
-	 
-	gif(anim2, "anim_fps30.gif", fps = 5)
-end
-
-# ╔═╡ e7f7e1d8-bbb0-4f5d-ac95-dec895527a52
-plot([1:1000], [[rand(Uniform(-atanh(-(s / 1001) + 1),atanh(-(s / 1001) + 1))) for s in 1:1000],[rand(Uniform(-(1 - (s/1001)),(1 - (s/1001)))) for s in 1:1000]], label = ["vb" "vc"], xlabel = "Iterations", ylabel = "variation")
-
-
-# ╔═╡ 679beed3-fa57-4bb0-95a8-ca5198f07938
-begin
-	# maak later zo een fancy struct ding waarbij de fitness locatie etc, allemaal in een datatype zitten, orden dan alles zodat ge niet maximum enzo moet gebruiken maar gewoon 1 en -1 ofzo voor beste en slechtste?? 
-	#call 
-	Random.seed!(124)
-	lb = [-100]
-	ub = [100]
-	problem_size = 1
-
-	# uit functie
-	z = 0.01
-	N = 20
-	maxt = 100
-	slime_list = [rand(lb[1]:ub[1]) for k in 1:N] # initialize slimes with position, change to more usefull default values.
-	DF = 1000
-	DF_value = 0 # NOG NIET GEFIXT HIER!!!
-	weight_list_history = []
-	vb_history = []
-	vc_history = []
-	p_history = []
-
+	local x
+	local y
+	local results
+	local gen
 	
-	iteration_history = Vector{IterationRecord}(undef, maxt)
-	for current_iteration in 1:maxt	
-		global slime_list # WEG DOEN IN FUNCTIE!!
-		global fitness_list
-		global DF
-		# Calculate the fitness of all slime mould
-		fitness_list = [fitness(s) for s in slime_list]
+	results = f8_2D_results
+	x = [i for i in -600:600]
+	y = [i for i in -600:600]
 	
-		# update bestFitness Xb
-		bF, bF_index = findmin(fitness_list) # max fitness
-		wF = maximum(fitness_list) # worst fitness
-		Xb = slime_list[bF_index] # location with max fitness
-		DF = min(bF, DF)
-		# Calculate the weights
-		boundary = N/2
-		weight_list = []
-		for (rank,s) in enumerate(sortperm(fitness_list))
-			push!(weight_list, W(fitness_list[s], bF, wF, (rank < boundary), current_iteration, maxt))
-		end
-		append!(weight_list_history, [weight_list])
-		# update p, vb and vc
-		a = max(atanh(-(current_iteration / maxt) + 1), 10e-100)
-		b = max((1 - (current_iteration)/maxt), 10e-100)
-		vb = Uniform(-a,a)
-		vc = Uniform(-b,b)
+	f8_2D = @animate for gen = 1:length(results.iteration)
+		f(x,y) = fitness_2_multi([x,y])
+		f8_2D_contour = contour(x,y,f)
+		f8_2D_contour = scatter!(
+			[results.slimes[gen][i][1] for i in 1:length(results.slimes[1])],
+			[results.slimes[gen][i][2] for i in 1:length(results.slimes[1])],
+			xlim=(-600,600),
+			ylim=(-600,600),
+			legend = false,
+			title="Fitness Contour Plot",
+			xlabel = "Dimention 1",
+			ylabel = "Dimention 2"
+		)
 
-		slime_list_temp = []
-		for s in 1:N
-			if rand(Uniform(0, 1)) < z
-				push!(slime_list_temp, rand(Uniform(lb[1],ub[1])))
-			else
-				p_temp = tanh(fitness_list[s] - DF)
-				push!(p_history, p_temp)
-				if rand(Uniform(0, 1)) < p_temp
-					Xa, Xb = sample(slime_list, 2, replace = false)
-					vb_temp = rand(vb)
-					push!(vb_history, vb_temp)
-					push!(slime_list_temp, clamp(Xb + vb_temp*(weight_list[s]*Xa - Xb), lb[1], ub[1]))
-				else
-					vc_temp = rand(vc)
-					push!(vc_history, vc_temp)
-					push!(slime_list_temp, clamp(slime_list[s] * vc_temp, lb[1], ub[1]))
-				end
-			end
-		end
-		iteration_history[current_iteration] = IterationRecord(current_iteration, slime_list, fitness_list, DF, DF_value, bF, wF, Xb)
-		slime_list = deepcopy(slime_list_temp)
-	end
-end
+	f8_2D_fitness = plot(
+				results.iteration[1:gen], 
+				[results.mean_fitness[1:gen], results.DF[1:gen]],  
+				title ="Fitness", 
+				label = ["Mean" "Lowest"], 
+				ylims=(-1000, 500), 
+				xlims=(0, length(results.iteration)), 
+				lw = 2, 
+				xlabel = "Generation", 
+				ylabel = "Fitness"
+	)
 
-# ╔═╡ 26f3b743-b7a1-43e8-b07f-1b4e3ebb42fb
-Test1 = ProcessRecordVector(iteration_history)
-
-# ╔═╡ 874bcad6-cf73-417a-82e6-093c6bcdd0d8
-md"""
-### Different fitness function:
-"""
-
-# ╔═╡ 40167574-d958-49a8-bfcc-59f95f98e7a1
-plot(-500:500,
-	[fitness_2(s) for s in -500:500], 
-	title = "Fitness Function", 
-	xlabel = "Location", 
-	ylabel = "Fitness")
-
-# ╔═╡ a071b8d5-f938-42a7-92e6-9883ad90aa09
-begin
-	Test3_record = SMA_1D(fitness_2, [-500], [500], 100, 20; z=0.03)
-	Test3_results = ProcessRecordVector(Test3_record)
-end
-
-# ╔═╡ 772f6482-2679-4672-97f5-96468c468f68
-begin
-	anim4 = @animate for i = 1:length(Test3_results.iteration)
-		p1 = plot(
-			Test3_results.iteration[1:i], 
-			[Test3_results.mean_fitness[1:i], Test3_results.DF[1:i]],  
-			title ="Fitness", 
-			label = ["Mean" "Lowest"], 
-			ylims=(minimum(Test3_results.DF)-100, maximum(Test3_results.mean_fitness)), 
-			xlims=(0, length(Test3_results.iteration)), 
-			lw = 2, 
-			xlabel = "Generation", 
-			ylabel = "Fitness")
-		
-	    p2 = scatter(
-			[rand() for i in 1:length(Test3_record[1].slimes)], 
-			sort(Test3_record[i].slimes), 
-			ylims=(-500, 500), 
-			xlims=(0, 1), 
-			title ="Slime Location per Generation", 
-			xticks = false, 
-			ylabel= "Location")
-
-		p3 = plot(
-			-500:500, 
-			[fitness_2(s) for s in -500:500], 
-			title = "Fitness Function", 
-			xlabel = "Location", 
-			ylabel = "Fitness")
-
-		p4 = scatter(
-			Test3_results.iteration, 
-			reduce(vcat,transpose.(Test3_results.slimes)), 
-			legend = false, 
-			markercolor = [(s == i ? :red : :green) for s in Test3_results.iteration], 
-			xlabel = "Generation", 
-			ylabel = "Location", 
-			title = "Slime Location")
-		p4 = plot!(Test3_results.iteration, [-418.9829 for i in Test3_results.iteration])
-
-		plot(p1, p2, p3, p4, 
-			layout = (2, 2)) #"Generation: " * string(i)
+	plot(
+		f8_2D_fitness, 
+		f8_2D_contour, 
+		layout = (1, 2),
+		size=(800,300)
+	)
 		
 	end
-	 
-	gif(anim4, "anim4.gif", fps = 5)
+	gif(f8_2D, fps = 5)
 end
 
-# ╔═╡ 3762e4c0-63a5-40d3-beab-0db781d83af0
+# ╔═╡ 36a3a18f-7537-46cc-b4f4-1551ae939be5
+begin
+	local x
+	local y
+	local results
+	local gen
+	
+	results = f8_2D_results
+	x = [i for i in -600:600]
+	y = [i for i in -600:600]
+	f(x,y) = fitness_2_multi([x,y])
+	f8_2D_3Dplot = @animate for gen = 1:length(results.iteration)
+		temp_camera = 30 + gen/2
+		
+		f8_2D_scatter = plot(
+			x,y,f,st=:surface,
+			camera=(temp_camera,50),
+			xlim=(-600,600),
+			ylim=(-600,600),
+			zlim=(-1000,1000)
+		)
+		
+		f8_2D_scatter = scatter!(
+			[[results.slimes[j][i][1] for i in 1:length(results.slimes[1])] for j in 1:length(results.iteration)],
+			[[results.slimes[j][i][2] for i in 1:length(results.slimes[1])] for j in 1:length(results.iteration)],
+			[[results.fitness[j][i] for i in 1:length(results.slimes[1])] for j in 1:length(results.iteration)],
+			xlim=(-600,600),
+			ylim=(-600,600),
+			zlim=(-1000,1000),
+			legend = false,
+			color = :green,
+			camera=(temp_camera,50)
+		)
+		
+		f8_2D_scatter = scatter!(
+			[results.slimes[gen][i][1] for i in 1:length(results.slimes[1])],
+			[results.slimes[gen][i][2] for i in 1:length(results.slimes[1])],
+			results.fitness[gen],
+			xlim=(-600,600),
+			ylim=(-600,600),
+			zlim=(-1000,1000),
+			legend = false,
+			color = :red,
+			camera= (temp_camera,50),
+			title = "Fitness in generation: "*string(gen) 
+		)
+	end
+	gif(f8_2D_3Dplot, fps = 5)
+end
 
+# ╔═╡ f9f4361c-ec29-4055-a1da-d3b0f5a20295
+begin
+	local ub
+	local lb
+	local maxt
+	local N
+	local max_iter
+	
+	max_iter = clamp(SIM1_max_iter,25,10000)
+	lb = [-500, -500]
+	ub = [500, 500]
+	maxt = 50
+	N = 50
+	
+	OG_results = []
+	Modified_results = []
+	Modified_2_results = []
+	
+	for i in 1:max_iter
+		f8_2D_record_MODIFIED = SMA(fitness_2_multi, lb, ub, maxt, N; z=0.03)
+		f8_2D_results_MODIFIED = ProcessRecordVectorMulti(f8_2D_record_MODIFIED)
+		push!(Modified_results,f8_2D_results_MODIFIED.DF[end])
 
-# ╔═╡ fff32e43-8c5c-416f-9734-b356478d17ab
+		f8_2D_record_OG = SMA_APPENDIX_2(fitness_2_multi, lb, ub, maxt, N; z=0.03)
+		f8_2D_results_OG = ProcessRecordVectorMulti(f8_2D_record_OG)
+		push!(OG_results,f8_2D_results_OG.DF[end])
+
+		f8_2D_record_MODIFIED_2 = SMA_APPENDIX_2(fitness_2_multi, lb, ub, maxt, N; z=0.03)
+		f8_2D_results_MODIFIED_2 = ProcessRecordVectorMulti(f8_2D_record_MODIFIED_2)
+		push!(Modified_2_results,f8_2D_results_MODIFIED_2.DF[end])
+	end
+	
+	OG_results_mean = round(mean(OG_results))
+	OG_results_minimum = round(minimum(OG_results))
+	OG_results_median = round(median(OG_results))
+	Modified_results_mean = round(mean(Modified_results))
+	Modified_results_minimum = round(minimum(Modified_results))
+	Modified_results_median = round(median(Modified_results))
+	Modified_2_results_mean = round(mean(Modified_2_results))
+	Modified_2_results_minimum = round(minimum(Modified_2_results))
+	Modified_2_results_median = round(median(Modified_2_results))
+	
+	scatter(
+		[[rand()/1.3 for j in 1:max_iter],[rand()/1.3+1 for j in 1:max_iter], [rand()/1.3+2 for j in 1:max_iter]], 
+		[OG_results, Modified_results, Modified_2_results],  
+		xlims=(-0.5, 3.5), 
+		title ="Final fitness scores", 
+		xticks = false, 
+		ylabel= "Fitness",
+		markeralpha = 0.7,
+		labels = ["Original" "Modified" "Modified_2"]
+	)
+	
+	boxplot!(
+		[[0.5/1.3 for j in 1:max_iter],[0.5/1.3+1 for j in 1:max_iter],[0.5/1.3+2 for j in 1:max_iter]],
+		[OG_results, Modified_results, Modified_2_results], 
+		outliers = false,
+		label=false, 
+		fillalpha = 0.3,
+		fillcolor = repeat([:blue :orange :green], outer = max_iter)
+	)
+
+end
+
+# ╔═╡ ba12b93e-83d2-4c8d-91d9-ff98afff6f10
 md"""
-## Multidimentional implementation
+The results of this simulation are:\
+**Original Algorithm:**\
+Mean: $(OG_results_mean)\
+Median: $(OG_results_median)\
+Minimum: $(OG_results_minimum)\
+**Modified Algorithm:**\
+Mean: $(Modified_results_mean)\
+Median: $(Modified_results_median)\
+Minimum: $(Modified_results_minimum)\
+**Modified_2 Algorithm:**\
+Mean: $(Modified_2_results_mean)\
+Median: $(Modified_2_results_median)\
+Minimum: $(Modified_2_results_minimum)\
 
+**Discussion:** For this low amount of dimensions and small intervals for the design space, all algorithms perform similarly. Most runs result either in the global optimum or one local optimum (which is why the boxplots look strange).
 """
 
-# ╔═╡ e4c3ed05-38ef-4440-82ac-c2a41616ad12
+# ╔═╡ 60cecddd-601e-4113-90c5-19d3d045136a
 begin
-	lb_2 = [-10, -100]
-	ub_2 = [10, 100]
-	teeest = [rand(lb_2[d]:ub_2[d]) for k = 1:N, d = 1:length(lb_2)]
+	local ub, lb, maxt, N, max_iter
+	local OG_results, Modified_results, Modified_2_results
+	local OG_results_mean, OG_results_minimum, OG_results_median, Modified_results_mean, Modified_results_minimum, Modified_results_median, Modified_2_results_mean, Modified_2_results_minimum, Modified_2_results_median
+	local simulation_figure
+	SIM2_max_iter_button
+
+	# Initiate algorithm settings
+	max_iter = clamp(SIM2_max_iter,25,10000)
+	lb = [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]
+	ub = [10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000]
+	maxt = 50
+	N = 50
+
+	# Initiate result vectors
+	OG_results = []
+	Modified_results = []
+	Modified_2_results = []
+	
+	for i in 1:max_iter
+		# Modified algorithm
+		f8_2D_record_MODIFIED = SMA(fitness_2_multi, lb, ub, maxt, N; z=0.03)
+		f8_2D_results_MODIFIED = ProcessRecordVectorMulti(f8_2D_record_MODIFIED)
+		push!(Modified_results,f8_2D_results_MODIFIED.DF[end])
+
+		# Original algorithm
+		f8_2D_record_OG = SMA_APPENDIX_2(fitness_2_multi, lb, ub, maxt, N; z=0.03)
+		f8_2D_results_OG = ProcessRecordVectorMulti(f8_2D_record_OG)
+		push!(OG_results,f8_2D_results_OG.DF[end])
+
+		# Modified_2 algorithm 
+		f8_2D_record_MODIFIED_2 = SMA_APPENDIX_2(fitness_2_multi, lb, ub, maxt, N; z=0.03)
+		f8_2D_results_MODIFIED_2 = ProcessRecordVectorMulti(f8_2D_record_MODIFIED_2)
+		push!(Modified_2_results,f8_2D_results_MODIFIED_2.DF[end])
+	end
+
+	# Calculate performance metrics
+	OG_results_mean = round(mean(OG_results))
+	OG_results_minimum = round(minimum(OG_results))
+	OG_results_median = round(median(OG_results))
+	Modified_results_mean = round(mean(Modified_results))
+	Modified_results_minimum = round(minimum(Modified_results))
+	Modified_results_median = round(median(Modified_results))
+	Modified_2_results_mean = round(mean(Modified_2_results))
+	Modified_2_results_minimum = round(minimum(Modified_2_results))
+	Modified_2_results_median = round(median(Modified_2_results))
+
+	# Create the figure
+	## first scatter the points
+	simulation_figure = scatter(
+		[
+			[rand()/1.3 for j in 1:max_iter],
+			[rand()/1.3+1 for j in 1:max_iter], 
+			[rand()/1.3+2 for j in 1:max_iter]
+		], 
+		[OG_results, Modified_results, Modified_2_results],  
+		xlims=(-0.5, 3.5), 
+		title ="Final fitness scores", 
+		xticks = false, 
+		ylabel= "Fitness",
+		markeralpha = 0.7,
+		labels = ["Original" "Modified" "Modified_2"]
+	)
+	
+	## Overlay the boxplots 
+	simulation_figure = boxplot!(
+		[
+			[0.5/1.3 for j in 1:max_iter],
+			[0.5/1.3+1 for j in 1:max_iter],
+			[0.5/1.3+2 for j in 1:max_iter]
+		],
+		[OG_results, Modified_results, Modified_2_results], 
+		outliers = false,
+		label = false, 
+		fillalpha = 0.3,
+		fillcolor = repeat([:blue :orange :green], outer = max_iter)
+	)
+	
+md"""
+$(simulation_figure)
+
+The results of this simulation are:\
+**Original Algorithm:**\
+Mean: $(OG_results_mean)\
+Median: $(OG_results_median)\
+Minimum: $(OG_results_minimum)\
+**Modified Algorithm:**\
+Mean: $(Modified_results_mean)\
+Median: $(Modified_results_median)\
+Minimum: $(Modified_results_minimum)\
+**Modified_2 Algorithm:**\
+Mean: $(Modified_2_results_mean)\
+Median: $(Modified_2_results_median)\
+Minimum: $(Modified_2_results_minimum)\
+
+**Discussion:** We are now using a design space with 15 dimensions and much larger intervals. The fact that there is no large population of points at the lowest fitness value (and that the boxplots look so clean) indicates that none of the algorithms are consistently reaching the global minimum. This may be because of the low amount of generations for each run, or the limited population size, especially because of the high complexity of the 15D problem.
+"""
 end
 
-# ╔═╡ 8a7a9e2a-ad0a-4996-9057-ccc05d5ff577
-teeest2 = [teeest[i,:] for i in 1:N]
-
-# ╔═╡ 83011d1f-d9c7-472e-b9b3-98b11a072df5
+# ╔═╡ 95f1d794-fba6-4743-862b-e2c0a5a0e1ed
 begin
-	multi1_record = SMA(fitness_multi, [-100], [100], 50, 10; z=0.03)
-	multi1_result = ProcessRecordVectorMulti(multi1_record)
+	local ub, lb, maxt, N, max_iter
+	local OG_results, Modified_results, Modified_2_results
+	local OG_results_mean, OG_results_minimum, OG_results_median, Modified_results_mean, Modified_results_minimum, Modified_results_median, Modified_2_results_mean, Modified_2_results_minimum, Modified_2_results_median
+	local simulation_figure
+	
+	SIM3_max_iter_button
+	
+	max_iter = clamp(SIM3_max_iter,25,10000)
+	lb = [100, 100, 100, 100, 100]
+	ub = [10000, 10000, 10000, 10000, 10000]
+	maxt = 500
+	N = 50
+	
+	OG_results = []
+	Modified_results = []
+	Modified_2_results = []
+	
+	for i in 1:max_iter
+		f8_2D_record_MODIFIED = SMA(fitness_2_multi, lb, ub, maxt, N; z=0.03)
+		f8_2D_results_MODIFIED = ProcessRecordVectorMulti(f8_2D_record_MODIFIED)
+		push!(Modified_results,f8_2D_results_MODIFIED.DF[end])
+
+		f8_2D_record_OG = SMA_APPENDIX_2(fitness_2_multi, lb, ub, maxt, N; z=0.03)
+		f8_2D_results_OG = ProcessRecordVectorMulti(f8_2D_record_OG)
+		push!(OG_results,f8_2D_results_OG.DF[end])
+
+		f8_2D_record_MODIFIED_2 = SMA_APPENDIX_2(fitness_2_multi, lb, ub, maxt, N; z=0.03)
+		f8_2D_results_MODIFIED_2 = ProcessRecordVectorMulti(f8_2D_record_MODIFIED_2)
+		push!(Modified_2_results,f8_2D_results_MODIFIED_2.DF[end])		
+	end
+	
+	OG_results_mean = round(mean(OG_results))
+	OG_results_minimum = round(minimum(OG_results))
+	OG_results_median = round(median(OG_results))
+	Modified_results_mean = round(mean(Modified_results))
+	Modified_results_minimum = round(minimum(Modified_results))
+	Modified_results_median = round(median(Modified_results))
+	Modified_2_results_mean = round(mean(Modified_2_results))
+	Modified_2_results_minimum = round(minimum(Modified_2_results))
+	Modified_2_results_median = round(median(Modified_2_results))
+	
+	simulation_figure = scatter(
+		[[rand()/1.3 for j in 1:max_iter],[rand()/1.3+1 for j in 1:max_iter], [rand()/1.3+2 for j in 1:max_iter]], 
+		[OG_results, Modified_results, Modified_2_results],  
+		xlims=(-0.5, 3.5), 
+		title ="Final fitness scores", 
+		xticks = false, 
+		ylabel= "Fitness",
+		markeralpha = 0.7,
+		labels = ["Original" "Modified" "Modified_2"]
+	)
+	
+	simulation_figure = boxplot!(
+		[[0.5/1.3 for j in 1:max_iter],[0.5/1.3+1 for j in 1:max_iter],[0.5/1.3+2 for j in 1:max_iter]],
+		[OG_results, Modified_results, Modified_2_results], 
+		outliers = false,
+		label=false, 
+		fillalpha = 0.3,
+		fillcolor = repeat([:blue :orange :green], outer = max_iter)
+	)
+md"""
+$(simulation_figure)
+
+The results of this simulation are:\
+**Original Algorithm:**\
+Mean: $(OG_results_mean)\
+Median: $(OG_results_median)\
+Minimum: $(OG_results_minimum)\
+**Modified Algorithm:**\
+Mean: $(Modified_results_mean)\
+Median: $(Modified_results_median)\
+Minimum: $(Modified_results_minimum)\
+**Modified_2 Algorithm:**\
+Mean: $(Modified_2_results_mean)\
+Median: $(Modified_2_results_median)\
+Minimum: $(Modified_2_results_minimum)\
+
+**Discussion:** Here we have increased the amount of generations from 50 to 500 and we see a clear advantage for the original algorithm.
+"""
 end
 
-# ╔═╡ a476cff9-e37d-4e21-a205-6b003bd04c62
-plot(multi1_result.iteration, [multi1_result.mean_fitness, multi1_result.DF], title = "Fitness", label = ["Mean Fitness of generation" "Lowest Fitness"], lw = 2)
+# ╔═╡ ed950215-5b2c-4216-b377-881b094f5c91
+begin
+	local ub, lb, maxt, N, max_iter
+	local OG_results, Modified_results, Modified_2_results
+	local OG_results_mean, OG_results_minimum, OG_results_median, Modified_results_mean, Modified_results_minimum, Modified_results_median, Modified_2_results_mean, Modified_2_results_minimum, Modified_2_results_median
+	local simulation_figure
+	
+	
+	max_iter = 25
+	lb = [100, 100, 100, 100, 100]
+	ub = [10000, 10000, 10000, 10000, 10000]
+	maxt = 50
+	N = 50
+	
+	OG_results = []
+	Modified_results = []
+	Modified_2_results = []
+	
+	for j in 25:20:500
+		maxt=j
+		OG_results_temp = []
+		Modified_results_temp = []
+		Modified_2_results_temp = []
+		for i in 1:max_iter
+			f8_2D_record_MODIFIED = SMA(fitness_2_multi, lb, ub, maxt, N; z=0.03)
+			f8_2D_results_MODIFIED = ProcessRecordVectorMulti(f8_2D_record_MODIFIED)
+			push!(Modified_results_temp,f8_2D_results_MODIFIED.DF[end])
+
+			f8_2D_record_OG = SMA_APPENDIX_2(fitness_2_multi, lb, ub, maxt, N; z=0.03)
+			f8_2D_results_OG = ProcessRecordVectorMulti(f8_2D_record_OG)
+			push!(OG_results_temp,f8_2D_results_OG.DF[end])
+
+			f8_2D_record_MODIFIED_2 = SMA_APPENDIX_2(fitness_2_multi, lb, ub, maxt, N; z=0.03)
+			f8_2D_results_MODIFIED_2 = ProcessRecordVectorMulti(f8_2D_record_MODIFIED_2)
+			push!(Modified_2_results_temp,f8_2D_results_MODIFIED_2.DF[end])
+		end
+		push!(Modified_results, Modified_results_temp)
+		push!(Modified_2_results, [Modified_2_results_temp])
+		push!(OG_results, [OG_results_temp])
+	end
+	plot(
+		[25:20:500],
+		[
+			[median(i) for i in OG_results],
+			[median(i) for i in Modified_results],
+			[median(i) for i in Modified_2_results]
+		],
+		title = "Median Fitness for Different maxt values",
+		ylabel = "Median Fitness",
+		xlabel = "maxt",
+		labels = ["Original" "Modified" "Modified_2"]
+	)
+end
+
+# ╔═╡ 96d04bb5-b8db-4fb3-b4b0-64150fb76a99
+begin
+	local ub, lb, maxt, N, max_iter
+	local OG_results, Modified_results, Modified_2_results
+	local OG_results_mean, OG_results_minimum, OG_results_median, Modified_results_mean, Modified_results_minimum, Modified_results_median, Modified_2_results_mean, Modified_2_results_minimum, Modified_2_results_median
+	local simulation_figure
+	
+	
+	max_iter = 25
+	lb = [100, 100, 100, 100, 100]
+	ub = [10000, 10000, 10000, 10000, 10000]
+	maxt = 50
+	N = 50
+	
+	OG_results = []
+	Modified_results = []
+	Modified_2_results = []
+	
+	for j in 25:20:500
+		maxt=N
+		OG_results_temp = []
+		Modified_results_temp = []
+		Modified_2_results_temp = []
+		for i in 1:max_iter
+			f8_2D_record_MODIFIED = SMA(fitness_2_multi, lb, ub, maxt, N; z=0.03)
+			f8_2D_results_MODIFIED = ProcessRecordVectorMulti(f8_2D_record_MODIFIED)
+			push!(Modified_results_temp,f8_2D_results_MODIFIED.DF[end])
+
+			f8_2D_record_OG = SMA_APPENDIX_2(fitness_2_multi, lb, ub, maxt, N; z=0.03)
+			f8_2D_results_OG = ProcessRecordVectorMulti(f8_2D_record_OG)
+			push!(OG_results_temp,f8_2D_results_OG.DF[end])
+
+			f8_2D_record_MODIFIED_2 = SMA_APPENDIX_2(fitness_2_multi, lb, ub, maxt, N; z=0.03)
+			f8_2D_results_MODIFIED_2 = ProcessRecordVectorMulti(f8_2D_record_MODIFIED_2)
+			push!(Modified_2_results_temp,f8_2D_results_MODIFIED_2.DF[end])
+		end
+		push!(Modified_results, Modified_results_temp)
+		push!(Modified_2_results, [Modified_2_results_temp])
+		push!(OG_results, [OG_results_temp])
+	end
+	plot(
+		[25:20:500],
+		[
+			[median(i) for i in OG_results],
+			[median(i) for i in Modified_results],
+			[median(i) for i in Modified_2_results]
+		],
+		title = "Median Fitness for Different Population Sizes",
+		ylabel = "Median Fitness",
+		xlabel = "Population size",
+		labels = ["Original" "Modified" "Modified_2"]
+	)
+end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1335,17 +1903,25 @@ Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 
 [compat]
 Distributions = "~0.25.41"
-Plots = "~1.25.6"
-PlutoUI = "~0.7.30"
+Plots = "~1.25.5"
+PlutoUI = "~0.7.32"
 StatsBase = "~0.33.14"
+StatsPlots = "~0.14.30"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
+
+[[AbstractFFTs]]
+deps = ["ChainRulesCore", "LinearAlgebra"]
+git-tree-sha1 = "6f1d9bc1c08f9f4a8fa92e3ea3cb50153a1b40d4"
+uuid = "621f4979-c628-5d54-868e-fcf4e3e8185c"
+version = "1.1.0"
 
 [[AbstractPlutoDingetjes]]
 deps = ["Pkg"]
@@ -1362,8 +1938,26 @@ version = "3.3.3"
 [[ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
 
+[[Arpack]]
+deps = ["Arpack_jll", "Libdl", "LinearAlgebra"]
+git-tree-sha1 = "2ff92b71ba1747c5fdd541f8fc87736d82f40ec9"
+uuid = "7d9fca2a-8960-54d3-9f78-7d1dccf2cb97"
+version = "0.4.0"
+
+[[Arpack_jll]]
+deps = ["Libdl", "OpenBLAS_jll", "Pkg"]
+git-tree-sha1 = "e214a9b9bd1b4e1b4f15b22c0994862b66af7ff7"
+uuid = "68821587-b530-5797-8361-c406ea357684"
+version = "3.5.0+3"
+
 [[Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
+
+[[AxisAlgorithms]]
+deps = ["LinearAlgebra", "Random", "SparseArrays", "WoodburyMatrices"]
+git-tree-sha1 = "66771c8d21c8ff5e3a93379480a2307ac36863f7"
+uuid = "13072b0f-2c55-5437-9ae7-d433b7a33950"
+version = "1.0.1"
 
 [[Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
@@ -1391,6 +1985,12 @@ deps = ["ChainRulesCore", "LinearAlgebra", "Test"]
 git-tree-sha1 = "bf98fa45a0a4cee295de98d4c1462be26345b9a1"
 uuid = "9e997f8a-9a97-42d5-a9f1-ce6bfc15e2c0"
 version = "0.1.2"
+
+[[Clustering]]
+deps = ["Distances", "LinearAlgebra", "NearestNeighbors", "Printf", "SparseArrays", "Statistics", "StatsBase"]
+git-tree-sha1 = "75479b7df4167267d75294d14b58244695beb2ac"
+uuid = "aaaa29a8-35af-508c-8bc3-b662a17a0fe5"
+version = "0.14.2"
 
 [[ColorSchemes]]
 deps = ["ColorTypes", "Colors", "FixedPointNumbers", "Random"]
@@ -1442,6 +2042,12 @@ git-tree-sha1 = "bfc1187b79289637fa0ef6d4436ebdfe6905cbd6"
 uuid = "e2d170a0-9d28-54be-80f0-106bbe20a464"
 version = "1.0.0"
 
+[[DataValues]]
+deps = ["DataValueInterfaces", "Dates"]
+git-tree-sha1 = "d88a19299eba280a6d062e135a43f00323ae70bf"
+uuid = "e7dc6d0d-1eca-5fa6-8ad6-5aecde8b7ea5"
+version = "0.4.13"
+
 [[Dates]]
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -1455,6 +2061,12 @@ deps = ["InverseFunctions", "Test"]
 git-tree-sha1 = "80c3e8639e3353e5d2912fb3a1916b8455e2494b"
 uuid = "b429d917-457f-4dbc-8f4c-0cc954292b1d"
 version = "0.4.0"
+
+[[Distances]]
+deps = ["LinearAlgebra", "SparseArrays", "Statistics", "StatsAPI"]
+git-tree-sha1 = "3258d0659f812acde79e8a74b11f17ac06d0ca04"
+uuid = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
+version = "0.10.7"
 
 [[Distributed]]
 deps = ["Random", "Serialization", "Sockets"]
@@ -1499,6 +2111,18 @@ deps = ["Artifacts", "Bzip2_jll", "FreeType2_jll", "FriBidi_jll", "JLLWrappers",
 git-tree-sha1 = "d8a578692e3077ac998b50c0217dfd67f21d1e5f"
 uuid = "b22a6f82-2f65-5046-a5b2-351ab43fb4e5"
 version = "4.4.0+0"
+
+[[FFTW]]
+deps = ["AbstractFFTs", "FFTW_jll", "LinearAlgebra", "MKL_jll", "Preferences", "Reexport"]
+git-tree-sha1 = "463cb335fa22c4ebacfd1faba5fde14edb80d96c"
+uuid = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
+version = "1.4.5"
+
+[[FFTW_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "c6033cc3892d0ef5bb9cd29b7f2f0331ea5184ea"
+uuid = "f5851436-0d7a-5f13-b9de-f02708fd171a"
+version = "3.3.10+0"
 
 [[FillArrays]]
 deps = ["LinearAlgebra", "Random", "SparseArrays", "Statistics"]
@@ -1618,9 +2242,21 @@ git-tree-sha1 = "098e4d2c533924c921f9f9847274f2ad89e018b8"
 uuid = "83e8ac13-25f8-5344-8a64-a9f2b223428f"
 version = "0.5.0"
 
+[[IntelOpenMP_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "d979e54b71da82f3a65b62553da4fc3d18c9004c"
+uuid = "1d5cc7b8-4909-519e-a0f8-d0f5ad9712d0"
+version = "2018.0.3+2"
+
 [[InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+
+[[Interpolations]]
+deps = ["AxisAlgorithms", "ChainRulesCore", "LinearAlgebra", "OffsetArrays", "Random", "Ratios", "Requires", "SharedArrays", "SparseArrays", "StaticArrays", "WoodburyMatrices"]
+git-tree-sha1 = "b15fc0a95c564ca2e0a7ae12c1f095ca848ceb31"
+uuid = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
+version = "0.13.5"
 
 [[InverseFunctions]]
 deps = ["Test"]
@@ -1661,6 +2297,12 @@ git-tree-sha1 = "d735490ac75c5cb9f1b00d8b5509c11984dc6943"
 uuid = "aacddb02-875f-59d6-b918-886e6ef4fbf8"
 version = "2.1.0+0"
 
+[[KernelDensity]]
+deps = ["Distributions", "DocStringExtensions", "FFTW", "Interpolations", "StatsBase"]
+git-tree-sha1 = "591e8dc09ad18386189610acafb970032c519707"
+uuid = "5ab0869b-81aa-558d-bb23-cbf5423bbe9b"
+version = "0.6.3"
+
 [[LAME_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "f6250b16881adf048549549fba48b1161acdac8c"
@@ -1683,6 +2325,10 @@ deps = ["Formatting", "InteractiveUtils", "LaTeXStrings", "MacroTools", "Markdow
 git-tree-sha1 = "a8f4f279b6fa3c3c4f1adadd78a621b13a506bce"
 uuid = "23fbe1c1-3f47-55db-b15f-69d7ec21a316"
 version = "0.15.9"
+
+[[LazyArtifacts]]
+deps = ["Artifacts", "Pkg"]
+uuid = "4af54fe1-eca0-43a8-85a7-787d91b784e3"
 
 [[LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
@@ -1764,6 +2410,12 @@ version = "0.3.6"
 [[Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
 
+[[MKL_jll]]
+deps = ["Artifacts", "IntelOpenMP_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "Pkg"]
+git-tree-sha1 = "5455aef09b40e5020e1520f551fa3135040d4ed0"
+uuid = "856f044c-d86e-5d09-b602-aeab76dc8ba7"
+version = "2021.1.1+2"
+
 [[MacroTools]]
 deps = ["Markdown", "Random"]
 git-tree-sha1 = "3d3e902b31198a27340d0bf00d6ac452866021cf"
@@ -1801,19 +2453,46 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 [[MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
 
+[[MultivariateStats]]
+deps = ["Arpack", "LinearAlgebra", "SparseArrays", "Statistics", "StatsBase"]
+git-tree-sha1 = "8d958ff1854b166003238fe191ec34b9d592860a"
+uuid = "6f286f6a-111f-5878-ab1e-185364afe411"
+version = "0.8.0"
+
 [[NaNMath]]
-git-tree-sha1 = "f755f36b19a5116bb580de457cda0c140153f283"
+git-tree-sha1 = "b086b7ea07f8e38cf122f5016af580881ac914fe"
 uuid = "77ba4419-2d1f-58cd-9bb1-8ffee604a2e3"
-version = "0.3.6"
+version = "0.3.7"
+
+[[NearestNeighbors]]
+deps = ["Distances", "StaticArrays"]
+git-tree-sha1 = "16baacfdc8758bc374882566c9187e785e85c2f0"
+uuid = "b8a86587-4115-5ab1-83bc-aa920d37bbce"
+version = "0.4.9"
 
 [[NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
+
+[[Observables]]
+git-tree-sha1 = "fe29afdef3d0c4a8286128d4e45cc50621b1e43d"
+uuid = "510215fc-4207-5dde-b226-833fc4488ee2"
+version = "0.4.0"
+
+[[OffsetArrays]]
+deps = ["Adapt"]
+git-tree-sha1 = "043017e0bdeff61cfbb7afeb558ab29536bbb5ed"
+uuid = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
+version = "1.10.8"
 
 [[Ogg_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "887579a3eb005446d514ab7aeac5d1d027658b8f"
 uuid = "e7412a2a-1a6e-54c0-be00-318e2571c051"
 version = "1.3.5+1"
+
+[[OpenBLAS_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
+uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
 
 [[OpenLibm_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -1856,9 +2535,9 @@ version = "0.11.5"
 
 [[Parsers]]
 deps = ["Dates"]
-git-tree-sha1 = "92f91ba9e5941fc781fecf5494ac1da87bdac775"
+git-tree-sha1 = "0b5cfbb704034b5b4c1869e36634438a047df065"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "2.2.0"
+version = "2.2.1"
 
 [[Pixman_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1884,15 +2563,15 @@ version = "1.1.3"
 
 [[Plots]]
 deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "GeometryBasics", "JSON", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "PlotThemes", "PlotUtils", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "UUIDs", "UnicodeFun", "Unzip"]
-git-tree-sha1 = "db7393a80d0e5bef70f2b518990835541917a544"
+git-tree-sha1 = "68e602f447344154f3b80f7d14bfb459a0f4dadf"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-version = "1.25.6"
+version = "1.25.5"
 
 [[PlutoUI]]
 deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
-git-tree-sha1 = "5c0eb9099596090bb3215260ceca687b888a1575"
+git-tree-sha1 = "ae6145ca68947569058866e443df69587acc1806"
 uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
-version = "0.7.30"
+version = "0.7.32"
 
 [[Preferences]]
 deps = ["TOML"]
@@ -1924,6 +2603,12 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 deps = ["Serialization"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
+[[Ratios]]
+deps = ["Requires"]
+git-tree-sha1 = "01d341f502250e81f6fec0afe662aa861392a3aa"
+uuid = "c84ed2f1-dad5-54f0-aa8e-dbefe2724439"
+version = "0.4.2"
+
 [[RecipesBase]]
 git-tree-sha1 = "6bf3f380ff52ce0832ddd3a2a7b9538ed1bcca7d"
 uuid = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
@@ -1931,9 +2616,9 @@ version = "1.2.1"
 
 [[RecipesPipeline]]
 deps = ["Dates", "NaNMath", "PlotUtils", "RecipesBase"]
-git-tree-sha1 = "37c1631cb3cc36a535105e6d5557864c82cd8c2b"
+git-tree-sha1 = "7ad0dfa8d03b7bcf8c597f59f5292801730c55b8"
 uuid = "01d81517-befc-4cb6-b9ec-a95719d0359c"
-version = "0.5.0"
+version = "0.4.1"
 
 [[Reexport]]
 git-tree-sha1 = "45e428421666073eab6f2da5c9d310d99bb12f9b"
@@ -1973,6 +2658,12 @@ git-tree-sha1 = "0b4b7f1393cff97c33891da2a0bf69c6ed241fda"
 uuid = "6c6a2e73-6563-6170-7368-637461726353"
 version = "1.1.0"
 
+[[SentinelArrays]]
+deps = ["Dates", "Random"]
+git-tree-sha1 = "15dfe6b103c2a993be24404124b8791a09460983"
+uuid = "91c51154-3ec4-41a3-a24f-3f23e20d615c"
+version = "1.3.11"
+
 [[Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 
@@ -2001,9 +2692,9 @@ uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [[SpecialFunctions]]
 deps = ["ChainRulesCore", "IrrationalConstants", "LogExpFunctions", "OpenLibm_jll", "OpenSpecFun_jll"]
-git-tree-sha1 = "e08890d19787ec25029113e88c34ec20cac1c91e"
+git-tree-sha1 = "e6bf188613555c78062842777b116905a9f9dd49"
 uuid = "276daf66-3868-5448-9aa4-cd146d93841b"
-version = "2.0.0"
+version = "2.1.0"
 
 [[StaticArrays]]
 deps = ["LinearAlgebra", "Random", "Statistics"]
@@ -2028,9 +2719,15 @@ version = "0.33.14"
 
 [[StatsFuns]]
 deps = ["ChainRulesCore", "InverseFunctions", "IrrationalConstants", "LogExpFunctions", "Reexport", "Rmath", "SpecialFunctions"]
-git-tree-sha1 = "bedb3e17cc1d94ce0e6e66d3afa47157978ba404"
+git-tree-sha1 = "f35e1879a71cca95f4826a14cdbf0b9e253ed918"
 uuid = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
-version = "0.9.14"
+version = "0.9.15"
+
+[[StatsPlots]]
+deps = ["Clustering", "DataStructures", "DataValues", "Distributions", "Interpolations", "KernelDensity", "LinearAlgebra", "MultivariateStats", "Observables", "Plots", "RecipesBase", "RecipesPipeline", "Reexport", "StatsBase", "TableOperations", "Tables", "Widgets"]
+git-tree-sha1 = "e1e5ed9669d5521d4bbdd4fab9f0945a0ffceba2"
+uuid = "f3b207a7-027a-5e70-b257-86293d7955fd"
+version = "0.14.30"
 
 [[StructArrays]]
 deps = ["Adapt", "DataAPI", "StaticArrays", "Tables"]
@@ -2045,6 +2742,12 @@ uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
 [[TOML]]
 deps = ["Dates"]
 uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+
+[[TableOperations]]
+deps = ["SentinelArrays", "Tables", "Test"]
+git-tree-sha1 = "e383c87cf2a1dc41fa30c093b2a19877c83e1bc1"
+uuid = "ab02a1b2-a7df-11e8-156e-fb1833f50b87"
+version = "1.2.0"
 
 [[TableTraits]]
 deps = ["IteratorInterfaceExtensions"]
@@ -2100,6 +2803,18 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "66d72dc6fcc86352f01676e8f0f698562e60510f"
 uuid = "2381bf8a-dfd0-557d-9999-79630e7b1b91"
 version = "1.23.0+0"
+
+[[Widgets]]
+deps = ["Colors", "Dates", "Observables", "OrderedCollections"]
+git-tree-sha1 = "80661f59d28714632132c73779f8becc19a113f2"
+uuid = "cc8bc4a8-27d6-5769-a93b-9d913e69aa62"
+version = "0.6.4"
+
+[[WoodburyMatrices]]
+deps = ["LinearAlgebra", "SparseArrays"]
+git-tree-sha1 = "de67fa59e33ad156a590055375a30b23c40299d3"
+uuid = "efce3f68-66dc-5838-9240-27a6d6f5f9b6"
+version = "0.5.5"
 
 [[XML2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libiconv_jll", "Pkg", "Zlib_jll"]
@@ -2302,7 +3017,8 @@ version = "0.9.1+5"
 
 # ╔═╡ Cell order:
 # ╠═0efef0ae-1de8-40e0-b689-e473ef9183e8
-# ╠═40272dcb-7ff1-4a5d-b201-9dc548d81d8c
+# ╟─40272dcb-7ff1-4a5d-b201-9dc548d81d8c
+# ╟─facf73a4-255a-4bf3-baa0-ef20f692e0bd
 # ╟─55d82d37-b380-44a5-a234-504329b58e3f
 # ╟─fb5e61c6-aae4-42c1-a088-ce87afe3ea01
 # ╟─f614543b-ccea-401e-a0ad-a74eb9076b40
@@ -2317,14 +3033,14 @@ version = "0.9.1+5"
 # ╟─91106045-43a1-427c-a300-e5200ad112ff
 # ╟─8663be81-9919-46a8-977a-1c11bbed0f73
 # ╟─6992e045-0daf-46bf-a17d-62ca7945e4af
-# ╠═4862cfb9-364b-4d34-9a30-38ce48ce069d
+# ╟─4862cfb9-364b-4d34-9a30-38ce48ce069d
 # ╟─2cb438ee-ae5e-4421-bf5c-369154aaef81
+# ╟─0f532a5b-741e-4c7c-8742-6108859ebd58
 # ╠═ab975494-0a3e-46fe-b3cb-74fa87010018
 # ╟─c9a1e998-a378-4d59-90c5-138257ac439e
 # ╟─1d12c6dd-7f0a-458c-ad43-9ffdc98acf31
 # ╟─60c3954b-d519-4f2b-9faa-efe85e34f774
 # ╟─daf5a973-e73e-4a2b-8c6a-15a60f461a07
-# ╟─787210f9-0ead-481d-a1ba-cc91cc7347cc
 # ╠═72b1f589-cae8-4ffb-a4d7-a50aeb1898ce
 # ╟─f595c7ab-5b6e-441a-b7b3-c804e8e0c7ab
 # ╟─79428f16-504e-4551-8289-83e5b86f53e2
@@ -2333,41 +3049,37 @@ version = "0.9.1+5"
 # ╠═d8497cde-7c0c-4e7e-91e0-6afb8d8cb411
 # ╟─c722ed1a-83dd-4634-ad4c-4d59738db97a
 # ╟─af816df6-6212-44bf-9301-a3dc4e7bf764
+# ╟─d0170f42-ce09-41c6-a7e4-86fbca1749ab
+# ╟─306f5d53-df88-4af3-bbec-25c947c0cb9f
+# ╠═6600061c-d18e-4699-beec-adb58de12f41
+# ╟─ea6fb2f4-6455-44af-a574-3768bad151a9
+# ╟─49a07a3d-51fa-4f38-b33d-e5127e744b04
+# ╠═36a3a18f-7537-46cc-b4f4-1551ae939be5
+# ╟─bad4cc28-ad6a-4d1e-9b72-642f394f2374
+# ╟─c2e2ec60-4433-43b9-b08e-ecb577900bc4
+# ╟─6583d269-9eab-4a0c-b81e-a25d18b3a5c8
+# ╟─f9f4361c-ec29-4055-a1da-d3b0f5a20295
+# ╟─ba12b93e-83d2-4c8d-91d9-ff98afff6f10
+# ╟─6fb1c386-ef44-458e-b3f5-8929309758eb
+# ╟─60cecddd-601e-4113-90c5-19d3d045136a
+# ╟─1b5114d9-37b0-469a-ab16-02574a5803a0
+# ╟─95f1d794-fba6-4743-862b-e2c0a5a0e1ed
+# ╟─bfef39eb-e71f-4342-b0b8-6357d00f96c6
+# ╟─ed950215-5b2c-4216-b377-881b094f5c91
+# ╟─96d04bb5-b8db-4fb3-b4b0-64150fb76a99
+# ╟─67ded75a-be8a-4989-976b-d0d9e6b1a3e1
 # ╟─094c3ae9-7af0-4dc4-874e-fdad2c18c10d
-# ╟─16a13599-bdef-4d23-82e9-905fff10dccc
-# ╟─d56b8eda-3629-4ed3-9960-0ff1dbf713de
-# ╟─a2da2e63-26af-4e86-b968-674727484e47
-# ╟─96233615-fe85-40cf-8a76-303cc67338c4
-# ╟─f7c5026a-0bd0-428b-a339-dfff7865997d
-# ╟─280122cc-54ec-4235-821d-815f7ab4f1cc
-# ╠═5e62b60e-6c00-11ec-34fa-4b57e5168947
-# ╟─0762d6d0-31c1-4ae3-b76f-0f6aeb5ed27b
-# ╠═a965ba28-6a8a-48a3-a298-db151b7af80b
 # ╟─f6e1875e-8780-457b-b7bc-beff24c5ceb9
 # ╠═955d45f8-6040-4904-9fc9-ff13ffa41193
 # ╟─f13d0c05-44bc-41aa-9476-3f8cd74200f1
-# ╟─5856285d-12a2-40f5-b321-034174ef7e6d
-# ╠═0cebe58b-f1b2-4220-b15c-0f844cf22057
+# ╟─1a2cc51d-b97f-4192-9284-f94eff0853ba
+# ╟─af296256-6662-49e9-b24d-c8550ce39c8d
+# ╟─0cebe58b-f1b2-4220-b15c-0f844cf22057
+# ╟─0241a8e7-2810-488e-bbc2-38c3da9a431e
 # ╟─3f9ee27d-f128-4d42-a144-d3f8856de4d3
-# ╠═d1dca62c-788e-4d20-a528-dcb8f39a3d53
-# ╠═a48e1156-fc46-4b58-b971-9b65b348d64b
-# ╠═e6a3536e-dfc1-494b-9b46-c33e22ed79f0
-# ╠═61b48e5d-5be4-4f03-9c5e-c2bfc5b6419a
-# ╟─b29ce423-a267-4290-b31b-e5ef4f64a56d
-# ╠═f9548ad3-ce2e-413a-a548-bfe35b7e811f
-# ╠═192e8eeb-0514-4792-ba60-90f1f3207c0a
-# ╠═e7f7e1d8-bbb0-4f5d-ac95-dec895527a52
-# ╟─679beed3-fa57-4bb0-95a8-ca5198f07938
-# ╠═26f3b743-b7a1-43e8-b07f-1b4e3ebb42fb
-# ╠═874bcad6-cf73-417a-82e6-093c6bcdd0d8
-# ╟─40167574-d958-49a8-bfcc-59f95f98e7a1
-# ╠═a071b8d5-f938-42a7-92e6-9883ad90aa09
-# ╠═772f6482-2679-4672-97f5-96468c468f68
-# ╠═3762e4c0-63a5-40d3-beab-0db781d83af0
-# ╟─fff32e43-8c5c-416f-9734-b356478d17ab
-# ╠═e4c3ed05-38ef-4440-82ac-c2a41616ad12
-# ╠═8a7a9e2a-ad0a-4996-9057-ccc05d5ff577
-# ╠═83011d1f-d9c7-472e-b9b3-98b11a072df5
-# ╠═a476cff9-e37d-4e21-a205-6b003bd04c62
+# ╟─5e62b60e-6c00-11ec-34fa-4b57e5168947
+# ╟─d1dca62c-788e-4d20-a528-dcb8f39a3d53
+# ╟─a48e1156-fc46-4b58-b971-9b65b348d64b
+# ╟─e6a3536e-dfc1-494b-9b46-c33e22ed79f0
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
