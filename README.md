@@ -1,6 +1,7 @@
-# STMO-ZOO
+# STMO-ZOO: Link between fractals and the Newton method
+## by Kim Hayoung and Merckx Anna
 
-Welcome to the STMO zoo! This is your final assignment for the course Selected Topics in Mathematical Optimization. Your goal is to implement an optimization method in Julia and contribute this to this repository. To pass, you have to:
+Welcome to the 'Link between fractals and the Newton method' repository in STMO zoo! This is the final assignment for the course Selected Topics in Mathematical Optimization. The goal is to implement an optimization method in Julia and contribute this to this repository.
 
 - fork this repo and create a pull request;
 - add a module to `src` with **at least one function**
