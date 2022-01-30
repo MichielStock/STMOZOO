@@ -242,15 +242,6 @@ The additional experiments show that GD with SD performs equally well compared t
 The overfitting problem with ADAM + SD can be successfully conquered with lower learning rates. However, the shape of the decision boundary suffers with learning rates as low as 0.0001. From all three ADAM + SD experiments, the one learning at a rate of 0.001 performed best.
 """
 
-# ╔═╡ bd4f515c-1e41-48bc-8c36-233535a3022c
-md"""
-### Plot Summary
-This section summarizes the decision boundaries of all figures from above for easier visual comparison in one plot.
-
-
-Figure 17:
-"""
-
 # ╔═╡ 2c740919-1fd4-45c4-91d1-ef3d3e081139
 md"""
 ## Discussion
@@ -282,15 +273,6 @@ Russell, S., & Norvig, P. (2002). Artificial intelligence: a modern approach.
 
 Kingma, D. P., & Ba, J. (2014). Adam: A method for stochastic optimization. arXiv preprint arXiv:1412.6980.
 """
-
-# ╔═╡ 9441b599-cb0d-4892-8151-4c40125214be
-md"""
-### Appendix
-To foster the understanding of interested reader on the mentioned regularization and optimization approaches,
-"""
-
-# ╔═╡ c7331867-28b5-4a3f-b95c-926a3639dad9
-
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -529,11 +511,8 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─2bfb5f10-cb87-41a4-9dca-f3f0b1157c6f
 # ╟─7460f609-c32b-4704-a361-71c98bb626cd
 # ╟─87cc8172-d5cc-49ff-9a0e-fa734e1010c1
-# ╠═bd4f515c-1e41-48bc-8c36-233535a3022c
 # ╟─2c740919-1fd4-45c4-91d1-ef3d3e081139
 # ╟─21854d7b-13ce-477c-bc61-1cb15536e24f
 # ╟─c95db58c-9d47-4ef0-9ede-234d7a693f41
-# ╠═9441b599-cb0d-4892-8151-4c40125214be
-# ╠═c7331867-28b5-4a3f-b95c-926a3639dad9
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
