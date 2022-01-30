@@ -11,11 +11,11 @@ using ScikitLearn
 
 export get_moon_data_loader, get_nmist_data_loader
 
-function get_moon_data_loader(; n = 300, offset = 0.5, shuffle = true, args...)
+function get_moon_data_loader(; n = 300, offset = 0.5, shuffle = true, seed = rand((1, 2^31)), args...)
     args = Args(; args...)
 
     # offset: linearly separable => 1.0; not lin. sep. => 0.5
-	x, y = generate_moons(n, offset = offset)
+	x, y = generate_moons(n, offset = offset, seed = seed)
 	x, y = transpose(x), onehotbatch(y, 0:1)
 
 	# create data loader
@@ -38,13 +38,15 @@ end
 function generate_moons_from_publication(; offset = 0.0, coord_down_scale = 1, show_plot = false)
     moons = hcat(moon_class_1(offset, coord_down_scale), moon_class_2(offset, coord_down_scale))
     labels = [repeat([0], 150); repeat([1], 150)]
+
     if show_plot 
         display(scatter(moons[1,:], moons[2,:], c = labels))
     end
+
     return moons, labels
 end
 
-function generate_moons(n; noise = 0.1, offset = 0.0, rotation = 90, seed = rand((1, 2^31)), show_plot = false)
+function generate_moons(n; noise = 0.09, offset = 0.0, rotation = 90, seed = rand((1, 2^31)), show_plot = false)
     X, y = make_moons(n_samples = n, noise = noise, random_state = seed)
     p1 = scatter(X[:,1], X[:,2], c = y, title = "generated state")
 
@@ -67,6 +69,7 @@ function generate_moons(n; noise = 0.1, offset = 0.0, rotation = 90, seed = rand
     if show_plot
         display(plot(p1, p2, p3, layout = (1, 3)))
     end
+
     return X, y
 end
 
@@ -399,6 +402,7 @@ function moon_class_1(offset = 0.0, coord_down_scale = 1)
         -0.7882243058017496,
         -0.9895456553950488
     ]
+
     return vcat(transpose.((x, y))...) / coord_down_scale
 end
 
@@ -707,6 +711,7 @@ function moon_class_2(offset = 0.0, coord_down_scale = 1)
         -3.0090552847647456,
         0.2317409067300455
     ] 
+
     return vcat(transpose.((x, y))...) / coord_down_scale
 end
 
