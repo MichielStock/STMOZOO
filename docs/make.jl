@@ -1,7 +1,6 @@
 using Documenter
 
-using STMOZOO
-using STMOZOO.Fridge
+using Fridge
 
 makedocs(sitename="Fridge.jl",
     format = Documenter.HTML(),

@@ -1,6 +1,6 @@
 
 # Fridge.jl
-[![](https://img.shields.io/badge/docs-latest-blue)](https://wardvanbelle.github.io/Fridge.jl/)    [![Coverage Status](https://coveralls.io/repos/github/wardvanbelle/Fridge.jl/badge.svg?branch=master)](https://coveralls.io/github/wardvanbelle/Fridge.jl?branch=master)\
+[![](https://img.shields.io/badge/docs-latest-blue)](https://wardvanbelle.github.io/Fridge.jl/)\
 \
 <img align="right" width="150" height="150" src="FridgeLogo.png">
 by <i>Ward Van Belle</i>

@@ -1,6 +1,6 @@
-name = "STMOZOO"
-uuid = "8e7dc78f-7190-4116-bf88-3d148ae9f088"
-authors = ["michielstock <michielfmstock@gmail.com>"]
+name = "Fridge"
+uuid = "673b17d6-c7db-4caa-9a54-38a02eba0033"
+authors = ["warvbell <wardvanbelle@gmail.com>"]
 version = "0.1.0"
 
 [deps]

@@ -1,6 +1,6 @@
 # testset for the Fridge.jl package
 @testset "Fridge" begin
-    using STMOZOO.Fridge
+    using Fridge
 
     testList = ["cheese","potato","tomato","cabbage"]
 
