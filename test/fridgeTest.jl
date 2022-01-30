@@ -15,6 +15,8 @@
         "macaroni" => ["cheese", "salt", "jambon"], 
         "salad" => ["cabbage","tomato","oil","horseradish"])
 
+    testSolution = Dict("salad" => [0,0,1,1,2], "fries" => [0,1,0,0,1])
+
     @testset "checkIngredients" begin
         # check if all ingredients are passed if no replacement is needed
         @test checkIngredients(testList,["cheese","salt","tomato","chocolate"]) == testList 
@@ -34,14 +36,25 @@
         @test greedyFindCombo(testList, testDict2, 3) == Dict("macaroni" => [1,0,0,0,2], "fries" => [0,1,0,0,1])
     end
 
-    @testset "RandomCombo" begin
+    @testset "randomCombo" begin
         # test all ingredients used end
-        @test RandomCombo(testList, testDict3, 3) == Dict("macaroni" => [1,0,0,0,2], "salad" => [0,0,1,1,2], "fries" => [0,1,0,0,1])
+        @test randomCombo(testList, testDict3, 3) == Dict("macaroni" => [1,0,0,0,2], "salad" => [0,0,1,1,2], "fries" => [0,1,0,0,1])
 
         # test no recipes left end
-        @test RandomCombo(testList, testDict2, 3) == Dict("macaroni" => [1,0,0,0,2], "fries" => [0,1,0,0,1])
+        @test randomCombo(testList, testDict2, 3) == Dict("macaroni" => [1,0,0,0,2], "fries" => [0,1,0,0,1])
 
         # test length of max number recipes end
-        @test length(values(RandomCombo(testList, testDict, 2))) == 2
+        @test length(values(randomCombo(testList, testDict, 2))) == 2
+    end
+
+    @testset "Neighbour" begin
+        # test not random with empty tabuList
+        @test "macaroni" in keys(Neighbour(testSolution, testList, testDict, 2, [], false))
+
+        # test not random with tabuList
+        @test !in("macaroni",keys(Neighbour(testSolution, testList, testDict, 2, ["macaroni"], false)))
+
+        # test length of random with empty tabuList
+        @test length(values(Neighbour(testSolution, testList, testDict, 2, [], true))) == 2
     end
 end

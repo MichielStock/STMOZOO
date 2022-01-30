@@ -450,6 +450,7 @@ function Neighbour(curSolution, fridgeList, recipeDict, numRecipes, tabuList, ra
     for recipe in keys(curSolution)
         if recipe != toRemove
             tempFridgeList = [i for i in fridgeList if !in(i,recipeDict[recipe])]
+            numRecipes -= 1
         end
     end
 

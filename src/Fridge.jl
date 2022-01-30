@@ -4,7 +4,7 @@ include("recipeWebscraper.jl")
 
 using .recipeWebscraper, JLD2
 
-export checkIngredients, greedyFindCombo, findBestRecipe, RandomCombo, removeRecipe, SAFindCombo, scrapeRecipe, loadRecipeDBCSV
+export checkIngredients, greedyFindCombo, findBestRecipe, randomCombo, Neighbour, SAFindCombo, scrapeRecipe, loadRecipeDBCSV
 
 #==================================================
           CHECK INGREDIENTS FUNCTIONS
@@ -163,7 +163,7 @@ This function gives a random combination of recipes from the provided recipe dic
 ## Output:
 - randCombo: A dictionary containing a random combination of recipes.
 """
-function RandomCombo(fridgeList, recipeDict, numRecipes)
+function randomCombo(fridgeList, recipeDict, numRecipes)
 
     randCombo = Dict()
     ingredientsArray = []
@@ -197,7 +197,7 @@ function RandomCombo(fridgeList, recipeDict, numRecipes)
 end
 
 """
-    removeRecipe(curSolution, fridgeList, recipeDict, numRecipes, tabuList, randRecipe)
+    Neighbour(curSolution, fridgeList, recipeDict, numRecipes, tabuList, randRecipe)
 
 This is a function that looks for a neighbour of the current solution. This function is used in the simulated annealing algorithm.
 It also uses a tabulist to stimulate the use of new solutions.
@@ -214,7 +214,7 @@ It also uses a tabulist to stimulate the use of new solutions.
 - neighbour: A dictionary containing a combination of recipes.
 
 """
-function removeRecipe(curSolution, fridgeList, recipeDict, numRecipes, tabuList, randRecipe)
+function Neighbour(curSolution, fridgeList, recipeDict, numRecipes, tabuList, randRecipe)
 
     toRemove = rand(curSolution)[1]
     # adapt the fridgeList so that only ingredients from the removed ingredient are available
@@ -222,9 +222,9 @@ function removeRecipe(curSolution, fridgeList, recipeDict, numRecipes, tabuList,
     for recipe in keys(curSolution)
         if recipe != toRemove
             tempFridgeList = [i for i in fridgeList if !in(i,recipeDict[recipe])]
+            numRecipes -= 1
         end
     end
-
     # adapt the recipeDict and use greedy search to find a new solution
     tempRecipeDict = copy(recipeDict)
     for recipe in keys(curSolution)
@@ -238,9 +238,9 @@ function removeRecipe(curSolution, fridgeList, recipeDict, numRecipes, tabuList,
     end
 
     if randRecipe
-        neighbour = RandomCombo(tempFridgeList, tempRecipeDict, numRecipes)
+        neighbour = randomCombo(tempFridgeList, tempRecipeDict, numRecipes)
     else
-        neighbour = GreedyFindCombo(tempFridgeList, tempRecipeDict, numRecipes)
+        neighbour = greedyFindCombo(tempFridgeList, tempRecipeDict, numRecipes)
     end
 
     # correct recipe vectors
@@ -304,7 +304,7 @@ function SAFindCombo(curSolution,  fridgeList, recipeDict, numRecipes, randRecip
         print("T = $T \n")
 		# repeat kT times
 		for i in 1:kT
-			sn = removeRecipe(solution, fridgeList, recipeDict, numRecipes, tabuList, randRecipe)  # random neighbor
+			sn = Neighbour(solution, fridgeList, recipeDict, numRecipes, tabuList, randRecipe)  # random neighbor
 			obj_sn = fridgeObjective([i for i in values(sn)])
 			# if the neighbor improves the solution, keep it
 			# otherwise accept with a probability determined by the
