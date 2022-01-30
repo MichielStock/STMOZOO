@@ -1,6 +1,6 @@
 module Fridge
 
-include("recipewebscraper.jl")
+include("recipeWebscraper.jl")
 
 using .recipeWebscraper, JLD2
 
