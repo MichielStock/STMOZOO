@@ -1,4 +1,15 @@
-testList = ["cheese","potato","tomato","cabbage","beetroot","cauliflower"]
-testList2 = ["cheese","potato","tomato","cabbage"]
+# testset for the Fridge.jl package
+@testset "Fridge" begin
+    using STMOZOO.Fridge
 
-test = findBestRecipe(testList, "./data/recipeDB.jld2", numRecipes=10, randRecipe=true)
+    testList = ["cheese","potato","tomato","cabbage"]
+
+    @testset "checkIngredients" begin
+        # check if all ingredients are passed if no replacement is needed
+        @test checkIngredients(testList,["cheese","salt","tomato","chocolate"]) == testList 
+
+        # test for type
+        @test checkIngredients(testList,["cheese","salt","tomato","chocolate"]) isa Vector{String}
+    end
+
+end
