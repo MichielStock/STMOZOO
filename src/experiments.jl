@@ -20,12 +20,14 @@ function run_experiments(experiments; prefix = "", show_plots = true, save_plots
         # create plots
         p1 = PlotLib.plot_decision_boundary(train_loader, model, title = name)
         p2 = PlotLib.plot_loss_and_accuracy(stats["loss"], stats["accuracy"])
+		# combine subplots
         p = [p1 p2]
-        PlotlyJS.relayout!(p, paper_bgcolor = "rgba(0, 0, 0, 0)")
+		# make background and plots transparent (looks better in dark-styled browsers)
+        PlotlyJS.relayout!(p, paper_bgcolor = "rgba(0, 0, 0, 0)", plot_bgcolor = "rgba(0, 0, 0, 0)")
         
-		# plot/save decision boundary and performance stats
+		# save and/or display decision boundary and performance stats
         if save_plots 
-			p_name = "plots/$(prefix)_" * replace(name, " " => "_") * ".png"
+			p_name = "plots/$(prefix)" * replace(name, " " => "_") * ".png"
 			PlotlyJS.savefig(p, p_name, width = plot_width, height = plot_height) 
 		end
 
@@ -53,4 +55,6 @@ function get_plot_resolution(size)
 		# 16:9 1080p
 		return 1920, 1080
 	end
+end
+
 end
