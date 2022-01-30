@@ -120,7 +120,7 @@ function calculate_S_first(RNA)
 end
 
 # ╔═╡ 2d83c447-1d33-496a-8a39-75d1cb9b2de1
-function calculate_S(RNA)
+function Nussinov(RNA)
 	n = length(RNA)
 	S = zeros(n,n)
 	# recursion happens from smaller to larger distancs between i and j,
@@ -156,19 +156,19 @@ function calculate_S(RNA)
 end
 
 # ╔═╡ 0a20eddd-24f7-43c6-a0f3-6c1c138fb90a
-S = calculate_S(RNA)
+S = Nussinov(RNA)
 
 # ╔═╡ 463d18c3-e155-4b73-896f-2bbcdb71bbd2
 function traceback(RNA, S, i, j; pairs = [])
 	if i < j
-		if S[i,j] == S[i,j-1]
+		if  S[i,j] == S[i,j-1] 
 			traceback(RNA, S, i, j-1, pairs = pairs)
-		elseif S[i,j] == S[i+1,j-1] + 1
+		elseif S[i,j] == S[i+1,j-1] + 1 && basepair(i, j, RNA)
 			push!(pairs, (i,j))
 			traceback(RNA, S, i+1, j-1, pairs = pairs)
 		else
 			for k in i+1:j-4
-				if S[i,j] == S[i,k-1] + S[k+1,j-1] + 1
+				if S[i,j] == S[i,k-1] + S[k+1,j-1] + 1 && basepair(k, j, RNA)
 					push!(pairs, (k,j))
 					traceback(RNA, S, i, k-1, pairs = pairs)
 					traceback(RNA, S, k+1, j-1, pairs = pairs)
@@ -254,14 +254,17 @@ function plotstructure3(RNA, pairs)
 		end
 	end
 	nuc = [string(i) for i in RNA]
+	nodesize = 1000/n
+	edgewidth = nodesize/3
 	f, ax, p = graphplot(G,
 						layout = Stress(),
-						node_size = 20,
+						node_size = nodesize,
 						node_color = nodecolors,
 						edge_color = edgecolors,
-						edge_width = 3,
+						edge_width = edgewidth,
 						nlabels = nuc,
 						nlabels_align = (:center,:center),
+						nlabels_textsize = nodesize,
 						)
 	hidedecorations!(ax); hidespines!(ax)
 	ax.aspect = DataAspect()
@@ -270,9 +273,6 @@ end
 
 # ╔═╡ 5e397f0a-7bdd-4db9-9acf-5781951897f6
 plotstructure3(RNA, pairs)
-
-# ╔═╡ c6b5f210-80d1-465c-b128-89917263e202
-
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1642,20 +1642,19 @@ version = "0.9.1+5"
 # ╟─3c7f1384-33ac-4b2d-9a63-4bf412bfa685
 # ╠═3ea557f6-a3bd-4d73-99ef-10fc69024fca
 # ╠═e5650185-a6bc-488c-a02b-3c1363c52b8c
-# ╠═dc573955-b679-4fdc-aeba-7001ea8f7a4c
+# ╟─dc573955-b679-4fdc-aeba-7001ea8f7a4c
 # ╠═2d83c447-1d33-496a-8a39-75d1cb9b2de1
 # ╠═0a20eddd-24f7-43c6-a0f3-6c1c138fb90a
 # ╠═463d18c3-e155-4b73-896f-2bbcdb71bbd2
 # ╠═43f97b8d-cd9c-4b8f-8821-68542488e49d
 # ╠═b156a4c7-6ed9-4a4d-b3c9-d3c06fbc1faf
 # ╠═0d5440c3-23f8-4718-b68e-852c7600cf5b
-# ╠═2c5e005a-7b42-4ae8-8865-585faa7b46de
+# ╟─2c5e005a-7b42-4ae8-8865-585faa7b46de
 # ╠═b5ed3265-3276-41b8-be2d-e9b8f03fe3f0
 # ╟─b3e65e30-be3b-4ae5-af26-2329eb882577
 # ╠═6fbe81e6-326c-466c-a7af-3d9e4afffde8
 # ╠═dba46e66-8704-42de-938c-d576a1336398
 # ╠═2e8fb274-0658-43f8-bfa0-40f2f1daf6f3
 # ╠═5e397f0a-7bdd-4db9-9acf-5781951897f6
-# ╠═c6b5f210-80d1-465c-b128-89917263e202
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
