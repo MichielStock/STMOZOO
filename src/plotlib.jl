@@ -7,7 +7,7 @@ using Flux
 using PlotlyJS
 using Plots
 
-export plot_train_and_test_data, plot_loss_and_accuracy, plot_decision_boundary
+export plot_train_and_test_data, plot_loss_and_accuracy, plot_features, plot_decision_boundary
 
 title_font_size = 18
 tick_font_size = 16
@@ -44,6 +44,29 @@ function plot_loss_and_accuracy(loss, accuracy; args...)
 				tickfont = attr(size = tick_font_size)),
 			legend = attr(font = attr(size = tick_font_size)),
 			automargin = false,
+			margin = attr(l = 0, r = 0, b = 0, t = 0, pad = 0),
+			plot_bgcolor = "rgba(0, 0, 0, 0)",
+			paper_bgcolor = "rgba(0, 0, 0, 0)"
+		)
+	)
+end
+
+function plot_features(z1, z2; args...)
+	args = Args(; args...)
+	PlotlyJS.plot([
+		PlotlyJS.scatter(y = z1, x = 1:args.epochs, mode = "lines", name = "z1"), 
+		PlotlyJS.scatter(y = z2, x = 1:args.epochs, mode = "lines", name = "z2")
+		],
+		Layout(
+			title = attr(text = "Features", font = attr(size = title_font_size)),
+			width = 1000, height = 1000, autosize = false,
+			xaxis = attr(
+				ticks = "outside",
+				tickfont = attr(size = tick_font_size)),
+			yaxis = attr(
+				ticks = "outside",	
+				tickfont = attr(size = tick_font_size)),
+			legend = attr(font = attr(size = tick_font_size)),
 			margin = attr(l = 0, r = 0, b = 0, t = 0, pad = 0),
 			plot_bgcolor = "rgba(0, 0, 0, 0)",
 			paper_bgcolor = "rgba(0, 0, 0, 0)"

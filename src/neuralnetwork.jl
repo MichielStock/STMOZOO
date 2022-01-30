@@ -7,6 +7,7 @@ using Flux
 using Flux: onecold
 using Flux: Optimiser
 using Flux.Losses: binarycrossentropy, crossentropy, logitcrossentropy, logitbinarycrossentropy
+using LinearAlgebra
 using MLDatasets
 using ProgressMeter
 using Statistics
@@ -47,15 +48,16 @@ function get_loss_and_accuracy(data_loader::Flux.Data.DataLoader, model, spectra
 end
 
 """
-	neural_network()
+	neural_network(500)
 
 Creates a Flux neural network according to the topology used by Pezeshki et al.
-That is a NN with 2 hidden layers, 500 units each and ReLU activation.
+That is a NN with 2 hidden layers, 500 units each and ReLU activation. The hidden
+layer dimensions can be adjusted.
 """
-function neural_network()
+function neural_network(hidden_dim = 500)
 	return Chain(
-		Dense(2, 500, relu),
-		Dense(500, 2)
+		Dense(2, hidden_dim, relu),
+		Dense(hidden_dim, 2)
 	)
 end
 
@@ -88,32 +90,57 @@ function train(data_loader::Flux.Data.DataLoader, optimizer::String = "SGD", spe
 
 	# record loss and accuracy progression over epochs
 	loss_prog, accuracy_prog = [], []
+	# record weight evolution of learned features
+	z1_prog, z2_prog = [], []
 
 	# training
 	prog = Progress(args.epochs, 0.25, "Training... ", 75)
 	for epoch in 1:args.epochs
-		loss(x, y) = spectral_decoupling ? 
-			Regularization.spectral_decoupling(model(x), y, args.λ) : 
-			logitcrossentropy(model(x), y)
+		for (x, y) in data_loader
+			grads = Flux.gradient(params) do
+				spectral_decoupling ? 
+					Regularization.spectral_decoupling(model(x), y, args.λ) : 
+					logitcrossentropy(model(x), y)
+			end
 
-		Flux.train!(loss, params, data_loader, optimizer)
+			Flux.Optimise.update!(optimizer, params, grads)
 
-		# evaluate loss and accuracy 
-		loss, accuracy = get_loss_and_accuracy(data_loader, model)
+			# evaluate loss and accuracy 
+			loss, accuracy = get_loss_and_accuracy(data_loader, model)
+			push!(loss_prog, loss)
+			push!(accuracy_prog, accuracy)
 
-		push!(loss_prog, loss)
-		push!(accuracy_prog, accuracy)
+			# evaluate learned features
+			# Y = Diagonal(y)
+			# Φ = ? --> NTK regime, unable to obtain NTRF matrix to perform SVD
+			# U = U of singular value decomposition
 
-		# show neat progress bar
-		ProgressMeter.next!(prog; showvalues = [
-			(:epoch, epoch), 
-			(:loss, loss),
-			(:accuracy, accuracy)
-			]
-		)
+			# workaround
+			# can only be done if hidden_dim = batchsize
+			if (size(model.layers[1].W, 1) == size(x, 2))
+				U = transpose(model.layers[1].W) .* model.layers[2].W
+				zs = U .* model(x)
+				# U1 = transpose(model.layers[1].W)
+				# U2 = model.layers[2].W
+				# z1 = U1 .* model(x)
+				# z2 = U2 .* model(x)
+				# push!(z1_prog, sum(abs.(z1)))
+				# push!(z2_prog, sum(abs.(z2)))
+				push!(z1_prog, sum(abs.(zs[1,:])))
+				push!(z2_prog, sum(abs.(zs[2,:])))
+			end
+
+			# show neat progress bar
+			ProgressMeter.next!(prog; showvalues = [
+				(:epoch, epoch), 
+				(:loss, loss),
+				(:accuracy, accuracy)
+				]
+			)
+		end
 	end
 
-	return model, Dict("loss" => loss_prog, "accuracy" => accuracy_prog)
+	return model, Dict("loss" => loss_prog, "accuracy" => accuracy_prog, "z1" => z1_prog, "z2" => z2_prog)
 end
 
 """
