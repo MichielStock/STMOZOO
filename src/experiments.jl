@@ -31,7 +31,7 @@ function run_experiments(experiments; prefix = "", random_moons = true, show_plo
 
         # create plots
         p1 = PlotLib.plot_decision_boundary(train_loader, model, title = name)
-        p2 = PlotLib.plot_loss_and_accuracy(stats["loss"], stats["accuracy"])
+        p2 = PlotLib.plot_loss_and_accuracy(stats["loss"], stats["accuracy"]; args...)
 
 		if plot_type == "both"
 			# combine subplots
