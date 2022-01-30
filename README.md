@@ -21,7 +21,7 @@ In this notebook we discuss the link between fractals and the Newton method. Fir
 
 ![Optional Text](https://github.com/HayoungKim27/STMOZOO/blob/b5a472f096674cef7b7e06b5627d4f09e4259980/figure/widget_slider.png)
 
-As you can see above, there are many **widgets** such as checkboxs or sliders when you read each line, so please participate and learn from it.
+As you can see above, there are many **widgets** such as checkboxes or sliders when you read each line, so please participate and learn from it.
 
 
 [![Build Status](https://travis-ci.org/MichielStock/STMOZOO.svg?branch=master)](https://travis-ci.org/MichielStock/STMOZOO)[![Coverage Status](https://coveralls.io/repos/github/MichielStock/STMOZOO/badge.svg?branch=master)](https://coveralls.io/github/MichielStock/STMOZOO?branch=master)
