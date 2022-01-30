@@ -1,7 +1,9 @@
-# STMO ZOO documentation
+# STMO ZOO documentation: Link between fractals and the Newton method
 
-This is the documentation page for the STMO ZOO packages (edition 2020-2021). This is the place for the **documentation**
-of your function. So explain the main functionality of your module and list the documentation of your funtions.
+This is the documentation page for the STMO ZOO packages (edition 2021-2022). This is the place for the **documentation**
+of two functions, Newtonsmethod and next_guess_zygote.
+
+1. Newtonsmethod
 
 ```@contents
 function Newtonsmethod(f, x₀, ϵ = 0.00001)
@@ -29,6 +31,8 @@ function Newtonsmethod(f, x₀, ϵ = 0.00001)
 end 
 ```
 
+2. next_guess_zygote
+
 ```@contents
 function next_guess_zygote(f, x₀, n = 100)
 	
@@ -45,11 +49,4 @@ function next_guess_zygote(f, x₀, n = 100)
 	return x
 	
 end 
-```
-
-```@contents
-
-```
-```@contents
-
 ```
