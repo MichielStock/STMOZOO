@@ -1,6 +1,6 @@
 
 # Fridge.jl
-[![](https://img.shields.io/badge/docs-latest-blue)](https://wardvanbelle.github.io/Fridge.jl/)\
+[![](https://img.shields.io/badge/docs-dev-blue)](https://wardvanbelle.github.io/Fridge.jl/dev) [![codecov](https://codecov.io/gh/wardvanbelle/Fridge.jl/branch/master/graph/badge.svg?token=GJ8JXBG5M1)](https://codecov.io/gh/wardvanbelle/Fridge.jl)\
 \
 <img align="right" width="150" height="150" src="FridgeLogo.png">
 by <i>Ward Van Belle</i>
