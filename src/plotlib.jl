@@ -12,6 +12,11 @@ export plot_train_and_test_data, plot_loss_and_accuracy, plot_features, plot_dec
 title_font_size = 18
 tick_font_size = 16
 
+"""
+	plot_train_and_test_data(train_loader, test_loader, "Train", "Test")
+
+Returns a PlotlyJS subplot with one row and two columns visualizing the two provided datasets.
+"""
 function plot_train_and_test_data(train_loader::Flux.Data.DataLoader, test_loader::Flux.Data.DataLoader; train_title = "", test_title = "")
 	# define common layout
 	layout = Layout(
@@ -50,7 +55,12 @@ function plot_train_and_test_data(train_loader::Flux.Data.DataLoader, test_loade
 	p
 end
 
-function plot_loss_and_accuracy(loss, accuracy; args...)
+"""
+	plot_loss_and_accuracy(loss, accuracy)
+
+Returns a PlotlyJS line plot with the data of the provided loss and accuracy vectors. 
+"""
+function plot_loss_and_accuracy(loss::Vector{Any}, accuracy::Vector{Any}; args...)
 	args = Args(; args...)
 	PlotlyJS.plot([
 		PlotlyJS.scatter(y = loss, x = 1:args.epochs, mode = "lines", name = "loss"),
@@ -76,7 +86,12 @@ function plot_loss_and_accuracy(loss, accuracy; args...)
 	)
 end
 
-function plot_features(z1, z2; args...)
+"""
+	plot_features(z1, z2)
+
+Returns a PlotlyJS line plot with the data of both features z1 and z2. 
+"""
+function plot_features(z1::Vector{Float64}, z2::Vector{Float64}; args...)
 	args = Args(; args...)
 	PlotlyJS.plot([
 		PlotlyJS.scatter(y = z1, x = 1:args.epochs, mode = "lines", name = "z1"), 
@@ -99,7 +114,12 @@ function plot_features(z1, z2; args...)
 	)
 end
 
-function plot_decision_boundary(loader, model; title = "")
+"""
+	plot_decision_boundary(train_loader, model; title = "SGD Δ0.5")
+
+Returns a PlotlyJS contour plot of the provided dataset according to the specified model.
+"""
+function plot_decision_boundary(loader::Flux.DataLoader, model; title = "")
 	# grid and range step size
 	n = 100
 	# determine limits of given data

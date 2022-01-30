@@ -11,7 +11,13 @@ using ScikitLearn
 
 export get_moon_data_loader, get_nmist_data_loader
 
-function get_moon_data_loader(; n = 300, offset = 0.5, shuffle = true, seed = rand((1, 2^31)), args...)
+"""
+    get_moon_data_loader(n = 300, offset = 0.5, shuffle = true, seed = 1337)
+
+Returns a Flux.DataLoader with moon data for the specified parameters.
+Supports creation of random moons and shuffling of the data points.  
+"""
+function get_moon_data_loader(; n::Int64 = 300, offset::Float64 = 0.5, shuffle::Bool = true, seed::Int64 = rand((1, 2^31)), args...)
     args = Args(; args...)
 
     # offset: linearly separable => 1.0; not lin. sep. => 0.5
@@ -22,7 +28,12 @@ function get_moon_data_loader(; n = 300, offset = 0.5, shuffle = true, seed = ra
 	return DataLoader((x, y), batchsize = args.batchsize, shuffle = shuffle)
 end
 
-function get_nmist_data_loader(; shuffle = true, args...)
+"""
+    get_nmist_data_loader(shuffle = true)
+
+Returns a Flux.DataLoader with MNIST data for the specified parameters.
+"""
+function get_nmist_data_loader(; shuffle::Bool = true, args...)
     args = Args(; args...)
 
 	x, y = MLDatasets.MNIST.traindata(Float32)
@@ -35,7 +46,13 @@ function get_nmist_data_loader(; shuffle = true, args...)
 	return DataLoader((x, y), batchsize = args.batchsize, shuffle = shuffle)
 end
 
-function generate_moons_from_publication(; offset = 0.0, coord_down_scale = 1, show_plot = false)
+"""
+    generate_moons_from_publication(offset = 0.5, coord_down_scale = 1.0, show_plot = false)
+
+Returns the exact same moons that were used on the demo website 
+of the publication authors at https://mohammadpz.github.io/GradientStarvation.html  
+"""
+function generate_moons_from_publication(; offset::Float64 = 0.0, coord_down_scale::Float64 = 1.0, show_plot::Bool = false)
     moons = hcat(moon_class_1(offset, coord_down_scale), moon_class_2(offset, coord_down_scale))
     labels = [repeat([0], 150); repeat([1], 150)]
 
@@ -46,7 +63,13 @@ function generate_moons_from_publication(; offset = 0.0, coord_down_scale = 1, s
     return moons, labels
 end
 
-function generate_moons(n; noise = 0.09, offset = 0.0, rotation = 90, seed = rand((1, 2^31)), show_plot = false)
+"""
+    generate_moons(n = 300, noise = 0.42, offset = 0.5, rotation = 90, seed = 42, show_plot = true)
+
+Wrapper function for scikitlearn make_moons function. Additionally features the options to rotate and offset the
+moons or plot the generated data.
+"""
+function generate_moons(n::Int64; noise::Float64 = 0.09, offset::Float64 = 0.0, rotation::Int64 = 90, seed::Int64 = rand((1, 2^31)), show_plot::Bool = false)
     X, y = make_moons(n_samples = n, noise = noise, random_state = seed)
     p1 = scatter(X[:,1], X[:,2], c = y, title = "generated state")
 
@@ -73,6 +96,11 @@ function generate_moons(n; noise = 0.09, offset = 0.0, rotation = 90, seed = ran
     return X, y
 end
 
+"""
+    apply_moon_offset(X, y, 0.5)
+
+Separates both moons by the specified offset.
+"""
 function apply_moon_offset(X, y, offset)
     # @assert direction in ["x", "y"] "Error: direction must be either x or y"
     # use offset as total offset, thus devide by number of labels; assume 2 labels
@@ -97,7 +125,13 @@ function apply_moon_offset(X, y, offset)
     return X
 end
 
-function moon_class_1(offset = 0.0, coord_down_scale = 1)
+"""
+    moon_class_1(0.0, 1.0)
+
+Returns the hardcoded coordinates of the first moon from the author's demo website 
+at https://mohammadpz.github.io/GradientStarvation.html
+"""
+function moon_class_1(offset::Float64 = 0.0, coord_down_scale::Float64 = 1.0)
     x = [
         -2.717835893494339 - offset,
         -2.0025756608302556 - offset,
@@ -406,7 +440,13 @@ function moon_class_1(offset = 0.0, coord_down_scale = 1)
     return vcat(transpose.((x, y))...) / coord_down_scale
 end
 
-function moon_class_2(offset = 0.0, coord_down_scale = 1)
+"""
+    moon_class_2(0.0, 1.0)
+
+Returns the hardcoded coordinates of the second moon from the author's demo website 
+at https://mohammadpz.github.io/GradientStarvation.html
+"""
+function moon_class_2(offset::Float64 = 0.0, coord_down_scale::Float64 = 1.0)
     x = [
         1.2605697631874289 + offset,
         0.4428841761287988 + offset,

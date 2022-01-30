@@ -6,13 +6,21 @@ include("plotlib.jl")
 include("plotutils.jl")
 include("structs.jl")
 
+using DataStructures
 using PlotlyJS
 
 export run_experiments
 
 plot_dir = "plots"
 
-function run_experiments(experiments; prefix = "", random_moons = true, show_plots = true, save_plots = true, plot_size = "medium", plot_type = "both", args...)
+"""
+	run_experiments(experiments, prefix = "exp_1", random_moons = true, show_plots = false, save_plots = true, plot_size = "medium", plot_type = "both", epochs = 500, batchsize = 42)
+
+Runs all experiments as specified by an DataStructures.OrderedDict.
+This includes the creation of moon data, the network, the training and the plotting of the results.
+This function is the work horse to conduct any analyses for the notebook.
+"""
+function run_experiments(experiments::DataStructures.OrderedDict; prefix::String = "", random_moons::Bool = true, show_plots::Bool = true, save_plots::Bool = true, plot_size::String = "medium", plot_type::String = "both", args...)
 	plot_type = lowercase(plot_type)
 	@assert plot_type in ["boundary", "stats", "both"] "Requested plot type '$plot_type' is not supported."
 
@@ -54,6 +62,7 @@ function run_experiments(experiments; prefix = "", random_moons = true, show_plo
 			display(p)
 		end
     end
+
 	@info "Finished $(length(experiments)) experiments."
 end
 

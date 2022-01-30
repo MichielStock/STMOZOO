@@ -52,9 +52,9 @@ end
 
 Creates a Flux neural network according to the topology used by Pezeshki et al.
 That is a NN with 2 hidden layers, 500 units each and ReLU activation. The hidden
-layer dimensions can be adjusted.
+layer dimensions can be adjusted by the first and only parameter.
 """
-function neural_network(hidden_dim = 500)
+function neural_network(hidden_dim::Int64 = 500)
 	return Chain(
 		Dense(2, hidden_dim, relu),
 		Dense(hidden_dim, 2)
@@ -71,12 +71,10 @@ the specified optimizer and additionally spectral decoupling as a loss regulariz
 ```julia-repl
 julia> train(train_loader, test_loader, "SGD", false)
 [ Info: opt = SGD, sd = false, lr = 0.01, bs = 50
-Training... 100%|███████████████████████████████████████████████████████████████████████████| Time: 0:00:42
-  epoch:           1000
-  train_loss:      0.1337
-  test_loss:       0.1337
-  train_accuracy:  1.0
-  test_accuracy:   1.0
+Training... 100%|███████████████████████████████████████████████████████████████████████████| Time: 0:00:05
+  epoch:     1000
+  loss:      0.1337
+  accuracy:  1.0
 ```
 """
 function train(data_loader::Flux.Data.DataLoader, optimizer::String = "SGD", spectral_decoupling::Bool = false; args...)
@@ -147,7 +145,7 @@ for the given learning rate. Supported optimizers are:
 	- Stochastic Gradient Descent (SGD)
 	- Weight Decay (WD)
 """
-function get_optimizer(learning_rate, optimizer = "SGD"; args...)
+function get_optimizer(learning_rate::Float64, optimizer::String = "SGD"; args...)
 	args = Args(; args...)
 	optimizer = uppercase(optimizer)
 	@assert optimizer in ["ADAM", "GD", "SGD", "WD"] "Requested optimizer '$optimizer' is not supported."
