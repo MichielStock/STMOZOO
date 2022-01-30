@@ -27,7 +27,7 @@ julia> get_loss_and_accuracy(train_loader, model)
 """
 function get_loss_and_accuracy(data_loader::Flux.Data.DataLoader, model, spectral_decoupling::Bool = false; args...)
 	args = Args(; args...)
-	@assert !(spectral_decoupling && isa(args.λ, Float64)) "λ must be specified if spectral decoupling is used"
+	@assert !(spectral_decoupling && isa(args.sd_λ, Float64)) "sd_λ must be specified if spectral decoupling is used"
 
 	accuracy = 0.0f0
 	loss = 0.0f0
@@ -37,7 +37,7 @@ function get_loss_and_accuracy(data_loader::Flux.Data.DataLoader, model, spectra
 	for (x, y) in data_loader
 		ŷ = model(y)		
 		loss += spectral_decoupling ? 
-			Regularization.spectral_decoupling(ŷ, y, args.λ) : 
+			Regularization.spectral_decoupling(ŷ, y, args.sd_λ) : 
 			logitcrossentropy(ŷ, y, agg = sum)
 		accuracy += sum(onecold(ŷ) .== onecold(y))
 		num += size(x)[end]
@@ -82,11 +82,12 @@ Training... 100%|█████████████████████
 function train(data_loader::Flux.Data.DataLoader, optimizer::String = "SGD", spectral_decoupling::Bool = false; args...)
 	args = Args(; args...)
 
-	@info "opt = $optimizer, sd = $spectral_decoupling, lr = $(args.learning_rate), bs = $(args.batchsize)" * (spectral_decoupling ? ", λ = $(args.λ)" : "")
+	@info "opt = $optimizer, sd = $spectral_decoupling, lr = $(args.learning_rate), bs = $(args.batchsize)" * 
+		(spectral_decoupling ? ", sd_λ = $(args.sd_λ)" : "") * (optimizer == "WD" ? ", wd_λ = $(args.wd_λ)" : "")
 
 	model = neural_network()
 	params = Flux.params(model)
-	optimizer = get_optimizer(args.learning_rate, optimizer)
+	optimizer = get_optimizer(args.learning_rate, optimizer; args.wd_λ)
 
 	# record loss and accuracy progression over epochs
 	loss_prog, accuracy_prog = [], []
@@ -99,17 +100,11 @@ function train(data_loader::Flux.Data.DataLoader, optimizer::String = "SGD", spe
 		for (x, y) in data_loader
 			grads = Flux.gradient(params) do
 				spectral_decoupling ? 
-					Regularization.spectral_decoupling(model(x), y, args.λ) : 
+					Regularization.spectral_decoupling(model(x), y, args.sd_λ) : 
 					logitcrossentropy(model(x), y)
 			end
 
 			Flux.Optimise.update!(optimizer, params, grads)
-
-			# evaluate loss and accuracy 
-			loss, accuracy = get_loss_and_accuracy(data_loader, model)
-			push!(loss_prog, loss)
-			push!(accuracy_prog, accuracy)
-
 			# evaluate learned features
 			# Y = Diagonal(y)
 			# Φ = ? --> NTK regime, unable to obtain NTRF matrix to perform SVD
@@ -123,22 +118,27 @@ function train(data_loader::Flux.Data.DataLoader, optimizer::String = "SGD", spe
 				push!(z1_prog, sum(abs.(zs[1,:])))
 				push!(z2_prog, sum(abs.(zs[2,:])))
 			end
-
-			# show neat progress bar
-			ProgressMeter.next!(prog; showvalues = [
-				(:epoch, epoch), 
-				(:loss, loss),
-				(:accuracy, accuracy)
-				]
-			)
 		end
+
+		# evaluate loss and accuracy 
+		loss, accuracy = get_loss_and_accuracy(data_loader, model)
+		push!(loss_prog, loss)
+		push!(accuracy_prog, accuracy)
+		
+		# show neat progress bar
+		ProgressMeter.next!(prog; showvalues = [
+			(:epoch, epoch), 
+			(:loss, loss),
+			(:accuracy, accuracy)
+			]
+		)
 	end
 
 	return model, Dict("loss" => loss_prog, "accuracy" => accuracy_prog, "z1" => z1_prog, "z2" => z2_prog)
 end
 
 """
-	get_optimizer(learning_rate, optimizer)
+	get_optimizer(learning_rate, optimizer, wd_λ)
 
 Returns a Flux.Optimiser according to the one requested by acronym with fixed parameters except 
 for the given learning rate. Supported optimizers are:
@@ -147,9 +147,13 @@ for the given learning rate. Supported optimizers are:
 	- Stochastic Gradient Descent (SGD)
 	- Weight Decay (WD)
 """
-function get_optimizer(learning_rate, optimizer = "SGD")
+function get_optimizer(learning_rate, optimizer = "SGD"; args...)
+	args = Args(; args...)
 	optimizer = uppercase(optimizer)
 	@assert optimizer in ["ADAM", "GD", "SGD", "WD"] "Requested optimizer '$optimizer' is not supported."
+	if optimizer == "WD"
+		@assert isa(args.wd_λ, Float64) "wd_λ must be specified if WD is used"
+	end
 
 	if optimizer == "ADAM"
 		return ADAM(learning_rate) 
@@ -159,7 +163,7 @@ function get_optimizer(learning_rate, optimizer = "SGD")
 		# stochastic gradient descent
 		return Momentum(learning_rate, 0.9) 
 	elseif optimizer == "WD"
-		return Optimiser(WeightDecay(), Descent(learning_rate))
+		return Optimiser(WeightDecay(args.wd_λ), Descent(learning_rate))
 	end
 end
 
