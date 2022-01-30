@@ -4,7 +4,7 @@ By Thiemen Mussche.
 The notebook is the main material.
 
 Levenberg-Marquardt is a numerical algorithm specifically made as an improvement to the Gauss-Newton method. 
-It employs Gradient descent to counter some disadvantages of Gauss-Newton's method.
+It employs Gradient descent to counter some disadvantages of Gauss-Newton.
 Both algorithms are meant to solve nonlinear least square problems. In the notebook we build the algorithms from the ground up
 trying to get a more intuitive look at them.
 
