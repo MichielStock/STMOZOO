@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: test1
-        run: ls /home/runner/work/Fridge.jl/Fridge.jl
+        run: ls /home/runner/work/Fridge.jl/Fridge.jl/src/
       - uses: julia-actions/setup-julia@latest
         with:
           version: '1.6'
