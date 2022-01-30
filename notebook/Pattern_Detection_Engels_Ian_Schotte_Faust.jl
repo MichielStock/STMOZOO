@@ -135,7 +135,7 @@ the function works as follows:
 # ╔═╡ 451ada98-1ac7-4207-a36d-a9d30c8de48a
 function similarity_matrix(protein, method = GlobalAlignment(), score_matrix = BLOSUM62)
 	proteins = collect(protein)
-	matrix = []
+	matrix = Vector{Any}[]
 	for (ind, protein1) in enumerate(proteins)
 		best = []
 		for protein2 in proteins
@@ -180,7 +180,7 @@ The actual MSA: the output is a multiple sequence alignment:
 function iterate(MSA, new_protein, method = GlobalAlignment(), score_matrix = BLOSUM62)
 	n = length(MSA) + 1
 	new_MSA = []
-	if MSA == []
+	if isempty(MSA)
 		new_MSA = [new_protein]
 	end
 	while length(new_MSA) < n #n = amount of sequences in the final alignment
@@ -203,7 +203,7 @@ end
 
 # ╔═╡ 40d2a415-6c4a-4098-a79d-ca4926efde5d
 function make_consensus(seq1, seq2)
-	consensus = []
+	consensus = Char[]
 	for i in range(1, length =length(seq1)) #i = place of aminoaicd in sequence
 		if seq1[i] == seq2[i]
 			append!(consensus, seq1[i])
@@ -220,7 +220,7 @@ end
 function multiple_alignment(proteins, method = GlobalAlignment(), score_matrix = BLOSUM62)
 	protein = copy(proteins)
 	n = length(protein)
-	evolution = []
+	evolution = Vector{Any}[]
 	consensus = []
 	while length(evolution) < n #n = number of sequences to be aligned
 		SM = similarity_matrix(protein, method, score_matrix)
@@ -267,7 +267,7 @@ function PCM(proteins, method = GlobalAlignment(), score_matrix = BLOSUM62)
 	M_alignment = multiple_alignment(protein, method, score_matrix)
 	n = length(M_alignment[1]) #n = length of a sequence in MSA
 	pcm = zeros(Int32,n)
-	dpcm = Dict()
+	dpcm = Dict{Char, Vector{Int64}}()
 	for proteins in M_alignment
 		for index in range(1, length=n)
 			if (proteins[index] in keys(dpcm)) == false
@@ -343,12 +343,12 @@ Furthermore, to find catalytic centers and protein domains we look at the place 
 function detect_motifs(protein, frequency = 0.85, method = GlobalAlignment(), score_matrix = BLOSUM62)
 	proteins = collect(protein)
 	consensus = find_consensus(proteins, frequency, method, score_matrix)
-	motifs = []
-	motif = []
+	motifs = Vector{Any}()
+	motif = Vector{Any}()
 	stop = 0
 	for element in consensus
 		stop += 1
-		if motif == [] && element != '-'
+		if isempty(motif) && element != '-'
 			push!(motif, element) 
 			continue
 		end
