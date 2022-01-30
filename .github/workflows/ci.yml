@@ -7,6 +7,9 @@ on:
     tags: '*'
   pull_request:
 
+env:
+  COVERALLS_TOKEN: 1DFS0iyWu4HHFuDsykE0TI5843M7noVZd
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -25,7 +28,7 @@ jobs:
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }} # If authenticating with SSH deploy key
         run: julia --project=docs/ --code-coverage=user docs/make.jl
       - uses: julia-actions/julia-processcoverage@v1
-      - uses: julia-actions/julia-uploadcoveralls@latest
       - uses: codecov/codecov-action@v1
         with:
           file: lcov.info
+      - uses: julia-actions/julia-uploadcoveralls@latest
