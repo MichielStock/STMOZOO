@@ -21,26 +21,34 @@ using Images, StatsBase, Plots, PlutoUI, Distributions, Random
 md"""
 # Genetic Algorithms
 
-By Jordi Verbruggen & Jietse Verweirder
+*By Jordi Verbruggen & Jietse Verweirder*
 
 ## Introduction
 
-Genetic algorithms (GAs) are described as optimization algorithms that make use of concepts of biological evolution, such as natural selection and survival of the fittest, to evolve a population to an optimal solution. The population is a representation of possible solutions, called chromosomes, to the problem in question. Each chromosome in their turn is comprised of genes, which are the actual number values of the solution. The algorithm will then apply evolutionary operators such as mutation, recombination and selection over several generations to converge the population to the best possible solution. A fitness function is used to determine which solution is the most optimal in the population, determining the objective function quality of the solution. Every generation, better solutions are created until the termination criteria are met or until a certain amount of generations has been run. The GA is terminated and the optimal solution should have been found. Although not guaranteed, most solutions will be of sufficient high quality. A schematic overview is shown below.
+**Genetic algorithms (GAs)** are described as optimization algorithms that make use of concepts originated from biological evolution, such as natural selection and survival of the fittest. 
+By introducing these concepts into the algotithm, a population will evolve to an optimal solution. 
+**The population** is a representation of possible solutions, called chromosomes, to the problem in question. Each chromosome in their turn is comprised of genes, which are the actual number values of the solution. The algorithm will then apply evolutionary operators such as **mutation, recombination and selection**, over several generations, to converge the population to the best possible solution. 
+**A fitness function** is used to determine which solution is the most optimal in the population, determining the objective function quality of the solution. Every generation, better solutions are created until **the termination criteria** are met or until a certain amount of generations has been run. The GA is terminated and the optimal solution should have been found. Although not guaranteed, most solutions will be of sufficient high quality. 
+
+A schematic overview of all the steps in the process is portrayed below.
 """
 
 # ╔═╡ 98b278e9-5cc9-4e36-9d1a-75eb9f4158de
-load("./Figs/GA_Overview.png")
+md"""
+
+![](https://github.com/JietseV/GeneticAlgorithms.jl/blob/master/notebook/Figs/GA_Overview.png?raw=true)
+"""
 
 # ╔═╡ d89c31c5-f2b3-4b52-8e47-580c62979687
 md"""
-During this project we will introduce the general concepts of GAs. We will build up a GA by introducing all its different parts. During this, the option will be given to alter the different parameters to see what effect they have. As a running example to explain the concept, we will discuss how we can find one of the four minima of Himmelblau's function. The function is written as follows:
+During this presentation we will introduce the general concepts of GAs. We will build up a GA by introducing all its different aspects. Along the way, the option will be given to experiment with the different parameters and evaluate their effect on the algorithm. As a running example, to explain the concept, we will make use of the **Himmelblau's function** where we will try to find one of its four minima. The function is written as follows:
 
 ```math 
 \begin{equation}
 	f(x,y) = (x^2 + y - 11)^2 + (x + y^2 - 7)^2
 \end{equation}
 ```
-A visualization of the function is given. Use the sliders to move the plot around.
+A visualization of the function is given. *(Use the sliders to move the plot around.)*
 """
 
 # ╔═╡ ba845736-b141-484a-9b10-fc73ecf31db3
@@ -55,39 +63,42 @@ $(@bind ca2 Slider(1:90,default=75,show_value=true))
 # ╔═╡ cccaf5fb-3c95-4ea9-b699-0cee2f12542e
 md"""
 
-The function takes x and y coordinates that have real number values. Therefore the representation of the individuals will be a tuple of the x and y coordinates. In principle are all techniques discussed here applicable to any function represented by chromosomes with real numbers. Bit string representations are also often used during in GAs, and most of what is discussed further can be applied to that, but not all, which is important to keep in mind. To illustrate the implementation with bitstrings, figures of this process have been added.
+The function takes x and y coordinates that have real number values. Therefore the representation of the individuals will be a tuple of the x and y coordinates. In principle all techniques that are discussed here, are applicable to any function represented by chromosomes with real numbers. Bit string representations are also often used in GAs, and most of what is discussed further can be applied to that, but not all, which is important to keep in mind. To illustrate the implementation with bitstrings, figures of this process have been added.
 
-In a last part of the notebook functionality has been added where custom objectives can be found via a genetic algorithm. Here you can write your function and by setting up some parameters, the extremeties of the objective can be found. Important to mention here is that the functions have to be 2D or 3D
+In a last part of the notebook functionality has been added where custom objectives can be found via a genetic algorithm. Here you can write your function and by setting up some parameters, the extremeties of the objective can be found. **Important to mention here is that the functions have to be 2D or 3D.**
 """
 
 # ╔═╡ 8212a676-3167-438a-944d-5eeae72d54d8
 md"""
 ## Initial population
 
-The first step in creating a genetic algorithm is defining the initial population. Each individual in the population contains a set of variables, descibed as genes. These genes together form a chromosome, which can be seen as the solution. Usually binary values are used to represent the genes. 
+The first step in creating a genetic algorithm is defining the **initial population.** Each individual in the population contains a set of variables, descibed as genes. These genes as a whole form a chromosome, which can be seen as a possible solution. In most of the cases simple binary values are used to represent the genes. An example is portrayed below.
 
 """
 
 # ╔═╡ 9365760a-10e5-48a4-ae77-b3f1a686f8e3
-load("./Figs/Init_Pop.png")
+md"""
+
+![](https://github.com/JietseV/GeneticAlgorithms.jl/blob/master/notebook/Figs/Init_Pop.png?raw=true)
+"""
 
 # ╔═╡ a8cd1caa-feb2-442f-ba8f-27619bfbff84
 md"""
 
 A few things have to be taken into account, when designing the initial population:
 
-- The population size: A smaller population has a higher change for a premature convergence, while a large population asks more computing time.
+- **The population size:** A smaller population has a higher change for a premature convergence, while a large population on the other hand asks for more computing time.
 	
-- The diversity: A low diverstity will also cause a premature convergence
+- **The diversity:** A low diverstity will also result in a premature convergence.
 
 
 Overall, there are two primary methods to initialize a population in a GA: 
 	
-- Random Initialization: Populate the initial population with completely random  solutions.
+- **Random Initialization:** Populate the initial population with completely random  solutions.
 
-- Heuristic initialization: Populate the initial population using a known heuristic for the problem. The population exists of solutions that are already a great step closer to the exact solution
+- **Heuristic initialization:** Populate the initial population using a known heuristic for the problem. The population exists of solutions that are already guided a few steps closer to the exact solution of the problem.
 
-The code to initialize goes as folows:
+*The code to initialize goes as folows:*
 """
 
 # ╔═╡ eba0c158-54d3-4f56-8b1a-5d3ddba001db
@@ -126,18 +137,18 @@ population = random_init_pop(100, 2, [-4,4], [-4,4])
 md"""
 ## Fitness
 
-As we want to improve our population over time, it is of absolute importance to select  individuals that have a high fitness level. To determine the fitness level of an individual, we have to implement a fitness function. This function takes a candidate solution to the problem as input and produces a value as output that indicates how “fit” our how “good” the solution is. 
+As we want to improve our population over time, it is of absolute importance to select  individuals that have a high **fitness level**. To determine the fitness level of an individual, we have to implement a **fitness function**. This function takes a candidate solution to the problem as input and produces a numeric value as output indicating how “fit” our how “good” the solution is. 
 
 Due to the fact that the fitness value has to be calculated after each generation, the fitness function should not only correlate closely with the designer's goal, but it also should be computationally efficient. If the fitness function becomes the bottleneck of the algorithm, then the overall efficiency of the genetic algorithm will be greatly reduced.
 
-The fitness function used as example here is based on the himmelblau's optimization function:
+**The fitness function used as example here is based on the himmelblau's optimization function:**
 			
 $$f(x, y) = (x^2 + y − 11)^2 + (x + y^2 − 7)^2$$
 
 The x and y values respectively were the first
 and second gene in the chromosome of the individual.
 
-As we want to calculate the minima of the Himmelblau function, we take the negative of the function as its fitness value.
+*(As we want to calculate the minima of the Himmelblau function, we take the negative of the function as its fitness value.)*
 
 """
 
@@ -186,15 +197,15 @@ end;
 md"""
 ## Termination criteria
 
-Eventually the run of the algorithm will have to come to an end. Herefore certain conditions have to be determined that halt the algoritm when these criteria are reached. It has been observed that initially, the GA progresses very fast with better solutions coming in every few iterations, but this tends to saturate in the later stages where the improvements are very small. We usually want a termination condition such that our solution is close to the optimal, at the end of the run.
+Eventually the run of the algorithm will have to come to an end. Herefore certain conditions have to be determined that halt the algoritm, when these criteria are met. It has been observed that initially, the GA progresses very fast with better solutions coming in every few iterations, but this tends to saturate in the later stages, where the improvements are very small. We usually want a termination condition such that our solution is close to the optimal, at the end of the run.
 
-Usually, we keep one of the following termination conditions:
+**Usually, we keep one of the following termination conditions:**
 
-- When there has been no improvement in the population for X iterations.
+- *No improvement in the population for X iterations.*
 
-- When we reach an absolute number of generations.
+- *An absolute number of generations is reached.*
 
-- When the objective function value has reached a certain pre-defined value.
+- *The objective function value has reached a certain pre-defined value.*
 
 The code goes as follows:
 """
@@ -225,7 +236,7 @@ end;
 md"""
 ## Selection
 
-During selection, the parent chromosomes are choosen with which later on the "breeding" will happen via the crossover operator. Different methods of selection are available. Important to note here is that an individual can be selected more than one time, otherwise the population would not change.
+During selection, the parent chromosomes are choosen for later on "breeding purposes", this is implemented by **the crossover operator.** Different methods of selection are available and some are discussed below. Important to note here is that an individual can be selected more than one time, otherwise the population would not change.
 """
 
 # ╔═╡ 953edf56-a957-4c61-8a89-9709dc6dfd65
@@ -233,9 +244,9 @@ md"""
 
 ### Roulette Wheel Selection
 
-As the name suggests, this way of selecting parents is based on turning a roulette wheel. The chance of selecting an individual is proportional to its fitness. The higher its fitness the bigger its pocket will be on the roulette wheel an thus the bigger its chance of being selected.
+As the name suggests, this way of selecting parents is based on turning a roulette wheel. The chance of selecting an individual is proportional to its fitness. The higher its fitness the bigger its pocket will be on the roulette wheel an thus resulting in a higher chance of being selected.
 
-The chance for an individual to be selected can be mathematically written as:
+**The chance for an individual to be selected can be mathematically written as:**
 
 ```math 
 \begin{equation}
@@ -244,9 +255,9 @@ The chance for an individual to be selected can be mathematically written as:
 ```
 
 Where:
-- pᵢ is the probability for choosing individual i
-- fᵢ is the fitness of individual i
-- N is the size of the population
+- *pᵢ is the probability for choosing individual i*
+- *fᵢ is the fitness of individual i*
+- *N is the size of the population*
 
 We implement this in code:
 """
@@ -287,8 +298,9 @@ end;
 md"""
 ### Rank Selection
 
-In rank selection individuals are ranked based on their fitness. The individual with the worst fitness is given rank one, the individual with the best fitness is given rank N. In rank selection, the fitness values can even be negative, as it is their rank that counts and not their actual value. 
-The probability with which an individual can be selected can then be given by:
+In **rank selection** individuals are ranked based on their fitness. The individual with the worst fitness is given rank one, the individual with the best fitness is given rank N. In rank selection, the fitness values can even be negative, as it is their rank that counts and not their actual value. 
+
+**The probability with which an individual can be selected can then be given by:**
 
 ```math 
 \begin{equation}
@@ -297,9 +309,9 @@ The probability with which an individual can be selected can then be given by:
 ```
 
 Where:
-- pᵢ is the probability for choosing individual i
-- rᵢ is the rank of individual i
-- n the total number of ranks, which is equal to the number of individuals in the population
+- *pᵢ is the probability for choosing individual i*
+- *rᵢ is the rank of individual i*
+- *n the total number of ranks, which is equal to the number of individuals in the population*
 
 We implement this in code:
 """
@@ -308,7 +320,7 @@ We implement this in code:
 md"""
 ### Steady State Selection
 
-During steady state selection a proportion of individuals with the highest fitness is choosen as mating pool. An equal proportion of individual with the lowest fitness values is removed from the population and replaced by the offspring of the mating pool.
+During **steady state selection** a proportion of individuals with the highest fitness is choosen as mating pool. An equal proportion of individual with the lowest fitness values is removed from the population and replaced by the offspring of the mating pool.
 
 We can write the code as follows:
 
@@ -347,7 +359,9 @@ end;
 md"""
 ### Tournament Selection
 
-Here selection happens by means of tournaments between randomly choosen individuals from the population. In the tournament, the individual with the biggest fitness is chosen with the biggest probability, the individual with the second highest probability has the second best probability to be chosen and so on. The probability with which the individual with the highest fitness is chosen, is a given value and can be written as
+Here selection happens by means of **tournaments between randomly choosen individuals** from the population. In the tournament, the individual with the biggest fitness is chosen with the biggest probability, the individual with the second highest probability has the second best probability to be chosen and so on. 
+
+**The probability with which the individual with the highest fitness is chosen, is a given value and can be written as:**
 
 ```math 
 \begin{equation}
@@ -356,8 +370,8 @@ Here selection happens by means of tournaments between randomly choosen individu
 ```
 
 Where:
-- pᵢ is the selection probability for the i-th fittest individual in the tournament
-- P is the selection probability for the best individual in the tournament with 0 < P ≤ 1
+- *pᵢ is the selection probability for the i-th fittest individual in the tournament*
+- *P is the selection probability for the best individual in the tournament with 0 < P ≤ 1*
 
 Each individual has the same chance to be chosen for a tournament. Selection continues until a mating pool with the same size as the population has been formed.
 
@@ -414,21 +428,24 @@ end;
 md"""
 ## Crossover
 
-The most significant way to stochastically generate new solutions from an existing population is by the recombination (crossover) of parental chromosomes. 
+The most significant way to stochastically generate new solutions from an existing population is by **recombination (crossover)** of parental chromosomes. 
 
 There exist a few different types of crossover:
 
-- Single Point Crossover : A crossover point on the parent organism string is selected. All data beyond that point in the organism string is swapped between the two parent organisms. Strings are characterized by Positional Bias.
+- **Single Point Crossover:** A crossover point on the parent organism string is selected. All data beyond that point in the organism string is swapped between the two parent organisms. Strings are characterized by Positional Bias.
 
-- Two-Point Crossover : This is a specific case of a N-point Crossover technique. Two random points are chosen on the individual chromosomes (strings) and the genetic material is exchanged at these points.
+- **Two-Point Crossover:** This is a specific case of a N-point Crossover technique. Two random points are chosen on the individual chromosomes (strings) and the genetic material is exchanged at these points.
 
-- Uniform Crossover : Each gene (bit) is selected randomly from one of the corresponding genes of the parent chromosomes. Tossing of a coin can be seen as an example technique.
+- **Uniform Crossover:** Each gene (bit) is selected randomly from one of the corresponding genes of the parent chromosomes. Tossing of a coin can be seen as an example technique.
 
 For this example we introduce the "Single Point Crossover" 
 """
 
 # ╔═╡ 0be0a442-8c9f-4035-b926-998f0c63ade7
-load("./Figs/Crossover.png")
+md"""
+
+![](https://github.com/JietseV/GeneticAlgorithms.jl/blob/master/notebook/Figs/Crossover.png?raw=true)
+"""
 
 # ╔═╡ 9c2f897a-663e-4408-8364-1582ef6cba9c
 md"""
@@ -438,14 +455,18 @@ $$C_1 = \alpha P_1 + (1 − \alpha)P_2$$
 
 $$C_2 = (1 − \alpha)P_1 + \alpha P_2$$
 
-with P1
-and P2 the gene of parent one and parent two respectively, C1 and C2 child one and child two respectively and α the factor by which the parental genes are divided. This technique is also called whole arithmetic crossover and goes as follows:
+Where:
+- *P1 is the gene of parent one*
+- *P2 is the gene of parent two*
+- *C1 is the gene of child/offspring one*
+- *C2 is the gene of child/offspring two*
+- *α is a factor by wich the parental genes are divided*
 
-- The mating pool is shuffled to make random parings of parents
-- Divide genome of parents over the offspring with a factor α
-- Two children are created out of two parents
-- The two parents are two individuals adjacent in the mating pool list
-- The whole population is replaced by the offspring
+This technique is also called **whole arithmetic crossover** and goes as follows:
+
+First the mating pool is shuffled to make random parings of parents and two parents are selected that are adjacent in the mating pool list. Then the genome of the parents is devided over the offspring with a factor α, resulting in two children. Eventually the whole population is replaced by the offsprings.
+
+The code goes as follows:
 """
 
 # ╔═╡ 1e7552ac-9c46-479d-b26e-5d776e3cc5af
@@ -489,11 +510,21 @@ function crossover(pool, α)
 	
 end;
 
-# ╔═╡ 3a075aab-dbf8-4120-93bc-337991c65b40
+# ╔═╡ 3347f3d5-dd43-40ff-bbed-f8f06532be47
 md"""
 ## Mutation
 
-During mutation small changes to the genes of the chromosomes are made. By doing this, genetic diversity is maintained within the population. When not applying mutation, the genetic diversity would go down with each generation of the algorithm. The applied changes can not be to large, otherwise a perfectly good solution would be changed completely, destroying the work that already had been put in. To ensure the changes are not to big a creep mutational operator can be used. Hereby only a small amount is added or substracted from the gene value, often a Gaussian deviate. Also important is the fact that after a lot of generations, the change is getting smaller so that the solution can be finetuned. The mutation rate gives the proportion of genes that need to be mutated. When applying mutation to a bitstring, a flip of one bit can be applied to introduce the change. 
+During **mutation** small changes are introduced to the genes of the chromosomes. By doing this, genetic diversity is maintained within the population. When not applying mutation, the genetic diversity would go down with each generation of the algorithm. The applied changes can not be to large, otherwise a perfectly good solution would be changed completely, destroying the work that already had been put into it. To ensure the changes are not to big a creep mutational operator can be used. Hereby only a small amount is added or substracted from the gene value, often a Gaussian deviate. Also important is the fact that after a lot of generations, the change is getting smaller so that the solution can be finetuned. **The mutation rate gives the proportion of genes that need to be mutated.** When applying mutation to a bitstring, a flip of one bit can be applied to introduce the change. 
+"""
+
+# ╔═╡ 82b5a573-6013-408f-99c9-f105708f948e
+md"""
+
+![](https://github.com/JietseV/GeneticAlgorithms.jl/blob/master/notebook/Figs/Mutation.png?raw=true)
+"""
+
+# ╔═╡ 0b598ee8-8671-4b99-87b8-1a65a2d63aa2
+md"""
 
 We code this as follows:
 """
@@ -550,14 +581,14 @@ end;
 md"""
 ## The complete algorithm
 
-After seeing the different parts of the algorithm, we can now put it all together to begin seeking the minima of Himmelblau's function:
+Now that we have been introduced to the different aspects of a genetic algorithm, it  it time to put it all together and sart seeking the minima of our Himmelblau's function:
 
 """
 
 # ╔═╡ 97af696e-d076-40b3-a5d5-ec363350d7b7
 md"""
 
-To better understand the influences of the different parameters, you can change them here. Take a look to see the effect of changing for instance the population size or the mutation rate.
+To better understand the influences of the different parameters, you can change them below. Alter the parameters and look in which way they change the efficiency of the algorithm. What is the effect of the population size or mutation rate for example?
 
 """
 
@@ -579,8 +610,8 @@ $(@bind pmₕ Slider(0:0.01:1,default=0.10,show_value=true))
 # ╔═╡ 48a851ce-fd14-4516-a172-c720f24bf153
 md"""
 We will visualize the different generations in order to get a better understanding of the inner workings of the algorithm.
-The visualization of the different steps of the solution can be seen here, you might need to fiddle again with the angles to get a good viewing point. 
-We recommend looking at where your solution is converging to and using the first plot to set the values for both angles (they are the same angles in both plots). 
+The visualization of the different steps of the solution can be seen here, you might need to fiddle with the angles again to get a good viewing point. 
+We recommend looking at where your solution is converging too and using the first plot to set the values for both angles (they are the same angles in both plots). 
 Moreover, to control the speed of the animation, you can alter the frames per second and the number of generations shown. Together these two will also decide how long it will run.
 """
 
@@ -2450,7 +2481,9 @@ version = "0.9.1+5"
 # ╟─9c2f897a-663e-4408-8364-1582ef6cba9c
 # ╠═1e7552ac-9c46-479d-b26e-5d776e3cc5af
 # ╠═fa31ea0c-b3dd-4145-bb35-3698308371a7
-# ╟─3a075aab-dbf8-4120-93bc-337991c65b40
+# ╟─3347f3d5-dd43-40ff-bbed-f8f06532be47
+# ╟─82b5a573-6013-408f-99c9-f105708f948e
+# ╟─0b598ee8-8671-4b99-87b8-1a65a2d63aa2
 # ╠═1b6763ba-ae24-4f63-b7e8-545364ddab89
 # ╠═93634846-dc90-4021-bf4c-de1b13f476cc
 # ╟─6a60527b-0f46-4bf0-bd6f-91e509737a32
