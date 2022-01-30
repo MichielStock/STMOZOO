@@ -1,6 +1,7 @@
 # STMO-ZOO: Link between fractals and the Newton method
 ### by Kim Hayoung and Merckx Anna
-https://github.com/HayoungKim27/STMOZOO/blob/b5a472f096674cef7b7e06b5627d4f09e4259980/figure/readmefractal.png
+![Optional Text](https://github.com/HayoungKim27/STMOZOO/blob/b5a472f096674cef7b7e06b5627d4f09e4259980/figure/readmefractal.png)
+
 Welcome to the 'Link between fractals and the Newton method' repository in STMO zoo! This is the final assignment for the course Selected Topics in Mathematical Optimization. The goal is to implement an optimization method in Julia and contribute this to this repository.
 
 ## Guideline
