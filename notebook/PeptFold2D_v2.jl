@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.17.3
+# v0.17.7
 
 using Markdown
 using InteractiveUtils
@@ -15,7 +15,7 @@ macro bind(def, element)
 end
 
 # ╔═╡ 29377c58-c5da-4e22-9502-58270c97745c
-using Plots, PlutoUI, Zygote, LinearAlgebra
+using Plots, PlutoUI, Zygote, LinearAlgebra, Test
 
 # ╔═╡ 1549aa30-6e24-11ec-3f44-93d0c99f8ba9
 md"# PeptFold2D.jl: Optimization of peptide folding in 2D off-lattice model
@@ -99,12 +99,21 @@ r_1=0.95
 md"### Conclusion"
 
 # ╔═╡ 7f365bd7-e407-4d59-a70e-2639aee0a4f4
-md"In conclusion, when starting from a given peptide sequence with randomly generated bond angles, PeptFold2D successfully 'folds' the peptide according to electrostatic and vanderwaals interactions within the limits of the simulation box. PeptFold2D does not guarantee the optimal solution, but finds a correct solution in a very large simulation space. Longer simulation time will deliver more optimal solutions. Performing simulations of many initial peptide structures in parallel can reveil possible convergence of a peptide to a certain consensus structure."
+md"In conclusion, when starting from a given peptide sequence with randomly generated bond angles, PeptFold2D successfully 'folds' the peptide according to electrostatic and vanderwaals interactions within the limits of the simulation box. PeptFold2D does not guarantee the optimal solution, but finds a correct solution in a very large simulation space. Longer simulation time will deliver more optimal solutions. Performing simulations of many initial peptide structures in parallel can reveil possible convergence of a peptide to a certain consensus structure.
+"
 
 # ╔═╡ 26a8a15b-d503-4cd3-a769-d632f859c1b6
 md"# Addendum: atomic interactions
-**Electrostatic interaction** is described by the Coulomb law based on distance $r$ between the AA bodies and their respective charge $q1$ and $q2$. Potential energy $U$ is positive for equally charged AAs, while it is negative for opposite charged AAs."
-
+**Electrostatic interaction** is described by the Coulomb law based on distance $r$ between the AA bodies and their respective charge $q1$ and $q2$. Potential energy $U$ is positive for equally charged AAs, while it is negative for opposite charged AAs.
+```math
+U(r)=1/(4*π*ϵ)*q1*q2/r
+```
+with
+- ϵ: vaccuum permittivity
+- q1: charge atom 1
+- q2: charge atom 2
+- r: atom distance
+"
 
 # ╔═╡ c2f78f6c-62fa-4c3f-bc23-0429af8277a4
 @bind q1 Slider(-10:0.01:10, show_value=true,default=-1)
@@ -119,7 +128,17 @@ f(r)=8.9e9*q1*q2/r
 plot(f,1,10, title="Electrostatic coulomb potential U in function of r",xlabel="r",ylabel="U_coulomb",label="U(r)")
 
 # ╔═╡ e388313b-65a4-4bc6-b9a8-0d105b625918
-md"**Vanderwaals interactions** can be modelled by the Lennard-Jones potential $U$ based on distance $r$ between AA bodies and parameters $ϵ$ and $σ$, where dispersion energy $ϵ$ corresponds to the depth of the energy well and $σ$ corresponds to the distance where the potential is zero. The potential models how two interacting AAs repel each other at very close distance, attract each other at moderate distance, and do not interact at infinite distance."
+md"**Vanderwaals interactions** can be modelled by the Lennard-Jones potential $U$ based on distance $r$ between AA bodies and parameters $ϵ$ and $σ$, where dispersion energy $ϵ$ corresponds to the depth of the energy well and $σ$ corresponds to the distance where the potential is zero. The potential models how two interacting AAs repel each other at very close distance, attract each other at moderate distance, and do not interact at infinite distance.
+
+```math
+U(r)=4*ϵ*((σ/r)^12-(σ/r)^6)
+```
+with:
+- ϵ: dispersion energy for specific pair of atoms the depth of the potential well)
+- σ: atom distance where the potential is zero
+- r: atom distance
+
+"
 
 # ╔═╡ 2f255247-c9fd-414e-875a-054d92141e1e
 @bind ϵ Slider(-10:1:10, show_value=true,default=2)
@@ -150,7 +169,7 @@ Input:
 Output:
 - AA_charge: amino acid charge
 """		
-function get_AA_charge(AA)		
+function get_AA_charge(AA::String)		
 	AA_charge=Dict{String,Float64}("G"=>0.0,"A"=>0.0,"L"=>0.0,"M"=>0.0,"F"=>0.0,"W"=>0.0,"K"=>1.0,"Q"=>0.0,"E"=>-1.0,"S"=>0.0,"P"=>0.0,"V"=>0.0,"I"=>0.0,"C"=>0.0,"Y"=>0.0,"H"=>1.0,"R"=>1.0,"N"=>0.0,"D"=>-1.0,"T"=>0.0)
 	return AA_charge[AA]
 end
@@ -554,12 +573,20 @@ begin
 	ylabel!("loss_θ(structure)")
 end
 
+# ╔═╡ a833dc15-b223-405f-ae53-ae974a1bb50b
+@testset "PeptFold2D" begin
+	@test get_AA_charge("G") isa Number
+	@test create_peptide("GAT") isa Vector{Float64}
+	@test θ_generator(5) isa Vector{Float64}
+end
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
@@ -1007,7 +1034,7 @@ uuid = "38a345b3-de98-5d2b-a5d3-14cd9215e700"
 version = "2.36.0+0"
 
 [[LinearAlgebra]]
-deps = ["Libdl"]
+deps = ["Libdl", "libblastrampoline_jll"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [[LogExpFunctions]]
@@ -1069,6 +1096,10 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "887579a3eb005446d514ab7aeac5d1d027658b8f"
 uuid = "e7412a2a-1a6e-54c0-be00-318e2571c051"
 version = "1.3.5+1"
+
+[[OpenBLAS_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
+uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
 
 [[OpenLibm_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -1164,7 +1195,7 @@ deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
 uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [[Random]]
-deps = ["Serialization"]
+deps = ["SHA", "Serialization"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [[RealDot]]
@@ -1488,6 +1519,10 @@ git-tree-sha1 = "5982a94fcba20f02f42ace44b9894ee2b140fe47"
 uuid = "0ac62f75-1d6f-5e53-bd7c-93b484bb37c0"
 version = "0.15.1+0"
 
+[[libblastrampoline_jll]]
+deps = ["Artifacts", "Libdl", "OpenBLAS_jll"]
+uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
+
 [[libfdk_aac_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "daacc84a041563f965be61859a36e17c4e4fcd55"
@@ -1594,5 +1629,6 @@ version = "0.9.1+5"
 # ╟─47c024fc-6150-467b-81df-bcfe9e53e3a9
 # ╟─ba0a420d-fc30-46e0-a7c9-939f6f547dc0
 # ╟─2f0314d2-5a00-4ba6-8f5a-f6426cc16266
+# ╟─a833dc15-b223-405f-ae53-ae974a1bb50b
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
