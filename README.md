@@ -2,9 +2,12 @@
 ## By Ian Engels & Faust Schotte
 
 Our Code provides a tool to detect conserved motifs in a set of proteins sequences. 
-Protein sequences provided in FASTA format.
+Protein sequences must be provided in FASTA format.
 Output is the peptide sequence of the discovered motif with the start and stop place corresponding to the consensus sequence.
+
 Have fun reading the Pluto Notebook!
+
+
 
 Welcome to the STMO zoo! This is your final assignment for the course Selected Topics in Mathematical Optimization. Your goal is to implement an optimization method in Julia and contribute this to this repository. To pass, you have to:
 
