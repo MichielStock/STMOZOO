@@ -27,9 +27,45 @@ md"""
 
 This pluto notebook contains the code for a simple RNA secondary structure prediction tool.
 
-This tool uses an algorithm called Nussinov's algorithm. This is a basepair maximization algorithm, it predicts the optimal structure by trying to maximize the amount of paired nucleotides in the sequence. This was one of the first ever algorithms to be used in RNA folding but sadly this algorithm is often to simple to get realistic results. 
+## Nussinov's Algorithm
 
-Other algorithms like energy minimization algorithms try to achieve the same thing but does this by taking base pairing energies, the stacking of certain types of basepairs and the size of different structures into account and by calculating the total minimum free energy of the folded RNA. However, implementeing these is a lot more complicated and out of the scope of a project like this.
+This tool uses an algorithm called Nussinov's algorithm. This is a basepair maximization algorithm, it predicts the optimal structure by trying to maximize the amount of paired nucleotides in an RNA sequence. This was one of the first ever algorithms to be used in RNA folding but sadly this algorithm is often to simple to get realistic results. 
+
+Other algorithms like energy minimization algorithms try to achieve the same thing but do this by taking base pairing energies, the energies of stacking of certain types of basepairs and the sizes of different structures into account and by calculating the total minimum free energy of the folded RNA. However, implementeing these is a lot more complicated and out of the scope of a project like this.
+
+Nussinov's algorithm tries to maximize the amount of paired bases in the structure. It does this using the following formula:
+
+$$S(i,j) = \max_{i\leq k<j} \begin{cases} S(i,j-1) \qquad\qquad\qquad\qquad\qquad\quad\; \text{if i unpaired} \\S(i,k-1)+S(k+1,j-1)+1 \qquad \text{if i, k complementary} \end{cases}$$
+
+Here $$i$$, $$j$$, and $$k$$ are three positions in the RNA sequence with $$k$$ being equal to $$i$$ or in between $$i$$ and $$j$$. And $$S(i,j)$$ is the score of the subsequence from $$i$$ to $$j$$ given by the aglorithm, this score is equal to the amount of basepairs in the subsequence.
+
+This formula is used to recursively fill in a dynamic programming matrix $$(S)$$ starting from smaller distances between $$i$$ and $$j$$ to larger ones, thus from smaller to larger subsequences, until $$i = 1$$ and $$j = n$$ (the length of the sequence). $$S(1,n)$$ then represents the score of the entire sequence.
+
+If position $$j$$ is not paired to any nucleotide, the score does not change. So the score remains the same as the score of the subsequence one nucleotide smaller $$S(i,j-1)$$. If $$j$$ can basepair with a nucleotide $$k$$ in the range $$i:j-1$$ then the sequence is split into two subsequence $$i...k-1$$ and $$k+1...j-1$$, if we add their scores together with a $$+1$$ for the new basepair $$(k,j)$$ we get the score of the entire subsequence. if $$k=i$$ than we have a special case where $$S(i,k-1)=S(i,i-1)$$ this is why $$S(i,i-1)$$ is set to be equal to zero.
+
+The matrix $$S$$ is initialized by all zeros and new values are only added to the upper right side of the matrix. Note that for two nucleotides to be able to basepair at least three other nucleotides need to be between them, otherwise there is not enough space for them to pair.
+
+Below you can see the implementation for this algorithm.
+
+"""
+
+# ╔═╡ a455cfa0-ee29-4a4e-8b26-cf91c36985ec
+md"""
+
+To retrieve the basepairs which form the optimally scoring secondary structure we have to perform a backtracking procedure. This procedure starts in the upper right corner of the dynamic programming matrix where $$i=1$$ and $$j=n$$ and continues towards smaller subsequences. If $$S(i,j)$$ is equal to $$S(i,j-1)$$ we can say that $$j$$ is unpaired and we can continue the traceback from $$(i,j-1)$$. Else $$j$$ is paired to a $$k$$. If $$k=i$$ then $$S(i,j)=S(i+1,j-1)+1$$ and we can continue the traceback from $$(i+1,j-1)$$. If $$k \neq i$$ then $$S(i,j)=S(i,k-1)+S(i+1,j-1)+1$$ and the traceback splits up in the two substructures that were formed $$(i,k-1)$$ and $$(k+1,j-1)$$.
+
+Since the rules of the Nussinov algorithm are simple there are most of the time many roads that lead to the same optimal score for a structure and thus many optimal ways to fold the RNA. This is because score for pairing $$j$$ with $$i$$ might give you the same score as pairing $$j$$ with $$k \; (\neq i)$$ or even the same as leaving $$j$$ unpaired.
+"""
+
+# ╔═╡ 31aeff3d-5083-4c26-a556-847fbe76f9d6
+md"""
+
+## Tool
+
+"""
+
+# ╔═╡ b2084e43-7914-495f-b93e-cf56a87be3c7
+md"""
 
 You can either choose an example sequence or input you own (DNA sequences are also allowed).
 
@@ -56,6 +92,9 @@ end
 
 # ╔═╡ 3c7f1384-33ac-4b2d-9a63-4bf412bfa685
 RNA = replace(uppercase(rna), 'T' => 'U')
+
+# ╔═╡ 45b4e0ec-5581-4a28-b6c1-c95b8e6a42bb
+RNA
 
 # ╔═╡ 42921538-4ff4-4902-aefa-d958f41d1404
 md"""
@@ -89,7 +128,7 @@ md"""
 """
 	basepair(i, j, RNA)
 
-Returns a the logical value true if 2 nucleotides can basepair, else false.
+Returns a the logical true if 2 nucleotides can basepair, else false.
 
 """
 function basepair(i, j, RNA)
@@ -97,28 +136,11 @@ function basepair(i, j, RNA)
 	# all possible pairs (GU is also possible in RNA):
 	pairs = ["AU", "UA", "GC", "CG", "UG", "GU"]
 	if pair in pairs
-		bp = true
-	else 
-		bp = false
+		return true
+	else
+		return false
 	end
-	return bp
 end
-
-# ╔═╡ 35ab76cf-16d5-432a-a185-960c69829b27
-md"""
-
-Nussinov's algorithm tries to maximize the amount of paired bases in the structure. It does this using the following formula:
-
-$$S(i,j) = \max_{i\leq k<j} \begin{cases} S(i,j-1) \qquad\qquad\qquad\qquad\qquad\quad\; \text{if i unpaired} \\S(i,k-1)+S(k+1,j-1)+1 \qquad \text{if i, k complementary} \end{cases}$$
-
-Here $$i$$, $$j$$, and $$k$$ are three positions in the RNA sequence with $$k$$ being equal to $$i$$ or in between $$i$$ and $$j$$. And $$S(i,j)$$ is the score of the subsequence from $$i$$ to $$j$$ given by the aglorithm, this score is equal to the amount of basepairs in the subsequence.
-
-This formula is used to recursively fill in a dynamic programming matrix $$(S)$$ starting from smaller distances between $$i$$ and $$j$$ to larger ones, thus from smaller to larger subsequences, until $$i = 1$$ and $$j = n$$ (the length of the sequence). $$S(1,n)$$ then represents the score of the entire sequence.
-
-If position $$j$$ is not paired to any nucleotide, the score does not change. So the score remains the same as the score of the subsequence one nucleotide smaller $$S(i,j-1). If $$\; j$$ can basepair with a nucleotide $$k$$ in the range $$i:j-1$$ then the sequence is split into two subsequence $$i...k-1$$ and $$k+1...j-1$$, if we add their scores together with a $$+1$$ for the new basepair $$(k,j)$$ we get the score of the entire subsequence. if $$k=i$$ than we have a special case where $$S(i,k-1)=S(i,i-1)$$ this is why S(i,i-1) is set to be equal to zero.
-
-The matrix $$S$$ is initialized by all zeros and new values are only added to the upper right side of the matrix. Note that for two nucleotides to be able to basepair at least three other nucleotides need to be between them, otherwise there is not enough space for them to pair.
-"""
 
 # ╔═╡ 2d83c447-1d33-496a-8a39-75d1cb9b2de1
 """
@@ -164,14 +186,6 @@ end
 
 # ╔═╡ 0a20eddd-24f7-43c6-a0f3-6c1c138fb90a
 S = Nussinov(RNA)
-
-# ╔═╡ a455cfa0-ee29-4a4e-8b26-cf91c36985ec
-md"""
-
-To retrieve the basepairs which form the optimally scoring secondary structure we have to perform a backtracking procedure. This procedure starts in the upper right corner of the dynamic programming matrix where $$i=1$$ and $$j=n$$ and continues towards smaller subsequences. If $$S(i,j)$$ is equal to $$S(i,j-1)$$ we can say that $$j$$ is unpaired and we can continue the traceback from $$(i,j-1)$$. Else $$j$$ is paired to a $$k$$. If $$k=i$$ then $$S(i,j)=S(i+1,j-1)+1$$ and we can continue the traceback from $$(i+1,j-1)$$. If $$k \neq i$$ then $$S(i,j)=S(i,k-1)+S(i+1,j-1)+1$$ and the traceback splits up in the two substructures that were formed $$(i,k-1)$$ and $$(k+1,j-1)$$.
-
-Since the rules of the Nussinov algorithm are simple there are most of the time many roads that lead to the same optimal score for a structure and thus many optimal ways to fold the RNA. This is because score for pairing $$j$$ with $$i$$ might give you the same score as pairing $$j$$ with $$k \; (\neq i)$$ or even the same as leaving $$j$$ unpaired.
-"""
 
 # ╔═╡ 463d18c3-e155-4b73-896f-2bbcdb71bbd2
 """
@@ -1644,7 +1658,15 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╟─4b3e86ea-6973-11ec-014f-9f2708ba86cf
+# ╠═4b3e86ea-6973-11ec-014f-9f2708ba86cf
+# ╠═2d83c447-1d33-496a-8a39-75d1cb9b2de1
+# ╠═45b4e0ec-5581-4a28-b6c1-c95b8e6a42bb
+# ╠═0a20eddd-24f7-43c6-a0f3-6c1c138fb90a
+# ╟─a455cfa0-ee29-4a4e-8b26-cf91c36985ec
+# ╠═463d18c3-e155-4b73-896f-2bbcdb71bbd2
+# ╠═43f97b8d-cd9c-4b8f-8821-68542488e49d
+# ╟─31aeff3d-5083-4c26-a556-847fbe76f9d6
+# ╟─b2084e43-7914-495f-b93e-cf56a87be3c7
 # ╟─59108cf2-d8a5-4c16-b373-bb6a23d13735
 # ╟─ed0a3dc5-99d3-4628-ad5c-7d13e699b353
 # ╟─3c7f1384-33ac-4b2d-9a63-4bf412bfa685
@@ -1657,12 +1679,6 @@ version = "0.9.1+5"
 # ╟─2fbe430d-ab80-406e-aa87-c377d6ed30c2
 # ╠═dba46e66-8704-42de-938c-d576a1336398
 # ╠═e5650185-a6bc-488c-a02b-3c1363c52b8c
-# ╟─35ab76cf-16d5-432a-a185-960c69829b27
-# ╠═2d83c447-1d33-496a-8a39-75d1cb9b2de1
-# ╠═0a20eddd-24f7-43c6-a0f3-6c1c138fb90a
-# ╟─a455cfa0-ee29-4a4e-8b26-cf91c36985ec
-# ╠═463d18c3-e155-4b73-896f-2bbcdb71bbd2
-# ╠═43f97b8d-cd9c-4b8f-8821-68542488e49d
 # ╠═b156a4c7-6ed9-4a4d-b3c9-d3c06fbc1faf
 # ╠═c86cc53d-4675-4cd1-af75-ec4a717fd7fa
 # ╠═2e8fb274-0658-43f8-bfa0-40f2f1daf6f3
