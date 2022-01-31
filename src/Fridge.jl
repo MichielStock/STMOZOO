@@ -127,9 +127,15 @@ function greedyFindCombo(fridgeList, recipeDict, numRecipes)
         ingredientsArray = ingredientsArray[bestOrder]
         namesArray = namesArray[bestOrder]
 
+        # break if all recipes that are left, don't use anything from the fridge
+        if all(ingredientsArray[1][1:end-1] .== 0)
+            break
+        end
+
         tempRecipeName = namesArray[1]
         bestCombo[tempRecipeName] = ingredientsArray[1]
 
+        # break if all ingredients are used
         if all(isone.(sum(values(bestCombo))))
             break
         end
@@ -137,6 +143,7 @@ function greedyFindCombo(fridgeList, recipeDict, numRecipes)
         namesArray = [name for (name, ingredientList) in zip(namesArray, ingredientsArray) if sum(ingredientList[1:end-1] .& bestCombo[tempRecipeName][1:end-1] ) == 0]
         ingredientsArray = [ingredientList for ingredientList in ingredientsArray if sum(ingredientList[1:end-1] .& bestCombo[tempRecipeName][1:end-1] ) == 0]
 
+        # break if there are no recipes left
         if isempty(namesArray)
             break
         end
@@ -180,6 +187,7 @@ function randomCombo(fridgeList, recipeDict, numRecipes)
         tempRecipeName = namesArray[randIndex]
         randCombo[tempRecipeName] = ingredientsArray[randIndex]
 
+        # break if all ingredients are used
         if all(isone.(sum(values(randCombo))))
             break
         end
@@ -187,6 +195,7 @@ function randomCombo(fridgeList, recipeDict, numRecipes)
         namesArray = [name for (name, ingredientList) in zip(namesArray, ingredientsArray) if sum(ingredientList[1:end-1] .& randCombo[tempRecipeName][1:end-1] ) == 0]
         ingredientsArray = [ingredientList for ingredientList in ingredientsArray if sum(ingredientList[1:end-1] .& randCombo[tempRecipeName][1:end-1] ) == 0]
 
+        # break if there are no recipes left
         if isempty(namesArray)
             break
         end
@@ -325,7 +334,6 @@ function SAFindCombo(curSolution,  fridgeList, recipeDict, numRecipes, randRecip
                 end
             end
 		end
-		#track!(tracker, f, s) # not yet implemented, maybe later
 
 		# decay temperature
 		T *= r

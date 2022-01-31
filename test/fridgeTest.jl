@@ -34,6 +34,9 @@
 
         # test no recipes left end
         @test greedyFindCombo(testList, testDict2, 3) == Dict("macaroni" => [1,0,0,0,2], "fries" => [0,1,0,0,1])
+
+        # test no recipes left that use ingredients from the fridge
+        @test greedyFindCombo(testList, testDict, 4) == Dict("macaroni" => [1,0,0,0,2], "salad" => [0,0,1,1,2], "fries" => [0,1,0,0,1])
     end
 
     @testset "randomCombo" begin
