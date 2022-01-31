@@ -168,7 +168,7 @@ for any value x. If $x = 0$, the polynomial should have the same value as $f(0)$
 ```
 We could say that $f(x) ≈ f(0)$ around $0$. That looks pretty stupid, but it isn't. The approximating polynomial is a flat line that intersects with $f(x)$ at $x = 0$.  
 
-Most likely though, $f(x)$ isn't a flat line at $x = 0$. It rises, or it drops according to its derivative. This looks abusable. Setting the slope of the polynomial to be the equal to that of $f(x)$ will improve the approximation around 0.
+Most likely though, $f(x)$ isn't a flat line at $x = 0$. It rises, or it drops according to its derivative. This looks abusable. Setting the slope of the polynomial to be the equal to that of $f(x)$ will improve the approximation around $0$.
 ```math
 ⇒ f'(0) = b + 2a(0) = b
 ```
@@ -180,7 +180,7 @@ Putting it all together, we can approximate $f(x)$ fairly well around $0$
 ```math
  f(x) ≈ f(0) + f'(0)x + (f''(0) / 2) x^2
 ```
-By replacing $x$ with $x - t$ in the polynomial, we can approximate $f(x)$ for any value $t$ of $x$. Now all but one terms of the polynomial become $0$ when filling in $f(t). Replacing $x$ in the polynomial is possible because we determine how the function looks like. Our only requirements are that the function depends on $x$ and is a polynomial. Both are unaffected by replacing $x$ with $x-t$
+By replacing $x$ with $x - t$ in the polynomial, we can approximate $f(x)$ for any value $t$ of $x$. Now all but one terms of the polynomial become $0$ when filling in $f(t)$. Replacing $x$ in the polynomial is possible because we determine how the function looks like. Our only requirements are that the function depends on $x$ and is a polynomial. Both are unaffected by replacing $x$ with $x-t$
 
 Note that with each added derivative, the approximation improves. The further we stray from $x = t$, the less correct the approximation becomes. 
 """
@@ -314,7 +314,7 @@ The `GNA` function takes the following input:
 - `F`: the objective function that will be used as input to the sum of squares
 - `x₀`: an initial guess for $x$
 - `k_max`: the maximum amount of iterations the algorithm is allowed to have
-- `S_min`: In this particular scenario where we know the global minimum of $f(x)$, $S_min$ controls how close GNA has to get to the global minimum before the algorithm is cut short and $x$ is returned as solution.
+- `S_min`: In this particular scenario where we know the global minimum of $f(x)$, S_min controls how close GNA has to get to the global minimum before the algorithm is cut short and $x$ is returned as solution.
 """
 
 # ╔═╡ d917f63a-0580-4209-9e79-a1045c951c46
@@ -330,7 +330,7 @@ The `LMA` function takes the following input:
 - `λ`: an initial value for the damping parameter. A good start value is 1
 - `v`: Marquardt's factor of the damping parameter. A good default value is 2
 - `k_max`: the maximum amount of iterations the algorithm is allowed to have
-- `S_min`: In this particular scenario where we know the global minimum of $f(x)$, $S_min$ controls how close LMA has to get to the global minimum before the algorithm is cut short and $x$ is returned as solution.
+- `S_min`: In this particular scenario where we know the global minimum of $f(x)$, S_min controls how close LMA has to get to the global minimum before the algorithm is cut short and $x$ is returned as solution.
 """
 
 # ╔═╡ e311f58d-28a1-4b0b-81d8-25149dfd9392
@@ -354,7 +354,7 @@ The `GD` function takes the following input:
 - `x₀`: an initial guess for $x$
 - `k_max`: the maximum amount of iterations the algorithm is allowed to have
 - `γ`: controls the step size. A descent initial value is $γ$ = 0.05
-- `f_min`: In this particular scenario where we know the global minimum of $f(x)$, $f_min$ controls how close Gradient descent has to get to the global minimum before the algorithm is cut short and $x$ is returned as solution.
+- `f_min`: In this particular scenario where we know the global minimum of $f(x)$, f_min controls how close Gradient descent has to get to the global minimum before the algorithm is cut short and $x$ is returned as solution.
 """
 
 # ╔═╡ ba7d60d9-b038-4550-aa00-93eae148dae0
@@ -793,10 +793,10 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═28d90808-72fd-4795-9f07-d12b6a165880
 # ╠═d917f63a-0580-4209-9e79-a1045c951c46
 # ╠═70057178-c54b-42e6-bcba-f35eecb442cd
-# ╟─f76a5b3f-d352-4f3d-bd4d-a7d68fadc8b5
+# ╠═f76a5b3f-d352-4f3d-bd4d-a7d68fadc8b5
 # ╠═6e213301-4852-4d44-904e-a69ad6c18f3d
 # ╟─e311f58d-28a1-4b0b-81d8-25149dfd9392
-# ╟─95b20450-2f9a-4506-936f-5a9039c67dfe
+# ╠═95b20450-2f9a-4506-936f-5a9039c67dfe
 # ╠═ba7d60d9-b038-4550-aa00-93eae148dae0
 # ╠═472e0d90-3145-47c2-9f47-6fb063dec578
 # ╠═85280aeb-b780-42c9-9304-ad77ca1de944
