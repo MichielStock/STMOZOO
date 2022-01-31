@@ -21,7 +21,7 @@ STMO Exam Project by **Ceri-Anne Laureyssens**
 md"""
 ### Cross-entropy
 
-As the title states the method has to do with the cross-entropy. It's a metric used to measure the distance between two probability distributions. These two distributions, as you will read later on, are in fact the original distribution (f) and the optimized distribution based on elite samples (g). The distance used to define cross-entropy is called the Kullback-Leibler (KL) distance and measures how one probability distribution is different from a second, reference probability distribution. This KL distance or relative entropy can be easily used to derive the cross-entropy itself and is defined as follows:
+As the title states the method has to do with the cross-entropy. It's a metric used to measure the distance between two probability distributions. These two distributions, as you will read later on, are in fact the original distribution ($$f$$) and the optimized distribution based on elite samples ($$g$$). The distance used to define cross-entropy is called the Kullback-Leibler (KL) distance and measures how one probability distribution is different from a second, reference probability distribution. This KL distance or relative entropy can be easily used to derive the cross-entropy itself and is defined as follows:
 
 ```math 
 \begin{equation}
@@ -30,9 +30,9 @@ D_{KL}(f,g) = E_f[\log\frac{f(X)}{g(X)}]
 \end{equation}
 ```
 
-With D being the KL distance, E the expectation, and X a random variable with support χ. 
+With $$D$$ being the KL distance, $$E$$ the expectation, and $$X$$ a random variable with support $$χ$$. 
 
-Minimizing this KL distance in between distribution f and g (parameterized by θ) is equivalent to choosing θ that minimizes the cross-entropy:
+Minimizing this KL distance in between distribution $$f$$ and $$g$$ (parameterized by $$θ$$) is equivalent to choosing $$θ$$ that minimizes the cross-entropy:
 
 ```math 
 \begin{equation}
@@ -42,9 +42,9 @@ H(f,g) = H(f) + D_{KL}(f,g)
 \end{equation}
 ```
 
-With H(f) being the entropy of distribution f.
+With $$H$$($$f$$) being the entropy of distribution $$f$$.
 
-This assumes that f and g share the support χ and are continuous with respect to x. The minimization problem becomes the following:
+This assumes that $$f$$ and $$g$$ share the support $$χ$$ and are continuous with respect to $$x$$. The minimization problem becomes the following:
 
 ```math 
 \begin{equation}
@@ -62,7 +62,7 @@ md"""
 The cross-entropy or CE method is a Monte Carlo method for importance sampling and optimization.
 Monte-Carlo algorithms rely on repeated sampling to obtain numerical results and use randomness as underlying concept to solve the given problem.
 
-The CE method can be used for both combinatorial as continuous problems, with either a static or noisy objective, and is also a valuable asset in rare-event simulation. 
+The CE method can be used for both combinatorial, such as the travelling salesman problem and the knapsack problem, as continuous problems, with either a static or noisy objective, and is also a valuable asset in rare-event simulation. In the examples called before a brute-force algorithm is not tractable. As such specialized algorithms, like the CE method, can be used because they quickly rule out large parts of the search space.
 
 The simple two-step process involves generating a random data sample according to a specified mechanism and updating the parameters of the mechanism based on the data to produce a better sample in the next iteration as can be seen in the figure underneath.
 """
@@ -74,7 +74,7 @@ md"""
 
 # ╔═╡ 9b4da26a-6136-4be7-b3d8-ad573a89c7f9
 md"""
-We start with a specified distribution in the left panel from which a fixed amount of samples are randomly derived. These randomly derived samples can be seen in the middle panel. The cross-entropy method makes use of an objective, or loss (as mentioned further down), function (S) which minimizes the cross-entropy between the known distribution f and a proposal distribution g parameterized by θ.
+We start with a specified distribution in the left panel from which a fixed amount of samples are randomly derived. These randomly derived samples can be seen in the middle panel. The cross-entropy method makes use of an objective, or loss (as mentioned further down), function ($$S$$) which minimizes the cross-entropy between the known distribution $$f$$ and a proposal distribution $$g$$ parameterized by $$θ$$.
 
 ```math 
 \begin{equation}
@@ -83,14 +83,21 @@ We start with a specified distribution in the left panel from which a fixed amou
 \end{equation}
 ```
 
-With I being the indicator function, and γ a threshold with which elite samples are determined.
+With $$I$$ being the indicator function, and $$γ$$ a threshold with which elite samples are determined.
 
 The grey dots indicate the elite samples. One becomes the elite samples by sorting the outcome of the objective function (done for every sample in the distribution). These elite samples are then selected as the samples of the new distribution, which can be seen in the third panel, and the whole process, starting from the left panel, is repeated until the distribution is optimized.
 """
 
 # ╔═╡ aba389ff-77b4-4683-9e41-35e8dc429797
 md"""
-The optimized distribution parameter *θ gstar* is estimated iteratively via the algorithm underneath which runs *max_iter* times. The parameters *θ iteration'* are defined based on the parameter *θ iteration*. The threshold *γ iteration* becomes smaller than its initial value, artificially making events less rare under X ~ g(x|*θ iteration*).
+The optimized distribution parameter $θ_g^*$ is estimated iteratively via the algorithm underneath which runs `max_iter` times and is used here for optimizing multivariate time series distributions.
+
+Suppose we have a timeseries `X = {x₁, ..., xₙ}` where each `xᵢ` is a vector of dimension `m`. The `cross_entropy_method` function can handle two different scenarios:
+
+1. The time series is sampled IID from a single distribution `p`: `xᵢ ~ p(x)`. In this case, the distribution is represented as a `Dict{Symbol, Tuple{Sampleable, Int64}}`. The dictionary will contain `m` symbols, one for each variable in the series. The `Sampleable` object represents `p` and the integer is the length of the timeseries (`N`).
+2. The time series is sampled from a different distribution at each timestep `pᵢ`: `xᵢ ~ pᵢ(x)`. In this case, the distribution is also represented as a `Dict{Symbol, Tuple{Sampleable, Int64}}`.
+
+The parameters $θ_{iteration'}$ are defined based on the parameter $θ_{iteration}$. The threshold $γ_{iteration}$ becomes smaller than its initial value, artificially making events less rare under $$X$$ ~ $$g$$($$x$$|$θ_{ iteration}$).
 """
 
 # ╔═╡ cb36a92a-0888-4993-ba11-ebbc7b05a3f9
@@ -132,7 +139,7 @@ The next two code chunks provide the functions for determining the loss function
 """
 
 # ╔═╡ d77ca772-6b3b-43fb-a3a1-459e04bc37fc
-# Define a loss function that identifies the values of 3,4,5 as those of intereste
+# Define a loss function that identifies the values of 3,4,5 as those of interest
 function l(d, s)
     v = s[:x][1]
     -(v in [3,4,5])
@@ -140,7 +147,20 @@ end
 
 # ╔═╡ f9a0105c-b570-46b2-93a6-af1982fd4966
 md"""
-Now we can run the `cross_entropy_method` function with the determined loss function on the sampling distribution. This will return the optimized distribution and can then be plotted in the second code chunk underneath. The plot contains both the base distribution, from which we started, and the optimal distribution as the `cross_entropy_method` funtion returned. Random.seed!(1234) is used so the results stay the same each time the code is run. This is done because the CE method uses randomness as underlying concept and thus might provide slightly different results each time its run (sometimes even a vector with different length in comparison to the base distribution, which will provide problems in the underlying plot).
+Now we can run the `cross_entropy_method` function with the determined loss function on the sampling distribution. This will return the optimized distribution and can then be plotted in the second code chunk underneath. The plot contains both the base distribution, from which we started, and the optimal distribution as the `cross_entropy_method` funtion returned. `Random.seed!(1234)` is used so the results stay the same each time the code is run. This is done because the CE method uses randomness as underlying concept and thus might provide slightly different results each time its run (sometimes even a vector with different length in comparison to the base distribution, which will provide problems in the underlying plot).
+"""
+
+# ╔═╡ e4cf6503-a9e1-4328-bdd5-d32b4330a6a0
+md"""
+### References
+
+Kloek, T., and van Dijk, H.K. (1978). *Bayesian Estimates of Equation System Parameters: An Application of Integration by Monte Carlo.* Econometrica, 46(1), 1-19.
+
+Moss, R.J. (2020). *Cross-Entropy Variants for Optimization.*
+
+Rubinstein, R.Y., and Kroese, D.P. (2004). *The Cross-Entropy Method: A Unified Approach to Combinatorial Optimization, Monte-Carlo Simulation, and Machine Learning.* Springer-Verlag, New York.
+
+Wikipedia (2021). *Combinatorial optimization.* Checked on the 31 January 2022 via https://en.wikipedia.org/wiki/Combinatorial_optimization
 """
 
 # ╔═╡ 04ef2558-ff4b-4a2d-9f59-2f8b6edde3f0
@@ -1286,6 +1306,7 @@ version = "0.9.1+5"
 # ╟─f9a0105c-b570-46b2-93a6-af1982fd4966
 # ╠═06af1708-5e0a-4c5c-a8a5-6d3ba97f2690
 # ╠═0902be86-d083-4c30-815b-f1aed4e92102
+# ╟─e4cf6503-a9e1-4328-bdd5-d32b4330a6a0
 # ╟─04ef2558-ff4b-4a2d-9f59-2f8b6edde3f0
 # ╠═9c2b64cf-c236-46aa-a4d6-02a22c5b7faa
 # ╠═abb2b875-0439-49f8-accd-5475ae388a67
