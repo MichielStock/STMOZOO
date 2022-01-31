@@ -6,7 +6,7 @@ include("regularization.jl")
 using Flux
 using Flux: onecold
 using Flux: Optimiser
-using Flux.Losses: binarycrossentropy, crossentropy, logitcrossentropy, logitbinarycrossentropy
+using Flux.Losses: logitcrossentropy
 using LinearAlgebra
 using MLDatasets
 using ProgressMeter

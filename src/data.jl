@@ -102,12 +102,10 @@ end
 Separates both moons by the specified offset.
 """
 function apply_moon_offset(X, y, offset)
-    # @assert direction in ["x", "y"] "Error: direction must be either x or y"
     # use offset as total offset, thus devide by number of labels; assume 2 labels
     offset /= 2
-    # direction == "x" ? direction = 1 : direction = 2
-
     moons = []
+    
     for label in unique(y)
         push!(moons, findall(l -> l == label, y))
     end

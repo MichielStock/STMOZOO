@@ -1,10 +1,16 @@
 module Regularization
 
-using Flux.Losses: crossentropy, logitcrossentropy, logitbinarycrossentropy
+using Flux.Losses: logitcrossentropy
 using Statistics
 
+"""
+	spectral_decoupling(ŷ, y, λ)
+
+Logitcrossentropy extended with spectral decoupling regularization as proposed by
+[Pezeshki et al.](https://arxiv.org/abs/2011.09468). The implementation here somewhat differs from the formula presented
+in the paper but the methodology is consistent with the python code provided by the authors.
+"""
 function spectral_decoupling(ŷ, y, λ)
-	# return mean(1.0 .* log.(1.0 .+ exp.(-ŷ .* y))) + λ * mean(ŷ .^ 2)
 	return logitcrossentropy(ŷ, y) + λ * mean(ŷ .^ 2) 
 end
 

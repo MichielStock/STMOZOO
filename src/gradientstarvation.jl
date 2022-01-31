@@ -7,16 +7,24 @@ if isfile("Project.toml") && isfile("Manifest.toml")
 end
 
 using DataStructures
-using PlotlyJS
 
+include("data.jl")
 include("experiments.jl")
 include("figures.jl")
+include("neuralnetwork.jl")
+include("plotlib.jl")
+include("plotutils.jl")
+include("regularization.jl")
 include("structs.jl")
+
+# includes & export needed for documentation
+export Data, Figures, Experiments, NeuralNetwork, PlotLib, PlotUtils, Regularization
 
 # figure 1
 Figures.create_figure_1("medium")
 
 # figures 2-13
+# run different experiments on the 2D classification task (moons)
 experiments = OrderedDict(
     "GD Δ0.5" => Experiment("GD", 0.5, false),
     "GD Δ1.0" => Experiment("GD", 1.0, false),
@@ -40,13 +48,13 @@ experiments = OrderedDict(
 )
 Experiments.run_experiments(experiments, show_plots = false, random_moons = false)
 
-# additional experiments
+# additional experiments with different parameters
+
 # figure 14
 Experiments.run_experiments(
     OrderedDict("GD Δ0.5 + SD 10000" => Experiment("GD", 0.5, true)),
     show_plots = false, random_moons = false, epochs = 10000
 )
-
 # figure 15, 16
 add_exp_adam = OrderedDict("ADAM Δ0.5 + SD" => Experiment("ADAM", 0.5, true))
 Experiments.run_experiments(add_exp_adam, show_plots = false, random_moons = false, learning_rate = 1e-4, prefix = "1e-4")
