@@ -21,7 +21,16 @@ Heesoo Song (01514152)
 
 ![Gradient_vs_sampling.png](https://github.com/HeesooSong/STMOZOO/blob/master/notebook/Figures/Gradient_vs_sampling.png?raw=true)
 
-The original paper (https://arxiv.org/abs/2005.05955) showed that sampling method could be compatible to the traditional back-propagation method (e.g. SGD) which gives very close classification accuracy in a very few rounds of updates. In this project, I tried to reproduce RSO function from the paper with simpler convolutional neural network (1 convolutional layer) and compared its classification accuracy to backpropagation method.
+According to the original paper (https://arxiv.org/abs/2005.05955),there are some **advantages** in using RSO over using backpropagation with SGD. 
+- RSO gives very close classification accuracy to SGD in a very few rounds of updates.
+- RSO requires fewer weight updates compared to SGD to find good minimizers for deep neural networks.
+- RSO can make aggressive weight updates in each step as there is no concept of learning rate.
+- The weight update step for individual layers is not coupled with the magnitude of the loss.
+- As a new optimization method in training deep neural networks, RSO potentially lead to a different class of training architectures.
+
+However, RSO also has a **drawback** in terms of computational cost. Since it requires updates which are proportional to the number of network parameters, it can be very computationally expensive. The author of the paper however suggests that this issue can be solved and could be a viable alternative to back-propagation if the number of trainable parameters are reduced drastically.
+
+In this project, I tried to reproduce the RSO function from the paper with simpler convolutional neural network (1 convolutional layer) and compared its classification accuracy to a backpropagation method (SGD). In addition explored how the RSO algorithm performs in different models and batch sizes.
 
 **!!IMPORTANT!!**\
 Before you open and run the notebook, install MLDatasets.jl package so that you can access to MNIST dataset:
