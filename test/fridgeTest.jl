@@ -88,10 +88,4 @@
         testDictDB = loadRecipeDBCSV("./testDB.csv")
         @test keys(testDictDB) == keys(Dict("Belgian Chocolate Mousse" => ["test"], "Belgian Buns" => ["test"]))
     end
-
-    @testset "findBestRecipe" begin
-        scrapeRecipe(106543,106555,"./testDB.csv")
-        # check if the combination of all recipes works
-        @test length(values(findBestRecipe(testList, "./testDB.csv", numRecipes=2, randRecipe=true, testmode=true))) == 0
-    end
 end
