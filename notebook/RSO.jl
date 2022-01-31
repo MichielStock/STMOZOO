@@ -50,12 +50,21 @@ md"""
 RSO is a new weight update algorithm for training deep neural networks which explores the region around the initialization point by sampling weight changes to minimize the objective function. The idea is based on the assumption that the initial set of weights is already close to the final solution, as deep neural networks are heavily over-parametrized. Unlike traditional backpropagation in training deep neural networks that involves estimation of gradient at a given point, **RSO is a gradient-free method that searches for the update one weight at a time with random sampling**. The formal expression of the RSO update rule is as following:
 
 $$w_{i+1}=\Bigg\{ \begin{align*}
-&wᵢ,\qquad \qquad f(x, wᵢ)<=f(s,wᵢ+\Delta wᵢ)\\
+&wᵢ,\qquad \qquad f(x, wᵢ)\leq f(s,wᵢ+\Delta wᵢ)\\
 &wᵢ+\Delta wᵢ,\quad f(x, wᵢ)>f(s,wᵢ+\Delta wᵢ)
 \end{align*}$$
 , where $\Delta wᵢ$ is the weight change hypothesis.
 
-In the following sections, we will reproduce RSO function and compare its classification accuracy to backpropagation method (SGD). Here, we used a simple model with one convolutional layers rather than the original model from the paper which was comprised of 6 convolutional layers.
+According to the paper, there are some **advantages** in using RSO over using backpropagation(SGD). 
+- RSO gives very close classification accuracy to SGD in a very few rounds of updates.
+- RSO requires fewer weight updates compared to SGD to find good minimizers for deep neural networks.
+- RSO can make aggressive weight updates in each step as there is no concept of learning rate.
+- The weight update step for individual layers is not coupled with the magnitude of the loss.
+- As a new optimization method in training deep neural networks, RSO potentially lead to a different class of training architectures.
+
+However, RSO also has a **drawback** in terms of computational cost. Since it requires updates which are proportional to the number of network parameters, it can be very computationally expensive. The author of the paper however suggests that this issue can be solved and could be a viable alternative to back-propagation if the number of trainable parameters are reduced drastically as in [3].
+
+In the following sections, we will reproduce the RSO function and compare its classification accuracy to the classical backpropagation method (SGD). In addition, we will have a look how the RSO algorithm performs in different models and batch sizes. To save your time, we used a simple model with one convolutional layer rather than the original model from the paper which was comprised of 6 convolutional layers.
 """
 
 # ╔═╡ 98e7978d-2355-407c-b87f-c0bd64b430aa
@@ -72,7 +81,7 @@ RSO function is constructed by following the pseudocode provided in the paper. T
 
 >\- $$W = \{W_1,...,W_d,...,W_D\}$$ = Weight set of layers \
 >\- $$W_d = \{w_1,...,w_{i_d},...,w_{n_d}\}$$ = Weight tensors of layer d that generates an activation set $$A_d = \{a_1,...,a_{i_d},...,a_{n_d}\}$$\
->\- $$w_{id}$$ = a weight tensor that generates an activation $a_{id}$\
+>\- $$w_{i_d}$$ = a weight tensor that generates an activation $a_{i_d}$\
 >\- $$w_j$$ = a weight in wid
 """
 
@@ -88,7 +97,7 @@ md"First, the weights are initialized by following the Gaussian distribution $$N
 Next, weight update is performed. The weights of the layer closest to the labels 
 are updated first and then sequentially move closer to the input. For each weight, the change is randomly sampled from Gaussian distribution $$N(0, \sigma_d)$$, in which the standard deviation computed in the initialization step. Then losses are computed for three different weight change scenario $$(W+\Delta W_j, W, W-\Delta W_j)$$ and compared. The weight set that gives minimum loss value is taken. 
 
-To note again, this update is perfomed on one weight at a time for every weights. Through C number of rounds (epochs) of these updates, model can be improved."
+To note again, this update is perfomed on one weight at a time for every weights. Through C number of rounds (epochs) of these updates, model can be improved further."
 
 # ╔═╡ bc0e3c51-16e1-47d1-8372-268debce32fa
 md"### 1-3. RSO function"
@@ -118,7 +127,7 @@ md"### 2-3. Result"
 md"""
 ##### 1) RSO performance summary:
 
-|                   |    Epoch   |    batch    |   time(s) |    loss    |   acc   |
+|                   |    Round   |    batch    |   time(s) |    loss    |   acc   |
 |:------------------|------------|-------------|-----------|------------|---------|
 | **Original model**|    1       |      256    |   5240    |   -        |   -     |
 |                   |    1       |    1000     |  73042    |     -      |    -    |
@@ -135,14 +144,14 @@ md"""
 |                   |    10      |    512      |   2834    | 0.29727805 | 0.9152  |
 |                   |    10      |    1024     |   5046    | 0.3011675  | 0.9148  |
 
-This table shows the performance of RSO in different conditions. Different models are explained in `3-1.2) Model Structures`. The loss and accuracy are not recorded in original model since it took immensive amount of time in training with original model even for 1 epoch. In both simpler models, it can be observed that the loss and accuracy improves as the batch size increases. This is because the loss calculation for weight updates were based on larger samples which lead to more precise reflection of the model (line 63, 68, 73 in RSO function). Furthermore, the generall loss and accuracy was better in TwoConv model than OneConv model.
+**This table is generated by myself through several experiments to show the performance of RSO in different conditions.** Please note that these experiments could not be generated user-interactively since the running time was insanely long for certain experiments. Different models are explained in `3-1.2) Model Structures`. The loss and accuracy are not recorded in original model since it took immensive amount of time in training with original model even for 1 round (epoch). In both simpler models, it can be observed that the loss and accuracy improves as the batch size increases. This is because the loss calculation for weight updates were based on larger samples which lead to more precise reflection of the model (line 63, 68, 73 in RSO function). Furthermore, the generall loss and accuracy was better in TwoConv model than OneConv model.
 """
 
 # ╔═╡ 27df401a-709d-4c73-bd4c-5333572ab233
 md"##### 2) Accuracy Comparison"
 
 # ╔═╡ 0082e604-f8bf-4e89-a3b3-f168c6e04efa
-md"Although it seems that RSO is lagging behind SGD in this plot, we have to consider that it was not the best model due to practical reasons. As shown above in `1) RSO performance summary`, the accuracy can peak 96.04% even with a little bit of more complexity in the model with larger batch size. According to the paper, RSO can perform 99.12% of accuracy after 50 cycles of updates with MNIST dataset, while the SGD gives 99.27% of accuracy after 50 epochs. Thus, one may consider using random sampling method than back-propagation methods for training neural networks as proposed and demonstrated in the paper."
+md"Although it seems that RSO is lagging behind SGD in this plot, we have to consider that it was not the best model that can be applied due to practical reasons. As shown above in `1) RSO performance summary`, the accuracy can peak 96.04% even with a little bit of more complexity in the model with larger batch size. According to the paper, RSO can perform 99.12% of accuracy after 50 cycles of updates with MNIST dataset, while the SGD gives 99.27% of accuracy after 50 epochs. Thus, one may consider using random sampling method than back-propagation methods for training neural networks as proposed and demonstrated in the paper."
 
 # ╔═╡ 6d9fa03d-cd79-416a-b686-d244afdba854
 
@@ -506,7 +515,7 @@ end
 begin
 	combine = hcat(acc_tracker_SGD.objectives, acc_tracker_RSO.objectives)
 	
-	plot(combine, title="RSO vs. SGD", label=["SGD-MNIST" "RSO_MNIST"], xlabel="epochs", ylabel="Accuracy", lw=2, legend=:bottomright)
+	plot(combine, title="RSO vs. SGD", label=["SGD_MNIST" "RSO_MNIST"], xlabel="epochs", ylabel="Accuracy", lw=2, legend=:bottomright)
 end
 
 # ╔═╡ fde5a843-5767-4fc7-a381-eb2ecc1fe801
@@ -543,7 +552,10 @@ end
 md"## References
 [1] Tripathi, R., & Singh, B. (2020). RSO: A Gradient Free Sampling Based Approach For Training Deep Neural Networks. arXiv preprint arXiv:2005.05955. [Link to paper](https://arxiv.org/abs/2005.05955)
 
-[2] [FluxML/model-zoo/vision/mlp\_mnist/mlp\_mnist.jl](https://github.com/FluxML/model-zoo/blob/master/vision/mlp_mnist/mlp_mnist.jl)"
+[2] [FluxML/model-zoo/vision/mlp\_mnist/mlp\_mnist.jl](https://github.com/FluxML/model-zoo/blob/master/vision/mlp_mnist/mlp_mnist.jl)
+
+[3] J. Frankle, D. J. Schwab, and A. S. Morcos. Training batchnorm and only batchnorm: On the expressive
+power of random features in cnns. arXiv preprint arXiv:2003.00152, 2020."
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
