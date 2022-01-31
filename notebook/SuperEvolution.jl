@@ -327,11 +327,11 @@ The parameters for the SA algorithm:
 # ╔═╡ 368f2043-6505-4c48-801e-aad1537e7b30
 md"""Because running SA takes a couple of minutes, it doesn't run automatically. You can push the "Run SA" button to start."""
 
-# ╔═╡ ebb3daa8-e41f-4ea1-8798-8840f1954c7c
-md"""*If an error occurs involving the range() function it might be best to update julia to the current stable version, which is v1.7.1 at this particular moment (31/01/2022). (Same goes for 4.2 MAP-Elites (ME))"""
-
 # ╔═╡ 4938804e-3f04-4821-847d-4bdb9c24d78b
 @bind SA CounterButton("Run SA")
+
+# ╔═╡ ebb3daa8-e41f-4ea1-8798-8840f1954c7c
+md"""*If an error occurs involving the range() function it might be best to update julia to the current stable version, which is v1.7.1 at this particular moment (31/01/2022). (Same goes for 4.2 MAP-Elites (ME))"""
 
 # ╔═╡ eab12a20-28a1-47c4-9d46-0a8b2ed6d870
 
