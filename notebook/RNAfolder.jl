@@ -19,6 +19,7 @@ using PlutoUI, Plots, Graphs, GraphMakie, CairoMakie, NetworkLayout
 
 # ╔═╡ 4b3e86ea-6973-11ec-014f-9f2708ba86cf
 md"""
+
 # RNAfolder
 
 *STMO*
@@ -49,6 +50,9 @@ Below you can see the implementation for this algorithm.
 
 """
 
+# ╔═╡ d3ee4413-c691-4fba-9f91-f24985fb8a88
+md""" The Nussinov matrix for the example RNA looks like this: """
+
 # ╔═╡ a455cfa0-ee29-4a4e-8b26-cf91c36985ec
 md"""
 
@@ -56,6 +60,9 @@ To retrieve the basepairs which form the optimally scoring secondary structure w
 
 Since the rules of the Nussinov algorithm are simple there are most of the time many roads that lead to the same optimal score for a structure and thus many optimal ways to fold the RNA. This is because score for pairing $$j$$ with $$i$$ might give you the same score as pairing $$j$$ with $$k \; (\neq i)$$ or even the same as leaving $$j$$ unpaired.
 """
+
+# ╔═╡ aea52dd9-7bcc-4873-9332-36b95592b27b
+md""" If we backtrack from $$(i=1,j=n)$$ we get all the pairs in the sequence: """
 
 # ╔═╡ 31aeff3d-5083-4c26-a556-847fbe76f9d6
 md"""
@@ -99,7 +106,7 @@ RNA
 # ╔═╡ 42921538-4ff4-4902-aefa-d958f41d1404
 md"""
 
-Below you can see the dotbracket strucure of the RNA. This is a representation of the secondary structure by using dots and brackets. Each character represents a nuceleotide in the sequence. Opening and closing brackets indicate two nucleotides that basepair. Dots represent unpaired nucleotides. Since guanine (G) and uracil (U) can also pair in RNA, GU pairs are allowed.
+Below you can see the dotbracket strucure of the RNA. This is a representation of the secondary structure by using dots and brackets. Each character represents a nucleotide in the sequence. Opening and closing brackets indicate two nucleotides that basepair. Dots represent unpaired nucleotides. Since guanine (G) and uracil (U) can also pair in RNA, GU pairs are allowed.
 
 """
 
@@ -120,7 +127,7 @@ Sadly there are no RNA visualization packages for Julia so I've had to use graph
 # ╔═╡ 2fbe430d-ab80-406e-aa87-c377d6ed30c2
 md"""
 
-## Functions
+## Appendix
 
 """
 
@@ -191,7 +198,7 @@ S = Nussinov(RNA)
 """
 	traceback(RNA, S, i, j; pairs = [])
 
-Performs a backtracking trhrough the Nussinov dynamic programming matrix starting from position (i,j). Outputs a list of tuples with all the pairs in the sequence.
+Performs a backtracking through the Nussinov dynamic programming matrix starting from position (i,j). Outputs a list of tuples with all the pairs in the sequence.
 
 """
 function traceback(RNA, S, i, j; pairs = [])
@@ -1658,12 +1665,14 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╠═4b3e86ea-6973-11ec-014f-9f2708ba86cf
+# ╟─4b3e86ea-6973-11ec-014f-9f2708ba86cf
 # ╠═2d83c447-1d33-496a-8a39-75d1cb9b2de1
 # ╠═45b4e0ec-5581-4a28-b6c1-c95b8e6a42bb
+# ╟─d3ee4413-c691-4fba-9f91-f24985fb8a88
 # ╠═0a20eddd-24f7-43c6-a0f3-6c1c138fb90a
 # ╟─a455cfa0-ee29-4a4e-8b26-cf91c36985ec
 # ╠═463d18c3-e155-4b73-896f-2bbcdb71bbd2
+# ╟─aea52dd9-7bcc-4873-9332-36b95592b27b
 # ╠═43f97b8d-cd9c-4b8f-8821-68542488e49d
 # ╟─31aeff3d-5083-4c26-a556-847fbe76f9d6
 # ╟─b2084e43-7914-495f-b93e-cf56a87be3c7
@@ -1673,7 +1682,7 @@ version = "0.9.1+5"
 # ╟─42921538-4ff4-4902-aefa-d958f41d1404
 # ╟─f66956d6-6d0d-42d1-b210-4bdf23ccd0b8
 # ╟─fd14341c-f195-4b86-9f9c-379477eed4af
-# ╟─06983a7b-efca-4167-be5d-a158a4e0858d
+# ╠═06983a7b-efca-4167-be5d-a158a4e0858d
 # ╟─ca99ac1a-e4da-41fe-8ab6-834e2b7134b7
 # ╟─e25d53b9-0096-4b6c-85cb-fcae261fabcb
 # ╟─2fbe430d-ab80-406e-aa87-c377d6ed30c2
