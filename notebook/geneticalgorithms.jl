@@ -87,10 +87,9 @@ md"""
 
 A few things have to be taken into account, when designing the initial population:
 
-- **The population size:** A smaller population has a higher change for a premature convergence, while a large population on the other hand asks for more computing time.
+- **The population size:** A smaller population has a higher chance for a premature convergence, while a large population on the other hand asks for more computing time.
 	
-- **The diversity:** A low diverstity will also result in a premature convergence.
-
+- **The diversity:** A low diverstity will also result in a premature convergence. Diversity in this context means that the individuals differ greatly in their genome.
 
 Overall, there are two primary methods to initialize a population in a GA: 
 	
@@ -139,7 +138,7 @@ md"""
 
 As we want to improve our population over time, it is of absolute importance to select  individuals that have a high **fitness level**. To determine the fitness level of an individual, we have to implement a **fitness function**. This function takes a candidate solution to the problem as input and produces a numeric value as output indicating how “fit” our how “good” the solution is. 
 
-Due to the fact that the fitness value has to be calculated after each generation, the fitness function should not only correlate closely with the designer's goal, but it also should be computationally efficient. If the fitness function becomes the bottleneck of the algorithm, then the overall efficiency of the genetic algorithm will be greatly reduced.
+Due to the fact that the fitness value has to be calculated after each generation, the fitness function should not only correlate closely with the designer's goal, but it also should be computationally efficient. 
 
 **The fitness function used as example here is based on the himmelblau's optimization function:**
 			
@@ -197,7 +196,7 @@ end;
 md"""
 ## Termination criteria
 
-Eventually the run of the algorithm will have to come to an end. Herefore certain conditions have to be determined that halt the algoritm, when these criteria are met. It has been observed that initially, the GA progresses very fast with better solutions coming in every few iterations, but this tends to saturate in the later stages, where the improvements are very small. We usually want a termination condition such that our solution is close to the optimal, at the end of the run.
+Eventually the run of the algorithm will have to come to an end. Therefore certain conditions have to be determined that halt the algoritm, when these criteria are met. It has been observed that initially, the GA progresses very fast with better solutions coming in every few iterations, but this tends to saturate in the later stages, where the improvements are very small. We usually want a termination condition such that our solution is close to the optimal, at the end of the run.
 
 **Usually, we keep one of the following termination conditions:**
 
@@ -207,7 +206,7 @@ Eventually the run of the algorithm will have to come to an end. Herefore certai
 
 - *The objective function value has reached a certain pre-defined value.*
 
-The code goes as follows:
+*The code goes as follows:*
 """
 
 # ╔═╡ 2bcdbbf0-2473-40d9-8c85-cec3b6ca4b31
@@ -236,7 +235,7 @@ end;
 md"""
 ## Selection
 
-During selection, the parent chromosomes are choosen for later on "breeding purposes", this is implemented by **the crossover operator.** Different methods of selection are available and some are discussed below. Important to note here is that an individual can be selected more than one time, otherwise the population would not change.
+During selection, the parent chromosomes are choosen for later on "breeding purposes", this is implemented by **the crossover operator.** Different methods of selection are available and some are discussed below. Important to note here is that an individual can be selected more than one time, otherwise the population would not change. When each individual can only be selected once, the least fit individuals would also be selected for the mating pool. Therefore convergence of the algorithm would be hindered.
 """
 
 # ╔═╡ 953edf56-a957-4c61-8a89-9709dc6dfd65
@@ -244,7 +243,7 @@ md"""
 
 ### Roulette Wheel Selection
 
-As the name suggests, this way of selecting parents is based on turning a roulette wheel. The chance of selecting an individual is proportional to its fitness. The higher its fitness the bigger its pocket will be on the roulette wheel an thus resulting in a higher chance of being selected.
+As the name suggests, this way of selecting parents is based on turning a roulette wheel. The chance of selecting an individual is proportional to its fitness. The higher its fitness the bigger its pocket will be on the roulette wheel and thus resulting in a higher chance of being selected.
 
 **The chance for an individual to be selected can be mathematically written as:**
 
@@ -259,7 +258,7 @@ Where:
 - *fᵢ is the fitness of individual i*
 - *N is the size of the population*
 
-We implement this in code:
+*We implement this in code:*
 """
 
 # ╔═╡ 79eb48df-26de-4965-b078-9bb20313247a
@@ -298,7 +297,7 @@ end;
 md"""
 ### Rank Selection
 
-In **rank selection** individuals are ranked based on their fitness. The individual with the worst fitness is given rank one, the individual with the best fitness is given rank N. In rank selection, the fitness values can even be negative, as it is their rank that counts and not their actual value. 
+In **rank selection** individuals are ranked based on their fitness. The individual with the worst fitness is given rank one, the individual with the best fitness is given rank N. In rank selection, the fitness values can be negative. 
 
 **The probability with which an individual can be selected can then be given by:**
 
@@ -313,7 +312,7 @@ Where:
 - *rᵢ is the rank of individual i*
 - *n the total number of ranks, which is equal to the number of individuals in the population*
 
-We implement this in code:
+*We implement this in code:*
 """
 
 # ╔═╡ 84d49f43-8ac3-4e73-991c-a54bb9fe9b5f
@@ -322,7 +321,7 @@ md"""
 
 During **steady state selection** a proportion of individuals with the highest fitness is choosen as mating pool. An equal proportion of individual with the lowest fitness values is removed from the population and replaced by the offspring of the mating pool.
 
-We can write the code as follows:
+*We can write the code as follows:*
 
 """
 
@@ -359,7 +358,7 @@ end;
 md"""
 ### Tournament Selection
 
-Here selection happens by means of **tournaments between randomly choosen individuals** from the population. In the tournament, the individual with the biggest fitness is chosen with the biggest probability, the individual with the second highest probability has the second best probability to be chosen and so on. 
+As a last selection technique, we have tournament selection. Here selection happens by means of **tournaments between randomly choosen individuals** from the population. In the tournament, the individual with the biggest fitness is chosen with the biggest probability, the individual with the second highest probability has the second best probability to be chosen and so on. 
 
 **The probability with which the individual with the highest fitness is chosen, is a given value and can be written as:**
 
@@ -375,7 +374,7 @@ Where:
 
 Each individual has the same chance to be chosen for a tournament. Selection continues until a mating pool with the same size as the population has been formed.
 
-We write the code as follows:
+*We write the code as follows:*
 """
 
 # ╔═╡ 6cf8534b-2fa1-4762-9526-bd3c2da99843
@@ -428,7 +427,7 @@ end;
 md"""
 ## Crossover
 
-The most significant way to stochastically generate new solutions from an existing population is by **recombination (crossover)** of parental chromosomes. 
+After selection the most significant way to stochastically generate new solutions from an existing population is by **recombination (crossover)** of parental chromosomes. 
 
 There exist a few different types of crossover:
 
@@ -464,9 +463,9 @@ Where:
 
 This technique is also called **whole arithmetic crossover** and goes as follows:
 
-First the mating pool is shuffled to make random parings of parents and two parents are selected that are adjacent in the mating pool list. Then the genome of the parents is devided over the offspring with a factor α, resulting in two children. Eventually the whole population is replaced by the offsprings.
+First the mating pool is shuffled to make random pairings of parents and two parents are selected that are adjacent in the mating pool list. Then the genome of the parents is divided over the offspring with a factor α, resulting in two children. Eventually the whole population is replaced by the offsprings.
 
-The code goes as follows:
+*The code goes as follows:*
 """
 
 # ╔═╡ 1e7552ac-9c46-479d-b26e-5d776e3cc5af
@@ -525,8 +524,7 @@ md"""
 
 # ╔═╡ 0b598ee8-8671-4b99-87b8-1a65a2d63aa2
 md"""
-
-We code this as follows:
+*We code this as follows:*
 """
 
 # ╔═╡ 1b6763ba-ae24-4f63-b7e8-545364ddab89
@@ -581,7 +579,7 @@ end;
 md"""
 ## The complete algorithm
 
-Now that we have been introduced to the different aspects of a genetic algorithm, it  it time to put it all together and sart seeking the minima of our Himmelblau's function:
+Now that we have been introduced to the different aspects of a genetic algorithm, it  it time to put it all together and start seeking the minima of our Himmelblau's function:
 
 """
 
@@ -2476,7 +2474,7 @@ version = "0.9.1+5"
 # ╟─307af9a7-6b0c-44ad-a5b0-d9b0c18b5db4
 # ╠═6cf8534b-2fa1-4762-9526-bd3c2da99843
 # ╠═4408b037-e336-4382-8468-28d1746c23d3
-# ╟─5096d7c0-0189-4c89-9ec0-13e7aac9aa8a
+# ╠═5096d7c0-0189-4c89-9ec0-13e7aac9aa8a
 # ╟─0be0a442-8c9f-4035-b926-998f0c63ade7
 # ╟─9c2f897a-663e-4408-8364-1582ef6cba9c
 # ╠═1e7552ac-9c46-479d-b26e-5d776e3cc5af
