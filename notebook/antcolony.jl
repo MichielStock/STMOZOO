@@ -4,13 +4,24 @@
 using Markdown
 using InteractiveUtils
 
+# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
+macro bind(def, element)
+    quote
+        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
+        el
+    end
+end
+
 # ╔═╡ 45160a1e-cb93-48bf-b2b9-35c337780a73
-using ShortCodes, Plots, Random, LinearAlgebra
+using ShortCodes, Plots, Random, LinearAlgebra, PlutoUI, Images
 
 # ╔═╡ 69899fd8-3b3f-4220-8997-88208c6177ca
 md"""
 *Natalie Thomas*\
 *STMO Fall 2021*\
+*Final version: Jan 31, 2022*
 """
 
 # ╔═╡ 3a5e53ea-b36d-4e97-af88-75bee3180b2a
@@ -20,7 +31,16 @@ md"""
 #### So you want to learn about Ant Colony Optimization
 
 *Target audience*: This notebook is intended for people with introductory knowledge of optimization problems and related terminology, and whom are relatively inexperienced with Julia. 
+"""
 
+
+# ╔═╡ 9d58ef2b-4c88-4c25-acbe-084dc1fc8842
+md"##### *What will I learn in this notebook?*
+click for answer: $(@bind showsol1 CheckBox())"
+
+# ╔═╡ 5cf8234f-6d9f-4738-8232-13a5f6ba723c
+if showsol1
+	md"""
 *After completing this notebook, the student will be able to answer the following questions*: 
 - What is the point of Ant Colony Optimization? What problem does it try to solve?
 - What is the biological behavior that inspires ACO? 
@@ -29,6 +49,11 @@ md"""
 - How can ACO be implemented in Julia?
 - What are some limitations of ACO?
 - What user-set parameters affect the outcome of ACO?
+	"""
+end
+
+# ╔═╡ ecd4e231-9030-438a-9068-e1f0d13f1b78
+md"""
 
 We begin with a review of some terminology, and an introduction to the Travelling Salesman Problem. 
 
@@ -43,6 +68,7 @@ We begin with a review of some terminology, and an introduction to the Travellin
 
 **Pheromone**: A chemical produced and secreted into the environment by an animal which affects the behavior or physiology of other animals of that species. Pheromones can encode many different signals and may be sensed/smelled by other community members and (for example) trigger a social response. 
 
+In this notebook, the terms **tour**, **trail**, and **route** are used interchangeably to describe the path of an ant to and from its colony, or the path of an ant through each of a number of "cities" and back to its colony.
 
 ## Inspiration for ACO
 ### The Travelling Salesman Problem
@@ -122,7 +148,7 @@ After initial (random) paths and path scores are calculated, the ants are deploy
 >> 2. calculate path scores\
 >> 3. find best solution\
 >> 4. update pheromone trail\
->*output* the solution (trail) and it's value (total length): **solutionpath** and **solutionlength**
+>*output* the length of the best trail, **trail_value**, and the trail itself, **best_ant**.
 
 That's quite a long list of inputs, isn't it? Don't worry, we'll use an initialization function to generate most of these items for us. In reality, you just two things to run our version of ACO: (1) a list of the x,y-coordinates of the cities and (2) the number of ants to simulate.
 
@@ -141,13 +167,13 @@ Before running the main ACO function, we need to initialize many objects. This i
 - `a`: (optional) an integer determing the number of ants that travel the graph; if left unspecified the default value is 4
 
 #### Function outputs:
-- `start`: an integer representting start city (i.e. colony location) 
+- `start`: an integer representing start city (i.e. colony location) 
 - `dists`: symmetric distance matrix for which any entry (i,j) represents the distance between two cities i and j
 - `ants`: an array of arrays, where the number of arrays is equal to the number of ants, and each any array is a solution (ordered trail) 
-- `best_t`: the index of the best solution in the ants array 
-- `best_l`: the total length of `best_t`
+- `best_ant`: the best trail/solution array in `ants`
+- `trail_value`: the total length of the best ant's trail
 
-#### Example dataset: 4 cities
+##### Example dataset: 4 cities
 We will use an example dataset containing just 4 cities. The x,y-coordinates for these cities is stored in `coords4`.
 
 We will run `init_aco` and store `init_aco` outputs in the following variables:
@@ -163,9 +189,14 @@ We will run `init_aco` and store `init_aco` outputs in the following variables:
 Note that each variable namee is appended with the number 4 to associate it with this 4-city example.
 """
 
+# ╔═╡ 09d67d88-a8f8-404d-820e-5a7cada6505d
+md""" ###### **!** *Comprehension check*:
+Does the optimal solution change if a different starting city (e.g. colony location) is selected from the dataset? Why or why not? 
+"""
+
 # ╔═╡ 2e5ff5ca-04fa-47c0-b9d5-03130097df57
 md""" ###### **!** *Comprehension check*:
-What is the initial pheromone value for any pair of cities? What is the reasoning behind this initialization?
+What is the initial pheromone value for any pair of cities? What reasoning might be behind this initialization?
 """
 
 # ╔═╡ 82a213e4-3c70-48c5-8b82-f4ff6ea55603
@@ -198,7 +229,7 @@ md"""
 After running initialization, we already have a solution to our problem. Of course, since the initialized ant paths are random, this solution is almost certainly garbage. Now we use Ant Colony Optimization to improve the solution by performing iterative runs of our algorithm.
 
 Recall the pseudocode for the main ACO loop:
->*input* **start**, **dists**, **ants**, **best_T**, **best_L**, **pheromones**, **n**, **a** and optionally **k**
+>*input* **start**, **dists**, **ants**, **best_ant**, **trail_value**, **pheromones**, **n**, **a** and optionally **k**
 >\
 >\
 > *repeat* **k** times:\
@@ -207,19 +238,24 @@ Recall the pseudocode for the main ACO loop:
 >> 2. calculate path scores\
 >> 3. find best solution\
 >> 4. update pheromone trail\
->*output* the solution (route) and it's value (length): **solutionpath** and **pathlength**
+>*output* the length of the optimized trail, **trail_value**, and the trail itself, **best_ant**.
 
-Rather than attempting to translate this pseudocode into one function, we create separate functions for each of the four tasks, along with some helper functions. In the end, the function `aco` makes use of all sub-functions to enact ACO as described in the pseudocode.
+Rather than attempting to translate this pseudocode into one giant function, we create separate functions for each of the four tasks, along with some helper functions. In the end, the function `aco` makes use of all sub-functions to enact ACO as described in the pseudocode.
 
-We will take a top-down approach to examine a few functions for this algorithm. First, you will try completing the `aco` function. After that you'll take a try at writing a few of the sub-functions, including `updateants` and `updatepheromones`, `trailsum`.
-
-*This may seem counter-intuitive at first*: After all, writing `aco` will involve calling functions you haven't even written yet! For now, just go with it. We'll revisit this question later.
+We will take a top-down approach to examine a few functions for this algorithm. First, you will try completing the `aco` function. After that you'll take a try at writing a few of the sub-functions used by `aco`, including `updateants` and `updatepheromones`, `trailsum`.
 """
 
 # ╔═╡ faa44127-59c5-486e-9e2a-19c768830da0
 md"""
-###### **!** *Thought experiment*: Top-down writing
+*A top-down approach may seem counter-intuitive at first*: After all, writing `aco` will involve calling functions you haven't even written yet! 
 
+###### **!** *Thought experiment*: Top-down writing
+click to show: $(@bind showsol2 CheckBox())
+"""
+
+# ╔═╡ d31a5524-0f98-433f-8b23-79be9c08cf39
+if showsol2
+	md"""
 Writing a function before actually defining the sub-functions that it calls is analogous to a boss delegating tasks. Imagine two modes as you work on these functions: **Boss Mode** and **Worker Mode**
 
 **Boss Mode**: As the boss, your job is to maintain the "bigger picture" of the project. Making calls to sub-functions, for example, is comparable to off-loading tasks on assistants: you don't get involved in the particulars. You trust that the employees will report back with the work you've assigned, when you call on them.
@@ -227,13 +263,15 @@ Writing a function before actually defining the sub-functions that it calls is a
 **Worker Mode**: In this mode, you are handed a task, and the bigger purpose of that task may be unclear. You might ask questions like "Okay, but why do it like this?" In this mode, you have to trust that the boss has a good reason for their particular request.
 
 There will be a few more exercises where you will finish writing incomplete functions. In some exercises you will work in **Boss Mode**, and in others you will be in **Worker Mode**.
-"""
+	"""
+end
 
 # ╔═╡ 1922c5e9-8275-4fbd-9d4b-af92d0ffb039
 md"""
 ###### **!** *Exercise*: Complete the `aco` function below. 
+Learn by practice: A partially filled-in function is given below. Replace any line with the word missing with the necessary code. Comments are provided within the function body to guide you.
 
-You can call the following functions:
+The following functions are provided for your use in this exercise:
 
 - `updateants(ants, pheromones, dists, start)` : updates ant path solutions
 - `updatepheromones(pheromones, ants, dists)` : updates pheromone matrix
@@ -243,64 +281,58 @@ You can call the following functions:
 
 # ╔═╡ 43d58b74-9388-4b97-9a94-7191952f4184
 """
-	aco(start, dists, ants, best_T, best_L, pheromones, n, a, k::Int=10)
+	aco(start, dists, ants, best_ant, trail_value, pheromones, n, a, k::Int=10)
 
 Runs ACO k times and returns the shortest path and its length. 
 
 Inputs:
 
-	- start: an integer representting start city (i.e. colony location) 
+	- start: an integer representing start city (i.e. colony location) 
 	- dists: symmetric distance matrix for which any entry (i,j) represents the distance between two cities i and j
 	- ants: array of solution "ant" arrays
-	- best_T: best trail in ants
-	- best_L: length of best_t
+	- best_ant: best trail in ants
+	- trail_value: length of best_ant
 	- pheromones: pheromone matrix 
 	- n: number of cities the ants must visit (including the origin city)
 	- a: number of ants 
-	- k: an index
+	- k: number of times the while loop iterates
 
 Outputs:
 
-	- best_T: updated best trail
-	- best_L: length of best_L
+	- best_ant: updated best trail
+	- trail_value: length of best_ant
 """
-function aco_exercise(start, dists, ants, best_T, best_L, pheromones, n, a, k::Int=10)
+function aco_exercise(start, dists, ants, best_ant, trail_value, pheromones, n, a, k::Int=10)
 
 	i = 1 #loop counter
-    currbest_T = zeros(Int64, n) #init currbest_T
-	currbest_L = 0 #init currbest_L
+	
+    currbest_ant = zeros(Int64, n) #init currbest_ant = the best trail 
+	currtrail_value = 0 		   #init currtrail_value = sum of best trail
 	
 	while missing # termination condition 
 		
-		missing #update ant paths
-		missing	#update pheromone matrix 
+		missing # update ant paths (hint: use provided function)
+		missing	# update pheromone matrix (hint: use provided function)
 
-		missing #find best of the current ant trails
-		missing #find length of current best trail
+		missing # find best of the current ant trails (hint: use provided function)
+		missing # find length of current best trail (hint: use provided function)
 
-		if missing #check whether current best trail is global best
-			missing #what should happen if the program finds a new global best?
+		if missing  # check whether current best trail is global best
+			missing # what should happen if the program finds a new global best?
 		end
 
-		missing #increment loop count	
+		missing 	# increment loop count	
 	
 	end 
 	
-	return best_L, best_T
+	return trail_value, best_ant
 end
 
-# ╔═╡ 1ce28f18-368d-4a0c-84e6-129d7fed30a5
-md"""
-
-##### **!** *Check your solution*
-
-Reveal the solution below by clicking the eye icon at the left of the function chunk ("Main.workspace###.aco"). 
+# ╔═╡ 4b715a6a-2015-4893-95a3-d866aa25a5e3
+md"""**Solution**: see hidden cell for completed `aco` code.\
 
 It is not expected that your solution for this or any other function is identical to the one provided. The purpose is only to practice implementing the ideas, and to think about why the structure of any function (and the overall program organization) is designed as it is.
 """
-
-# ╔═╡ 4b715a6a-2015-4893-95a3-d866aa25a5e3
-md"Solution:"
 
 # ╔═╡ 48b6e748-2d0d-4e1d-805f-d1180ed44a04
 md"""
@@ -309,20 +341,20 @@ md"""
 Let's continue with our example dataset and run `aco`.
 
 Run the main ACO function:
-> `aco(start, dists, ants, best_T, best_L, pheromones, n, a, k::Int=10)`
+> `aco(start, dists, ants, best_ant, trail_value, pheromones, n, a, k::Int=10)`
 - Variables returned by `init_aco` will be entered as paramteres for `aco`
 - You can optionally specify `k`, the number of iterations of the loop, i.e. how many times the ants are sent to walk a tour 
 - `aco` returns 2 values: the length of the shortest route (e.g. tour) found, and the route itself 
 """
 
 # ╔═╡ 97e40099-12aa-41ab-b362-816bacd5995c
-#Optionally specify k4
+#optionally specify k4 (number of iterations through while loop)
 k4 = 10
 
 # ╔═╡ 1541356f-d713-443b-94fe-2216b6630dc5
 md"""
 ###### **!** *Exercise*
-Does changing parameters *n* or *a* give a better (or worse) result? Why (or why not)?
+Does changing parameters *n* or *a* above give a better (or worse) result? Why (or why not)?
 """
 
 # ╔═╡ bccd27de-3da5-4c4a-aa49-3382bf10228f
@@ -360,7 +392,7 @@ Next, we'll examine each of these steps in turn.
 # ╔═╡ 97e31857-bb2a-4cca-bf04-9da7e74796b1
 md"""
 ### Step 1: generate ant paths
-Learn by practice: A partially filled-in function is given below. Replace any line with the word **missing** with the necessary code. Comments are provided within the function body to guide you.
+*Learn by practice*: A partially filled-in function is given below. Replace any line with the word **missing** with the necessary code. Comments are provided within the function body to guide you.
 ###### **!** *Exercise*: Complete the `updateants` function below. 
 
 The following function is already provided for your use in `updateants`:
@@ -381,14 +413,14 @@ The next step in the `aco` while loop is to calculate the score of each ant path
 A partially filled-in function is given below. Replace any line with the word missing with the necessary code. Comments are provided within the function body to guide you.
 You can call the following function:
 
-- `distance(cityX, cityY, dists)` : returns the distance between `cityX` and `cityY` according to the distance matrix `dists`
+- `distance(city_x, city_y, dists)` : returns the distance between `city_x` and `city_y` according to the distance matrix `dists`
 """
 
 # ╔═╡ 6cfc4a6e-049d-48db-a4a5-5fb60ed32e7f
 """
 	trailsum(trail, dists) 
 
-Calculates the sum of the entire path taken by the ant.  
+Calculates the sum of the ant trail.  
 
 Inputs:
 
@@ -403,10 +435,8 @@ function trailsum_exercise(trail, dists) # total length of a trail (sum of dista
 
 	result = 0.0 #initialize a result variable
 	
-	for i in 1:missing
-		result = missing #find the sum of the trail
+	missing # find the sum of the trail
 
-	end
 	return missing
 end
 
@@ -422,17 +452,17 @@ The next step in the `aco` while loop is to find the best solution in the curren
 # ╔═╡ f451c468-b840-4843-b442-d792ebbf785d
 md"""
 ### Step 4: update pheromone trails
-The last step in the `aco` while loop is to update pheromone trails. This equates to calculating a value for each path segment (edge) created by any two cities in the graph. The more attractive a particular edge is, the higher the pheromone value it receives, and the more likely it is to be travelled by future ants.  
+The last step in the `aco` while loop is to update pheromone trails based on the most recent ant solutions. This equates to calculating a value for each path segment (edge) created by any two cities in the graph. The more attractive a particular edge is, the higher the pheromone value it receives, and the more likely it is to be travelled by future ants.  Remember that pheromone signals also fade over time, so a pheromone decrease factor must also be taken into account. 
 
 #### Equation for updating pheromones 
-The particulars of the math and reasoning behind this function are outside the scope of this notebook, but if you're curious, you can read about it [here](http://www.scholarpedia.org/article/Ant_colony_optimization#Main_ACO_algorithms). 
+An exhaustive explanatin of the following function is outside the scope of this notebook, but if you're curious, you can read about it [here](http://www.scholarpedia.org/article/Ant_colony_optimization#Main_ACO_algorithms). 
 
  $τ_{i,j}$ is the amount of pheromone on any edge $(i,j)$\. Pheromone amounts are updated according to the following equation:\
 
 > $τ_{i,j} ← (1-ρ)τ_{i,j} + ∑_k Δτ_{i,j}^k$\
 where $(1-ρ)τ_{i,j}$ is a pheromone decrease factor and $∑_k Δτ_{i,j}^k$, a pheromone increase factor, with: 
 
--  $ρ$: the rate of pheromone evaporation
+-  $ρ$: the rate of pheromone evaporation 
 -  $∑_k Δτ_{i,j}^k$: the amount of pheromone to deposit 
 
 ##### **!** *Exercise*: Complete the `updatepheromones` function below. 
@@ -442,7 +472,9 @@ The following functions are already provided for your use in writing `updatepher
 - `trailsum(ants[k], dists)`: Calculates the sum of the entire path taken by the ant
 - `is_edge(i, j, ants[k])`: Checks if two cities *i* and *j* are adjacent to each other in the *k*th trail in `ants`, (the *k*th trail is a trail solution associated to a particular ant)
 
-(Note: this exercise is a great example of working in "Worker Mode", as described before!) 
+**Note**: in `updatepheromones`, $∑_k Δτ_{i,j}^k = q/l$ , where $q$ is an arbitrary numerator value (default = $2$) and $l$ is the length of the $k$th ant's trail. 
+
+**Note**: the pheromone increase factor for an edge $(i,j)$ need only be calculated if the ant walks directly from city $i$ to city $j$ (i.e. if the ant doesn't walk over edge $(i,j)$, it isn't possible to leave pheromones there).
 """
 
 # ╔═╡ d916c673-ad4f-4475-8141-06d068f32efa
@@ -476,11 +508,17 @@ The cumulative probability array is:
 ###### **!** *Comprehension check*: 
 **How does drawing randomly from the cumulative probability distribution translate into using pheromone information?**
 
-*Answer*: 
+###### Show answer:  $(@bind showsol4 CheckBox())
+"""
+
+# ╔═╡ 96a41671-0557-44d8-bfbd-291d396fccf5
+if showsol4
+	md"""
 The more attractive the city is, the bigger 'slice' it will have of the cumulative probability array. Then when a number is randomly drawn, more attactive cities will be more likely to be selected, although there is still a chance to pick an unattactive city. 
 
 This is a pretty cool property of ACO because it means there is a measure of "free will" in the ant's decision-making! 
-"""
+	"""
+end
 
 # ╔═╡ f6152a42-bb18-4a17-94b3-b9885d6885d4
 md"""
@@ -491,25 +529,25 @@ As you read through the function code below, try to connect what you're seeing b
 # ╔═╡ f6de5186-e714-4962-801e-e1e52bef8af7
 md"""
 ##### **!** *Want to see more?*
-The function definition for the following main loop helper functions are available at the end of this notebook:
+The function definition for the following main loop helper functions are available in the notebook appendix:
 
 - `buildtrail(k, start, pheromones, dists)`
-- `getprobs(k, cityX, visited, pheromones, dists)`
-- `distance(cityX, cityY, dists)`
-- `is_edge(cityX, cityY, trail)`
+- `getprobs(k, city_x, visited, pheromones, dists)`
+- `distance(city_x, city_y, dists)`
+- `is_edge(city_x, city_y, trail)`
 """
 
 # ╔═╡ f125718f-54f0-481c-a23d-98cce6e12a4f
 md"""
 ## ACO in action
 ### 25 city example
-Here's another example use of our `aco` algorithm. This time, we'll use the data in `coords25`, which holds x,y-coordinates of 25 cities.
+Let's try our `aco` algorithm on a bigger dataset. This time, we'll use the data in `coords25`, which holds x,y-coordinates of 25 cities.
 
 #### Initialization step 
 
-Run `init_aco(coords25, a)` below.
+Run `init_aco(coords25,a)` below.
 - `coords25` is a pre-defined list of 25 x,y-coordinate pairs. 
-- You can choose a value for `a`, an integer that sets the number of ants. If you run `init_aco(coords25)`, $a=4$ by default.
+- You can optionally choose a value for `a` (number of ants). If you run `init_aco(coords25)` with no value for `a`, $4$ ants are used by default.
 
 *Suggestion*:
 Append each variable name with the number 25 to associate it with this 25-city example, e.g. `colony25`: the starting city; `dists25`: the distance matrix; `ants25`: initial solutions for each ant; `bestroute25`: the best initial solution;
@@ -518,10 +556,10 @@ Append each variable name with the number 25 to associate it with this 25-city e
 
 # ╔═╡ 93025b8d-6773-4cee-99c3-7da7498597de
 md"""
-#### Optimization  
+#### Ant Colony Optimization  
 Run the main ACO function:
 
-`aco(start, dists, ants, best_T, best_L, pheromones, n, a, k::Int=10)`
+`aco(start, dists, ants, best_ant, trail_value, pheromones, n, a, k::Int=10)`
 - Use the variables you saved from `init_aco` as parameters for `aco`
 - You can optionally specify `k`, the number of iterations of the loop, i.e. how many times the ants are sent to walk a tour 
 - `aco` returns 2 values: the length of the shortest tour found, and the tour itself 
@@ -549,19 +587,25 @@ md"""
 6. How do you think you can find the values for `a` and `k` that will give the most consistent (reproducible) and highest quality solution?
 """
 
-# ╔═╡ 57baf53e-9bb1-4cf3-bae2-3ac5588a6d11
+# ╔═╡ 49293ec8-5ccb-4a9d-aaeb-1b23cb0835c5
 md"""
-### Partial Totoro example
+### How do individual ant solutions evolve over time?
+Instead of looking at a static final solution, let's follow an ant throughout it's $k$ trips through the 25 cities.
 """
 
-# ╔═╡ 7bfda195-e39a-49c9-bbab-3eecd682eb48
-ktoto = 4
+# ╔═╡ 6bbf4d81-9db1-4308-aebb-bf0a8a5a6701
+md"""
+##### **!** *Exercises*
+- Compare the plot above with the optimized solution, below. 
+- Is the evolution of the ant's path over its trips as you expected? Why or why not?
+- Adjust the sliders for `k` and `a`. What parameter settings seem to yield the best solution? 
+"""
 
 # ╔═╡ 64dae470-6b3b-487f-b663-25f10b7b9567
 md"""
 ### Epilogue and food for thought
 ACO is a very promising solution method for TSP, and basic implementation is possible with minimal expertise. However, did you notice some inefficiencies in our implementation? 
-- To begin, we initialize random paths for the ants. How could this be made more efficient? 
+- To begin, we initialize random paths for the ants. How could this be made more efficient? Is there any advantage to using completely randomized paths at the beginning?
 - We touched in brief on parameters $α$, $β$, and $ρ$, which effect pheromone computation. How might adjusting these parameters improve our solution quality or convergence rate? 
 
 In fact, ACO is not always as good as other state-of-the-art solutions for TSP. It may suffer from slow convergence speed or may prematurely converge before finding the global optimum. At the same time, ACO is also promising in the way it can encode real world context. For example, adjusting the pheromone parameters can encode information about how influencable you want your ant agents to be to social pressure. Adjusting the pheromone evaporate rate can also control how long-lasting the effects of colony communication are, which is another unique property of ACO and other swarm algorithms. 
@@ -575,8 +619,8 @@ I hope you enjoyed this introduction to Ant Colony Optimization! For a complete 
 
 # ╔═╡ 31e6f16e-e12e-474f-9c27-5bff01c53310
 md"""
-![](https://github.com/natclaret/Ant_Colony_Optimization.jl/blob/master/notebook/ACO_images/Elettes_cartoon.png?raw=true)
-Cartoon by Elette, age 8
+![](https://github.com/natclaret/Ant_Colony_Optimization.jl/blob/master/notebook/ACO_images/elette_ants_v2_2.png?raw=true)
+Cartoon by my niece Elette, age 10
 """
 
 # ╔═╡ 40785798-1223-4efe-870e-e37b0b761af1
@@ -591,7 +635,7 @@ Function relationships:
 
 	init_aco(n::Int=10, a::Int=4)
 
-		makegraphdists(n) 
+		makegraphdists(n)* 
 
 		initants(a, n)
 
@@ -605,13 +649,15 @@ Function relationships:
 
 		best_trail(ants, dists)
 *Note*: indention denotes one function calling another. For example, `randomtrail` calls `getidx`. 
+
+*`makegraphdists` was not used in the preceding examples, but it can be used in the case that you would like to randomly generate a dataset of n cities.
 """
 
 # ╔═╡ 3fc17fc7-e345-4e3d-8e77-78e374dd0bfc
 """
 	makegraphdists(n) 
 
-Generates an nxn symmetric matrix with 0s on the diagonal 
+Randomly generates an nxn symmetric matrix with 0s on the diagonal, i.e. a random distance matrix
 
 Inputs:
 
@@ -662,30 +708,30 @@ Helper functions for the main loop functions are defined below.
 
 Function relationships:
 
-	aco(start, dists, ants, best_T, best_L, pheromones, n, a, maxTime::Int=10)
+	aco(start, dists, ants, best_ant, trail_value, pheromones, n, a, maxTime::Int=10)
 
 		updateants(ants, pheromones, dists)
 
 				buildtrail(k, start, pheromones, dists)
 
-						nextcity(k, cityX, visited, pheromones, dists) 
+						nextcity(k, city_x, visited, pheromones, dists) 
 
-							getprobs(k, cityX, visited, pheromones, dists)
+							getprobs(k, city_x, visited, pheromones, dists)
 
-								distance(cityX, cityY, dists) 
+								distance(city_x, city_y, dists) 
 
-						distance(cityX, cityY, dists) 
+						distance(city_x, city_y, dists) 
 
 			updatepheromones(pheromones, ants, dists)
 
-				is_edge(cityX, cityY, trail) 
+				is_edge(city_x, city_y, trail) 
 """
 
 # ╔═╡ c8de83fa-1519-48d0-b257-97bfeb4952ad
 """
 	distance(city_x, city_y, graphDistances)
 
-Returns the distance between city_x and city_y
+Returns the distance between `city_x` and `city_y`
 
 Inputs:
 
@@ -764,17 +810,20 @@ end
 # ╔═╡ 04e007ac-c582-4510-a053-052e5037e57c
 md"""
 ### Misc. items for plotting
-Additional functions used for plotting and other utilities
+Additional functions and variables used for plotting
 """
 
+# ╔═╡ 86b7067f-5f85-48c3-b78d-3d2e5ed0af3f
+md"##### Ant path evolution example"
+
 # ╔═╡ b8a1320e-f7af-4598-b5ee-68b28f25dc47
-md" #### The 4-city example"
+md" ###### The 4-city example"
 
 # ╔═╡ 2fbf893e-5ced-4233-90a4-3dce09fb5ed0
 coords4 = [1.0 1.5; 2.1 0.3; -0.3 1.2; -2.0 -2.3]
 
 # ╔═╡ cffe3e0b-f1a8-423f-8c3a-c98f1bda82d7
-md" #### The 25-city example"
+md"######  The 25-city example"
 
 # ╔═╡ 8f3b6386-2a28-4433-bcef-f4f2250072a0
 coords25 = [1 2;
@@ -804,7 +853,7 @@ coords25 = [1 2;
 13 23]
 
 # ╔═╡ 1c0844ba-5451-4fd8-921b-0f82ecb7e4ff
-md" #### The partial Totoro example"
+md" ######  The partial Totoro example"
 
 # ╔═╡ 0056b890-3ff8-47aa-92a0-58b89c7e2078
 some_totoro_coords = [484 800;
@@ -946,4851 +995,16 @@ some_totoro_coords = [484 800;
 265 81;
 159 79]
 
+# ╔═╡ 57baf53e-9bb1-4cf3-bae2-3ac5588a6d11
+md"""
+#### "Partial" Totoro example
+"""
+
+# ╔═╡ 7bfda195-e39a-49c9-bbab-3eecd682eb48
+ktoto = 4 # 4 loops
+
 # ╔═╡ ad027e48-419b-4aac-af3a-5e6d4acf7e94
-md" #### Taken from STMO tsp.jl"
-
-# ╔═╡ b2c4ecf1-e86c-42f7-b186-f7f3e528b902
-#got_tsp() = TravelingSalesmanProblem(got_coords)
-
-# ╔═╡ 67c91979-c561-4ac6-aa43-00ed552d109d
-#totoro_tsp() = TravelingSalesmanProblem(totoro_coords)
-
-# ╔═╡ d5679d24-9901-4b1c-8554-1981c532e4b8
-got_coords = [947 1023;
-939 1017;
-1017 1017;
-916 1016;
-948 1016;
-973 1016;
-931 1015;
-975 1015;
-1022 1015;
-872 1014;
-1023 1014;
-875 1013;
-869 1012;
-864 1011;
-903 1011;
-926 1010;
-969 1010;
-973 1010;
-1000 1010;
-877 1009;
-883 1009;
-914 1009;
-962 1009;
-1005 1009;
-976 1008;
-1000 1008;
-1001 1008;
-891 1007;
-901 1007;
-902 1007;
-999 1007;
-1001 1007;
-1014 1007;
-923 1006;
-975 1006;
-863 1005;
-982 1005;
-872 1004;
-914 1004;
-985 1003;
-926 1002;
-932 1002;
-904 1001;
-919 1001;
-989 1001;
-879 1000;
-986 1000;
-919 999;
-925 999;
-901 998;
-1009 998;
-869 997;
-1016 996;
-1004 995;
-999 994;
-1018 993;
-995 992;
-1005 991;
-829 990;
-908 990;
-939 990;
-1029 990;
-940 989;
-984 988;
-1000 986;
-829 985;
-908 985;
-961 983;
-900 982;
-928 982;
-1011 980;
-1003 978;
-934 976;
-986 976;
-1002 976;
-1026 976;
-983 975;
-993 975;
-1036 975;
-1094 975;
-750 974;
-846 974;
-929 974;
-1020 974;
-1031 973;
-1037 973;
-1041 973;
-835 972;
-868 972;
-939 971;
-967 971;
-1124 971;
-1126 971;
-1127 971;
-957 970;
-1040 970;
-855 969;
-945 969;
-957 969;
-745 968;
-1077 968;
-1078 968;
-1092 968;
-909 967;
-931 967;
-946 967;
-1130 967;
-925 966;
-1096 966;
-1129 966;
-741 965;
-939 965;
-1026 964;
-929 963;
-933 963;
-1010 963;
-905 962;
-930 962;
-970 962;
-1041 962;
-897 961;
-934 961;
-1018 961;
-1035 961;
-1038 961;
-1112 961;
-1118 961;
-758 960;
-766 960;
-874 960;
-877 960;
-1034 960;
-741 959;
-1000 959;
-1082 959;
-734 958;
-914 958;
-1036 958;
-1071 958;
-1140 958;
-1012 957;
-1073 957;
-1161 957;
-935 956;
-1104 956;
-1107 956;
-897 955;
-1091 954;
-1102 954;
-718 953;
-893 953;
-911 953;
-1015 953;
-1019 953;
-1132 953;
-722 952;
-886 952;
-906 952;
-1096 952;
-1098 952;
-1134 952;
-757 951;
-901 951;
-1023 951;
-1026 951;
-771 950;
-1022 950;
-875 949;
-902 949;
-903 949;
-917 949;
-1063 949;
-1169 949;
-766 948;
-759 947;
-1096 947;
-872 946;
-898 946;
-1122 946;
-713 945;
-1063 945;
-784 944;
-815 944;
-924 944;
-927 944;
-1147 944;
-1150 944;
-1062 943;
-706 942;
-1011 942;
-1022 942;
-1115 942;
-1136 942;
-1116 941;
-1016 940;
-1029 940;
-929 939;
-1059 939;
-761 938;
-703 937;
-743 937;
-768 937;
-880 937;
-923 937;
-940 937;
-1144 937;
-697 936;
-760 936;
-772 936;
-780 936;
-798 936;
-936 936;
-1049 936;
-699 935;
-702 935;
-796 935;
-1052 935;
-770 934;
-1029 933;
-768 932;
-807 932;
-721 931;
-768 931;
-1038 931;
-677 930;
-722 930;
-674 929;
-687 929;
-689 929;
-695 929;
-794 929;
-815 929;
-1016 929;
-1052 929;
-672 928;
-707 928;
-747 928;
-799 928;
-814 928;
-1187 928;
-1046 927;
-1156 927;
-691 926;
-758 926;
-873 926;
-700 925;
-795 925;
-802 925;
-815 924;
-1038 924;
-1141 924;
-761 922;
-794 922;
-822 922;
-1112 922;
-1135 922;
-663 921;
-739 921;
-1183 921;
-1202 921;
-1205 921;
-695 920;
-721 920;
-750 920;
-1104 920;
-1179 920;
-1200 920;
-666 919;
-686 919;
-695 919;
-1134 919;
-1199 919;
-748 918;
-1161 918;
-1193 918;
-1199 918;
-1051 917;
-1060 917;
-1112 917;
-749 916;
-1154 916;
-1221 916;
-671 915;
-789 915;
-830 915;
-1053 915;
-1064 915;
-1100 915;
-1133 915;
-1160 915;
-670 914;
-738 914;
-780 914;
-775 913;
-782 913;
-799 913;
-1110 913;
-1138 913;
-693 912;
-826 912;
-1055 912;
-1183 912;
-793 911;
-799 911;
-688 910;
-1008 909;
-658 908;
-667 908;
-1042 908;
-1150 908;
-1161 907;
-1221 907;
-649 906;
-782 906;
-831 906;
-1125 906;
-1159 906;
-1181 906;
-767 905;
-783 905;
-1212 905;
-682 904;
-785 904;
-1123 904;
-1174 904;
-728 903;
-1026 903;
-1036 903;
-1191 902;
-779 901;
-815 901;
-1153 901;
-1232 901;
-716 900;
-818 900;
-843 900;
-1043 900;
-703 899;
-804 899;
-823 899;
-1127 899;
-733 898;
-737 898;
-792 898;
-1191 898;
-826 897;
-1037 897;
-1239 897;
-696 896;
-833 896;
-1061 896;
-665 895;
-667 895;
-672 895;
-718 895;
-1016 895;
-1044 895;
-1114 895;
-1191 895;
-1207 895;
-1215 895;
-646 894;
-697 894;
-827 894;
-846 894;
-1042 894;
-1204 894;
-1219 894;
-680 893;
-729 893;
-810 893;
-821 893;
-1018 893;
-1037 892;
-1041 892;
-1044 892;
-1108 892;
-1204 892;
-660 891;
-799 891;
-808 891;
-833 891;
-1058 891;
-1111 891;
-1196 891;
-1209 891;
-1236 891;
-667 889;
-670 889;
-843 889;
-1009 889;
-1118 889;
-1217 889;
-1223 889;
-1251 889;
-842 888;
-636 887;
-654 887;
-849 887;
-1086 887;
-1244 887;
-812 886;
-1047 886;
-713 885;
-828 885;
-839 885;
-1122 885;
-1257 885;
-642 884;
-687 884;
-1026 884;
-1244 884;
-997 883;
-1026 883;
-1036 883;
-1208 883;
-990 882;
-1193 882;
-1031 881;
-1223 881;
-692 880;
-826 880;
-642 879;
-1080 879;
-1106 879;
-1259 879;
-1114 878;
-1186 878;
-1244 878;
-1271 878;
-1098 877;
-1100 877;
-1255 877;
-635 876;
-1089 876;
-1242 876;
-646 875;
-997 875;
-1018 875;
-1200 875;
-1259 875;
-648 874;
-1098 874;
-1191 874;
-819 873;
-981 873;
-996 873;
-1257 873;
-626 872;
-723 872;
-654 871;
-724 871;
-804 871;
-988 871;
-1246 871;
-684 870;
-813 870;
-844 870;
-1032 870;
-632 869;
-800 869;
-830 869;
-1022 869;
-1031 869;
-1276 869;
-662 868;
-823 868;
-1081 868;
-624 867;
-1093 867;
-1205 867;
-1222 867;
-991 866;
-697 864;
-699 864;
-857 864;
-1028 864;
-1118 864;
-1258 864;
-977 863;
-1195 863;
-1264 863;
-1277 863;
-826 860;
-1249 860;
-1269 860;
-823 859;
-963 859;
-986 859;
-1217 859;
-1302 859;
-836 858;
-844 858;
-1009 858;
-1093 858;
-624 857;
-683 857;
-816 857;
-1004 857;
-1110 857;
-1218 857;
-1258 857;
-1261 857;
-1215 856;
-1280 856;
-1185 855;
-1197 855;
-668 854;
-859 854;
-954 854;
-984 854;
-1186 854;
-1215 854;
-602 853;
-608 853;
-626 853;
-652 853;
-983 853;
-685 852;
-828 851;
-831 851;
-846 851;
-1299 851;
-843 850;
-849 850;
-974 850;
-1111 850;
-1117 850;
-1284 850;
-1291 850;
-614 849;
-1191 849;
-845 848;
-968 848;
-973 848;
-1091 848;
-1096 848;
-1203 848;
-701 847;
-1270 847;
-845 846;
-945 846;
-947 846;
-603 845;
-684 845;
-1261 845;
-1262 845;
-849 844;
-930 844;
-818 843;
-939 843;
-971 843;
-1182 843;
-1245 843;
-922 842;
-984 842;
-983 841;
-828 840;
-941 840;
-1262 840;
-1001 839;
-1007 839;
-1134 839;
-685 838;
-805 838;
-1258 838;
-1305 838;
-617 837;
-670 837;
-805 837;
-848 837;
-1135 837;
-1168 837;
-1177 837;
-1261 837;
-821 836;
-922 836;
-618 835;
-658 835;
-1129 835;
-1205 835;
-1286 835;
-1296 835;
-1305 835;
-825 834;
-927 834;
-995 834;
-1183 834;
-660 833;
-817 833;
-919 833;
-986 833;
-1112 833;
-1153 833;
-1177 833;
-676 832;
-976 832;
-914 831;
-920 831;
-1096 831;
-1099 831;
-1174 831;
-1194 831;
-828 830;
-905 830;
-942 830;
-962 830;
-1161 830;
-1280 830;
-1303 830;
-817 829;
-963 829;
-1188 829;
-1281 828;
-959 827;
-1154 827;
-1300 827;
-957 826;
-1284 826;
-825 825;
-855 825;
-1110 825;
-1113 824;
-914 823;
-1186 823;
-854 822;
-667 821;
-1117 821;
-599 820;
-660 820;
-831 820;
-953 820;
-924 819;
-1169 819;
-1318 819;
-921 818;
-1304 818;
-1311 818;
-902 817;
-1325 817;
-845 816;
-824 815;
-829 815;
-821 814;
-838 814;
-895 814;
-957 814;
-985 814;
-1113 814;
-1141 814;
-817 813;
-916 813;
-983 813;
-842 812;
-857 812;
-889 812;
-1282 812;
-1158 811;
-1163 811;
-1310 811;
-840 810;
-845 810;
-1172 810;
-914 809;
-1295 809;
-839 808;
-907 808;
-942 808;
-1317 808;
-893 807;
-922 807;
-941 807;
-1158 807;
-1174 807;
-822 806;
-833 806;
-893 806;
-914 806;
-938 806;
-1148 806;
-1183 806;
-845 804;
-889 804;
-914 804;
-944 804;
-1299 804;
-807 803;
-828 803;
-876 803;
-892 803;
-950 803;
-1132 803;
-1170 803;
-803 802;
-882 802;
-1138 802;
-1346 802;
-819 801;
-954 801;
-1338 801;
-1340 801;
-827 800;
-881 800;
-933 800;
-1335 800;
-1333 799;
-828 798;
-918 798;
-830 796;
-1343 796;
-805 795;
-832 794;
-885 794;
-924 794;
-1085 794;
-1093 793;
-1109 793;
-816 792;
-818 792;
-888 792;
-1038 792;
-1106 792;
-1345 792;
-911 791;
-889 790;
-905 790;
-1065 789;
-1120 789;
-1311 789;
-850 788;
-873 788;
-912 788;
-1129 788;
-826 787;
-908 787;
-1014 787;
-1048 787;
-1092 787;
-1108 787;
-1342 787;
-866 786;
-874 786;
-880 786;
-891 786;
-903 786;
-1056 786;
-1090 786;
-1112 786;
-1305 786;
-1330 786;
-832 785;
-854 784;
-912 784;
-1023 784;
-1028 784;
-1043 784;
-1317 784;
-1330 784;
-921 783;
-1061 783;
-1065 783;
-1079 783;
-1334 783;
-860 782;
-1101 782;
-1118 782;
-1135 782;
-1138 782;
-1151 782;
-1158 782;
-1336 782;
-839 781;
-897 781;
-1041 781;
-1047 781;
-1316 781;
-548 780;
-844 780;
-1040 780;
-1061 780;
-1082 780;
-1095 780;
-1140 780;
-813 779;
-990 779;
-1042 779;
-1058 779;
-818 778;
-843 778;
-988 778;
-1051 778;
-1127 778;
-1177 778;
-1329 778;
-878 777;
-1117 777;
-1120 777;
-1310 777;
-1338 777;
-1085 776;
-1100 776;
-1176 776;
-1306 776;
-1320 776;
-1010 775;
-1072 775;
-1094 775;
-1104 775;
-855 774;
-915 774;
-1003 774;
-1344 774;
-666 773;
-886 773;
-903 773;
-1167 773;
-1189 773;
-913 772;
-1055 772;
-1073 772;
-1096 772;
-1118 772;
-1138 772;
-1178 772;
-1185 772;
-1338 772;
-1350 772;
-807 771;
-883 771;
-889 771;
-989 771;
-1016 771;
-1063 771;
-1089 771;
-1143 771;
-1145 771;
-841 770;
-1124 770;
-914 769;
-1106 769;
-1166 769;
-1193 769;
-653 768;
-807 768;
-812 768;
-990 768;
-1144 768;
-1164 768;
-1172 768;
-1198 768;
-1200 768;
-1359 768;
-586 767;
-1085 767;
-1326 767;
-621 766;
-831 766;
-914 766;
-1033 766;
-1202 766;
-1208 766;
-1344 766;
-543 765;
-548 765;
-805 765;
-975 765;
-1037 765;
-1091 765;
-1102 765;
-1162 765;
-581 764;
-875 764;
-985 764;
-1129 764;
-1176 764;
-579 763;
-611 763;
-623 763;
-639 763;
-659 763;
-678 763;
-821 763;
-876 763;
-1063 763;
-1066 763;
-690 762;
-871 762;
-1027 762;
-1101 762;
-1211 762;
-610 761;
-1095 761;
-809 760;
-887 760;
-1007 760;
-1148 760;
-1175 760;
-1176 760;
-1233 760;
-691 759;
-699 759;
-811 759;
-814 759;
-1119 759;
-1215 759;
-1349 759;
-814 758;
-1024 758;
-1028 758;
-1116 758;
-1122 758;
-1181 758;
-1198 758;
-1339 758;
-626 757;
-634 757;
-641 757;
-808 757;
-825 757;
-994 757;
-1107 757;
-1175 757;
-1190 757;
-1349 757;
-615 756;
-817 756;
-1068 756;
-1102 756;
-1187 756;
-1204 756;
-662 755;
-993 755;
-1343 755;
-601 754;
-636 754;
-656 754;
-663 754;
-1011 754;
-1137 754;
-1186 754;
-1204 754;
-566 753;
-630 753;
-679 753;
-826 753;
-829 753;
-832 753;
-1024 753;
-1086 753;
-1191 753;
-609 752;
-869 752;
-871 752;
-874 752;
-887 752;
-1032 752;
-1155 752;
-1236 752;
-1372 752;
-724 751;
-733 751;
-869 751;
-1062 751;
-1198 751;
-1325 751;
-1348 751;
-1354 751;
-533 750;
-573 750;
-625 750;
-832 750;
-842 750;
-1077 750;
-1156 750;
-1224 750;
-1329 750;
-882 749;
-954 749;
-1048 749;
-1062 749;
-1233 749;
-1338 749;
-565 748;
-969 748;
-1012 748;
-1108 748;
-1331 748;
-1332 748;
-533 747;
-535 747;
-633 747;
-721 747;
-743 747;
-1180 747;
-1192 747;
-563 746;
-611 746;
-660 746;
-704 746;
-979 746;
-999 746;
-1112 746;
-1115 746;
-1121 746;
-1327 746;
-639 745;
-669 745;
-729 745;
-747 745;
-819 745;
-978 745;
-1025 745;
-1026 745;
-1067 745;
-1068 745;
-1370 745;
-535 744;
-592 744;
-593 744;
-712 744;
-721 744;
-727 744;
-825 744;
-852 744;
-1133 744;
-1224 744;
-1261 744;
-836 743;
-845 743;
-1035 743;
-1067 743;
-1113 743;
-1114 743;
-1116 743;
-1131 743;
-1181 743;
-566 742;
-617 742;
-668 742;
-712 742;
-995 742;
-1028 742;
-1256 742;
-1342 742;
-536 741;
-698 741;
-838 741;
-1071 741;
-1102 741;
-1167 741;
-1268 741;
-1370 741;
-707 740;
-978 740;
-990 740;
-1029 740;
-1069 740;
-1081 740;
-1121 740;
-1132 740;
-672 739;
-678 739;
-827 739;
-841 739;
-1079 739;
-1102 739;
-1206 739;
-579 738;
-605 738;
-650 738;
-681 738;
-986 738;
-1033 738;
-1168 738;
-535 737;
-674 737;
-679 737;
-824 737;
-885 737;
-1015 737;
-1112 737;
-1139 737;
-695 736;
-714 736;
-866 736;
-1032 736;
-1055 736;
-1192 736;
-1362 736;
-528 735;
-610 735;
-640 735;
-728 735;
-826 735;
-980 735;
-1032 735;
-1066 735;
-1120 735;
-1166 735;
-1255 735;
-528 734;
-530 734;
-808 734;
-870 734;
-978 734;
-1078 734;
-1082 734;
-1156 734;
-1159 734;
-857 733;
-975 733;
-1079 733;
-1340 733;
-632 732;
-662 732;
-804 732;
-814 732;
-1028 732;
-1256 732;
-1353 732;
-1373 732;
-557 731;
-562 731;
-643 731;
-690 731;
-992 731;
-1012 731;
-1015 731;
-1103 731;
-1126 731;
-1129 731;
-1221 731;
-1392 731;
-680 730;
-1176 730;
-1177 730;
-1192 730;
-1196 730;
-1232 730;
-1237 730;
-1271 730;
-610 729;
-984 729;
-994 729;
-1111 729;
-1368 729;
-555 728;
-587 728;
-806 728;
-811 728;
-841 728;
-1003 728;
-1128 728;
-1369 728;
-1378 728;
-611 727;
-667 727;
-809 727;
-1002 727;
-1205 727;
-1391 727;
-650 726;
-1011 726;
-1150 726;
-1368 726;
-634 725;
-733 725;
-806 725;
-1049 725;
-525 724;
-742 724;
-761 724;
-812 724;
-1161 724;
-1188 724;
-1205 724;
-538 723;
-627 723;
-733 723;
-751 723;
-994 723;
-1119 723;
-1383 723;
-651 722;
-683 722;
-717 722;
-1175 722;
-1189 722;
-1207 722;
-1236 722;
-1247 722;
-1249 722;
-642 721;
-644 721;
-815 721;
-833 721;
-1104 721;
-585 720;
-611 720;
-837 720;
-1044 720;
-1074 720;
-1384 720;
-530 719;
-533 719;
-562 719;
-568 719;
-730 719;
-1025 719;
-1031 719;
-1126 719;
-1139 719;
-1180 719;
-1253 719;
-1365 719;
-1373 719;
-737 718;
-758 718;
-813 718;
-1042 718;
-1133 718;
-525 717;
-736 717;
-828 717;
-830 717;
-863 717;
-1114 717;
-521 716;
-691 716;
-751 716;
-851 716;
-1017 716;
-1044 716;
-1055 716;
-1139 716;
-1243 716;
-1251 716;
-1272 716;
-1305 716;
-542 715;
-1172 715;
-1207 715;
-1299 715;
-1370 715;
-1396 715;
-690 714;
-750 714;
-824 714;
-1008 714;
-1093 714;
-1115 714;
-1143 714;
-547 713;
-605 713;
-1032 713;
-1054 713;
-1110 713;
-1143 713;
-1161 713;
-1211 713;
-1243 713;
-724 712;
-799 712;
-848 712;
-864 712;
-1089 712;
-1118 712;
-1128 712;
-1250 712;
-1301 712;
-596 711;
-760 711;
-1050 711;
-1103 711;
-1266 711;
-1275 711;
-543 710;
-568 710;
-727 710;
-1090 710;
-1135 710;
-1243 710;
-1257 710;
-1358 710;
-734 709;
-1011 709;
-1122 709;
-1168 709;
-712 708;
-1043 708;
-1129 708;
-874 707;
-1177 707;
-1211 707;
-1213 707;
-1275 707;
-1285 707;
-1310 707;
-1353 707;
-1369 707;
-523 706;
-828 706;
-838 706;
-853 706;
-1163 706;
-1210 706;
-514 705;
-795 705;
-861 705;
-1014 705;
-1055 705;
-1241 705;
-1362 705;
-1369 705;
-1373 705;
-1393 705;
-703 704;
-855 704;
-875 704;
-1033 704;
-1116 704;
-1184 704;
-1260 704;
-1283 704;
-533 703;
-537 703;
-1128 703;
-1173 703;
-1196 703;
-1208 703;
-1183 702;
-525 701;
-833 701;
-856 701;
-857 701;
-1004 701;
-1029 701;
-1086 701;
-1092 701;
-1377 701;
-523 700;
-549 700;
-739 700;
-741 700;
-743 700;
-844 700;
-853 700;
-994 700;
-1215 700;
-1250 700;
-1313 700;
-1359 700;
-1391 700;
-527 699;
-579 699;
-1048 699;
-1186 699;
-1228 699;
-739 698;
-759 698;
-787 698;
-791 698;
-861 698;
-1063 698;
-1082 698;
-1124 698;
-1244 698;
-1256 698;
-1274 698;
-1278 698;
-1374 698;
-581 697;
-729 697;
-738 697;
-779 697;
-1129 697;
-1187 697;
-1231 697;
-1240 697;
-1309 697;
-1310 697;
-1364 697;
-529 696;
-534 696;
-716 696;
-824 696;
-849 696;
-1119 696;
-1192 696;
-1411 696;
-535 695;
-571 695;
-850 695;
-860 695;
-1038 695;
-1060 695;
-1088 695;
-1105 695;
-562 694;
-815 694;
-1059 694;
-1114 694;
-1115 694;
-1228 694;
-1293 694;
-562 693;
-1048 693;
-1079 693;
-1265 693;
-1272 693;
-1373 693;
-827 692;
-1012 692;
-1191 692;
-1292 692;
-1280 691;
-501 690;
-534 690;
-557 690;
-578 690;
-580 690;
-785 690;
-861 690;
-1200 690;
-1389 690;
-746 689;
-763 689;
-1048 689;
-1248 689;
-1390 689;
-500 688;
-570 688;
-762 688;
-783 688;
-833 688;
-1112 688;
-1268 688;
-504 687;
-543 687;
-789 687;
-832 687;
-1037 687;
-1108 687;
-1374 687;
-1402 687;
-836 686;
-842 686;
-1064 686;
-1208 686;
-1231 686;
-1331 686;
-1406 686;
-526 685;
-565 685;
-586 685;
-794 685;
-828 685;
-1009 685;
-1020 685;
-1212 685;
-1219 685;
-1300 685;
-551 684;
-561 684;
-801 684;
-815 684;
-1035 684;
-1116 684;
-1296 684;
-1413 684;
-571 683;
-773 683;
-780 683;
-784 683;
-831 683;
-1000 683;
-1013 683;
-1034 683;
-1328 683;
-507 682;
-587 682;
-744 682;
-778 682;
-787 682;
-821 682;
-830 682;
-1003 682;
-1037 682;
-1133 682;
-1201 682;
-1213 682;
-1257 682;
-1274 682;
-1335 682;
-527 681;
-743 681;
-1024 681;
-1065 681;
-1221 681;
-1302 681;
-1387 681;
-790 680;
-1335 680;
-560 679;
-768 679;
-850 679;
-1033 679;
-1050 679;
-1340 679;
-503 678;
-793 678;
-795 678;
-868 678;
-1044 678;
-1285 678;
-558 677;
-733 677;
-834 677;
-1005 677;
-1048 677;
-1247 677;
-1333 677;
-508 676;
-814 676;
-831 676;
-1000 676;
-1057 676;
-1065 676;
-1066 676;
-1237 676;
-1240 676;
-1383 676;
-497 675;
-737 675;
-753 675;
-1239 675;
-1319 675;
-508 674;
-524 674;
-549 674;
-1006 674;
-1218 674;
-1243 674;
-514 673;
-566 673;
-803 673;
-816 673;
-1258 673;
-1304 673;
-1395 673;
-499 672;
-775 672;
-1031 672;
-1040 672;
-1255 672;
-1408 672;
-774 671;
-835 671;
-1018 671;
-1019 671;
-1312 671;
-1395 671;
-1407 671;
-991 670;
-1272 670;
-1294 670;
-503 669;
-1213 669;
-1250 669;
-1287 669;
-552 668;
-801 668;
-743 667;
-846 667;
-851 667;
-1003 667;
-1006 667;
-1019 667;
-1396 667;
-755 666;
-770 666;
-845 666;
-1293 666;
-1323 666;
-1347 666;
-1380 666;
-506 665;
-554 665;
-757 665;
-785 665;
-800 665;
-849 665;
-872 665;
-1037 665;
-1238 665;
-805 664;
-807 664;
-1047 664;
-1391 664;
-505 663;
-768 663;
-812 663;
-874 663;
-1030 663;
-758 662;
-1298 662;
-1316 662;
-542 661;
-1221 661;
-1225 661;
-1233 661;
-1227 660;
-1236 660;
-1237 660;
-1256 660;
-1260 660;
-1287 660;
-1402 660;
-506 659;
-996 659;
-1023 659;
-1310 659;
-1333 659;
-1391 659;
-761 658;
-765 658;
-990 658;
-1023 658;
-1030 658;
-1285 658;
-787 657;
-834 657;
-1000 657;
-1011 657;
-1273 657;
-744 656;
-767 656;
-1034 656;
-842 655;
-1002 655;
-1049 655;
-1317 655;
-1339 655;
-1408 655;
-1022 654;
-541 653;
-760 653;
-761 653;
-771 653;
-807 653;
-810 653;
-823 653;
-1277 653;
-836 652;
-1042 652;
-1228 652;
-1306 652;
-747 651;
-1014 651;
-1298 651;
-1393 651;
-510 650;
-838 650;
-848 650;
-1016 650;
-1041 650;
-1065 650;
-501 649;
-774 649;
-782 649;
-826 649;
-848 649;
-1011 649;
-1042 649;
-1229 649;
-1299 649;
-1428 649;
-790 648;
-1020 648;
-1165 648;
-1288 648;
-1303 648;
-512 647;
-848 647;
-1002 647;
-514 646;
-774 646;
-788 646;
-528 644;
-1159 644;
-1347 644;
-501 643;
-883 643;
-1158 643;
-1428 643;
-505 642;
-764 642;
-798 642;
-843 642;
-1186 642;
-1295 642;
-784 641;
-1168 641;
-1424 641;
-510 640;
-846 640;
-880 640;
-885 640;
-1013 640;
-1028 640;
-1289 640;
-1307 640;
-1329 640;
-1331 640;
-529 639;
-826 639;
-850 639;
-892 639;
-1327 639;
-806 638;
-997 638;
-998 638;
-1007 638;
-774 637;
-824 637;
-857 637;
-872 637;
-894 637;
-1031 637;
-1046 637;
-1182 637;
-1360 637;
-1416 637;
-756 636;
-827 636;
-887 636;
-1173 636;
-497 635;
-525 635;
-547 635;
-1431 635;
-546 634;
-841 634;
-900 634;
-1026 634;
-1356 634;
-774 633;
-870 633;
-1018 633;
-546 632;
-549 632;
-809 632;
-854 632;
-873 632;
-1170 632;
-1318 632;
-1347 632;
-556 631;
-769 631;
-770 631;
-823 631;
-859 631;
-933 631;
-984 631;
-1015 631;
-1158 631;
-1297 631;
-1308 631;
-549 630;
-819 630;
-1165 630;
-1355 630;
-499 629;
-888 629;
-1016 629;
-1031 629;
-1169 629;
-1184 629;
-1326 629;
-1346 629;
-1410 629;
-799 628;
-829 628;
-1159 628;
-1433 628;
-766 627;
-963 627;
-983 627;
-1189 627;
-872 626;
-900 626;
-979 626;
-1173 626;
-1353 626;
-497 625;
-788 625;
-797 625;
-826 625;
-894 625;
-967 625;
-1200 625;
-1209 625;
-1320 625;
-556 624;
-838 624;
-1161 624;
-1174 624;
-1190 624;
-1207 624;
-1299 624;
-927 623;
-1409 623;
-555 622;
-777 622;
-817 622;
-875 622;
-885 622;
-1199 622;
-1326 622;
-1370 622;
-1399 622;
-710 621;
-867 621;
-868 621;
-874 621;
-972 621;
-989 621;
-1212 621;
-1351 621;
-549 620;
-564 620;
-831 620;
-995 620;
-1146 620;
-1374 620;
-555 619;
-877 619;
-909 619;
-912 619;
-930 619;
-964 619;
-1366 619;
-497 618;
-869 618;
-874 618;
-895 618;
-946 618;
-1024 618;
-1151 618;
-1309 618;
-1347 618;
-815 617;
-904 617;
-914 617;
-968 617;
-1179 617;
-1315 617;
-1368 617;
-1420 617;
-767 616;
-1036 616;
-776 615;
-855 615;
-928 615;
-961 615;
-1175 615;
-1191 615;
-1410 615;
-1412 615;
-810 614;
-857 614;
-1001 614;
-1006 614;
-1316 614;
-491 613;
-541 613;
-965 613;
-1323 613;
-1341 613;
-666 612;
-779 612;
-816 612;
-677 611;
-812 611;
-843 611;
-903 611;
-1201 611;
-501 610;
-666 610;
-678 610;
-722 610;
-998 610;
-1172 610;
-663 609;
-773 609;
-801 609;
-920 609;
-933 609;
-992 609;
-1004 609;
-1420 609;
-662 608;
-714 608;
-879 608;
-884 608;
-944 608;
-1409 608;
-557 607;
-657 607;
-699 607;
-774 607;
-819 607;
-1201 607;
-1329 607;
-555 606;
-819 606;
-847 606;
-852 606;
-932 606;
-1344 606;
-541 605;
-665 605;
-789 605;
-877 605;
-907 605;
-957 605;
-1189 605;
-1212 605;
-505 604;
-920 604;
-1004 604;
-1011 604;
-1026 604;
-1074 604;
-1430 604;
-491 603;
-493 603;
-693 603;
-843 603;
-859 603;
-864 603;
-949 603;
-955 603;
-1132 603;
-1150 603;
-1210 603;
-1320 603;
-968 602;
-984 602;
-1138 602;
-673 601;
-725 601;
-791 601;
-1311 601;
-1416 601;
-487 600;
-1223 600;
-1324 600;
-1410 600;
-826 599;
-833 599;
-857 599;
-945 599;
-963 599;
-1037 599;
-1055 599;
-1195 599;
-524 598;
-695 598;
-993 598;
-1010 598;
-1021 598;
-1048 598;
-1067 598;
-1077 598;
-1148 598;
-1229 598;
-1416 598;
-524 597;
-714 597;
-734 597;
-861 597;
-914 597;
-983 597;
-1359 597;
-874 596;
-1351 596;
-1357 596;
-1436 596;
-498 595;
-707 595;
-923 595;
-972 595;
-1010 595;
-1055 595;
-1142 595;
-1310 595;
-800 594;
-810 594;
-1045 594;
-1118 594;
-1192 594;
-1229 594;
-559 593;
-928 593;
-931 593;
-991 593;
-1158 593;
-550 592;
-985 592;
-994 592;
-1082 592;
-1217 592;
-1332 592;
-729 591;
-818 591;
-830 591;
-875 591;
-915 591;
-942 591;
-1059 591;
-1307 591;
-920 590;
-1057 590;
-1122 590;
-1133 590;
-1136 590;
-1175 590;
-1188 590;
-1419 590;
-717 589;
-788 589;
-832 589;
-886 589;
-896 589;
-911 589;
-944 589;
-971 589;
-1315 589;
-1366 589;
-1416 589;
-834 588;
-913 588;
-1138 588;
-1425 588;
-557 587;
-564 587;
-803 587;
-871 587;
-900 587;
-948 587;
-1016 587;
-1057 587;
-1146 587;
-1344 587;
-1378 587;
-558 586;
-670 586;
-853 586;
-985 586;
-1002 586;
-680 585;
-795 585;
-823 585;
-958 585;
-1034 585;
-1168 585;
-1335 585;
-486 584;
-656 584;
-947 584;
-1030 584;
-1038 584;
-1123 584;
-1167 584;
-1225 584;
-1360 584;
-911 583;
-919 583;
-1024 583;
-1147 583;
-1202 583;
-1240 583;
-673 582;
-688 582;
-856 582;
-561 581;
-956 581;
-1020 581;
-1186 581;
-1237 581;
-1351 581;
-1364 581;
-1430 581;
-806 580;
-810 580;
-929 580;
-1009 580;
-1055 580;
-1316 580;
-1366 580;
-1379 580;
-725 579;
-733 579;
-792 579;
-917 579;
-962 579;
-1062 579;
-1078 579;
-1146 579;
-1149 579;
-1174 579;
-634 578;
-700 578;
-856 578;
-946 578;
-1182 578;
-1336 578;
-649 577;
-674 577;
-996 577;
-1083 577;
-1125 577;
-1213 577;
-1361 577;
-1371 577;
-787 576;
-814 576;
-835 576;
-850 576;
-927 576;
-959 576;
-1035 576;
-1118 576;
-1125 576;
-1226 576;
-1313 576;
-819 575;
-885 575;
-917 575;
-918 575;
-1188 575;
-1207 575;
-1316 575;
-1355 575;
-1393 575;
-638 574;
-682 574;
-720 574;
-725 574;
-821 574;
-966 574;
-987 574;
-1016 574;
-1060 574;
-1098 574;
-1111 574;
-1136 574;
-1204 574;
-1342 574;
-919 573;
-925 573;
-991 573;
-1036 573;
-1126 573;
-1163 573;
-1192 573;
-1205 573;
-1238 573;
-1426 573;
-693 572;
-694 572;
-733 572;
-993 572;
-1084 572;
-1087 572;
-1123 572;
-1187 572;
-1318 572;
-1345 572;
-636 571;
-704 571;
-722 571;
-985 571;
-1014 571;
-1029 571;
-1032 571;
-1151 571;
-1376 571;
-810 570;
-837 570;
-894 570;
-963 570;
-1000 570;
-1127 570;
-1250 570;
-648 569;
-796 569;
-817 569;
-837 569;
-888 569;
-895 569;
-914 569;
-971 569;
-1013 569;
-1106 569;
-1134 569;
-1233 569;
-1247 569;
-734 568;
-833 568;
-843 568;
-863 568;
-908 568;
-910 568;
-930 568;
-937 568;
-960 568;
-1048 568;
-1061 568;
-1342 568;
-708 567;
-720 567;
-809 567;
-882 567;
-1050 567;
-1085 567;
-1164 567;
-1428 567;
-705 566;
-816 566;
-869 566;
-942 566;
-964 566;
-1059 566;
-1063 566;
-1146 566;
-1313 566;
-1343 566;
-673 565;
-866 565;
-881 565;
-892 565;
-907 565;
-939 565;
-943 565;
-947 565;
-985 565;
-1068 565;
-1109 565;
-1157 565;
-1168 565;
-1174 565;
-1313 565;
-1346 565;
-1387 565;
-666 564;
-792 564;
-853 564;
-869 564;
-891 564;
-1011 564;
-1013 564;
-1023 564;
-1101 564;
-1138 564;
-1173 564;
-1211 564;
-1348 564;
-1389 564;
-856 563;
-1031 563;
-1071 563;
-1077 563;
-1145 563;
-1154 563;
-1199 563;
-1383 563;
-712 562;
-1028 562;
-1067 562;
-1119 562;
-1120 562;
-1195 562;
-1258 562;
-1345 562;
-975 561;
-1026 561;
-1128 561;
-1132 561;
-1325 561;
-691 560;
-829 560;
-904 560;
-995 560;
-1040 560;
-1063 560;
-1147 560;
-1197 560;
-516 559;
-983 559;
-1114 559;
-1136 559;
-1223 559;
-1328 559;
-892 558;
-914 558;
-1162 558;
-1175 558;
-670 557;
-674 557;
-714 557;
-732 557;
-846 557;
-867 557;
-1146 557;
-1383 557;
-670 556;
-697 556;
-787 556;
-860 556;
-878 556;
-1049 556;
-1082 556;
-1121 556;
-1227 556;
-1253 556;
-1426 556;
-657 555;
-713 555;
-874 555;
-876 555;
-884 555;
-1024 555;
-1048 555;
-1086 555;
-1125 555;
-1258 555;
-683 554;
-853 554;
-875 554;
-911 554;
-1004 554;
-1067 554;
-1138 554;
-1174 554;
-1237 554;
-1369 554;
-797 553;
-886 553;
-994 553;
-1054 553;
-1055 553;
-1094 553;
-1255 553;
-1379 553;
-678 552;
-830 552;
-832 552;
-918 552;
-1056 552;
-1060 552;
-1089 552;
-1129 552;
-1134 552;
-1193 552;
-1341 552;
-1366 552;
-1432 552;
-504 551;
-667 551;
-738 551;
-1018 551;
-1107 551;
-1137 551;
-1144 551;
-1377 551;
-691 550;
-728 550;
-870 550;
-1019 550;
-1131 550;
-1148 550;
-1161 550;
-1342 550;
-1385 550;
-1431 550;
-503 549;
-927 549;
-963 549;
-996 549;
-1198 549;
-681 548;
-689 548;
-873 548;
-899 548;
-1011 548;
-1117 548;
-1118 548;
-1156 548;
-1167 548;
-1177 548;
-1351 548;
-1392 548;
-825 547;
-830 547;
-891 547;
-965 547;
-1023 547;
-1104 547;
-1117 547;
-1136 547;
-1266 547;
-1314 547;
-1357 547;
-500 546;
-938 546;
-1022 546;
-1069 546;
-1086 546;
-1208 546;
-1369 546;
-1388 546;
-496 545;
-719 545;
-854 545;
-893 545;
-966 545;
-1434 545;
-680 544;
-837 544;
-893 544;
-1084 544;
-1351 544;
-1390 544;
-703 543;
-918 543;
-948 543;
-961 543;
-974 543;
-1190 543;
-1194 543;
-1213 543;
-1267 543;
-923 542;
-967 542;
-1021 542;
-1081 542;
-1146 542;
-1209 542;
-1210 542;
-1220 542;
-1354 542;
-1400 542;
-687 541;
-703 541;
-989 541;
-1127 541;
-1151 541;
-1350 541;
-1369 541;
-736 540;
-838 540;
-870 540;
-1048 540;
-1119 540;
-1121 540;
-1144 540;
-1148 540;
-1162 540;
-1249 540;
-1346 540;
-1358 540;
-1377 540;
-1384 540;
-884 539;
-915 539;
-943 539;
-1027 539;
-1198 539;
-1258 539;
-1435 539;
-737 538;
-865 538;
-900 538;
-1021 538;
-1111 538;
-1393 538;
-690 537;
-707 537;
-729 537;
-839 537;
-860 537;
-862 537;
-939 537;
-1055 537;
-1095 537;
-1100 537;
-1230 537;
-904 536;
-944 536;
-1010 536;
-1071 536;
-1390 536;
-863 535;
-930 535;
-1040 535;
-1222 535;
-1360 535;
-858 534;
-983 534;
-992 534;
-1129 534;
-1133 534;
-1149 534;
-868 533;
-1074 533;
-1097 533;
-1163 533;
-1399 533;
-740 532;
-819 532;
-876 532;
-934 532;
-1124 532;
-1189 532;
-1358 532;
-706 531;
-713 531;
-862 531;
-918 531;
-926 531;
-1038 531;
-1178 531;
-1194 531;
-1219 531;
-843 530;
-940 530;
-967 530;
-1047 530;
-1083 530;
-1100 530;
-1355 530;
-840 529;
-1194 529;
-1252 529;
-1366 529;
-1404 529;
-711 528;
-712 528;
-995 528;
-1130 528;
-716 527;
-908 527;
-1046 527;
-1354 527;
-705 526;
-832 526;
-872 526;
-1351 526;
-1360 526;
-1048 525;
-1082 525;
-1272 525;
-1359 525;
-1368 525;
-737 524;
-824 524;
-1041 524;
-1049 524;
-1149 524;
-1194 524;
-1222 524;
-1377 524;
-841 523;
-863 523;
-922 523;
-949 523;
-978 523;
-1203 523;
-1352 523;
-1372 523;
-1393 523;
-1408 523;
-740 522;
-1031 522;
-1062 522;
-1107 522;
-1236 522;
-1271 522;
-490 521;
-826 521;
-828 521;
-893 521;
-977 521;
-1084 521;
-1149 521;
-1399 521;
-937 520;
-984 520;
-1004 520;
-1192 520;
-1391 520;
-880 519;
-961 519;
-1107 519;
-1145 519;
-947 518;
-1021 518;
-1173 518;
-1227 518;
-1253 518;
-1265 518;
-895 517;
-1147 517;
-1196 517;
-1205 517;
-1229 517;
-1248 517;
-1269 517;
-1358 517;
-1395 517;
-1400 517;
-506 516;
-725 516;
-853 516;
-878 516;
-885 516;
-944 516;
-1108 516;
-1197 516;
-1207 516;
-1240 516;
-1355 516;
-603 515;
-734 515;
-1013 515;
-1056 515;
-1158 515;
-1204 515;
-1256 515;
-750 514;
-850 514;
-885 514;
-919 514;
-970 514;
-1014 514;
-1065 514;
-1098 514;
-491 513;
-590 513;
-717 513;
-848 513;
-885 513;
-959 513;
-1027 513;
-1094 513;
-710 512;
-838 512;
-889 512;
-955 512;
-1060 512;
-1065 512;
-1075 512;
-1083 512;
-1103 512;
-1112 512;
-1166 512;
-1240 512;
-1252 512;
-1366 512;
-1396 512;
-741 511;
-848 511;
-850 511;
-1057 511;
-1065 511;
-1145 511;
-1249 511;
-591 510;
-936 510;
-966 510;
-1000 510;
-1053 510;
-1168 510;
-1172 510;
-1403 510;
-502 509;
-870 509;
-1038 509;
-1068 509;
-1179 509;
-1376 509;
-1059 508;
-1079 508;
-1120 508;
-1217 508;
-1230 508;
-483 507;
-486 507;
-862 507;
-891 507;
-1200 507;
-1409 507;
-596 506;
-731 506;
-745 506;
-1009 506;
-1033 506;
-1035 506;
-1041 506;
-1365 506;
-1379 506;
-1410 506;
-497 505;
-551 505;
-723 505;
-862 505;
-875 505;
-971 505;
-1124 505;
-887 504;
-934 504;
-969 504;
-1011 504;
-1062 504;
-1064 504;
-1177 504;
-1209 504;
-1271 504;
-1273 504;
-1379 504;
-908 503;
-998 503;
-1085 503;
-1249 503;
-1384 503;
-485 502;
-871 502;
-880 502;
-903 502;
-1067 502;
-1164 502;
-1175 502;
-1230 502;
-1402 502;
-636 501;
-742 501;
-906 501;
-990 501;
-1093 501;
-1203 501;
-1258 501;
-1373 501;
-507 500;
-558 500;
-728 500;
-752 500;
-856 500;
-972 500;
-1001 500;
-1120 500;
-1125 500;
-1203 500;
-1204 500;
-1396 500;
-558 499;
-623 499;
-736 499;
-909 499;
-949 499;
-1080 499;
-1109 499;
-1174 499;
-1204 499;
-1210 499;
-1267 499;
-490 498;
-573 498;
-740 498;
-901 498;
-914 498;
-1018 498;
-1066 498;
-1192 498;
-575 497;
-720 497;
-1104 497;
-1404 497;
-602 496;
-752 496;
-888 496;
-951 496;
-1030 496;
-1072 496;
-1079 496;
-1092 496;
-1124 496;
-1214 496;
-1215 496;
-1226 496;
-1235 496;
-1377 496;
-1378 496;
-503 495;
-640 495;
-714 495;
-1092 495;
-1102 495;
-506 494;
-545 494;
-641 494;
-642 494;
-731 494;
-941 494;
-960 494;
-1011 494;
-1156 494;
-1404 494;
-556 493;
-650 493;
-741 493;
-895 493;
-1097 493;
-1157 493;
-1264 493;
-1364 493;
-1365 493;
-1371 493;
-566 492;
-603 492;
-639 492;
-874 492;
-892 492;
-895 492;
-989 492;
-997 492;
-1047 492;
-1048 492;
-1053 492;
-1058 492;
-1118 492;
-1219 492;
-1229 492;
-582 491;
-882 491;
-890 491;
-966 491;
-1065 491;
-1170 491;
-1198 491;
-1267 491;
-909 490;
-1071 490;
-1274 490;
-1294 490;
-539 489;
-741 489;
-985 489;
-996 489;
-1007 489;
-1051 489;
-1226 489;
-1383 489;
-1390 489;
-537 488;
-717 488;
-898 488;
-1044 488;
-1048 488;
-1198 488;
-1248 488;
-1373 488;
-1380 488;
-1410 488;
-924 487;
-1026 487;
-1104 487;
-1114 487;
-1137 487;
-1255 487;
-1398 487;
-609 486;
-1019 486;
-1111 486;
-1412 486;
-612 485;
-718 485;
-892 485;
-925 485;
-1056 485;
-1063 485;
-1106 485;
-1191 485;
-1250 485;
-916 484;
-1074 484;
-1377 484;
-558 483;
-746 483;
-1032 483;
-1103 483;
-1172 483;
-1196 483;
-897 482;
-1066 482;
-1120 482;
-584 481;
-623 481;
-646 481;
-912 481;
-923 481;
-937 481;
-1011 481;
-1077 481;
-1091 481;
-1214 481;
-1266 481;
-554 480;
-563 480;
-624 480;
-739 480;
-943 480;
-981 480;
-1114 480;
-1411 480;
-497 479;
-594 479;
-627 479;
-740 479;
-1015 479;
-1184 479;
-495 478;
-560 478;
-625 478;
-974 478;
-1021 478;
-1135 478;
-1243 478;
-573 477;
-734 477;
-870 477;
-940 477;
-961 477;
-1002 477;
-1097 477;
-622 476;
-650 476;
-893 476;
-901 476;
-1105 476;
-1152 476;
-1172 476;
-1217 476;
-1270 476;
-1284 476;
-1385 476;
-559 475;
-1020 475;
-1044 475;
-1169 475;
-540 474;
-578 474;
-871 474;
-896 474;
-952 474;
-1058 474;
-1368 474;
-1395 474;
-501 473;
-552 473;
-630 473;
-777 473;
-908 473;
-1146 473;
-1267 473;
-1298 473;
-1407 473;
-973 472;
-975 472;
-1183 472;
-1207 472;
-1231 472;
-1244 472;
-1278 472;
-510 471;
-728 471;
-1207 471;
-1257 471;
-561 470;
-717 470;
-885 470;
-936 470;
-1029 470;
-1185 470;
-1389 470;
-732 469;
-777 469;
-970 469;
-1168 469;
-1224 469;
-627 468;
-633 468;
-719 468;
-783 468;
-917 468;
-1019 468;
-1026 468;
-1043 468;
-1082 468;
-1169 468;
-1236 468;
-947 467;
-1133 467;
-1374 467;
-774 466;
-1057 466;
-1112 466;
-659 465;
-673 465;
-961 465;
-1046 465;
-1056 465;
-1178 465;
-1194 465;
-565 464;
-713 464;
-726 464;
-767 464;
-961 464;
-1081 464;
-1128 464;
-1407 464;
-508 463;
-758 463;
-776 463;
-871 463;
-944 463;
-954 463;
-964 463;
-998 463;
-1035 463;
-1252 463;
-633 462;
-643 462;
-707 462;
-1011 462;
-1071 462;
-1098 462;
-1126 462;
-1215 462;
-1230 462;
-1235 462;
-546 461;
-892 461;
-1105 461;
-1144 461;
-1246 461;
-1399 461;
-642 460;
-764 460;
-884 460;
-897 460;
-1115 460;
-1166 460;
-510 459;
-549 459;
-878 459;
-913 459;
-928 459;
-1035 459;
-1043 459;
-1152 459;
-1223 459;
-1373 459;
-1375 459;
-491 458;
-640 458;
-722 458;
-981 458;
-999 458;
-1077 458;
-1139 458;
-1173 458;
-1179 458;
-1191 458;
-1275 458;
-1392 458;
-1413 458;
-539 457;
-555 457;
-715 457;
-736 457;
-972 457;
-1021 457;
-1053 457;
-1156 457;
-1276 457;
-1390 457;
-512 456;
-871 456;
-942 456;
-995 456;
-1039 456;
-1167 456;
-1211 456;
-495 455;
-546 455;
-716 455;
-734 455;
-795 455;
-1009 455;
-1146 455;
-1215 455;
-1228 455;
-1253 455;
-1378 455;
-507 454;
-518 454;
-790 454;
-891 454;
-966 454;
-1053 454;
-1114 454;
-1117 454;
-1149 454;
-1407 454;
-515 453;
-538 453;
-718 453;
-950 453;
-1064 453;
-1173 453;
-1255 453;
-491 452;
-889 452;
-940 452;
-1190 452;
-1228 452;
-1274 452;
-926 451;
-1003 451;
-1026 451;
-1073 451;
-1077 451;
-1081 451;
-1084 451;
-1130 451;
-1164 451;
-1225 451;
-1306 451;
-1366 451;
-544 450;
-656 450;
-778 450;
-971 450;
-1037 450;
-1066 450;
-1145 450;
-1204 450;
-1228 450;
-963 449;
-985 449;
-990 449;
-1225 449;
-1364 449;
-491 448;
-721 448;
-801 448;
-908 448;
-987 448;
-994 448;
-1253 448;
-1297 448;
-501 447;
-872 447;
-989 447;
-1101 447;
-1169 447;
-1257 447;
-1366 447;
-536 446;
-794 446;
-951 446;
-1050 446;
-510 445;
-661 445;
-926 445;
-1053 445;
-1171 445;
-1396 445;
-516 444;
-535 444;
-810 444;
-991 444;
-1263 444;
-1369 444;
-916 443;
-920 443;
-936 443;
-1035 443;
-1385 443;
-532 442;
-668 442;
-784 442;
-902 442;
-1117 442;
-655 441;
-809 441;
-906 441;
-1000 441;
-1156 441;
-1225 441;
-1400 441;
-511 440;
-513 440;
-909 440;
-1232 440;
-1412 440;
-507 439;
-787 439;
-967 439;
-1116 439;
-1129 439;
-1156 439;
-1241 439;
-1258 439;
-1308 439;
-655 438;
-715 438;
-717 438;
-790 438;
-806 438;
-982 438;
-1167 438;
-1279 438;
-648 437;
-779 437;
-1153 437;
-1253 437;
-1263 437;
-667 436;
-822 436;
-1018 436;
-1175 436;
-512 435;
-795 435;
-874 435;
-891 435;
-944 435;
-1120 435;
-1131 435;
-1142 435;
-1241 435;
-1374 435;
-1409 435;
-532 434;
-937 434;
-1000 434;
-1019 434;
-1286 434;
-497 433;
-507 433;
-649 433;
-665 433;
-899 433;
-901 433;
-971 433;
-979 433;
-1044 433;
-1114 433;
-1142 433;
-1174 433;
-1233 433;
-1243 433;
-1402 433;
-716 432;
-877 432;
-1002 432;
-1098 432;
-519 431;
-523 431;
-669 431;
-922 431;
-950 431;
-1032 431;
-1201 431;
-1246 431;
-529 430;
-531 430;
-834 430;
-1116 430;
-1136 430;
-1254 430;
-1265 430;
-1375 430;
-1390 430;
-718 429;
-1191 429;
-1236 429;
-882 428;
-948 428;
-1030 428;
-1048 428;
-1055 428;
-1059 428;
-1391 428;
-653 427;
-828 427;
-996 427;
-1006 427;
-1012 427;
-1049 427;
-1084 427;
-1122 427;
-1168 427;
-528 426;
-661 426;
-999 426;
-1015 426;
-1076 426;
-1269 426;
-1405 426;
-655 425;
-796 425;
-915 425;
-917 425;
-993 425;
-1203 425;
-1403 425;
-509 424;
-667 424;
-1129 424;
-794 423;
-889 423;
-919 423;
-990 423;
-1127 423;
-1176 423;
-1195 423;
-1203 423;
-1305 423;
-1363 423;
-1380 423;
-679 422;
-881 422;
-896 422;
-1106 422;
-1114 422;
-1159 422;
-1205 422;
-1277 422;
-1286 422;
-537 421;
-796 421;
-838 421;
-1018 421;
-1150 421;
-1169 421;
-1250 421;
-1259 421;
-655 420;
-658 420;
-816 420;
-877 420;
-900 420;
-916 420;
-919 420;
-920 420;
-1001 420;
-1013 420;
-1107 420;
-1129 420;
-1248 420;
-1260 420;
-1367 420;
-1386 420;
-1398 420;
-835 419;
-921 419;
-982 419;
-1018 419;
-1158 419;
-1167 419;
-1257 419;
-1258 419;
-654 418;
-662 418;
-684 418;
-892 418;
-1052 418;
-1171 418;
-1244 418;
-1270 418;
-1384 418;
-1410 418;
-992 417;
-1093 417;
-1114 417;
-1355 417;
-520 416;
-682 416;
-854 416;
-1037 416;
-1123 416;
-1205 416;
-888 415;
-905 415;
-924 415;
-937 415;
-1028 415;
-1087 415;
-1200 415;
-1383 415;
-681 414;
-878 414;
-965 414;
-1029 414;
-1134 414;
-1142 414;
-1185 414;
-1309 414;
-1366 414;
-1381 414;
-516 413;
-537 413;
-838 413;
-929 413;
-968 413;
-998 413;
-1047 413;
-1064 413;
-1072 413;
-1077 413;
-1081 413;
-1102 413;
-1145 413;
-1295 413;
-1353 413;
-1354 413;
-1406 413;
-804 412;
-815 412;
-841 412;
-859 412;
-917 412;
-1041 412;
-1051 412;
-1128 412;
-501 411;
-540 411;
-667 411;
-1005 411;
-1046 411;
-1132 411;
-1163 411;
-1396 411;
-658 410;
-853 410;
-864 410;
-901 410;
-1023 410;
-1266 410;
-501 409;
-535 409;
-648 409;
-908 409;
-1306 409;
-1388 409;
-1409 409;
-512 408;
-540 408;
-976 408;
-992 408;
-1006 408;
-1024 408;
-1058 408;
-1148 408;
-1206 408;
-1367 408;
-869 407;
-916 407;
-1042 407;
-1105 407;
-1152 407;
-1162 407;
-1253 407;
-1305 407;
-1405 407;
-674 406;
-873 406;
-921 406;
-963 406;
-1004 406;
-1047 406;
-1138 406;
-1158 406;
-1164 406;
-1245 406;
-1249 406;
-1254 406;
-1294 406;
-1379 406;
-988 405;
-993 405;
-1056 405;
-1067 405;
-1081 405;
-1083 405;
-1162 405;
-1182 405;
-679 404;
-889 404;
-980 404;
-1052 404;
-1155 404;
-511 403;
-985 403;
-1270 403;
-1362 403;
-1366 403;
-647 402;
-660 402;
-850 402;
-852 402;
-855 402;
-913 402;
-962 402;
-1043 402;
-1288 402;
-1358 402;
-847 401;
-908 401;
-1073 401;
-1090 401;
-527 400;
-653 400;
-904 400;
-1029 400;
-1163 400;
-1182 400;
-1189 400;
-1270 400;
-516 399;
-889 399;
-1000 399;
-1008 399;
-1038 399;
-1060 399;
-1277 399;
-508 398;
-824 398;
-837 398;
-970 398;
-1127 398;
-1145 398;
-1263 398;
-840 397;
-870 397;
-887 397;
-922 397;
-1026 397;
-1060 397;
-1168 397;
-1268 397;
-1348 397;
-856 396;
-967 396;
-1016 396;
-1154 396;
-1287 396;
-1368 396;
-510 395;
-537 395;
-855 395;
-913 395;
-979 395;
-1291 395;
-1294 395;
-828 394;
-886 394;
-998 394;
-1042 394;
-1047 394;
-1105 394;
-1165 394;
-533 393;
-681 393;
-829 393;
-1074 393;
-1091 393;
-1170 393;
-1235 393;
-842 392;
-851 392;
-882 392;
-1001 392;
-1070 392;
-1178 392;
-1193 392;
-1296 392;
-1361 392;
-645 391;
-657 391;
-837 391;
-969 391;
-1013 391;
-1050 391;
-1128 391;
-1130 391;
-1386 391;
-1397 391;
-641 390;
-1047 390;
-1245 390;
-1253 390;
-1264 390;
-1275 390;
-527 389;
-852 389;
-865 389;
-981 389;
-1011 389;
-1131 389;
-1242 389;
-1251 389;
-1299 389;
-1310 389;
-1378 389;
-908 388;
-1106 388;
-867 387;
-1021 387;
-1047 387;
-1080 387;
-1090 387;
-1254 387;
-1264 387;
-1385 387;
-1022 386;
-1039 386;
-1084 386;
-1139 386;
-849 385;
-859 385;
-1088 385;
-1102 385;
-539 384;
-1159 384;
-1267 384;
-536 383;
-890 383;
-1092 383;
-1158 383;
-1257 383;
-1386 383;
-523 382;
-537 382;
-865 382;
-1266 382;
-1314 382;
-515 381;
-550 381;
-905 381;
-1079 381;
-1157 381;
-1255 381;
-1313 381;
-1386 381;
-1392 381;
-668 380;
-890 380;
-901 380;
-973 380;
-988 380;
-1050 380;
-1138 380;
-1398 380;
-851 379;
-859 379;
-878 379;
-988 379;
-996 379;
-1127 379;
-1174 379;
-1178 379;
-1042 378;
-1089 378;
-1117 378;
-1165 378;
-1131 377;
-1151 377;
-1283 377;
-1306 377;
-528 376;
-556 376;
-652 376;
-966 376;
-1079 376;
-1091 376;
-1170 376;
-1266 376;
-1389 376;
-632 375;
-862 375;
-1270 375;
-1376 375;
-545 374;
-628 374;
-906 374;
-907 374;
-1185 374;
-1371 374;
-661 373;
-995 373;
-545 372;
-868 372;
-996 372;
-1023 372;
-1031 372;
-1046 372;
-1265 372;
-1293 372;
-557 371;
-657 371;
-980 371;
-1060 371;
-1258 371;
-890 370;
-895 370;
-903 370;
-1070 370;
-1154 370;
-1165 370;
-1249 370;
-1306 370;
-1390 370;
-576 369;
-665 369;
-899 369;
-1015 369;
-1148 369;
-1197 369;
-603 368;
-622 368;
-548 367;
-580 367;
-595 367;
-901 367;
-1025 367;
-1055 367;
-1073 367;
-1075 367;
-1179 367;
-1257 367;
-1383 367;
-597 366;
-1006 366;
-1080 366;
-1097 366;
-1151 366;
-1384 366;
-551 365;
-627 365;
-1045 365;
-1050 365;
-1092 365;
-1182 365;
-541 364;
-910 364;
-997 364;
-1121 364;
-1258 364;
-525 363;
-594 363;
-888 363;
-900 363;
-914 363;
-979 363;
-1306 363;
-644 362;
-902 362;
-974 362;
-1003 362;
-1091 362;
-1252 362;
-1303 362;
-1370 362;
-1381 362;
-624 361;
-973 361;
-1003 361;
-1121 361;
-1127 361;
-1286 361;
-1075 360;
-1111 360;
-1276 360;
-1393 360;
-517 359;
-539 359;
-577 359;
-591 359;
-619 359;
-629 359;
-1076 359;
-1253 359;
-1270 359;
-1296 359;
-1395 359;
-527 358;
-545 358;
-635 358;
-893 358;
-1032 358;
-1132 358;
-1240 358;
-1244 358;
-1269 358;
-1295 358;
-1391 358;
-557 357;
-560 357;
-1007 357;
-1030 357;
-1040 357;
-1095 357;
-1180 357;
-1394 357;
-771 356;
-1012 356;
-1129 356;
-1135 356;
-1174 356;
-1263 356;
-1268 356;
-1290 356;
-1391 356;
-594 355;
-990 355;
-995 355;
-1179 355;
-1292 355;
-1012 354;
-1123 354;
-1301 354;
-533 353;
-549 353;
-1046 353;
-1152 353;
-1246 353;
-761 352;
-1047 352;
-1057 352;
-1164 352;
-622 351;
-778 351;
-1013 351;
-1015 351;
-1021 351;
-1066 351;
-1094 351;
-1139 351;
-1171 351;
-1368 351;
-574 350;
-1038 350;
-1298 350;
-582 349;
-611 349;
-1033 349;
-1104 349;
-1142 349;
-1177 349;
-1238 349;
-1266 349;
-1267 349;
-777 348;
-1008 348;
-1108 348;
-1390 348;
-789 347;
-976 347;
-1138 347;
-1174 347;
-1294 347;
-552 346;
-892 346;
-1030 346;
-1097 346;
-1238 346;
-1241 346;
-1245 346;
-778 345;
-990 345;
-1026 345;
-1065 345;
-780 344;
-893 344;
-1021 344;
-1032 344;
-1172 344;
-1227 344;
-1290 344;
-526 343;
-530 343;
-783 343;
-985 343;
-997 343;
-1023 343;
-1038 343;
-1119 343;
-1145 343;
-979 342;
-982 342;
-1150 342;
-1259 342;
-537 341;
-1057 341;
-1135 341;
-1189 341;
-1246 341;
-1133 340;
-1143 340;
-1166 340;
-1258 340;
-541 339;
-884 339;
-537 338;
-554 338;
-1037 338;
-1046 338;
-1113 338;
-1252 338;
-1257 338;
-1309 338;
-529 337;
-534 337;
-782 337;
-1291 337;
-1122 336;
-1164 336;
-1177 336;
-1027 335;
-1134 335;
-1141 335;
-538 334;
-784 334;
-988 334;
-1019 334;
-1159 334;
-1173 333;
-1185 333;
-1291 333;
-543 332;
-1003 332;
-1018 332;
-1104 332;
-1053 331;
-1130 331;
-773 330;
-1035 330;
-1272 330;
-1367 330;
-541 329;
-736 329;
-741 329;
-791 329;
-792 329;
-1014 329;
-1047 329;
-1177 329;
-734 328;
-764 328;
-1055 328;
-1102 328;
-545 327;
-784 327;
-990 327;
-1018 327;
-1096 327;
-1098 327;
-1142 327;
-1177 327;
-1291 327;
-1002 326;
-1025 326;
-1028 326;
-1369 326;
-781 325;
-1029 325;
-1261 325;
-1379 325;
-781 324;
-786 324;
-1094 324;
-1107 324;
-1167 324;
-1185 324;
-774 323;
-1028 323;
-1145 323;
-1191 323;
-1261 323;
-1377 323;
-758 322;
-788 322;
-794 322;
-1021 322;
-1023 322;
-1045 322;
-1276 322;
-725 321;
-1051 320;
-1130 320;
-1267 320;
-1272 320;
-1297 320;
-800 319;
-1105 319;
-1137 319;
-1152 319;
-1184 319;
-1025 318;
-1286 318;
-567 317;
-779 317;
-1002 317;
-1094 317;
-1102 317;
-1286 317;
-1052 316;
-1056 316;
-1095 316;
-1171 316;
-1107 315;
-991 314;
-1037 314;
-1139 314;
-1162 314;
-1192 314;
-1304 314;
-556 313;
-749 312;
-750 312;
-766 312;
-769 312;
-1002 312;
-1146 312;
-1149 312;
-1157 312;
-1144 311;
-1147 311;
-1156 311;
-1286 311;
-1295 311;
-759 310;
-796 310;
-801 310;
-999 310;
-1298 310;
-1358 310;
-1192 309;
-783 308;
-1022 308;
-1108 308;
-1119 308;
-812 307;
-1111 307;
-1140 307;
-552 306;
-555 306;
-1165 306;
-773 305;
-1173 305;
-1273 305;
-565 304;
-577 304;
-1192 304;
-1269 304;
-785 303;
-1036 303;
-1132 303;
-1136 303;
-574 302;
-785 302;
-1135 302;
-1165 302;
-1293 302;
-762 301;
-990 301;
-1149 301;
-1160 301;
-1257 301;
-572 300;
-794 300;
-799 300;
-1366 300;
-546 299;
-1141 299;
-1158 299;
-1278 299;
-826 298;
-1190 298;
-573 297;
-1113 297;
-1144 297;
-578 296;
-769 296;
-828 296;
-1022 296;
-1034 296;
-1043 296;
-1138 295;
-1298 295;
-780 294;
-1029 294;
-1036 294;
-1143 294;
-1261 294;
-1007 293;
-1013 293;
-1193 293;
-567 292;
-985 292;
-1153 292;
-1294 292;
-1281 291;
-566 290;
-779 290;
-1045 290;
-1107 290;
-1247 290;
-553 289;
-579 289;
-734 289;
-1025 289;
-1053 289;
-1056 289;
-1094 289;
-1141 289;
-776 288;
-590 287;
-1258 287;
-773 286;
-776 286;
-841 286;
-1037 286;
-1153 286;
-772 285;
-848 285;
-1029 285;
-1041 285;
-1153 285;
-1158 285;
-1253 285;
-862 284;
-959 284;
-1104 284;
-1259 284;
-735 283;
-939 283;
-966 283;
-985 283;
-1104 283;
-927 282;
-1095 282;
-1102 282;
-1167 282;
-1015 281;
-1269 281;
-1354 281;
-887 280;
-965 280;
-1013 280;
-1017 280;
-1022 280;
-1059 280;
-1087 280;
-1243 280;
-804 279;
-866 279;
-1123 279;
-1157 279;
-1357 279;
-725 278;
-798 278;
-1253 278;
-1275 278;
-834 277;
-1046 277;
-1261 277;
-1348 277;
-585 276;
-729 276;
-760 276;
-854 276;
-901 276;
-914 276;
-970 276;
-1150 276;
-592 275;
-793 275;
-800 275;
-837 275;
-976 275;
-977 275;
-1032 275;
-831 274;
-835 274;
-1027 274;
-1147 274;
-1249 274;
-1253 274;
-583 273;
-814 273;
-928 273;
-998 273;
-742 272;
-744 272;
-845 272;
-867 272;
-1040 272;
-1260 272;
-848 271;
-915 271;
-958 271;
-988 271;
-1017 271;
-1144 271;
-1244 271;
-1281 271;
-906 270;
-1048 270;
-1252 270;
-584 269;
-812 269;
-923 269;
-996 269;
-1026 269;
-1029 269;
-579 268;
-588 268;
-930 268;
-989 268;
-1028 268;
-1035 268;
-1155 268;
-1350 268;
-1125 267;
-1145 267;
-1231 267;
-566 266;
-585 266;
-606 266;
-944 266;
-952 266;
-955 266;
-988 266;
-599 265;
-822 265;
-936 265;
-1108 265;
-1114 265;
-1225 265;
-821 264;
-928 264;
-939 264;
-943 264;
-967 264;
-1045 264;
-1115 264;
-1244 264;
-721 263;
-968 263;
-1011 263;
-1094 263;
-1113 263;
-1138 263;
-1248 263;
-608 262;
-609 262;
-1010 262;
-1018 262;
-1024 262;
-1101 262;
-854 260;
-871 260;
-921 260;
-929 260;
-937 260;
-961 260;
-1089 260;
-1151 260;
-944 259;
-1263 259;
-815 258;
-1276 258;
-857 257;
-876 257;
-920 257;
-1019 257;
-1054 257;
-1094 257;
-1170 257;
-1338 257;
-833 256;
-955 256;
-969 256;
-1045 256;
-1119 256;
-1237 256;
-1248 256;
-1264 256;
-836 255;
-871 255;
-1014 255;
-1088 255;
-1170 255;
-931 254;
-942 254;
-1237 254;
-920 253;
-955 253;
-598 252;
-923 252;
-936 251;
-939 251;
-968 251;
-1126 251;
-969 250;
-1130 250;
-616 249;
-1095 249;
-1137 249;
-1138 249;
-1236 249;
-1245 249;
-1276 249;
-1334 249;
-1110 248;
-834 247;
-1160 247;
-601 246;
-1083 246;
-1225 245;
-1324 245;
-837 244;
-1121 244;
-1142 244;
-1218 244;
-1094 243;
-608 242;
-1113 242;
-1218 242;
-1228 242;
-1253 242;
-1321 242;
-1207 240;
-1077 239;
-1216 239;
-1239 238;
-1137 237;
-838 236;
-1217 236;
-1265 236;
-1130 235;
-1245 235;
-1317 235;
-1043 234;
-1070 234;
-1220 234;
-1260 234;
-1316 234;
-1068 233;
-1198 233;
-635 232;
-1087 232;
-624 231;
-630 231;
-844 231;
-1076 231;
-616 230;
-622 230;
-1093 230;
-1313 230;
-641 229;
-1234 229;
-1118 228;
-1122 228;
-1125 227;
-1070 226;
-1252 226;
-1264 226;
-828 225;
-1076 225;
-1071 224;
-1074 224;
-1094 224;
-1196 224;
-1076 223;
-1122 223;
-600 222;
-603 222;
-842 222;
-603 221;
-1076 221;
-1108 221;
-1125 221;
-1240 221;
-647 220;
-1081 220;
-1082 220;
-1093 220;
-843 219;
-1088 219;
-1101 218;
-644 217;
-1057 217;
-830 216;
-831 216;
-1112 216;
-1211 215;
-1231 215;
-1305 215;
-1120 214;
-1209 214;
-1212 214;
-634 213;
-824 213;
-1054 213;
-830 212;
-1096 212;
-1129 212;
-1248 212;
-623 211;
-1108 211;
-1209 211;
-658 210;
-1055 210;
-1079 210;
-1128 210;
-1249 210;
-840 209;
-1085 208;
-1233 208;
-1116 207;
-1212 207;
-1243 207;
-622 206;
-1090 206;
-1219 206;
-617 205;
-620 205;
-845 205;
-662 204;
-1107 204;
-1238 204;
-657 203;
-1083 203;
-1061 202;
-1202 202;
-1230 202;
-1237 202;
-1291 201;
-680 200;
-1069 200;
-1242 200;
-649 198;
-674 198;
-680 197;
-1078 197;
-1079 197;
-1058 196;
-1209 195;
-841 194;
-1102 194;
-1037 193;
-1071 193;
-1231 193;
-1243 193;
-1033 192;
-1280 192;
-1034 191;
-1085 191;
-659 190;
-1046 190;
-824 189;
-1061 189;
-1279 189;
-685 188;
-1057 187;
-1056 186;
-1209 186;
-686 185;
-700 185;
-1025 185;
-1075 185;
-1080 185;
-1094 185;
-654 184;
-680 184;
-686 184;
-1047 184;
-1053 184;
-1076 184;
-1090 184;
-678 183;
-1068 183;
-1228 183;
-702 182;
-1214 182;
-1054 180;
-1216 180;
-1232 180;
-1093 179;
-1197 179;
-699 178;
-1228 178;
-1230 178;
-1231 178;
-1190 177;
-1213 177;
-1223 177;
-686 176;
-719 176;
-1059 176;
-685 175;
-700 175;
-1075 175;
-1190 175;
-662 174;
-1192 174;
-1263 174;
-688 172;
-708 172;
-1197 172;
-1064 171;
-1063 170;
-670 169;
-690 169;
-699 169;
-1007 169;
-1032 169;
-1085 169;
-1190 169;
-703 168;
-729 167;
-985 167;
-1195 167;
-705 166;
-982 166;
-1212 166;
-1182 165;
-726 164;
-1182 164;
-1217 164;
-683 163;
-750 163;
-1015 163;
-1037 163;
-1178 163;
-1216 163;
-689 162;
-1015 161;
-1173 161;
-1212 161;
-694 160;
-737 160;
-760 160;
-986 160;
-1009 160;
-1044 160;
-700 159;
-765 159;
-964 158;
-1026 158;
-1165 158;
-960 157;
-1044 157;
-1174 157;
-1180 157;
-714 155;
-737 155;
-709 154;
-724 154;
-703 153;
-984 153;
-1014 153;
-1187 153;
-978 152;
-993 152;
-1037 152;
-1179 152;
-717 151;
-954 151;
-942 150;
-1158 150;
-1162 150;
-775 149;
-981 149;
-719 148;
-752 148;
-1034 148;
-717 147;
-749 147;
-765 147;
-789 147;
-1018 147;
-1182 147;
-730 146;
-970 146;
-995 146;
-1131 146;
-1158 146;
-732 145;
-924 145;
-995 145;
-1009 145;
-716 144;
-778 144;
-1140 144;
-713 143;
-731 143;
-848 143;
-1102 143;
-1148 143;
-770 142;
-980 142;
-1097 142;
-1144 142;
-1159 142;
-726 141;
-755 141;
-770 141;
-780 141;
-967 141;
-1006 141;
-1095 141;
-1137 141;
-1162 141;
-778 140;
-1131 140;
-732 139;
-827 139;
-847 139;
-1004 139;
-1148 139;
-1150 139;
-737 138;
-754 138;
-824 138;
-835 138;
-920 138;
-999 138;
-1107 138;
-1137 138;
-806 137;
-808 137;
-826 137;
-850 137;
-1012 137;
-1037 137;
-753 136;
-774 136;
-900 136;
-953 136;
-957 136;
-1162 136;
-925 135;
-997 135;
-1108 135;
-1122 135;
-1157 135;
-741 134;
-856 134;
-871 134;
-903 134;
-1031 134;
-1100 134;
-1144 134;
-738 133;
-776 133;
-918 133;
-962 133;
-971 133;
-1141 133;
-762 132;
-829 132;
-951 132;
-817 131;
-944 131;
-773 130;
-861 130;
-867 130;
-969 130;
-790 129;
-816 129;
-916 129;
-925 129;
-779 128;
-836 128;
-756 127;
-806 127;
-823 127;
-987 127;
-1130 127;
-798 126;
-900 126;
-769 125;
-856 125;
-905 125;
-959 125;
-1112 125;
-761 124;
-835 124;
-930 124;
-1103 124;
-1153 124;
-867 123;
-878 123;
-880 123;
-969 123;
-1116 123;
-831 122;
-884 122;
-777 121;
-818 121;
-984 120;
-1098 120;
-837 119;
-856 119;
-932 119;
-977 119;
-1125 119;
-940 118;
-954 118;
-975 118;
-1120 118;
-1124 118;
-1144 118;
-923 117;
-1109 117;
-1116 117;
-877 116;
-1130 115;
-1133 115;
-769 114;
-818 114;
-855 114;
-1128 114;
-795 113;
-892 113;
-1115 113;
-1120 113;
-1133 113;
-818 112;
-897 112;
-965 112;
-1119 112;
-750 111;
-835 111;
-940 111;
-963 111;
-1105 111;
-850 110;
-868 110;
-982 110;
-788 109;
-833 109;
-866 109;
-882 109;
-926 109;
-894 108;
-967 108;
-1108 108;
-1117 108;
-785 107;
-858 107;
-877 107;
-886 107;
-932 107;
-1109 107;
-780 106;
-1130 106;
-771 105;
-802 105;
-923 105;
-1115 105;
-831 103;
-1091 103;
-1128 102;
-858 101;
-846 100;
-898 100;
-1084 100;
-908 99;
-912 99;
-1116 99;
-820 98;
-825 98;
-858 96;
-1079 96;
-896 95;
-1077 95;
-897 94;
-1088 94;
-920 93;
-1076 93;
-906 92;
-1078 92;
-1063 90;
-1102 89;
-1104 87;
-1049 85;
-1057 85;
-1085 83;
-1058 82;
-1022 80;
-1033 80;
-1063 79;
-1022 77;
-1056 76;
-1007 75;
-1027 74;
-1015 73;
-1058 73;
-998 69;
-990 63;
-905 62;
-916 62;
-925 62;
-929 60;
-908 58]
-
+md" ##### Taken from STMO tsp.jl"
 
 # ╔═╡ 017fd37b-e872-405c-8ab2-a713cecb9a8d
 totoro_coords=[484 800;
@@ -6996,12 +2210,12 @@ Outputs:
 	- ants: updated array of ant (solution) arrays 
 """
 function updateants_exercise(ants, pheromones, dists, start)
-	n = Int64(size(dists,2)) 
-	num_ants = Int64(length(ants)) #a
-	for k in missing #for each of k ants
+	n = Int64(size(dists,2)) 		# n = the number of cities 
+	num_ants = Int64(length(ants))  # num_ants = the number of ants
+	for a in missing # for each of i ants
 
-		missing #build a new trail
-		missing #update the ants vector by assigning the new trail to the kth ant 
+		missing 	 # build a new trail (hint: use provided functino)
+		missing 	 # update kth ant in `ants` 
 	end
 end
 
@@ -7018,82 +2232,29 @@ Inputs:
 
 Outputs:
 
-	- result: sum of trail from begin to end but not back to start again 
+	- result: sum of trail from begin to end 
 """
-function trailsum(trail, dists) # total length of a trail (sum of distances)
+function trailsum(trail, dists) 
 
-	result = 0.0
+	result = 0.0 #init result
 	
-	for  i in 1:(length(trail)-1)
-		result += distance(trail[i], trail[i+1], dists) 
-		         #Distance(cityX, cityY, graphDistances)
+	# cumulative sum of trail segments
+	for  i in 1:(length(trail)-1)  
+		result += distance(trail[i], trail[i+1], dists)        
 	end
-	#add Distance(trail[i], trail[1], dists) ???? 
 	return result
 end
 
-# ╔═╡ 888991d5-b77a-4ca8-a885-2ac10b028a72
-"""
-	updatepheromones(k, start, pheromones, dists, ρ)
-
-Updates pheromone entry for any edge (i,j) in a pheromone matrix  
-
-Inputs:
-
-	- start: an integer representting start city (i.e. colony location) 
-	- dists: symmetric distance matrix for which any entry (i,j) represents the distance between two cities i and j
-	- ants: an array of of ants, where each ant is a solution array
-	- best_T: the index of the best solution in the ants array 
-	- best_L: the length of best_T
-	- pheromones: the pheromone matrix 
-	- nn: number of cities the ants must visit (including the origin city)
-	- a: number of ants that will traverse the parameter space
-	- k: n - 1
-
-Outputs:
-
-	- updated pheromone matrix 
-"""
-function updatepheromones_exercise(pheromones, ants, dists, ρ::Real=0.01, Q::Real=2.0)
-	# initialize variables
-	pher_rows = size(pheromones,1)
-	pher_cols = size(pheromones,2)
-	num_ants = length(ants)
-
-	# for each entry in pheromones matrix, and each ant in ants, 
-		#compute the length of the Kth ant trail, then compute it's decrease factor and increase factor, then update the relevant entry in pheromones.
-	for i in 1:missing 	
-		for j in 1:missing 
-			for k in 1:missing 	
-				missing  		# compute length of Kth ant trail
-           		decrease = missing #decrease factor: (1-ρ) * τ_{i,j}  
-				
-				# check for an edge in the trail
-				if missing 		# if there is an edge
-					increase = missing  # increase factor =  Q / path length  
-				end
-    
-				pheromones[i,j] = missing # update the pheromone value 
- 
-                pheromones[j,i] = missing  # maintain matrix symmetry
-				
-				# bound pheromone value between 1e-5 and 1e5
-				pheromones .= clamp.(pheromones,1e-5,1e5)
-			end 
-		end 
-	end
-end 
-
 # ╔═╡ c40fe82a-2dee-44d4-b768-25ff50ce746c
 """
-	nextcity(k, cityX, visited, pheromones, dists)
+	nextcity(k, city_x, visited, pheromones, dists)
 
 Selects the next city to visit in the trail based on drawing randomly from the probability distribution created from the pheromone matrix
 
 Inputs:
 
 	- k: an index
-	- cityX: a city 
+	- city_x: a city 
 	- visited: boolean indicating whether city has been visited in the given trail
 	- pheromones: pheromone value matrix 
 	- dists: symmetric distance matrix for which any entry (i,j) represents the distance between two cities i and j
@@ -7102,13 +2263,17 @@ Outputs:
 
 	- a city to visit next in the trail
 """
-function nextcity(k::Int, cityX::Int, visited, pheromones, dists, α::Real=3, β::Real=2)
-	n = Int64(size(dists,2))
-	probs = getprobs(k::Int, cityX::Int, visited, pheromones, dists, n::Int)
+function nextcity(k::Int, city_x::Int, visited, pheromones, dists, α::Real=3, β::Real=2)
+	n = Int64(size(dists,2)) #n = number of cities 
+
+	#get probabilities using getprobs function
+	probs = getprobs(k::Int, city_x::Int, visited, pheromones, dists, n::Int)
+	
 	cumul = zeros(length(probs)+1) #init cumulative probability array 
 	
+	#fill values in cumul 
 	for i in 1:length(probs)
-		cumul[i+1] = cumul[i] + probs[i] #cumul = the previous sum + next prob 
+		cumul[i+1] = cumul[i] + probs[i] 
 	end
 
 	#enforce that cumulative probabilty is 1 (in case of small rounding errors)
@@ -7125,7 +2290,6 @@ function nextcity(k::Int, cityX::Int, visited, pheromones, dists, α::Real=3, β
       		return i #return the index of the city the ant visits next 
 		end
 	end
-	#return cumul
 end 
 
 # ╔═╡ 2df743f0-620f-43bc-bb51-17dc5e5c0be7
@@ -7147,14 +2311,16 @@ Outputs:
 	- trail: atrail whose length is n-1 , and starts at 'start' city
 """
 function buildtrail(k::Int, start::Int, pheromones, dists, n::Int)
+	#init an empty trail and a boolean vector of equal length
 	trail = zeros(Int64, n+1)
 	visited = falses(n+1)
 
-	trail[1] = start 
-	visited[start] = true 
-	trail[n+1] = start
-	
-	for i in 1:(n-1) #because if we go to n there is no next city
+	trail[1] = start  	  # the first element in 'trail' is the start city
+	visited[start] = true # set the corresponding index in 'visited' to true
+	trail[n+1] = start    # just a placeholder
+
+	#look at each city in the trail and set the corresponding index in 'visited' as true
+	for i in 1:(n-1)
 		cityX = Int64(trail[i])
 		next_city = nextcity(k, cityX, visited, pheromones, dists)
 		trail[i+1] = Int64(next_city)
@@ -7181,11 +2347,11 @@ Outputs:
 	- ants: updated array of ant (solution) arrays 
 """
 function updateants(ants, pheromones, dists, start)
-	n = Int64(size(dists,2)) #numCities
-	num_ants = Int64(length(ants))
-	for k in 1:num_ants
-		newtrail = buildtrail(k, start, pheromones, dists, n)
-		ants[k] = newtrail
+	n = Int64(size(dists,2)) # n = the number of cities 
+	num_ants = Int64(length(ants))  # a = the number of ants
+	for a in 1:num_ants      #for each ant, build a new trail
+		newtrail = buildtrail(a, start, pheromones, dists, n)
+		ants[a] = newtrail   
 	end
 end
 
@@ -7193,9 +2359,10 @@ end
 """
 	getidx(trail, target)
 
-A helper function for randomtrail
+A helper function for randomtrail; returns the index of a 'target' city in a trail
 
 Inputs:
+
 	- trail: a solution vector 
 	- target: a city in the trail
 
@@ -7230,15 +2397,17 @@ function randomtrail(start::Int, n::Int)
 
 	
 	#Allocate a 'basic' trail [1,2,3,4,5...n-1
-	chrono_trail = 1:(n) |> collect #chronological trail 
+	chrono_trail = 1:(n) |> collect # build a trail 
 	
-	trail = shuffle(chrono_trail)
+	trail = shuffle(chrono_trail) # randomly shuffle the trail
 
-	idx = getidx(trail, start)
-	temp = trail[1]  #Julia starts at 1 indexing
+	#Modify the trail so that the 1st city in the trail is the start city 
+	idx = getidx(trail, start) 
+	temp = trail[1]  
 	trail[1] = trail[idx] #swap the start city with the 
 	trail[idx] = temp 
-	append!(trail,start) #cycle back to the "colony" or origin city
+	append!(trail,start) #the start city is also the end city
+	
 	return trail
 end
 
@@ -7246,7 +2415,7 @@ end
 """
 	initants(start, a, n)
 
-Returns an array of of randomized solutions
+Returns an array of random ant paths (random solutions)
 
 Inputs:
 
@@ -7262,9 +2431,9 @@ function initants(start::Int, a::Int, n::Int)
 	
 	ants = [] # init array that will hold trail arrays 
 	
-	for k in 1:a
-		t = randomtrail(start, n)	 # changed from n+1 today 
-		push!(ants,t)
+	for k in 1:a # for each ant, make a random trail
+		t = randomtrail(start, n)	
+		push!(ants,t) # save the kth ant's trail in ants
 	end
   
   return ants
@@ -7284,7 +2453,7 @@ Inputs:
 
 Outputs:
 
-	- the index of the best solution in the ants array 
+	- the index of the best ant (solution) in the ants array 
 """
 function best_trail(ants, dists)
 	
@@ -7293,7 +2462,7 @@ function best_trail(ants, dists)
 	idxbest = 1
 	n = size(dists,2) 
 	
-	#check the rest of the trails
+	#check the rest of the trails and compare to find the best 
 	for k in 2:length(ants)
 		len = trailsum(ants[k], dists)
 		if len < best_l
@@ -7309,7 +2478,7 @@ end
 """
 	init_aco(n::Int=10, a::Int=4)
 
-Initializes start city `start`, distance matrix `dists`, ant (solutions) `ants`, the solution `best_t`, and its value/length `best_l`. 
+Initializes start city `start`, distance matrix `dists`, ant (solutions) `ants`, the solution `best_ant`, and its value/length `trail_value`. 
 
 Inputs:
 
@@ -7321,8 +2490,8 @@ Outputs:
 	- start: an integer representting start city (i.e. colony location) 
 	- dists: symmetric distance matrix for which any entry (i,j) represents the distance between two cities i and j
 	- ants: an array of arrays, where the number of arrays is equal to the number of ants, and each any array is a solution (ordered trail) 
-	- best_t: the index of the best solution in the ants array 
-	- best_l: the total length of best_t
+	- best_ant: the best solution `ants`  
+	- trail_value: the total length of best_ant
 """
 function init_aco(citycoords, a::Int=4)
 	n = Int64(size(citycoords,1)) 
@@ -7330,23 +2499,42 @@ function init_aco(citycoords, a::Int=4)
 	dists = dist(citycoords,citycoords)
 	ants = initants(start, a, n)	
 	
-	best_t = best_trail(ants, dists)	
-    best_l = trailsum(best_t, dists)		
+	best_ant = best_trail(ants, dists)	
+    trail_value = trailsum(best_ant, dists)		
 
     pheromones = initpheromones(n)		
 	
-	return start, dists, ants, best_t, best_l, pheromones, n, a
+	return start, dists, ants, best_ant, trail_value, pheromones, n, a
 end
 
 # ╔═╡ 47c98bd7-f84d-455d-a417-5ffc93fa6fdd
 colony4, dists4, ants4, bestroute4, routelength4, pheromones4, n4, a4 = init_aco(coords4)
 
+# ╔═╡ 81dc269f-5145-4e9f-80e3-86c70879e462
+bestroute4
+
 # ╔═╡ a14949b9-77b2-4f32-89f7-d2316736e803
 #run initialization here (optionally specify the number of ants)
 colony25, dists25, ants25, bestroute25, routelength25, pheromones25, n25, a25 = init_aco(coords25, 20) 
 
+# ╔═╡ 2c6733ca-c300-4bc3-9d31-103d7b2cbd6c
+md"""
+Use sliders to select `k`, the number of times an ant walks the graph, and `a`, number of ants in the colony.
+
+k:
+$(@bind k Slider(1:1:k25,default=4,show_value=true))
+
+a:
+$(@bind a Slider(1:1:a25,default=10,show_value=true))
+
+The plot below will display the solutions for the *i*th ant. Select the *i*th ant using the slider:
+
+$(@bind kth_ant Slider(1:1:a,default=1,show_value=true))
+"""
+
 # ╔═╡ 0f903495-cfbf-4ce2-9851-a49aba684e6a
-starttoto, diststoto, antstoto, best_tourtoto, tour_lengthtoto, pheromonestoto, ntoto, atoto = init_aco(some_totoro_coords, 6) 
+#Beware, may take several seconds
+starttoto, diststoto, antstoto, best_tourtoto, tour_lengthtoto, pheromonestoto, ntoto, atoto = init_aco(some_totoro_coords, 10) 
 
 # ╔═╡ dcf0c148-2f9a-4083-9739-89a891574eda
 begin
@@ -7359,7 +2547,7 @@ end
 """
 	is_edge(city_x city_y, trail)
 
-Checks if city_xand city_y are adjacent to each other in trail
+Checks if `city_x` and `city_y` are adjacent to each other in `trail`, signifying that an ant travels directly between the two cities, traversing edge (i.j) 
 
 Inputs:
 
@@ -7369,48 +2557,95 @@ Inputs:
 
 Outputs:
 
-	- a boolean value (true if city_x and city_y are adjacent, otherwise false)
+	- a boolean value (true if city_x and city_y are adjacent in `trail`)
 """
 function is_edge(city_x::Int, city_y::Int, trail)
 	
-	#make sure city_x, city_y are ins
-	city_x
-	city_y
-	lastIndex = length(trail) 
-    idx = getidx(trail, city_x)
+	lastIndex = length(trail)  
+	
+    idx = getidx(trail, city_x) #get index of city_x in trail
 
     #if X = 1st in trail, see if it's next to 2nd or last in trail
-	if idx == 1 && trail[2] == city_y # (X, Y, ...)
-    	return true #checked
+	if idx == 1 && trail[2] == city_y # if (X, Y, ...)
+    	return true 
            
-    elseif idx == 1 && trail[lastIndex] == city_y #(X, ..., Y)
-    	return true #checked
+	elseif idx == 1 && trail[lastIndex] == city_y #if (X, ..., Y)
+    	return true 
     
-	elseif idx == 1
-    	return false #checked
+	elseif idx == 1 #if X = 1st, and Y is not 2nd or last, there's no edge
+    	return false 
 	end
 	
-	#if X is last in trail, see if its next to 2nd-to-last or 1st
-	if idx == lastIndex && trail[lastIndex-1] == city_y
+	#if X is last in trail, see if Y is 2nd-to-last or 1st
+	if idx == lastIndex && trail[lastIndex-1] == city_y # if (.... Y, X)
 		return true
 	
-	elseif idx == lastIndex && trail[1] == city_y
+	elseif idx == lastIndex && trail[1] == city_y # if (Y,...., X)
 		return true
 	
-	elseif idx == lastIndex
+	elseif idx == lastIndex #if X is last and Y isnt 1st or, 2nd-to-last, no edge
 		return false
 
-	#BELOW IS WORKING
-	#if X is not 1st or last in list, just check left and right
-	elseif trail[idx - 1] == city_y
-		return true #checked 
+	#if X is not 1st or last in list, just check left and right of it
+	elseif trail[idx - 1] == city_y # if (...Y,X,...)
+		return true 
 
-	elseif trail[idx + 1] == city_y
-   		return true #checked 
+	elseif trail[idx + 1] == city_y # if (...X,Y,...)
+   		return true 
 
 	else
-		return false#checked 
+		return false # if Y isn't directly left or right of X, there's no edge
 	
+	end
+end 
+
+# ╔═╡ 888991d5-b77a-4ca8-a885-2ac10b028a72
+"""
+	updatepheromones(k, start, pheromones, dists, ρ)
+
+Updates pheromone entry for any edge (i,j) in a pheromone matrix  
+
+Inputs:
+
+	- pheromones: the pheromone matrix 
+	- ants: an array of of ants, where each ant is a solution array
+	- dists: symmetric distance matrix for which any entry (i,j) represents the distance between two cities i and j
+	- ρ: pheromone evaporation rate 
+	- q: pheromone increase parameter (arbitrary)
+
+
+Outputs:
+
+	- updated pheromone matrix 
+"""
+function updatepheromones_exercise(pheromones, ants, dists, ρ::Real=0.01, q::Real=2.0)
+	# initialize variables
+	pher_rows = size(pheromones,1)
+	pher_cols = size(pheromones,2)
+	num_ants = length(ants)
+	
+	for i in 1:pher_rows
+		for j in 1:pher_cols    
+			for k in 1:num_ants    
+				missing  		       # compute length of Kth ant trail
+           		decrease = missing     # decrease factor = (1-ρ) * τ_{i,j}  
+
+				increase = 0.0 		   # init increase factor 
+				
+	# increase factor for (i,j) only need be calculated if ant travels on it, so
+				# check for edge (i,j) in the ant's path
+				if is_edge(i, j, ants[k]) == true 
+					increase = missing # increase factor  = q / Kth ant trail length 
+				end
+    
+				pheromones[i,j] = missing # update the pheromone value 
+ 
+                pheromones[j,i] = missing  # maintain matrix symmetry
+				
+				# bound pheromone value between 1e-5 and 1e5
+				pheromones .= clamp.(pheromones,1e-5,1e5)
+			end 
+		end 
 	end
 end 
 
@@ -7422,56 +2657,49 @@ Updates pheromone entry for any edge (i,j) in a pheromone matrix
 
 Inputs:
 
-	- start: an integer representting start city (i.e. colony location) 
-	- dists: symmetric distance matrix for which any entry (i,j) represents the distance between two cities i and j
-	- ants: an array of of ants, where each ant is a solution array
-	- bestTrail: the index of the best solution in the ants array 
-	- bestLength: the length of bestTrail
 	- pheromones: the pheromone matrix 
-	- numCities: number of cities the ants must visit (including the origin city)
-	- numAnts: number of ants that will traverse the parameter space
-	- k: numCities - 1
+	- ants: an array of of ants, where each ant is a solution array
+	- dists: symmetric distance matrix for which any entry (i,j) represents the distance between two cities i and j
+	- ρ: pheromone evaporation rate 
+	- q: pheromone increase parameter (arbitrary)
+
 
 Outputs:
 
 	- updated pheromone matrix 
 """
-function updatepheromones(pheromones, ants, dists, ρ::Real=0.01, Q::Real=2.0)
+function updatepheromones(pheromones, ants, dists, ρ::Real=0.01, q::Real=2.0)
 	pher_rows = size(pheromones,1)
-	pher_cols = size(pheromones,2) #is a square matrix 
+	pher_cols = size(pheromones,2)  
 	num_ants = length(ants)
 	
 	for i in 1:pher_rows
 		for j in 1:pher_cols
-			for k in 1:num_ants #number of ants
+			for k in 1:num_ants
 				trail_length = trailsum(ants[k], dists) #length of ant K trail
-           		decrease = (1.0-ρ) * pheromones[i,j]
-           		increase = 0.0
-				
+           		decrease = (1.0-ρ) * pheromones[i,j] # pher decrease factor 
+           		
+				increase = 0.0 # init increase factor
+
+				#computing increase on edge (i,j) only needed if ant walks over (i,j)
 				if is_edge(i, j, ants[k]) == true
-					increase = Q / trail_length
+					increase = q / trail_length # compute increase factor 
 				end
     
-				pheromones[i,j] = decrease + increase
+				pheromones[i,j] = decrease + increase # update the pheromone value 
 
-                #if pheromones[i,j] < 0.0001
-				#	pheromones[i,j] = 0.0001
-                        
-                #elseif pheromones[i,j] > 100000.0
-                #	pheromones[i,j] = 100000.0
-				#end
-                        
-                pheromones[j,i] = pheromones[i,j]
-
+				pheromones[j,i] = pheromones[i,j] # maintain matrix symmetry
+				
+				# bound pheromone value between 1e-5 and 1e5
 				pheromones.=clamp.(pheromones,1e-5,1e5)
-			end #for k
-		end # for j
-	end #for i
+			end
+		end
+	end 
 end 
 
 # ╔═╡ e05ce658-cbaf-4ac2-a426-c9741fbc37d2
 """
-	aco(start, dists, ants, best_T, best_L, pheromones, n, a, k::Int=10)
+	aco(start, dists, ants, best_ant, trail_value, pheromones, n, a, k::Int=10)
 
 Runs ACO k times and returns the shortest path and its length. 
 
@@ -7480,41 +2708,41 @@ Inputs:
 	- start: an integer representting start city (i.e. colony location) 
 	- dists: symmetric distance matrix for which any entry (i,j) represents the distance between two cities i and j
 	- ants: array of solution "ant" arrays
-	- best_T: best trail in ants
-	- best_L: length of best_t
+	- best_ant: best trail in ants
+	- trail_value: length of best_ant
 	- pheromones: pheromone matrix 
 	- n: number of cities the ants must visit (including the origin city)
 	- a: number of ants 
-	- k: an index
+	- k: number of times the while loop iterates
 
 Outputs:
 
-	- best_T: updated best trail
-	- best_L: length of best_L
+	- best_ant: updated best trail
+	- trail_value: length of best_ant
 """
-function aco(start, dists, ants, best_T, best_L, pheromones, n, a, k::Int=10)
+function aco(start, dists, ants, best_ant, trail_value, pheromones, n, a, k::Int=10)
 
     i = 1
-    currbest_T = zeros(Int64, n+1)
-	currbest_L = 0
+    currbest_ant = zeros(Int64, n+1)
+	currtrail_value = 0
 
-	while i < k
-		updateants(ants, pheromones, dists, start)	
-		updatepheromones(pheromones, ants, dists)
+	while i < k  # until we loop k times
+		updateants(ants, pheromones, dists, start)	# update ant solutions
+		updatepheromones(pheromones, ants, dists)   # update pheromone matrix 
 
-		currbest_T = best_trail(ants, dists)
-		currbest_L = trailsum(currbest_T, dists)
+		currbest_ant = best_trail(ants, dists)		# find the best 'ant' (trail)
+		currtrail_value = trailsum(currbest_ant, dists) #calculate best trail sum
 
-		if currbest_L < best_L
-			best_L = currbest_L
-			best_T = currbest_T	
+		if currtrail_value< trail_value # check if best ant from this pass beats 													previous best 
+			trail_value = currtrail_value # if so, update best trail length
+			best_ant = currbest_ant              #and best ant 
 		end
 
 		i += 1		
 	
 	end 
 	
-	return best_L, best_T
+	return trail_value, best_ant
 end
 
 # ╔═╡ d0e27503-80c1-4dd7-aacd-fda306414005
@@ -7541,7 +2769,61 @@ begin
 end
 
 # ╔═╡ 679c1c38-f926-4492-ada5-aafa5af25fd2
+#Beware: may take several minutes
 tour_lengthTotoro, best_tourTotoro = aco(starttoto, diststoto, antstoto, best_tourtoto, tour_lengthtoto, pheromonestoto, ntoto, atoto, ktoto) 
+
+# ╔═╡ abbf326e-4617-483c-b956-33db2b666fbc
+"""
+	aco_savetheants(start, dists, ants, best_ant, trail_value, pheromones, n, a, k::Int=10)
+
+Identical to `aco` function except it also returns all solution arrays for all ants in all iterations. 
+
+Inputs:
+
+	- start: an integer representting start city (i.e. colony location) 
+	- dists: symmetric distance matrix for which any entry (i,j) represents the distance between two cities i and j
+	- ants: array of solution "ant" arrays
+	- best_ant: best trail in ants
+	- trail_value: length of best_ant
+	- pheromones: pheromone matrix 
+	- n: number of cities the ants must visit (including the origin city)
+	- a: number of ants 
+	- k: number of times the while loop iterates
+
+Outputs:
+
+	- best_ant: updated best trail
+	- trail_value: length of best_ant
+"""
+function aco_savetheants(start, dists, ants, best_ant, trail_value, pheromones, n, a, k::Int=10)
+
+    i = 1
+    currbest_ant = zeros(Int64, n+1)
+	currtrail_value = 0
+	all_ants = []
+	append!(all_ants,ants) 
+	while i < k  # until we loop k times
+		updateants(ants, pheromones, dists, start)	# update ant solutions
+		append!(all_ants,ants) 
+		updatepheromones(pheromones, ants, dists)   # update pheromone matrix 
+
+		currbest_ant = best_trail(ants, dists)		# find the best 'ant' (trail)
+		currtrail_value = trailsum(currbest_ant, dists) #calculate best trail sum
+
+		if currtrail_value< trail_value # check if best ant from this pass beats 													previous best 
+			trail_value = currtrail_value # if so, update best trail length
+			best_ant = currbest_ant              #and best ant 
+		end
+
+		i += 1		
+	
+	end 
+	
+	return all_ants, best_ant, trail_value
+end
+
+# ╔═╡ 5d929be0-d406-440a-bd0f-2bfe5d26c94a
+all_ants_custom, best_ant_c, trail_c = aco_savetheants(colony25, dists25, ants25, bestroute25, routelength25, pheromones25, n25, a, k)
 
 # ╔═╡ 554154af-0a61-4b4f-b363-bc856bfc32f4
 tsp4 = TravelingSalesmanProblem(coords4)
@@ -7579,6 +2861,27 @@ begin
 	title!(" ACO: $a25 ants make $k25 tours, shortest route: $tourlen25")
 end
 
+# ╔═╡ 01a5011f-f6ae-4a13-8641-7b213487d65d
+begin
+	tournum = 1
+	num_solutions = k*a
+	animation1 = @animate for i in range(kth_ant,num_solutions, step = a) 
+		plot_tour(tsp25, all_ants_custom[i][1:25])
+		title!("Ant number $kth_ant's trip number #$tournum")
+		tournum +=1
+	end
+	gif(animation1, fps=2)
+end
+
+# ╔═╡ 7b1506d2-02e3-4a13-a277-9ec99bbad91c
+begin
+	tourcost = round(trail_c, digits = 3)
+	plot_tour(tsp25, best_ant_c[1:25])
+	plot_cities!(tsp25)
+	title!(" ACO: Optimal solution using $a ants and $k iterations,
+shortest route: $tourcost")
+end
+
 # ╔═╡ 909583cd-c5cb-4009-8e55-29c88dcb4828
 tsptotoro = TravelingSalesmanProblem(some_totoro_coords)
 
@@ -7600,44 +2903,60 @@ end
 md"""
 ## References
 
-https://towardsdatascience.com/the-inspiration-of-an-ant-colony-optimization-f377568ea03f  
+Basu, Pratik. [Introduction to Ant Colony Optimization](https://www.geeksforgeeks.org/introduction-to-ant-colony-optimization/)
 
-https://people.idsia.ch//~luca/aco2004.pdf 
+Dorigo, Marco. [Ant colony optimization](http://www.scholarpedia.org/article/Ant_colony_optimization#Main_ACO_algorithms) 
 
-https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0257317#sec001
+Dorigo, Marco & Di Caro, Gianni. [The Ant Colony Optimization Meta-Heuristic](https://www.researchgate.net/publication/2831286_The_Ant_Colony_Optimization_Meta-Heuristic)
 
-https://www.researchgate.net/publication/2831286_The_Ant_Colony_Optimization_Meta-Heuristic
+Dorigo, Marco. [Ant colony optimization]
+(http://www.scholarpedia.org/article/Ant_colony_optimization#Main_ACO_algorithms) 
 
-https://www.geeksforgeeks.org/introduction-to-ant-colony-optimization/
+Glass Games Studios. [Ant Interactive Education Simulation](https://fypmm161a.wixsite.com/ant-nest/)
 
-https://www.opentextbooks.org.hk/ditatopic/27149 
+Gambardella, Luca Maria & de Luigi, Fabio & Maniezzo, Vittorio. [Ant Colony Optimization](https://people.idsia.ch//~luca/aco2004.pdf)
 
-https://docs.microsoft.com/en-us/archive/msdn-magazine/2012/february/test-run-ant-colony-optimization
+Liang, Shengbin & Tongtong, Jiao & Wencai, Du & Qu, Shenming. [An improved ant colony optimization algorithm based on context for tourism route planning](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0257317#sec001)
 
-https://www.csd.uoc.gr/~hy583/papers/ch11.pdf 
+McCaffrey, James. [Test Run - Ant Colony Optimization](https://docs.microsoft.com/en-us/archive/msdn-magazine/2012/february/test-run-ant-colony-optimization)
 
-http://www.scholarpedia.org/article/Ant_colony_optimization#Main_ACO_algorithms 
+Rahman, Awan-Ur. [Introduction to Ant colony optimization(ACO)](https://towardsdatascience.com/the-inspiration-of-an-ant-colony-optimization-f377568ea03f)
 
-https://fypmm161a.wixsite.com/ant-nest/
-
+University of Crete. [The Traveling Salesman Problem](https://www.csd.uoc.gr/~hy583/papers/ch11.pdf)
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
+Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 ShortCodes = "f62ebe17-55c5-4640-972f-b59c0dd11ccf"
 
 [compat]
+Images = "~0.25.1"
 Plots = "~1.25.7"
+PlutoUI = "~0.7.32"
 ShortCodes = "~0.3.2"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
+
+[[AbstractFFTs]]
+deps = ["ChainRulesCore", "LinearAlgebra"]
+git-tree-sha1 = "6f1d9bc1c08f9f4a8fa92e3ea3cb50153a1b40d4"
+uuid = "621f4979-c628-5d54-868e-fcf4e3e8185c"
+version = "1.1.0"
+
+[[AbstractPlutoDingetjes]]
+deps = ["Pkg"]
+git-tree-sha1 = "8eaf9f1b4921132a4cff3f36a1d9ba923b14a481"
+uuid = "6e696c72-6542-2067-7265-42206c756150"
+version = "1.1.4"
 
 [[Adapt]]
 deps = ["LinearAlgebra"]
@@ -7648,8 +2967,32 @@ version = "3.3.3"
 [[ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
 
+[[ArnoldiMethod]]
+deps = ["LinearAlgebra", "Random", "StaticArrays"]
+git-tree-sha1 = "62e51b39331de8911e4a7ff6f5aaf38a5f4cc0ae"
+uuid = "ec485272-7323-5ecc-a04f-4719b315124d"
+version = "0.2.0"
+
+[[ArrayInterface]]
+deps = ["Compat", "IfElse", "LinearAlgebra", "Requires", "SparseArrays", "Static"]
+git-tree-sha1 = "ffc6588e17bcfcaa79dfa5b4f417025e755f83fc"
+uuid = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
+version = "4.0.1"
+
 [[Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
+
+[[AxisAlgorithms]]
+deps = ["LinearAlgebra", "Random", "SparseArrays", "WoodburyMatrices"]
+git-tree-sha1 = "66771c8d21c8ff5e3a93379480a2307ac36863f7"
+uuid = "13072b0f-2c55-5437-9ae7-d433b7a33950"
+version = "1.0.1"
+
+[[AxisArrays]]
+deps = ["Dates", "IntervalSets", "IterTools", "RangeArrays"]
+git-tree-sha1 = "d127d5e4d86c7680b20c35d40b503c74b9a39b5e"
+uuid = "39de3d68-74b9-583c-8d2d-e117c070f3a9"
+version = "0.4.4"
 
 [[Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
@@ -7660,11 +3003,28 @@ git-tree-sha1 = "19a35467a82e236ff51bc17a3a44b69ef35185a2"
 uuid = "6e34b625-4abd-537c-b88f-471c36dfa7a0"
 version = "1.0.8+0"
 
+[[CEnum]]
+git-tree-sha1 = "215a9aa4a1f23fbd05b92769fdd62559488d70e9"
+uuid = "fa961155-64e5-5f13-b03f-caf6b980ea82"
+version = "0.4.1"
+
 [[Cairo_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll", "JLLWrappers", "LZO_jll", "Libdl", "Pixman_jll", "Pkg", "Xorg_libXext_jll", "Xorg_libXrender_jll", "Zlib_jll", "libpng_jll"]
 git-tree-sha1 = "4b859a208b2397a7a623a03449e4636bdb17bcf2"
 uuid = "83423d85-b0ee-5818-9007-b63ccbeb887a"
 version = "1.16.1+1"
+
+[[Calculus]]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "f641eb0a4f00c343bbc32346e1217b86f3ce9dad"
+uuid = "49dc2e85-a5d0-5ad3-a950-438e2897f1b9"
+version = "0.5.1"
+
+[[CatIndices]]
+deps = ["CustomUnitRanges", "OffsetArrays"]
+git-tree-sha1 = "a0f80a09780eed9b1d106a1bf62041c2efc995bc"
+uuid = "aafaddc9-749c-510e-ac4f-586e18779b91"
+version = "0.2.2"
 
 [[ChainRulesCore]]
 deps = ["Compat", "LinearAlgebra", "SparseArrays"]
@@ -7677,6 +3037,12 @@ deps = ["ChainRulesCore", "LinearAlgebra", "Test"]
 git-tree-sha1 = "bf98fa45a0a4cee295de98d4c1462be26345b9a1"
 uuid = "9e997f8a-9a97-42d5-a9f1-ce6bfc15e2c0"
 version = "0.1.2"
+
+[[Clustering]]
+deps = ["Distances", "LinearAlgebra", "NearestNeighbors", "Printf", "SparseArrays", "Statistics", "StatsBase"]
+git-tree-sha1 = "75479b7df4167267d75294d14b58244695beb2ac"
+uuid = "aaaa29a8-35af-508c-8bc3-b662a17a0fe5"
+version = "0.14.2"
 
 [[CodecZlib]]
 deps = ["TranscodingStreams", "Zlib_jll"]
@@ -7696,6 +3062,12 @@ git-tree-sha1 = "024fe24d83e4a5bf5fc80501a314ce0d1aa35597"
 uuid = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
 version = "0.11.0"
 
+[[ColorVectorSpace]]
+deps = ["ColorTypes", "FixedPointNumbers", "LinearAlgebra", "SpecialFunctions", "Statistics", "TensorCore"]
+git-tree-sha1 = "3f1f500312161f1ae067abe07d13b40f78f32e07"
+uuid = "c3611d14-8923-5661-9e6a-0046d554d3a4"
+version = "0.9.8"
+
 [[Colors]]
 deps = ["ColorTypes", "FixedPointNumbers", "Reexport"]
 git-tree-sha1 = "417b0ed7b8b838aa6ca0a87aadf1bb9eb111ce40"
@@ -7712,11 +3084,27 @@ version = "3.41.0"
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
 
+[[ComputationalResources]]
+git-tree-sha1 = "52cb3ec90e8a8bea0e62e275ba577ad0f74821f7"
+uuid = "ed09eef8-17a6-5b46-8889-db040fac31e3"
+version = "0.3.2"
+
 [[Contour]]
 deps = ["StaticArrays"]
 git-tree-sha1 = "9f02045d934dc030edad45944ea80dbd1f0ebea7"
 uuid = "d38c429a-6771-53c6-b99e-75d170b6e991"
 version = "0.5.7"
+
+[[CoordinateTransformations]]
+deps = ["LinearAlgebra", "StaticArrays"]
+git-tree-sha1 = "681ea870b918e7cff7111da58791d7f718067a19"
+uuid = "150eb455-5306-5404-9cee-2592286d6298"
+version = "0.6.2"
+
+[[CustomUnitRanges]]
+git-tree-sha1 = "1a3f97f907e6dd8983b744d2642651bb162a3f7a"
+uuid = "dc8bdbbb-1ca9-579f-8c36-e416f6a65cce"
+version = "1.0.2"
 
 [[DataAPI]]
 git-tree-sha1 = "cc70b17275652eb47bc9e5f81635981f13cea5c8"
@@ -7742,6 +3130,12 @@ uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 deps = ["Mmap"]
 uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 
+[[Distances]]
+deps = ["LinearAlgebra", "SparseArrays", "Statistics", "StatsAPI"]
+git-tree-sha1 = "3258d0659f812acde79e8a74b11f17ac06d0ca04"
+uuid = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
+version = "0.10.7"
+
 [[Distributed]]
 deps = ["Random", "Serialization", "Sockets"]
 uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
@@ -7756,11 +3150,23 @@ version = "0.8.6"
 deps = ["ArgTools", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 
+[[DualNumbers]]
+deps = ["Calculus", "NaNMath", "SpecialFunctions"]
+git-tree-sha1 = "84f04fe68a3176a583b864e492578b9466d87f1e"
+uuid = "fa6b7ba4-c1ee-5f82-b5fc-ecf0adba8f74"
+version = "0.6.6"
+
 [[EarCut_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "3f3a2501fa7236e9b911e0f7a588c657e822bb6d"
 uuid = "5ae413db-bbd1-5e63-b57d-d24a61df00f5"
 version = "2.2.3+0"
+
+[[EllipsisNotation]]
+deps = ["ArrayInterface"]
+git-tree-sha1 = "d7ab55febfd0907b285fbf8dc0c73c0825d9d6aa"
+uuid = "da5c29d0-fa7d-589e-88eb-ea29b0a81949"
+version = "1.3.0"
 
 [[Expat_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -7779,6 +3185,30 @@ deps = ["Artifacts", "Bzip2_jll", "FreeType2_jll", "FriBidi_jll", "JLLWrappers",
 git-tree-sha1 = "d8a578692e3077ac998b50c0217dfd67f21d1e5f"
 uuid = "b22a6f82-2f65-5046-a5b2-351ab43fb4e5"
 version = "4.4.0+0"
+
+[[FFTViews]]
+deps = ["CustomUnitRanges", "FFTW"]
+git-tree-sha1 = "cbdf14d1e8c7c8aacbe8b19862e0179fd08321c2"
+uuid = "4f61f5a4-77b1-5117-aa51-3ab5ef4ef0cd"
+version = "0.3.2"
+
+[[FFTW]]
+deps = ["AbstractFFTs", "FFTW_jll", "LinearAlgebra", "MKL_jll", "Preferences", "Reexport"]
+git-tree-sha1 = "463cb335fa22c4ebacfd1faba5fde14edb80d96c"
+uuid = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
+version = "1.4.5"
+
+[[FFTW_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "c6033cc3892d0ef5bb9cd29b7f2f0331ea5184ea"
+uuid = "f5851436-0d7a-5f13-b9de-f02708fd171a"
+version = "3.3.10+0"
+
+[[FileIO]]
+deps = ["Pkg", "Requires", "UUIDs"]
+git-tree-sha1 = "67551df041955cc6ee2ed098718c8fcd7fc7aebe"
+uuid = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
+version = "1.12.0"
 
 [[FixedPointNumbers]]
 deps = ["Statistics"]
@@ -7846,11 +3276,23 @@ git-tree-sha1 = "a32d672ac2c967f3deb8a81d828afc739c838a06"
 uuid = "7746bdde-850d-59dc-9ae8-88ece973131d"
 version = "2.68.3+2"
 
+[[Graphics]]
+deps = ["Colors", "LinearAlgebra", "NaNMath"]
+git-tree-sha1 = "1c5a84319923bea76fa145d49e93aa4394c73fc2"
+uuid = "a2bd30eb-e257-5431-a919-1863eab51364"
+version = "1.1.1"
+
 [[Graphite2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "344bf40dcab1073aca04aa0df4fb092f920e4011"
 uuid = "3b182d85-2403-5c21-9c21-1e1f0cc25472"
 version = "1.3.14+0"
+
+[[Graphs]]
+deps = ["ArnoldiMethod", "Compat", "DataStructures", "Distributed", "Inflate", "LinearAlgebra", "Random", "SharedArrays", "SimpleTraits", "SparseArrays", "Statistics"]
+git-tree-sha1 = "d727758173afef0af878b29ac364a0eca299fc6b"
+uuid = "86223c79-3864-5bf0-83f7-82e725a168b6"
+version = "1.5.1"
 
 [[Grisu]]
 git-tree-sha1 = "53bb909d1151e57e2484c3d1b53e19552b887fb2"
@@ -7869,15 +3311,173 @@ git-tree-sha1 = "129acf094d168394e80ee1dc4bc06ec835e510a3"
 uuid = "2e76f6c2-a576-52d4-95c1-20adfe4de566"
 version = "2.8.1+1"
 
+[[Hyperscript]]
+deps = ["Test"]
+git-tree-sha1 = "8d511d5b81240fc8e6802386302675bdf47737b9"
+uuid = "47d2ed2b-36de-50cf-bf87-49c2cf4b8b91"
+version = "0.0.4"
+
+[[HypertextLiteral]]
+git-tree-sha1 = "2b078b5a615c6c0396c77810d92ee8c6f470d238"
+uuid = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
+version = "0.9.3"
+
+[[IOCapture]]
+deps = ["Logging", "Random"]
+git-tree-sha1 = "f7be53659ab06ddc986428d3a9dcc95f6fa6705a"
+uuid = "b5f81e59-6552-4d32-b1f0-c071b021bf89"
+version = "0.2.2"
+
+[[IfElse]]
+git-tree-sha1 = "debdd00ffef04665ccbb3e150747a77560e8fad1"
+uuid = "615f187c-cbe4-4ef1-ba3b-2fcf58d6d173"
+version = "0.1.1"
+
+[[ImageAxes]]
+deps = ["AxisArrays", "ImageBase", "ImageCore", "Reexport", "SimpleTraits"]
+git-tree-sha1 = "c54b581a83008dc7f292e205f4c409ab5caa0f04"
+uuid = "2803e5a7-5153-5ecf-9a86-9b4c37f5f5ac"
+version = "0.6.10"
+
+[[ImageBase]]
+deps = ["ImageCore", "Reexport"]
+git-tree-sha1 = "b51bb8cae22c66d0f6357e3bcb6363145ef20835"
+uuid = "c817782e-172a-44cc-b673-b171935fbb9e"
+version = "0.1.5"
+
+[[ImageContrastAdjustment]]
+deps = ["ImageCore", "ImageTransformations", "Parameters"]
+git-tree-sha1 = "0d75cafa80cf22026cea21a8e6cf965295003edc"
+uuid = "f332f351-ec65-5f6a-b3d1-319c6670881a"
+version = "0.3.10"
+
+[[ImageCore]]
+deps = ["AbstractFFTs", "ColorVectorSpace", "Colors", "FixedPointNumbers", "Graphics", "MappedArrays", "MosaicViews", "OffsetArrays", "PaddedViews", "Reexport"]
+git-tree-sha1 = "9a5c62f231e5bba35695a20988fc7cd6de7eeb5a"
+uuid = "a09fc81d-aa75-5fe9-8630-4744c3626534"
+version = "0.9.3"
+
+[[ImageDistances]]
+deps = ["Distances", "ImageCore", "ImageMorphology", "LinearAlgebra", "Statistics"]
+git-tree-sha1 = "7a20463713d239a19cbad3f6991e404aca876bda"
+uuid = "51556ac3-7006-55f5-8cb3-34580c88182d"
+version = "0.2.15"
+
+[[ImageFiltering]]
+deps = ["CatIndices", "ComputationalResources", "DataStructures", "FFTViews", "FFTW", "ImageBase", "ImageCore", "LinearAlgebra", "OffsetArrays", "Reexport", "SparseArrays", "StaticArrays", "Statistics", "TiledIteration"]
+git-tree-sha1 = "15bd05c1c0d5dbb32a9a3d7e0ad2d50dd6167189"
+uuid = "6a3955dd-da59-5b1f-98d4-e7296123deb5"
+version = "0.7.1"
+
+[[ImageIO]]
+deps = ["FileIO", "Netpbm", "OpenEXR", "PNGFiles", "QOI", "Sixel", "TiffImages", "UUIDs"]
+git-tree-sha1 = "816fc866edd8307a6e79a575e6585bfab8cef27f"
+uuid = "82e4d734-157c-48bb-816b-45c225c6df19"
+version = "0.6.0"
+
+[[ImageMagick]]
+deps = ["FileIO", "ImageCore", "ImageMagick_jll", "InteractiveUtils"]
+git-tree-sha1 = "ca8d917903e7a1126b6583a097c5cb7a0bedeac1"
+uuid = "6218d12a-5da1-5696-b52f-db25d2ecc6d1"
+version = "1.2.2"
+
+[[ImageMagick_jll]]
+deps = ["JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pkg", "Zlib_jll", "libpng_jll"]
+git-tree-sha1 = "1c0a2295cca535fabaf2029062912591e9b61987"
+uuid = "c73af94c-d91f-53ed-93a7-00f77d67a9d7"
+version = "6.9.10-12+3"
+
+[[ImageMetadata]]
+deps = ["AxisArrays", "ImageAxes", "ImageBase", "ImageCore"]
+git-tree-sha1 = "36cbaebed194b292590cba2593da27b34763804a"
+uuid = "bc367c6b-8a6b-528e-b4bd-a4b897500b49"
+version = "0.9.8"
+
+[[ImageMorphology]]
+deps = ["ImageCore", "LinearAlgebra", "Requires", "TiledIteration"]
+git-tree-sha1 = "7668b123ecfd39a6ae3fc31c532b588999bdc166"
+uuid = "787d08f9-d448-5407-9aad-5290dd7ab264"
+version = "0.3.1"
+
+[[ImageQualityIndexes]]
+deps = ["ImageContrastAdjustment", "ImageCore", "ImageDistances", "ImageFiltering", "OffsetArrays", "Statistics"]
+git-tree-sha1 = "1d2d73b14198d10f7f12bf7f8481fd4b3ff5cd61"
+uuid = "2996bd0c-7a13-11e9-2da2-2f5ce47296a9"
+version = "0.3.0"
+
+[[ImageSegmentation]]
+deps = ["Clustering", "DataStructures", "Distances", "Graphs", "ImageCore", "ImageFiltering", "ImageMorphology", "LinearAlgebra", "MetaGraphs", "RegionTrees", "SimpleWeightedGraphs", "StaticArrays", "Statistics"]
+git-tree-sha1 = "36832067ea220818d105d718527d6ed02385bf22"
+uuid = "80713f31-8817-5129-9cf8-209ff8fb23e1"
+version = "1.7.0"
+
+[[ImageShow]]
+deps = ["Base64", "FileIO", "ImageBase", "ImageCore", "OffsetArrays", "StackViews"]
+git-tree-sha1 = "d0ac64c9bee0aed6fdbb2bc0e5dfa9a3a78e3acc"
+uuid = "4e3cecfd-b093-5904-9786-8bbb286a6a31"
+version = "0.3.3"
+
+[[ImageTransformations]]
+deps = ["AxisAlgorithms", "ColorVectorSpace", "CoordinateTransformations", "ImageBase", "ImageCore", "Interpolations", "OffsetArrays", "Rotations", "StaticArrays"]
+git-tree-sha1 = "42fe8de1fe1f80dab37a39d391b6301f7aeaa7b8"
+uuid = "02fcd773-0e25-5acc-982a-7f6622650795"
+version = "0.9.4"
+
+[[Images]]
+deps = ["Base64", "FileIO", "Graphics", "ImageAxes", "ImageBase", "ImageContrastAdjustment", "ImageCore", "ImageDistances", "ImageFiltering", "ImageIO", "ImageMagick", "ImageMetadata", "ImageMorphology", "ImageQualityIndexes", "ImageSegmentation", "ImageShow", "ImageTransformations", "IndirectArrays", "IntegralArrays", "Random", "Reexport", "SparseArrays", "StaticArrays", "Statistics", "StatsBase", "TiledIteration"]
+git-tree-sha1 = "11d268adba1869067620659e7cdf07f5e54b6c76"
+uuid = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
+version = "0.25.1"
+
+[[Imath_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "87f7662e03a649cffa2e05bf19c303e168732d3e"
+uuid = "905a6f67-0a94-5f89-b386-d35d92009cd1"
+version = "3.1.2+0"
+
+[[IndirectArrays]]
+git-tree-sha1 = "012e604e1c7458645cb8b436f8fba789a51b257f"
+uuid = "9b13fd28-a010-5f03-acff-a1bbcff69959"
+version = "1.0.0"
+
+[[Inflate]]
+git-tree-sha1 = "f5fc07d4e706b84f72d54eedcc1c13d92fb0871c"
+uuid = "d25df0c9-e2be-5dd7-82c8-3ad0b3e990b9"
+version = "0.1.2"
+
 [[IniFile]]
 deps = ["Test"]
 git-tree-sha1 = "098e4d2c533924c921f9f9847274f2ad89e018b8"
 uuid = "83e8ac13-25f8-5344-8a64-a9f2b223428f"
 version = "0.5.0"
 
+[[IntegralArrays]]
+deps = ["ColorTypes", "FixedPointNumbers", "IntervalSets"]
+git-tree-sha1 = "00019244715621f473d399e4e1842e479a69a42e"
+uuid = "1d092043-8f09-5a30-832f-7509e371ab51"
+version = "0.1.2"
+
+[[IntelOpenMP_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "d979e54b71da82f3a65b62553da4fc3d18c9004c"
+uuid = "1d5cc7b8-4909-519e-a0f8-d0f5ad9712d0"
+version = "2018.0.3+2"
+
 [[InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+
+[[Interpolations]]
+deps = ["AxisAlgorithms", "ChainRulesCore", "LinearAlgebra", "OffsetArrays", "Random", "Ratios", "Requires", "SharedArrays", "SparseArrays", "StaticArrays", "WoodburyMatrices"]
+git-tree-sha1 = "b15fc0a95c564ca2e0a7ae12c1f095ca848ceb31"
+uuid = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
+version = "0.13.5"
+
+[[IntervalSets]]
+deps = ["Dates", "EllipsisNotation", "Statistics"]
+git-tree-sha1 = "3cc368af3f110a767ac786560045dceddfc16758"
+uuid = "8197267c-284f-5f27-9208-e0e47529a953"
+version = "0.5.3"
 
 [[InverseFunctions]]
 deps = ["Test"]
@@ -7899,6 +3499,12 @@ version = "1.4.0"
 git-tree-sha1 = "a3f24677c21f5bbe9d2a714f95dcd58337fb2856"
 uuid = "82899510-4779-5014-852e-03e436cf321d"
 version = "1.0.0"
+
+[[JLD2]]
+deps = ["DataStructures", "FileIO", "MacroTools", "Mmap", "Pkg", "Printf", "Reexport", "TranscodingStreams", "UUIDs"]
+git-tree-sha1 = "bcb31db46795eeb64480c89d854615bc78a13289"
+uuid = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
+version = "0.4.19"
 
 [[JLLWrappers]]
 deps = ["Preferences"]
@@ -7946,6 +3552,10 @@ deps = ["Formatting", "InteractiveUtils", "LaTeXStrings", "MacroTools", "Markdow
 git-tree-sha1 = "a8f4f279b6fa3c3c4f1adadd78a621b13a506bce"
 uuid = "23fbe1c1-3f47-55db-b15f-69d7ec21a316"
 version = "0.15.9"
+
+[[LazyArtifacts]]
+deps = ["Artifacts", "Pkg"]
+uuid = "4af54fe1-eca0-43a8-85a7-787d91b784e3"
 
 [[LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
@@ -8027,11 +3637,22 @@ version = "0.3.6"
 [[Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
 
+[[MKL_jll]]
+deps = ["Artifacts", "IntelOpenMP_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "Pkg"]
+git-tree-sha1 = "5455aef09b40e5020e1520f551fa3135040d4ed0"
+uuid = "856f044c-d86e-5d09-b602-aeab76dc8ba7"
+version = "2021.1.1+2"
+
 [[MacroTools]]
 deps = ["Markdown", "Random"]
 git-tree-sha1 = "3d3e902b31198a27340d0bf00d6ac452866021cf"
 uuid = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 version = "0.5.9"
+
+[[MappedArrays]]
+git-tree-sha1 = "e8b359ef06ec72e8c030463fe02efe5527ee5142"
+uuid = "dbb5928d-eab1-5f90-85c2-b9b0edb7c900"
+version = "0.4.1"
 
 [[Markdown]]
 deps = ["Base64"]
@@ -8058,6 +3679,12 @@ git-tree-sha1 = "2b1dfcba103de714d31c033b5dacc2e4a12c7caa"
 uuid = "c03570c3-d221-55d1-a50c-7939bbd78826"
 version = "0.4.4"
 
+[[MetaGraphs]]
+deps = ["Graphs", "JLD2", "Random"]
+git-tree-sha1 = "2af69ff3c024d13bde52b34a2a7d6887d4e7b438"
+uuid = "626554b9-1ddb-594c-aa3c-2596fe9399a5"
+version = "0.7.1"
+
 [[Missings]]
 deps = ["DataAPI"]
 git-tree-sha1 = "bf210ce90b6c9eed32d25dbcae1ebc565df2687f"
@@ -8067,6 +3694,12 @@ version = "1.0.2"
 [[Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
+[[MosaicViews]]
+deps = ["MappedArrays", "OffsetArrays", "PaddedViews", "StackViews"]
+git-tree-sha1 = "b34e3bc3ca7c94914418637cb10cc4d1d80d877d"
+uuid = "e94cdb99-869f-56ef-bcf0-1ae2bcbe0389"
+version = "0.3.3"
+
 [[MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
 
@@ -8075,8 +3708,26 @@ git-tree-sha1 = "b086b7ea07f8e38cf122f5016af580881ac914fe"
 uuid = "77ba4419-2d1f-58cd-9bb1-8ffee604a2e3"
 version = "0.3.7"
 
+[[NearestNeighbors]]
+deps = ["Distances", "StaticArrays"]
+git-tree-sha1 = "16baacfdc8758bc374882566c9187e785e85c2f0"
+uuid = "b8a86587-4115-5ab1-83bc-aa920d37bbce"
+version = "0.4.9"
+
+[[Netpbm]]
+deps = ["FileIO", "ImageCore"]
+git-tree-sha1 = "18efc06f6ec36a8b801b23f076e3c6ac7c3bf153"
+uuid = "f09324ee-3d7c-5217-9330-fc30815ba969"
+version = "1.0.2"
+
 [[NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
+
+[[OffsetArrays]]
+deps = ["Adapt"]
+git-tree-sha1 = "043017e0bdeff61cfbb7afeb558ab29536bbb5ed"
+uuid = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
+version = "1.10.8"
 
 [[Ogg_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -8084,11 +3735,33 @@ git-tree-sha1 = "887579a3eb005446d514ab7aeac5d1d027658b8f"
 uuid = "e7412a2a-1a6e-54c0-be00-318e2571c051"
 version = "1.3.5+1"
 
+[[OpenEXR]]
+deps = ["Colors", "FileIO", "OpenEXR_jll"]
+git-tree-sha1 = "327f53360fdb54df7ecd01e96ef1983536d1e633"
+uuid = "52e1d378-f018-4a11-a4be-720524705ac7"
+version = "0.3.2"
+
+[[OpenEXR_jll]]
+deps = ["Artifacts", "Imath_jll", "JLLWrappers", "Libdl", "Pkg", "Zlib_jll"]
+git-tree-sha1 = "923319661e9a22712f24596ce81c54fc0366f304"
+uuid = "18a262bb-aa17-5467-a713-aee519bc75cb"
+version = "3.1.1+0"
+
+[[OpenLibm_jll]]
+deps = ["Artifacts", "Libdl"]
+uuid = "05823500-19ac-5b8b-9628-191a04bc5112"
+
 [[OpenSSL_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "648107615c15d4e09f7eca16307bc821c1f718d8"
 uuid = "458c3c95-2e84-50aa-8efc-19380b2a3a95"
 version = "1.1.13+0"
+
+[[OpenSpecFun_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "13652491f6856acfd2db29360e1bbcd4565d04f1"
+uuid = "efe28fd5-8261-553b-a9e1-b2916fc3738e"
+version = "0.5.5+0"
 
 [[Opus_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -8107,6 +3780,24 @@ git-tree-sha1 = "b2a7af664e098055a7529ad1a900ded962bca488"
 uuid = "2f80f16e-611a-54ab-bc61-aa92de5b98fc"
 version = "8.44.0+0"
 
+[[PNGFiles]]
+deps = ["Base64", "CEnum", "ImageCore", "IndirectArrays", "OffsetArrays", "libpng_jll"]
+git-tree-sha1 = "6d105d40e30b635cfed9d52ec29cf456e27d38f8"
+uuid = "f57f5aa1-a3ce-4bc8-8ab9-96f992907883"
+version = "0.3.12"
+
+[[PaddedViews]]
+deps = ["OffsetArrays"]
+git-tree-sha1 = "03a7a85b76381a3d04c7a1656039197e70eda03d"
+uuid = "5432bcbf-9aad-5242-b902-cca2824c8663"
+version = "0.5.11"
+
+[[Parameters]]
+deps = ["OrderedCollections", "UnPack"]
+git-tree-sha1 = "34c0e9ad262e5f7fc75b10a9952ca7692cfc5fbe"
+uuid = "d96e819e-fc66-5662-9728-84c9c7592b0a"
+version = "0.12.3"
+
 [[Parsers]]
 deps = ["Dates"]
 git-tree-sha1 = "92f91ba9e5941fc781fecf5494ac1da87bdac775"
@@ -8122,6 +3813,12 @@ version = "0.40.1+0"
 [[Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+
+[[PkgVersion]]
+deps = ["Pkg"]
+git-tree-sha1 = "a7a7e1a88853564e551e4eba8650f8c38df79b37"
+uuid = "eebad327-c553-4316-9ea0-9fa01ccd7688"
+version = "0.1.1"
 
 [[PlotThemes]]
 deps = ["PlotUtils", "Requires", "Statistics"]
@@ -8141,6 +3838,12 @@ git-tree-sha1 = "7e4920a7d4323b8ffc3db184580598450bde8a8e"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 version = "1.25.7"
 
+[[PlutoUI]]
+deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
+git-tree-sha1 = "ae6145ca68947569058866e443df69587acc1806"
+uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+version = "0.7.32"
+
 [[Preferences]]
 deps = ["TOML"]
 git-tree-sha1 = "2cf929d64681236a2e074ffafb8d568733d2e6af"
@@ -8151,11 +3854,29 @@ version = "1.2.3"
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
+[[ProgressMeter]]
+deps = ["Distributed", "Printf"]
+git-tree-sha1 = "afadeba63d90ff223a6a48d2009434ecee2ec9e8"
+uuid = "92933f4c-e287-5a05-a399-4b506db050ca"
+version = "1.7.1"
+
+[[QOI]]
+deps = ["ColorTypes", "FileIO", "FixedPointNumbers"]
+git-tree-sha1 = "18e8f4d1426e965c7b532ddd260599e1510d26ce"
+uuid = "4b34888f-f399-49d4-9bb3-47ed5cae4e65"
+version = "1.0.0"
+
 [[Qt5Base_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Fontconfig_jll", "Glib_jll", "JLLWrappers", "Libdl", "Libglvnd_jll", "OpenSSL_jll", "Pkg", "Xorg_libXext_jll", "Xorg_libxcb_jll", "Xorg_xcb_util_image_jll", "Xorg_xcb_util_keysyms_jll", "Xorg_xcb_util_renderutil_jll", "Xorg_xcb_util_wm_jll", "Zlib_jll", "xkbcommon_jll"]
 git-tree-sha1 = "ad368663a5e20dbb8d6dc2fddeefe4dae0781ae8"
 uuid = "ea2cea3b-5b76-57ae-a6ef-0a8af62496e1"
 version = "5.15.3+0"
+
+[[Quaternions]]
+deps = ["DualNumbers", "LinearAlgebra"]
+git-tree-sha1 = "adf644ef95a5e26c8774890a509a55b7791a139f"
+uuid = "94ee1d12-ae83-5a48-8b1c-48b8ff168ae0"
+version = "0.4.2"
 
 [[REPL]]
 deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
@@ -8164,6 +3885,17 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 [[Random]]
 deps = ["Serialization"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+
+[[RangeArrays]]
+git-tree-sha1 = "b9039e93773ddcfc828f12aadf7115b4b4d225f5"
+uuid = "b3c3ace0-ae52-54e7-9d0b-2c1406fd6b9d"
+version = "0.3.2"
+
+[[Ratios]]
+deps = ["Requires"]
+git-tree-sha1 = "01d341f502250e81f6fec0afe662aa861392a3aa"
+uuid = "c84ed2f1-dad5-54f0-aa8e-dbefe2724439"
+version = "0.4.2"
 
 [[RecipesBase]]
 git-tree-sha1 = "6bf3f380ff52ce0832ddd3a2a7b9538ed1bcca7d"
@@ -8181,6 +3913,12 @@ git-tree-sha1 = "45e428421666073eab6f2da5c9d310d99bb12f9b"
 uuid = "189a3867-3050-52da-a836-e630ba90ab69"
 version = "1.2.2"
 
+[[RegionTrees]]
+deps = ["IterTools", "LinearAlgebra", "StaticArrays"]
+git-tree-sha1 = "4618ed0da7a251c7f92e869ae1a19c74a7d2a7f9"
+uuid = "dee08c22-ab7f-5625-9660-a9af2021b33f"
+version = "0.3.2"
+
 [[RelocatableFolders]]
 deps = ["SHA", "Scratch"]
 git-tree-sha1 = "cdbd3b1338c72ce29d9584fdbe9e9b70eeb5adca"
@@ -8192,6 +3930,12 @@ deps = ["UUIDs"]
 git-tree-sha1 = "838a3a4188e2ded87a4f9f184b4b0d78a1e91cb7"
 uuid = "ae029012-a4dd-5104-9daa-d747884805df"
 version = "1.3.0"
+
+[[Rotations]]
+deps = ["LinearAlgebra", "Quaternions", "Random", "StaticArrays", "Statistics"]
+git-tree-sha1 = "405148000e80f70b31e7732ea93288aecb1793fa"
+uuid = "6038ab10-8711-5258-84ad-4b1120ba62dc"
+version = "1.2.0"
 
 [[SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
@@ -8221,6 +3965,24 @@ git-tree-sha1 = "91eddf657aca81df9ae6ceb20b959ae5653ad1de"
 uuid = "992d4aef-0814-514b-bc4d-f2e9a6c4116f"
 version = "1.0.3"
 
+[[SimpleTraits]]
+deps = ["InteractiveUtils", "MacroTools"]
+git-tree-sha1 = "5d7e3f4e11935503d3ecaf7186eac40602e7d231"
+uuid = "699a6c99-e7fa-54fc-8d76-47d257e15c1d"
+version = "0.9.4"
+
+[[SimpleWeightedGraphs]]
+deps = ["Graphs", "LinearAlgebra", "Markdown", "SparseArrays", "Test"]
+git-tree-sha1 = "a6f404cc44d3d3b28c793ec0eb59af709d827e4e"
+uuid = "47aef6b3-ad0c-573a-a1e2-d07658019622"
+version = "1.2.1"
+
+[[Sixel]]
+deps = ["Dates", "FileIO", "ImageCore", "IndirectArrays", "OffsetArrays", "REPL", "libsixel_jll"]
+git-tree-sha1 = "8fb59825be681d451c246a795117f317ecbcaa28"
+uuid = "45858cf5-a6b0-47a3-bbea-62219f50df47"
+version = "0.1.2"
+
 [[Sockets]]
 uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
 
@@ -8233,6 +3995,24 @@ version = "1.0.1"
 [[SparseArrays]]
 deps = ["LinearAlgebra", "Random"]
 uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+
+[[SpecialFunctions]]
+deps = ["ChainRulesCore", "IrrationalConstants", "LogExpFunctions", "OpenLibm_jll", "OpenSpecFun_jll"]
+git-tree-sha1 = "e6bf188613555c78062842777b116905a9f9dd49"
+uuid = "276daf66-3868-5448-9aa4-cd146d93841b"
+version = "2.1.0"
+
+[[StackViews]]
+deps = ["OffsetArrays"]
+git-tree-sha1 = "46e589465204cd0c08b4bd97385e4fa79a0c770c"
+uuid = "cae243ae-269e-4f55-b966-ac2d0dc13c15"
+version = "0.1.1"
+
+[[Static]]
+deps = ["IfElse"]
+git-tree-sha1 = "b4912cd034cdf968e06ca5f943bb54b17b97793a"
+uuid = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
+version = "0.5.1"
 
 [[StaticArrays]]
 deps = ["LinearAlgebra", "Random", "Statistics"]
@@ -8287,9 +4067,27 @@ version = "1.6.1"
 deps = ["ArgTools", "SHA"]
 uuid = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
 
+[[TensorCore]]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "1feb45f88d133a655e001435632f019a9a1bcdb6"
+uuid = "62fd8b95-f654-4bbd-a8a5-9c27f68ccd50"
+version = "0.1.1"
+
 [[Test]]
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[[TiffImages]]
+deps = ["ColorTypes", "DataStructures", "DocStringExtensions", "FileIO", "FixedPointNumbers", "IndirectArrays", "Inflate", "OffsetArrays", "PkgVersion", "ProgressMeter", "UUIDs"]
+git-tree-sha1 = "991d34bbff0d9125d93ba15887d6594e8e84b305"
+uuid = "731e570b-9d59-4bfa-96dc-6df516fadf69"
+version = "0.5.3"
+
+[[TiledIteration]]
+deps = ["OffsetArrays"]
+git-tree-sha1 = "5683455224ba92ef59db72d10690690f4a8dc297"
+uuid = "06e1c1a7-607b-532d-9fad-de7d9aa2abac"
+version = "0.3.1"
 
 [[TranscodingStreams]]
 deps = ["Random", "Test"]
@@ -8305,6 +4103,11 @@ version = "1.3.0"
 [[UUIDs]]
 deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
+
+[[UnPack]]
+git-tree-sha1 = "387c1f73762231e86e0c9c5443ce3b4a0a9a0c2b"
+uuid = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
+version = "1.0.2"
 
 [[Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
@@ -8331,6 +4134,12 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "66d72dc6fcc86352f01676e8f0f698562e60510f"
 uuid = "2381bf8a-dfd0-557d-9999-79630e7b1b91"
 version = "1.23.0+0"
+
+[[WoodburyMatrices]]
+deps = ["LinearAlgebra", "SparseArrays"]
+git-tree-sha1 = "de67fa59e33ad156a590055375a30b23c40299d3"
+uuid = "efce3f68-66dc-5838-9240-27a6d6f5f9b6"
+version = "0.5.5"
 
 [[XML2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libiconv_jll", "Pkg", "Zlib_jll"]
@@ -8498,6 +4307,12 @@ git-tree-sha1 = "94d180a6d2b5e55e447e2d27a29ed04fe79eb30c"
 uuid = "b53b4c65-9356-5827-b1ea-8c7a1a84506f"
 version = "1.6.38+0"
 
+[[libsixel_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "78736dab31ae7a53540a6b752efc61f77b304c5b"
+uuid = "075b6546-f08a-558a-be8f-8157d0f608a5"
+version = "1.8.6+1"
+
 [[libvorbis_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Ogg_jll", "Pkg"]
 git-tree-sha1 = "b910cb81ef3fe6e78bf6acee440bda86fd6ae00c"
@@ -8535,12 +4350,17 @@ version = "0.9.1+5"
 # ╟─69899fd8-3b3f-4220-8997-88208c6177ca
 # ╠═45160a1e-cb93-48bf-b2b9-35c337780a73
 # ╟─3a5e53ea-b36d-4e97-af88-75bee3180b2a
+# ╟─9d58ef2b-4c88-4c25-acbe-084dc1fc8842
+# ╟─5cf8234f-6d9f-4738-8232-13a5f6ba723c
+# ╟─ecd4e231-9030-438a-9068-e1f0d13f1b78
 # ╟─6608e84a-fb31-492a-aced-70b32e3c6a14
 # ╟─249340e4-c31a-46a3-a620-ceef9abaadb5
 # ╟─a5078d2c-4ce0-4c9f-af45-e6b2dde62277
 # ╟─67d95176-fc53-4daa-931f-1a7baa29e888
 # ╟─139df66d-b0bf-4adb-891a-18c9fad6db87
 # ╠═47c98bd7-f84d-455d-a417-5ffc93fa6fdd
+# ╠═81dc269f-5145-4e9f-80e3-86c70879e462
+# ╟─09d67d88-a8f8-404d-820e-5a7cada6505d
 # ╟─2e5ff5ca-04fa-47c0-b9d5-03130097df57
 # ╠═82a213e4-3c70-48c5-8b82-f4ff6ea55603
 # ╟─681ec771-af2c-41e1-8d6a-3067188c3d6e
@@ -8548,9 +4368,9 @@ version = "0.9.1+5"
 # ╟─dbb0ae04-589b-475d-ba59-95367fccd96b
 # ╟─06009ce9-99a0-4568-814b-4f56cfd1815a
 # ╟─faa44127-59c5-486e-9e2a-19c768830da0
+# ╟─d31a5524-0f98-433f-8b23-79be9c08cf39
 # ╟─1922c5e9-8275-4fbd-9d4b-af92d0ffb039
 # ╠═43d58b74-9388-4b97-9a94-7191952f4184
-# ╟─1ce28f18-368d-4a0c-84e6-129d7fed30a5
 # ╟─4b715a6a-2015-4893-95a3-d866aa25a5e3
 # ╟─e05ce658-cbaf-4ac2-a426-c9741fbc37d2
 # ╟─48b6e748-2d0d-4e1d-805f-d1180ed44a04
@@ -8578,8 +4398,9 @@ version = "0.9.1+5"
 # ╟─d916c673-ad4f-4475-8141-06d068f32efa
 # ╟─a2aba49e-809f-4cdd-9bd5-d10b854a6628
 # ╟─bf508a6c-425a-4da0-9143-8298f06988e3
+# ╟─96a41671-0557-44d8-bfbd-291d396fccf5
 # ╟─f6152a42-bb18-4a17-94b3-b9885d6885d4
-# ╟─c40fe82a-2dee-44d4-b768-25ff50ce746c
+# ╠═c40fe82a-2dee-44d4-b768-25ff50ce746c
 # ╟─f6de5186-e714-4962-801e-e1e52bef8af7
 # ╟─f125718f-54f0-481c-a23d-98cce6e12a4f
 # ╠═a14949b9-77b2-4f32-89f7-d2316736e803
@@ -8587,10 +4408,14 @@ version = "0.9.1+5"
 # ╠═4d97ef57-3a6c-4850-afa3-1b2bf83ab146
 # ╠═07f1ae73-ef20-4be4-81a2-99c7e9651e02
 # ╟─855e5ce1-d143-4af5-841d-331add7c3880
-# ╟─9f55aa64-cbcf-4148-91b1-e8d5f7df299f
 # ╟─89ad5ab5-8676-45d7-9506-7321a5cd8e44
 # ╟─a4741762-a76d-4626-8acd-26ac22e9d6cd
 # ╟─9faf5ebd-1c73-4ddf-876c-b1b042389290
+# ╟─49293ec8-5ccb-4a9d-aaeb-1b23cb0835c5
+# ╟─2c6733ca-c300-4bc3-9d31-103d7b2cbd6c
+# ╟─01a5011f-f6ae-4a13-8641-7b213487d65d
+# ╟─6bbf4d81-9db1-4308-aebb-bf0a8a5a6701
+# ╟─7b1506d2-02e3-4a13-a277-9ec99bbad91c
 # ╟─64dae470-6b3b-487f-b663-25f10b7b9567
 # ╟─31e6f16e-e12e-474f-9c27-5bff01c53310
 # ╟─40785798-1223-4efe-870e-e37b0b761af1
@@ -8608,12 +4433,16 @@ version = "0.9.1+5"
 # ╟─c8de83fa-1519-48d0-b257-97bfeb4952ad
 # ╟─e3e2ca54-c6c6-4a84-a70f-2d5cfaefd9ba
 # ╟─04e007ac-c582-4510-a053-052e5037e57c
+# ╟─86b7067f-5f85-48c3-b78d-3d2e5ed0af3f
+# ╟─abbf326e-4617-483c-b956-33db2b666fbc
+# ╟─5d929be0-d406-440a-bd0f-2bfe5d26c94a
 # ╟─b8a1320e-f7af-4598-b5ee-68b28f25dc47
 # ╟─2fbf893e-5ced-4233-90a4-3dce09fb5ed0
 # ╟─554154af-0a61-4b4f-b363-bc856bfc32f4
 # ╟─cffe3e0b-f1a8-423f-8c3a-c98f1bda82d7
 # ╟─8f3b6386-2a28-4433-bcef-f4f2250072a0
 # ╟─195eb6d1-1d67-4c08-bdb7-a27dbe5d6d84
+# ╟─9f55aa64-cbcf-4148-91b1-e8d5f7df299f
 # ╟─1c0844ba-5451-4fd8-921b-0f82ecb7e4ff
 # ╟─0056b890-3ff8-47aa-92a0-58b89c7e2078
 # ╟─909583cd-c5cb-4009-8e55-29c88dcb4828
@@ -8626,9 +4455,6 @@ version = "0.9.1+5"
 # ╠═80696f29-ea1e-45b3-9e3b-3038e01cd9b7
 # ╟─ad027e48-419b-4aac-af3a-5e6d4acf7e94
 # ╟─f565bbd4-9046-4870-9c41-f86a08ca14e1
-# ╠═b2c4ecf1-e86c-42f7-b186-f7f3e528b902
-# ╠═67c91979-c561-4ac6-aa43-00ed552d109d
-# ╟─d5679d24-9901-4b1c-8554-1981c532e4b8
 # ╟─017fd37b-e872-405c-8ab2-a713cecb9a8d
 # ╟─cdc1c7d3-c230-4a39-80b6-fdea2d6fb66f
 # ╟─d541900d-92ed-4d69-850a-861b805f2eb8
