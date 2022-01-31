@@ -7,4 +7,4 @@ The goal was to explain the problem of gradient starvation and to investigate it
 
 The notebook and the code of my project are separate! You can find them in their respective subfolders `notebook` and `src`.
 
-All experiments conducted, including the related figures, can be simply repeated and re-created by running `include("src\\gradientstarvation.jl")` from a Julia REPL.
+All experiments conducted, including the related figures, can be simply repeated and re-created by running `include("src\\gradientstarvation.jl")` from a Julia REPL after checking out the project on your local machine.
