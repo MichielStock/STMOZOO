@@ -1,6 +1,6 @@
 # Super Evolution
 
-Evolving Supershapes using subjective optimization and fitting Supershapes to images of diatoms, flowers, starfish ... using simulated annealing and MAP-ElitesFitting.
+Evolving Supershapes using subjective optimization and fitting Supershapes to images of diatoms, flowers, starfish ... using simulated annealing and MAP-ElitesFitting. The code can be found in the Pluto notebook.
 
 By Shauny Van Hoye
 
