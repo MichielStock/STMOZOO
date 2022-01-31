@@ -23,6 +23,9 @@ md"""
 In this project we will give an overview of the steps involved in the development of the tool that performs a *de novo* design pattern discovery in a set of proteins of interest.
 We will focus primarily on the discovery of design patterns in phage lytic proteins, however the tool can also be used to discover design patterns in other kinds of proteins over any type of organism.
 
+###what are design patterns
+Design patterns are conserved regions in a proteins thoughout the evolution of that protein. These patterns are needed for the folding, and function of the protein, and are thus conserved between species. Design patterns is the overarching term for motifs, protein domains, and other functional regions of a protein. In this project we will furter refer to the design patterns as motifs.
+
 ### What is the in- and output?
 As input of the tool we take a set of protein sequences in FASTA format. These will be multiple aligned, followed by detection of motifs using the consensus sequence, and an arbitrary threshold (depending on your own research question).
 """
@@ -33,7 +36,7 @@ md"""
 We will use a toy example to simply visualize and explain the different steps of the *de novo* protein design patterns discovery tool.
 This toy example contains 7 subsequences of the scenence \"I LIKE PLANTS AND ANIMALS\".
 
-At the end we will use three sets of protein sequences collected from NCBI (BLASTP) in FASTA format. The first set contains sequences of the lytic enzyme from phage species which are closely related (all *Pseudomonas phages*). The second set contains sequences of endolysin and lysin proteins (homologues) from *Staphylococcus phages*. The last set contains random lytic protein sequences from different phage species. The phage species of this final set are more distantly related compaired to the other two sets.
+At the end we will use three sets of protein sequences collected from NCBI (BLASTP) in FASTA format. The first set contains sequences of the lytic enzyme from phage species which are closely related (all *Pseudomonas phages*). The second set contains sequences of endolysin and lysin proteins (homologues) from *Staphylococcus phages*. The last set contains random lytic protein sequences from different phage species. The phage species of this final set are more distantly related compared to the other two sets.
 
 """
 
@@ -126,7 +129,7 @@ pairwise_alignment(proteins_toy[1], proteins_toy[2], GlobalAlignment())
 # ╔═╡ 60d87de2-200a-4b9c-93af-c837be725580
 md"""
 #### 2. The Similarity_matrix function
-The similarity matrix is a matrix that contains the pairwise alignment scores of all sequence pairs. We use this as a base for the tree based (evolutionary) multiple sequence alignment. The highest score in the similarity matrix is correlated with the closest related sequences (in other words the best alignment will have the highest score). 
+The similarity matrix is a matrix that contains the pairwise alignment scores of all sequence pairs. We use this as a base for the tree based (evolutionary) multiple sequence alignment (read part 3). The highest score in the similarity matrix is correlated with the closest related sequences (in other words the best alignment will have the highest score). 
 the function works as follows:
 1) The input has to be a set of all protein sequences that have to be aligned. The parameters of your choosing which are used for the pairwise alignment can also be included (described in 1.).
 2) The output is a list containing the score of all the sequences aligned to sequence X. We chose a list instead of a matrix, since it is more accessible for further use. Furthermore the score of the alignment of the intercept is set to -Inf, as this alignment is of no use in the multiple sequence alignment. 
@@ -161,16 +164,20 @@ similarity_matrix(proteins_toy)
 md"""
 ### 3. Multiple_alignment function
 The actual multiple sequence alignment (MSA) function consists of 3 subfunctions, which also use the pairwise alingment and similarity matrix function described above.
+We followed a tree-based evolutionary algorithmic approach. 
+- Evolutionary: Each time a new sequence is added to the multiple alignment, a consensus sequence is made. Here only the aminoacids that were found in the parent sequences are returned (the differences are shown with a gap "-"). This consensus is then used in a next iteration.
+- Tree-based: In each iterative step of the function we take the 2 sequences with the best score. This means that either 2 new sequences are chosen or the consensus sequence + a new sequence. For example: we have the clusters ABC and DE. The algorihtm will first take AB together followed by addition of C, which has for instance 2 deletions compared to A and B. The aligned DE sequences (which are evolutionary more distant to ABC than to each other) will than first be aligned to each other before addition to the multiple alignment ABC. 
+
 The entire multiple sequence alignment goes as follows:
 1) The input is the same as was used in the similarity matrix function, which is a set of proteins that have to be aligned, and parameters for the pairwise alignment method. In contrast to the similarity matrix, we use a SemiGlobalAlignment for the MSA. 
 The actual MSA: the output is a multiple sequence alignment:
 1) Make a similarity matrix.
-2) Find the 2 most closely related sequences by scanning the similarity matrix for the highest score.
+2) Find the 2 most closely related sequences by scanning the similarity matrix for the highest score (tree based).
 3) Perform a pairwise alignment of these 2 sequences.
 4) The 2 sequences are compared to all other consensus sequences (no consensus made in first alignment). If these do not match, the resulting sequence obtained from the pairwise alignment is added to the existing alignment.
 5) This is the iteration step where the new sequence is added to the existing MSA and iterated to become the new MSA with the highest score (using the iterate function). This looks for the sequence pair with the highest score, and adds the other sequences with a decreasing score to the alignment (similarity based). The first iteration will always include the new sequence.
 6) The sequences that were aligned are stripped from the set of non-aligned sequences. 
-7) A consensus is made from the resulting sequences of the pairwise alignment. This consensus is added to the non-aligned sequence set. Basis of **The evolutionary alghorithm**. The consensus sequence is made by use of the make_consensus function.
+7) A consensus is made from the resulting sequences of the pairwise alignment (non matches will be returned as gaps). This consensus is added to the non-aligned sequence set. This is the **The evolutionary alghorithm** based part. The consensus sequence is made by use of the make_consensus function.
 8) Repeat steps 1-7 until all sequences are aligned.
 9) Iterate 1 last time for optimal result.
 
