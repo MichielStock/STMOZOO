@@ -23,6 +23,9 @@ Unlike linear regression, finding the optimal parameter values to a nonlinear mo
 In this notebook we will build the LMA from the ground up so to fundamentally understand the reasoning behind it.
 
 In 'poetic' words that would make more sense after reading: using the Gauss-Newton algorithm to solve nonlinear least-squares is like eating a metaphorical icecream cone, while LMA is the serviette you get with your icecream cone to stop the ice from dripping.
+
+![]
+(https://github.com/ThiemenMus/LM.jl/blob/master/notebook/coner.jpg?raw=true)
 """
 
 
@@ -34,6 +37,12 @@ md""" From regression to LMA is quite a big leap and although you surely know wh
 
 Regression estimates the relation between a response variable and one or more predictors. There are different ways to do this, partly based on how observational data is presumed to behave. 
 In the commonly used linear regression a model is set up in which the observational data is a linear combination of the predictors and their parameters. By fitting a line through the data, the parameters can be estimated with the famous least squares method.
+"""
+
+# ╔═╡ c624a3f8-9b46-4475-8169-60ac443e2af2
+md"""
+![]
+(https://github.com/ThiemenMus/LM.jl/blob/master/notebook/regression.jpg?raw=true)
 """
 
 # ╔═╡ f0ea984f-3c02-40ac-acfb-ca62dbdfcd1d
@@ -156,7 +165,17 @@ We must not forget that we approximated $f(x, β + δ)$ and hence $β₁$ is not
 md"""
 ##### intermezzo: Taylor approximation
 Goal: approximate non-polynomial functions by a polynomial
+"""
 
+
+# ╔═╡ 7b5cb2d1-3c53-4026-818b-86dad384b5ec
+md"""
+![]
+(https://github.com/ThiemenMus/LM.jl/blob/master/notebook/taylor.png?raw=true)
+"""
+
+# ╔═╡ 4856a7ca-72e3-48c3-b4e4-a3147f3cac11
+md"""
 Method:
 Imagine $f(x)$ a non-polynomial, approximated by a polynomial: $c + bx + ax^2$
 ```math
@@ -271,6 +290,16 @@ We will perform LMA on the Rosenbrock function, a non-convex function often used
 ```math
 f(x) = (a - x₁)² + b(x₂ - x₁²)²
 ```
+"""
+
+# ╔═╡ 3cad0d21-68f0-4673-95e7-1ad12b2ce678
+md"""
+![]
+(https://github.com/ThiemenMus/LM.jl/blob/master/notebook/rosen.jpg?raw=true)
+"""
+
+# ╔═╡ 563240ed-4a0a-47cd-a564-a6d6d19f58ef
+md"""
 GNA and LMA want to minimize a cost function that can be written as a sum of squares. The Rosenbrock function can be written as a sum of squares if we define:
 ```math
 f₁(x) = a - x₁
@@ -771,6 +800,7 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─ca4d4bb8-2f6d-4a69-a6b1-6cc0fc8b5b99
 # ╟─b38660ed-9b17-47d3-860c-d65d63f862b2
 # ╟─e4e4e45d-cb4a-4413-8587-9aab8974813b
+# ╟─c624a3f8-9b46-4475-8169-60ac443e2af2
 # ╟─f0ea984f-3c02-40ac-acfb-ca62dbdfcd1d
 # ╟─afb431a1-a2e0-4411-8092-5ebf0d78fdfd
 # ╟─ed9840c8-700d-4b60-a584-c923b766fd48
@@ -783,14 +813,18 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─9dd7d5d1-e624-400d-b82d-cdd7fa576524
 # ╟─01ec6ca9-fb36-445e-9623-7b2ec247658e
 # ╟─dde5dadf-9fe2-4955-8143-970365a27d40
+# ╟─7b5cb2d1-3c53-4026-818b-86dad384b5ec
+# ╟─4856a7ca-72e3-48c3-b4e4-a3147f3cac11
 # ╟─e5bcd117-de88-452b-9984-64483c51c557
 # ╟─a4a01416-190c-4560-8dac-79d789bad7cf
 # ╟─ca803027-4063-4a34-86da-c41b667aee06
 # ╟─e8c7f84f-c856-41fa-b129-5dfef74b6ff0
 # ╟─b46abd33-efe8-4d57-b276-c4b6a5b4dd32
 # ╟─2026d0c0-7c6b-48f6-a113-7c63138e6bc6
+# ╟─3cad0d21-68f0-4673-95e7-1ad12b2ce678
+# ╟─563240ed-4a0a-47cd-a564-a6d6d19f58ef
 # ╟─96684e8a-dd4f-4497-8c06-3bd12bae357c
-# ╠═28d90808-72fd-4795-9f07-d12b6a165880
+# ╟─28d90808-72fd-4795-9f07-d12b6a165880
 # ╠═d917f63a-0580-4209-9e79-a1045c951c46
 # ╠═70057178-c54b-42e6-bcba-f35eecb442cd
 # ╠═f76a5b3f-d352-4f3d-bd4d-a7d68fadc8b5
