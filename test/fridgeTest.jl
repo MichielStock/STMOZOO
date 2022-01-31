@@ -71,9 +71,21 @@
 
     @testset "SAFindCombo" begin
         # test output type
-        @test typeof(SAFindCombo(testSolution,  testList, testDict4, 2, true, tabulength=1)) == Dict{Any, Any}
+        @test typeof(SAFindCombo(testSolution,  testList, testDict4, 2, true, tabuLength=1)) == Dict{Any, Any}
 
         # test output length
-        @test length(values(SAFindCombo(testSolution,  testList, testDict4, 2, true, tabulength=1))) == 2
+        @test length(values(SAFindCombo(testSolution,  testList, testDict4, 2, true, tabuLength=1))) == 2
+    end
+
+    @testset "scrapeRecipe" begin
+        # check if .csv file is produced
+        scrapeRecipe(106541,106542,"./testDB.csv")
+        @test isfile("./testDB.csv")
+    end
+
+    @testset "loadRecipeDBCSV" begin
+        # check if downloaded recipes are correct
+        testDictDB = loadRecipeDBCSV("./testDB.csv")
+        @test keys(testDictDB) == keys(Dict("Belgian Chocolate Mousse" => ["test"], "Belgian Buns" => ["test"]))
     end
 end
