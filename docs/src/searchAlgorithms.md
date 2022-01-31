@@ -17,6 +17,6 @@ SAFindCombo
 ### Neighbour Functions
 
 ```@docs
-RandomCombo
-removeRecipe
+randomCombo
+Neighbour
 ```
