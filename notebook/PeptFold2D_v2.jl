@@ -74,26 +74,26 @@ taking into account interactions between AAs and box size*"
 # ╔═╡ 96bff7cf-b4c3-4c85-a101-1901d5ab9ee7
 md"T min:"
 
-# ╔═╡ 960e0f1a-7291-4cb1-aa5d-70852be2fc05
-Tmin_1=0.001
+# ╔═╡ ea9f268b-9007-48d7-842e-7bd762617eda
+@bind Tmin_1 confirm(Slider(0.001:0.01:1, show_value=true,default=0.001))
 
 # ╔═╡ 49baefa8-79d0-4699-b6f3-2bbe3d45210a
 md"T max:"
 
-# ╔═╡ 50010973-8120-4c67-adbb-9352cd046d46
-Tmax_1=1.0
+# ╔═╡ 99dd54ca-374e-4804-81ec-c5d36aa929ad
+@bind Tmax_1 confirm(Slider(1.0:1000.0, show_value=true,default=1.0))
 
 # ╔═╡ 593b4459-5f98-4eb0-a57d-0842112f8538
 md"number of iterations kT:"
 
-# ╔═╡ cabef5ee-b955-4ff7-a1bd-d935f496f2e1
-kT_1=100
+# ╔═╡ 1d018764-7329-4d4e-bd06-6697b8a91c19
+@bind kT_1 confirm(Slider(1:10000, show_value=true,default=100))
 
 # ╔═╡ 620a7fd5-99ff-44b3-914b-1483a9479bd2
 md"Cooling rate r:"
 
-# ╔═╡ 893ac506-163f-4ddf-8259-fe87f47cf616
-r_1=0.95
+# ╔═╡ 969fb9fb-985a-4adf-be02-83639b35e584
+@bind r_1 confirm(Slider(0.0:0.01:1.0, show_value=true,default=0.95))
 
 # ╔═╡ a259f48c-da82-4aa8-976e-512dd7cd5569
 md"### Conclusion"
@@ -554,7 +554,7 @@ function sim_anneal_opt(structure::Vector{Vector{Float64}}, loss_θ::Function; T
 end
 
 # ╔═╡ cc445666-794a-49f8-a6b9-861adfc68696
-opt_str_good,obj_tracker_good=sim_anneal_opt(opt_str_rand, loss_θ,Tmin=Tmin_1, Tmax=Tmax_1, kT=kT_1, r=r_1)
+opt_str_good,obj_tracker_good=sim_anneal_opt(opt_str_rand, loss_θ;Tmin=Tmin_1, Tmax=Tmax_1, kT=kT_1, r=r_1)
 
 # ╔═╡ 2b701598-4417-40ad-bf45-0bc2535481c5
 #Generate coordinates for plotting
@@ -1034,7 +1034,7 @@ uuid = "38a345b3-de98-5d2b-a5d3-14cd9215e700"
 version = "2.36.0+0"
 
 [[LinearAlgebra]]
-deps = ["Libdl", "libblastrampoline_jll"]
+deps = ["Libdl"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [[LogExpFunctions]]
@@ -1096,10 +1096,6 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "887579a3eb005446d514ab7aeac5d1d027658b8f"
 uuid = "e7412a2a-1a6e-54c0-be00-318e2571c051"
 version = "1.3.5+1"
-
-[[OpenBLAS_jll]]
-deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
-uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
 
 [[OpenLibm_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -1195,7 +1191,7 @@ deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
 uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 
 [[Random]]
-deps = ["SHA", "Serialization"]
+deps = ["Serialization"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [[RealDot]]
@@ -1519,10 +1515,6 @@ git-tree-sha1 = "5982a94fcba20f02f42ace44b9894ee2b140fe47"
 uuid = "0ac62f75-1d6f-5e53-bd7c-93b484bb37c0"
 version = "0.15.1+0"
 
-[[libblastrampoline_jll]]
-deps = ["Artifacts", "Libdl", "OpenBLAS_jll"]
-uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
-
 [[libfdk_aac_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "daacc84a041563f965be61859a36e17c4e4fcd55"
@@ -1589,13 +1581,13 @@ version = "0.9.1+5"
 # ╟─f8b90343-aab7-4859-88d9-9934d4ce8739
 # ╟─ca93f680-2ab9-44a5-9f6a-25f57e6a7410
 # ╟─96bff7cf-b4c3-4c85-a101-1901d5ab9ee7
-# ╠═960e0f1a-7291-4cb1-aa5d-70852be2fc05
+# ╟─ea9f268b-9007-48d7-842e-7bd762617eda
 # ╟─49baefa8-79d0-4699-b6f3-2bbe3d45210a
-# ╠═50010973-8120-4c67-adbb-9352cd046d46
+# ╟─99dd54ca-374e-4804-81ec-c5d36aa929ad
 # ╟─593b4459-5f98-4eb0-a57d-0842112f8538
-# ╠═cabef5ee-b955-4ff7-a1bd-d935f496f2e1
+# ╟─1d018764-7329-4d4e-bd06-6697b8a91c19
 # ╟─620a7fd5-99ff-44b3-914b-1483a9479bd2
-# ╠═893ac506-163f-4ddf-8259-fe87f47cf616
+# ╟─969fb9fb-985a-4adf-be02-83639b35e584
 # ╠═cc445666-794a-49f8-a6b9-861adfc68696
 # ╟─a1db0450-0b17-4402-993a-5565eb817405
 # ╟─2b701598-4417-40ad-bf45-0bc2535481c5
