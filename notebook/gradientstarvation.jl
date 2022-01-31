@@ -50,24 +50,23 @@ The input layer encodes the data presented to the network and feeds it weighted 
 md"""
 ### Supervised Learning – Learning from Examples
 
-Supervised learning tries to learn a function which maps input to output values based on known input-output pairs (i.e. the pair ($x$, $y$); a correct classification $y$ for a given input $x$). The observed outputs $y$ originate from an unknown function $f(x) = y$. Thus, the goal of the learning process is to approximate $f(x)$ by a hypothesis $h(x) \approx f(x)$ while minimizing the error of the approximation, refered to as loss. More formally, the loss is defined as the utility lost by substituting the correct classification $f(x) = y$ by the hypothesis $h(x) = \hat{y}$:
+Supervised learning tries to learn a function which maps input to output values based on known input-output pairs (i.e. the pair ($x$, $y$); a correct classification $y$ for a given input $x$). The observed outputs $y$ originate from an unknown function $f(x) = y$. Thus, the goal of the learning process is to approximate $f(x)$ by a hypothesis $h(x) \approx f(x)$ while minimizing the error of the approximation, referred to as loss. More formally, the loss is defined as the utility lost by substituting the correct classification $f(x) = y$ by the hypothesis $h(x) = \hat{y}$:
 
-$L(x, y, ŷ) = 
-Utility\\(result\ of\ using\ y\ given\ x\\) 
-- Utility\\(result\ of\ using\ ŷ\ given\ x\\)$ 
+$L(x, y, ŷ) = \text{Utility(result of using}\ y\ \text{given}\ x\\) 
+- \text{Utility(result of using}\ ŷ\ \text{given}\ x\\)$ 
 
 Commonly applied loss functions are the mean absolute error and mean squared error loss. Especially popular for classification tasks is the cross-entropy loss, also called logarithmic loss:
 
-$L(y, ŷ) = -\sum_{i}y_i\cdot log(ŷ_i)$
+$L(y, ŷ) = -\sum_{i}y_i\cdot \log(ŷ_i)$
 
 The learning process maximizes the expected utility through choosing the optimal hypothesis by minimizing the loss function. In practice, this is estimated by the empirical loss observed on the set $X$ of $N$ training examples.
 
-$EmpiricalLoss(h) = \frac{1}{N}\cdot\sum_{(x, y) \in X} L(y, h(x))$
+$\text{EmpiricalLoss}(h) = \frac{1}{N}\cdot\sum_{(x, y) \in X} L(y, h(x))$
 
 But what about the weights I’ve introduced earlier as the “actual learned parameters”? Keep in mind that a hypothesis $h$ is a function and the weights simply represent the function coefficients. For the linear case that would mean $h(x) = w_1 x + w_0$.
 In the multivariate case there is no closed-form solution for the minimum loss. Therefore, we are confronted with an optimization problem which can be solved by gradient descent. The weight update with learning rate $\alpha$ and the vector of weights $\bf{w}$ looks like this:
  
-$w_i = w_i - \alpha\cdot \frac{\partial}{\partial w_i}\cdot Loss(\bf{w})$
+$w_i = w_i - \alpha\cdot \frac{\partial}{\partial w_i}\cdot \text{Loss}(\bf{w})$
 
 """
 
@@ -78,12 +77,12 @@ md"""
 > "Entities should not be multiplied beyond necessity." – William of Ockham
 This quote, known as Ockham’s razor and usually paraphrased as “simple solutions are better solutions” captures the core idea of regularization. The aim of regularization is to find the hypothesis which minimizes the total cost, defined as the sum of empirical loss and its complexity:
 
-$Cost(h) = EmpiricalLoss(h) + \lambda\cdot Complexity(h)$
+$\text{Cost}(h) = \text{EmpiricalLoss}(h) + \lambda\cdot \text{Complexity}(h)$
 
-Regularization penalizes complex hypotheses (mind the added regularization term in the formula $\lambda\cdot Complexity(h)$) and favors more regular functions. It limits the values that the weights can take during the learning process. Therefore, regularization avoids overfitting of the data.
+Regularization penalizes complex hypotheses (mind the added regularization term in the formula $\lambda\cdot \text{Complexity}(h)$) and favors more regular functions. It limits the values that the weights can take during the learning process. Therefore, regularization avoids overfitting of the data.
 The estimated best hypothesis $ĥ^*$ from the hypothesis space $\mathcal{H}$ now becomes:
 
-$ĥ^* = \arg\min_{h \in \mathcal{H}} Cost(h)$
+$ĥ^* = \arg\min_{h \in \mathcal{H}} \text{Cost}(h)$
 
 ### Optimization
 Given the major workings of supervised learning, it should have become clear that learning is a mathematical optimization problem. A classic way to achieve the minimization of the cost is the application of gradient descent (GD). However, the path the gradient take on the surface of the solution space can limit its ability to find the global optimum. To conquer that, the steps can be modified by additional optimization methods. Common choices for that purpose are the addition of momentum, resulting in stochastic gradient descent (SGD); an adaptive learning rate, different forms of parameter initialization as well as normalization techniques.
@@ -102,11 +101,11 @@ md"""
 ### Spectral Decoupling
 Proceeding from the popular "ridge-regularized cross entropy":
 
-$\mathcal{L}(\boldsymbol{θ}) = \boldsymbol{1} \cdot log(1 + exp(-\boldsymbol{Y}\boldsymbol{ŷ})) + \frac{λ}{2} ||\boldsymbol{θ}||^2$
+$\mathcal{L}(\boldsymbol{θ}) = \boldsymbol{1} \cdot \log(1 + \exp(-\boldsymbol{Y}\boldsymbol{ŷ})) + \frac{λ}{2} ||\boldsymbol{θ}||^2$
 
 with $\boldsymbol{Y}$ the diagonal matrix of $y$ and $\boldsymbol{θ}$ the concatenation of all layer's weights, SD is a variation where the L2 regularization term is replaced by a penalty on the raw predictions $\boldsymbol{ŷ}$:
 
-$\mathcal{L}(\boldsymbol{θ}) = \boldsymbol{1} \cdot log(1 + exp(-\boldsymbol{Y}\boldsymbol{ŷ})) + \frac{λ}{2} ||\boldsymbol{ŷ}||^2$
+$\mathcal{L}(\boldsymbol{θ}) = \boldsymbol{1} \cdot \log(1 + \exp(-\boldsymbol{Y}\boldsymbol{ŷ})) + \frac{λ}{2} ||\boldsymbol{ŷ}||^2$
 
 This, as stated by the Pezeshki et al., uncouples the learning of multiple features. According to their work, a feature trained close to its optimum inhibits (starves) the training of other features which is thus prevented by SD.
 """
