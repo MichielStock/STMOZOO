@@ -28,16 +28,15 @@ md"""
 
 ## The Slime Mold
 ### Background
-Slime Molds are a group of **Amoebozoa** (protists) classified under the infraphylum **Mycetozoa**, although the term has been used less strictly in the past. Within this group, there are three classes: **Myxogastria, Dictyosteliida, and Protosteloids**. (This classification is still disputed and likely to change.)
+Slime Molds are a group of **Amoebozoa** (protists) classified under the infraphylum **Mycetozoa**, although the term has been used less strictly in the past. Within this group, there are three classes: **Myxogastria, Dictyosteliida, and Protosteloids**. (This classification is still disputed and likely to change.) While a species of the Myxogastria group is the subject of this notebook, we will quickly look at the others' weird properties as well.
 
 Slime molds are noted because of their special characteristics. Slime molds from the Protosteloids group are amoebae capable of making fruiting bodies and spores. Species from the group Dicotyosteliida are referred to as **cellular** slime molds. When food is available they feed and divide as normal unicellular amoebae. However, when food becomes limited these individuals aggregate to form a **pseudoplasmodium** or **grex**. This multicellular complex can then move like a slug with a greatly increased capacity to migrate. When conditions are suitable this grex differentiates further into a **sorocarp** or fruiting body used to spread spores. This unique life cycle (shown in the figure) challenges the concepts of unicellularity, multicellularity, and what makes up an individual.
 
-
+(**Note: This figure is included because it is interesting. This is not the life cycle of the organism of interest!**)
 ![Dictyostelium Life Cycle](https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Dicty_Life_Cycle_H01.svg/1024px-Dicty_Life_Cycle_H01.svg.png)
 
 
-Lastly, the species in the group of Myxogastria are known as **acellular** slime molds. They can have multiple different morphological phases like microscopic individual cells, and fruiting bodies, but they are most recognized in their slimy amorphous form shown in the figure. Despite their ability to grow to a size of up to a meter and weigh multiple kg's, they are still made up of only a single cell. **Physarum polycephalum**, a species from this last group, will be the focus of this work.
-
+Lastly, the species in the group of Myxogastria are known as **acellular** slime molds and are the real stars of the show. They can have multiple different morphological phases like microscopic individual cells, and fruiting bodies, but they are most recognized in their slimy amorphous form shown in the figure. Despite their ability to grow to a size of up to a meter and weigh multiple kg's, they are still made up of only a **single cell**! **Physarum polycephalum**, a species from this last group, will be the focus of this work.
 ![slime](https://upload.wikimedia.org/wikipedia/commons/6/6d/Physarum_polycephalum_plasmodium.jpg)
 
 ### Problem Solving
@@ -3054,7 +3053,7 @@ version = "0.9.1+5"
 # ╠═6600061c-d18e-4699-beec-adb58de12f41
 # ╟─ea6fb2f4-6455-44af-a574-3768bad151a9
 # ╟─49a07a3d-51fa-4f38-b33d-e5127e744b04
-# ╠═36a3a18f-7537-46cc-b4f4-1551ae939be5
+# ╟─36a3a18f-7537-46cc-b4f4-1551ae939be5
 # ╟─bad4cc28-ad6a-4d1e-9b72-642f394f2374
 # ╟─c2e2ec60-4433-43b9-b08e-ecb577900bc4
 # ╟─6583d269-9eab-4a0c-b81e-a25d18b3a5c8
