@@ -311,7 +311,6 @@ function bellman_ford_animated(graph, start_node)
 				
 				#if a shorter distance is possible, update the distance
 				if distance[n] > distance[v] + w
-					########distance[n] = min(distance[n], distance[v] + w)
 					distance[n] = distance[v] + w
 					push!(updated_edges, (v, n))
 
@@ -1845,11 +1844,11 @@ version = "0.9.1+5"
 # ╠═08fb2d9d-7402-493c-be73-893318adec4d
 # ╠═d281a1a9-3e89-4069-9da3-99673ec50dd2
 # ╟─e31936be-b9fd-41c8-87c0-513aded62e83
-# ╟─f01c84aa-395e-4aca-baee-6098916f76c5
-# ╟─7838c794-88e0-4d8a-9ab5-7f90bc3a7293
-# ╟─0fbf0be0-12b7-47e5-9d9c-e7fd57549f77
-# ╟─2408e409-24d1-4ae7-8dd3-a2349b573363
-# ╟─63afbb82-509e-4eda-802b-f54349bc1e6b
-# ╟─5c61831e-122d-4a68-b16e-c674d9aa6e36
+# ╠═f01c84aa-395e-4aca-baee-6098916f76c5
+# ╠═7838c794-88e0-4d8a-9ab5-7f90bc3a7293
+# ╠═0fbf0be0-12b7-47e5-9d9c-e7fd57549f77
+# ╠═2408e409-24d1-4ae7-8dd3-a2349b573363
+# ╠═63afbb82-509e-4eda-802b-f54349bc1e6b
+# ╠═5c61831e-122d-4a68-b16e-c674d9aa6e36
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
