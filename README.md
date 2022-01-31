@@ -2,19 +2,6 @@
 
 Jordi Verbruggen and Jietse Verweirder
 
-## Abstract of what the code should do
+## Abstract
 
-# STMO-ZOO
-
-Welcome to the STMO zoo! This is your final assignment for the course Selected Topics in Mathematical Optimization. Your goal is to implement an optimization method in Julia and contribute this to this repository. To pass, you have to:
-
-- fork this repo and create a pull request;
-- add a module to `src` with **at least one function**
-- add at least one unit test to the folder `test`;
-- document all your functions and add a page to the documentation page;
-- make a notebook in [Pluto](https://github.com/fonsp/Pluto.jl) and add it to `notebooks`;
-- perform a small code review of two other students.
-
-Depending on the project you choose some of these individual assignments might be really minimalistic, with other parts larger. For example, if you want to develop an application, say solving the graph coloring problem with Tabu Search, you might have only a single function in the source code (e.g., generating an instance) but have a fairly large notebook with a tutorial. On the other hand, if you work on a method, e.g., implementing Bee Colony Optimization, you might have many functions in the source code, while your notebook is only a demonstration on the test functions. 
-
-[![Build Status](https://travis-ci.org/MichielStock/STMOZOO.svg?branch=master)](https://travis-ci.org/MichielStock/STMOZOO)[![Coverage Status](https://coveralls.io/repos/github/MichielStock/STMOZOO/badge.svg?branch=master)](https://coveralls.io/github/MichielStock/STMOZOO?branch=master)
+Genetic algorithms (GAs) are described as optimization algorithms that make use of concepts originated from biological evolution, such as natural selection and survival of the fittest. By introducing these concepts into the algotithm, a population will evolve to an optimal solution. The population is a representation of possible solutions, called chromosomes, to the problem in question. Each chromosome in their turn is comprised of genes, which are the actual number values of the solution. The algorithm will then apply evolutionary operators such as mutation, recombination and selection, over several generations, to converge the population to the best possible solution. A fitness function is used to determine which solution is the most optimal in the population, determining the objective function quality of the solution. Every generation, better solutions are created until the termination criteria are met or until a certain amount of generations has been run. The GA is terminated and the optimal solution should have been found. Although not guaranteed, most solutions will be of sufficient high quality. 
