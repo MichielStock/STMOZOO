@@ -1,14 +1,21 @@
-# STMO-ZOO
+# STMO-ZOO: Slime Mould Algorithm (SMA)
+**By Natan Tourne**
 
-Welcome to the STMO zoo! This is your final assignment for the course Selected Topics in Mathematical Optimization. Your goal is to implement an optimization method in Julia and contribute this to this repository. To pass, you have to:
+![slime2](https://biohaviour.com/wp-content/uploads/2020/11/SlimeMold.gif)
 
-- fork this repo and create a pull request;
-- add a module to `src` with **at least one function**
-- add at least one unit test to the folder `test`;
-- document all your functions and add a page to the documentation page;
-- make a notebook in [Pluto](https://github.com/fonsp/Pluto.jl) and add it to `notebooks`;
-- perform a small code review of two other students.
+Physarum polycephalum, an acellular slime mold, is well known for its problem-solving abilities. In this notebook, we explore the Slime Mold Algorithm (SMA) which attempts to replicate this organism's special properties and use it to solve a wider array of problems. We will first look at the biological background and then explore the mathematical background of the algorithm. Finally, we will investigate its performance and compare it to modified versions of the algorithm. 
 
-Depending on the project you choose some of these individual assignments might be really minimalistic, with other parts larger. For example, if you want to develop an application, say solving the graph coloring problem with Tabu Search, you might have only a single function in the source code (e.g., generating an instance) but have a fairly large notebook with a tutorial. On the other hand, if you work on a method, e.g., implementing Bee Colony Optimization, you might have many functions in the source code, while your notebook is only a demonstration on the test functions. 
+**Note: The notebook requires a few minutes to generate the figures when first opened. Some of the cells have been disabled by default to reduce this problem.**
+
+![preview](https://raw.githubusercontent.com/NatanTourne/STMOZOO/master/readme_figure.gif)
+
+The notebooks requires the following packages:
+  - Random
+  - Distributions
+  - PlutoUI
+  - StatsBase
+  - Plots
+  - StatsPlots
+
 
 [![Build Status](https://travis-ci.org/MichielStock/STMOZOO.svg?branch=master)](https://travis-ci.org/MichielStock/STMOZOO)[![Coverage Status](https://coveralls.io/repos/github/MichielStock/STMOZOO/badge.svg?branch=master)](https://coveralls.io/github/MichielStock/STMOZOO?branch=master)
