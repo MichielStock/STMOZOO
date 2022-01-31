@@ -63,8 +63,8 @@ md"### Step 1: Initial optimization
 
 Number of steps:"
 
-# ╔═╡ 63177b37-498f-4f0d-b3a8-1623799236f0
-steps_random=100000
+# ╔═╡ 0bb7e5ba-137d-43be-830f-dd2a284a908e
+@bind steps_random confirm(Slider(100:1000000, show_value=true,default=100000))
 
 # ╔═╡ ca93f680-2ab9-44a5-9f6a-25f57e6a7410
 md"### Step 2: Apply simulated annealing to the structure optimized in step 1
@@ -1574,7 +1574,7 @@ version = "0.9.1+5"
 # ╟─e41723bc-b953-4f06-b81a-f0d8168431b5
 # ╟─8934a844-db04-4d1f-bdc6-e5edc6b2c41b
 # ╟─40ea5ed6-86b5-4ac3-b79a-bfd0864b76c0
-# ╠═63177b37-498f-4f0d-b3a8-1623799236f0
+# ╟─0bb7e5ba-137d-43be-830f-dd2a284a908e
 # ╠═69a138ef-7862-44c2-866e-b07eeb425d58
 # ╟─e3896e61-8321-4e49-ae5b-054e465c5e8a
 # ╟─5650e4ca-2078-4f29-842b-fe0b88a50e6a
