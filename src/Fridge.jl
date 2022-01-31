@@ -31,12 +31,13 @@ For instance cheese may be replaced by swiss cheese.
 ## Input:
 - fridgeList: A list containing the different foods in your fridge as a string.
 - ingredientList: A list containing all the different ingredients that are used in the recipe database.
+- test: An optional Boolean argument. When true the function simulates user input.
 
 ## Output:
 - fridgeList: The (adapted) given fridgeList
 
 """
-function checkIngredients(fridgeList,ingredientList)
+function checkIngredients(fridgeList,ingredientList; test=false)
 
 
     print("Checking if the food in your fridge is found in our database.\n\n")
@@ -54,7 +55,14 @@ function checkIngredients(fridgeList,ingredientList)
                     print("[$indexNum] $alternative\n")
                 end
                 print("If you want to take an alternative type its number, else type no.\n")
-                answer = readline()
+                if !test
+                    # read wanted alternative number
+                    answer = readline()
+                else
+                    # simulate user input
+                    answer = string(rand(1:length(alternatives)))
+                    print("The computer typed $answer.")
+                end
                 if answer != "no"
                     correctInput = false
                     while !correctInput
@@ -303,13 +311,24 @@ function SAFindCombo(curSolution,  fridgeList, recipeDict, numRecipes, randRecip
     
     @assert 0 < Tmin < Tmax "Temperatures should be positive"
 	@assert 0 < r < 1 "cooling rate is between 0 and 1"
+
+
 	solution = curSolution
-	obj = fridgeObjective([i for i in values(solution)])
+    if isempty(solution)
+        print("There are no recipes in the database matching your fridge.")
+        T = Tmin-1
+    else
+        obj = fridgeObjective([i for i in values(solution)])
+	    T = Tmax
+    end
+	
     tabuList = String[i for i in keys(curSolution)] 
 
-	# current temperature
-	T = Tmax
 	while T > Tmin
+        if isempty(solution)
+            print("There are no recipes in the database matching your fridge.")
+            break
+        end
         print("T = $T \n")
 		# repeat kT times
 		for i in 1:kT
@@ -359,12 +378,13 @@ if not it offers possible alternatives. Next it uses simulated annealing to find
 ## Optional Inputs:
 - numRecipes: The max amount of recipes that a combo should contain.
 - randRecipe: A Boolean `true` or `false` value. When `true`, random recipes are used to find the neighbour in simulated annealing.
+- testmode: An optional Boolean argument. When true the function simulates user input.
 
 ## Output:
 - SASolution: A dictionary containing the best found combination of recipes.
 
 """
-function findBestRecipe(fridgeList, dataPath; numRecipes=3, randRecipe=false)
+function findBestRecipe(fridgeList, dataPath; numRecipes=3, randRecipe=false, testmode=false)
 
 
     # load the recipe dictionary from the db file
@@ -374,10 +394,10 @@ function findBestRecipe(fridgeList, dataPath; numRecipes=3, randRecipe=false)
     ingredientList = createIngredientDatabase(recipeDict)
 
     # check for every food in your fridge if it's in the database. If not check if their are alternatives.
-    fridgeList = checkIngredients(fridgeList, ingredientList)
+    fridgeList = checkIngredients(fridgeList, ingredientList, test=testmode)
 
     # find the best greedy recipe
-    greedySolution = GreedyFindCombo(fridgeList, recipeDict, numRecipes)
+    greedySolution = greedyFindCombo(fridgeList, recipeDict, numRecipes)
     print("greedySolution = $greedySolution\n")
 
     # find the best recipe with SA
