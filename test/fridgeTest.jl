@@ -15,6 +15,14 @@
         "macaroni" => ["cheese", "salt", "jambon"], 
         "salad" => ["cabbage","tomato","oil","horseradish"])
 
+    testDict4 = Dict("fries" => ["potato","salt"], 
+    "macaroni" => ["cheese", "salt", "jambon"], 
+    "salad" => ["cabbage","tomato","oil","horseradish"],
+    "chocolatemilk" => ["chocolate","milk"],
+    "waffle" => ["sugar", "eggs", "milk"],
+    "thea" => ["herbs", "water"],
+    "coffee" => ["coffeebeans", "water"])
+
     testSolution = Dict("salad" => [0,0,1,1,2], "fries" => [0,1,0,0,1])
 
     @testset "checkIngredients" begin
@@ -59,5 +67,13 @@
 
         # test length of random with empty tabuList
         @test length(values(Neighbour(testSolution, testList, testDict, 2, [], true))) == 2
+    end
+
+    @testset "SAFindCombo" begin
+        # test output type
+        @test typeof(SAFindCombo(testSolution,  testList, testDict4, 2, true, tabulength=1)) == Dict{Any, Any}
+
+        # test output length
+        @test length(values(SAFindCombo(testSolution,  testList, testDict4, 2, true, tabulength=1))) == 2
     end
 end
