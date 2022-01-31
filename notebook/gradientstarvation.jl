@@ -11,6 +11,8 @@ using PlutoUI
 md"""
 # Starving Neurons - Neural Networks and Gradient Starvation
 
+Author: Peter Merseburger
+
 ## Introduction
 
 Artificial intelligence (AI) and machine learning are disciplines whose methods have become ubiquitously applied in a broad range of scientific domains, enabling the implicit learning of features inherent to a dataset. A common AI tool for self-learning of data characteristics by examples are neural networks (NNs) which attempt to mimic biological neurons. NNs are broadly applicable, e.g. for tasks such as image and speech recognition, weather forecasting, stock market prediction, robotics and data mining among many others. But how do these artificial neural networks learn?
@@ -125,7 +127,7 @@ The first topology allows to draw a line by a very small margin between the two 
 
 # ╔═╡ 2f766a9c-de6e-4f95-aa73-aacb486aaf61
 md"""
-$(LocalResource("../plots/figure_1_edited.png"))
+$(Resource("https://raw.githubusercontent.com/justinsane1337/GradientStarvation/master/plots/figure_1_edited.png"))
 Figure 1: Two moons topologies; one linear separable (offset Δ1.0), the other separable by a curved boundary (offset Δ0.5).
 """
 
@@ -160,16 +162,16 @@ md"""
 # ╔═╡ 884bc572-9daa-40ad-8d76-56ec58728f63
 md"""
 ##### Linear separable case
-$(LocalResource("../plots/GD_Δ1.0.png"))
+$(Resource("https://raw.githubusercontent.com/justinsane1337/GradientStarvation/master/plots/GD_%CE%941.0.png"))
 Figure 2: GD, moon offset = Δ1.0. The decision boundary is almost linear and the loss continuously falls while training. Accuracy reaches 100%.
 
-$(LocalResource("../plots/SGD_Δ1.0.png"))
+$(Resource("https://raw.githubusercontent.com/justinsane1337/GradientStarvation/master/plots/SGD_%CE%941.0.png"))
 Figure 3: SGD, moon offset = Δ1.0. The decision boundary is similar to the one learned with GD but equally distant from both classes. Loss declines quicker and reaches an overall lower level compared to GD. Accuracy reaches 100% after less training.
 
-$(LocalResource("../plots/WD_Δ1.0.png"))
+$(Resource("https://raw.githubusercontent.com/justinsane1337/GradientStarvation/master/plots/WD_%CE%941.0.png"))
 Figure 4: WD, moon offset = Δ1.0, WD coefficient = 0.01. The boundary is similar to GD without WD.
 
-$(LocalResource("../plots/ADAM_Δ1.0.png"))
+$(Resource("https://raw.githubusercontent.com/justinsane1337/GradientStarvation/master/plots/ADAM_%CE%941.0.png"))
 Figure 5: ADAM, moon offset = Δ1.0. The decision boundary is slightly curved around the data points closest to the boundary. Loss converges to zero almost immediately while full accuracy is attained. 
 """
 
@@ -182,16 +184,16 @@ As we can see from figures 2 to 5, the decision boundaries of all networks exhib
 md"""
 ##### Linear inseparable case
 
-$(LocalResource("../plots/GD_Δ0.5.png"))
+$(Resource("https://raw.githubusercontent.com/justinsane1337/GradientStarvation/master/plots/GD_%CE%940.5.png"))
 Figure 6: GD, moon offset = Δ0.5. The network fails to learn a decision boundary to separate the two classes within the 1000 training iterations.
 
-$(LocalResource("../plots/SGD_Δ0.5.png"))
+$(Resource("https://raw.githubusercontent.com/justinsane1337/GradientStarvation/master/plots/SGD_%CE%940.5.png"))
 Figure 7: SGD, moon offset = Δ0.5. The network learns a curved decision boundary which is very close to the interleaving data points. Loss becomes negligible during learning.
 
-$(LocalResource("../plots/WD_Δ0.5.png"))
+$(Resource("https://raw.githubusercontent.com/justinsane1337/GradientStarvation/master/plots/WD_%CE%940.5.png"))
 Figure 8: WD, moon offset = Δ0.5. The network fails to learn a decision boundary to separate the two classes. Again, similar result compared to GD.
 
-$(LocalResource("../plots/ADAM_Δ0.5.png"))
+$(Resource("https://raw.githubusercontent.com/justinsane1337/GradientStarvation/master/plots/ADAM_%CE%940.5.png"))
 Figure 9: ADAM, moon offset = Δ0.5. The network learns a curved decision boundary. Loss fluctuates especially during the early iterations of training.
 """
 
@@ -204,16 +206,16 @@ SGD and ADAM are able to learn a curved decision boundary (fig. 7 and 9) while G
 md"""
 #### Spectral Decoupling
 
-$(LocalResource("../plots/GD_Δ0.5_+_SD.png"))
+$(Resource("https://raw.githubusercontent.com/justinsane1337/GradientStarvation/master/plots/GD_%CE%940.5_%2B_SD.png"))
 Figure 10: GD with SD, moon offset = Δ0.5. No curved decision boundary is learned but the loss also did not converge.
 
-$(LocalResource("../plots/SGD_Δ0.5_+_SD.png"))
+$(Resource("https://raw.githubusercontent.com/justinsane1337/GradientStarvation/master/plots/SGD_%CE%940.5_%2B_SD.png"))
 Figure 11: SGD with SD, moon offset = Δ0.5. The network learns a curved decision boundary which greatly resembles the moon data structure and shows invaginations at the data points of both moons closest to the boundary. Loss converges to ~15%.
 
-$(LocalResource("../plots/WD_Δ0.5_+_SD.png"))
+$(Resource("https://raw.githubusercontent.com/justinsane1337/GradientStarvation/master/plots/WD_%CE%940.5_%2B_SD.png"))
 Figure 12: WD with SD, moon offset = Δ0.5. NN fails to separate the two data classes. Similar to GD with SD, loss could still be lowered with further training.
 
-$(LocalResource("../plots/ADAM_Δ0.5_+_SD.png"))
+$(Resource("https://raw.githubusercontent.com/justinsane1337/GradientStarvation/master/plots/ADAM_%CE%940.5_%2B_SD.png"))
 Figure 13: ADAM with SD, moon offset = Δ0.5. The network learns a curved decision boundary which greatly resembles the data structure. Loss heavily oscillates and steadily increases with longer training. Interestingly, all data points of each respective class belong to the same contour.
 """
 
@@ -227,15 +229,15 @@ md"""
 #### Additional experiments
 Given that the loss did not converge for GD + SD after 1000 epochs, the network was trained for 10000 iterations.
 
-$(LocalResource("../plots/GD_Δ0.5_+_SD_10000.png"))
+$(Resource("https://raw.githubusercontent.com/justinsane1337/GradientStarvation/master/plots/GD_%CE%940.5_%2B_SD_10000.png"))
 Figure 14: GD with SD, moon offset = Δ0.5. NN was trained 10 times longer (10000 iterations). The learned curved decision boundary resembles the result obtained with SGD + SD.
 
 To conquer the overfitting observed with ADAM + SD lower learning rates were evaluated.
 
-$(LocalResource("../plots/1e-3_ADAM_Δ0.5_+_SD.png"))
+$(Resource("https://raw.githubusercontent.com/justinsane1337/GradientStarvation/master/plots/1e-3_ADAM_%CE%940.5_%2B_SD.png"))
 Figure 15: ADAM with SD on the moons with offset = Δ0.5 and a learning rate of 0.001 still suffers from severe overfitting. Nonetheless, oscillations in loss are dampened.
 
-$(LocalResource("../plots/1e-4_ADAM_Δ0.5_+_SD.png"))
+$(Resource("https://raw.githubusercontent.com/justinsane1337/GradientStarvation/master/plots/1e-4_ADAM_%CE%940.5_%2B_SD.png"))
 Figure 16: ADAM with SD on the moons with offset = Δ0.5 and a learning rate of 0.0001 shows lower loss compared to 0.001 but a decision boundary with a smaller margin.
 
 The additional experiments show that GD with SD performs equally well compared to SGD with SD but needs much more training for that.
