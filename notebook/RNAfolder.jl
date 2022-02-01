@@ -15,7 +15,7 @@ macro bind(def, element)
 end
 
 # ╔═╡ dba46e66-8704-42de-938c-d576a1336398
-using PlutoUI, Plots, Graphs, GraphMakie, CairoMakie, NetworkLayout
+using PlutoUI, Plots, Graphs, GraphMakie, CairoMakie, NetworkLayout, Test
 
 # ╔═╡ 4b3e86ea-6973-11ec-014f-9f2708ba86cf
 md"""
@@ -30,7 +30,7 @@ This pluto notebook contains the code for a simple RNA secondary structure predi
 
 ## Nussinov's Algorithm
 
-This tool uses an algorithm called Nussinov's algorithm. This is a basepair maximization algorithm, it predicts the optimal structure by trying to maximize the amount of paired nucleotides in an RNA sequence. This was one of the first ever algorithms to be used in RNA folding but sadly this algorithm is often to simple to get realistic results. 
+The tool uses an algorithm called Nussinov's algorithm. This is a basepair maximization algorithm, it predicts the optimal structure by trying to maximize the amount of paired nucleotides in an RNA sequence. This was one of the first ever algorithms to be used in RNA folding but sadly this algorithm is often too simple to get realistic results. 
 
 Other algorithms like energy minimization algorithms try to achieve the same thing but do this by taking base pairing energies, the energies of stacking of certain types of basepairs and the sizes of different structures into account and by calculating the total minimum free energy of the folded RNA. However, implementeing these is a lot more complicated and out of the scope of a project like this.
 
@@ -304,6 +304,31 @@ end
 # ╔═╡ 06983a7b-efca-4167-be5d-a158a4e0858d
 plotstructure(RNA, pairs)
 
+# ╔═╡ 94691ccf-b1ef-4cc3-8eed-72dd543001f5
+md""" Unit tests are in the hidden chunk below: """
+
+# ╔═╡ 32755c53-eefc-4d40-bf60-a8b21a545c6d
+@testset "RNAfolder" begin
+	
+	@testset "Nussinov" begin
+		
+		@test Nussinov("AGCU") isa Array
+		@test Nussinov("AAA") == zeros(3,3)
+		@test Nussinov("AGCU") == zeros(4,4)
+		@test Nussinov("AAAAU")[1,5] == 1.0
+		
+	end
+	
+	@testset "Traceback" begin
+		
+		@test traceback("AAA", Nussinov("AAA"), 1, 3) isa Array
+		@test isempty(traceback("AAA", Nussinov("AAA"), 1, 3))
+		@test traceback("AAAAU", Nussinov("AAAAU"), 1, 5) == [(1,5)]
+		
+	end
+		
+end
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
@@ -313,6 +338,7 @@ Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
 NetworkLayout = "46757867-2c16-5918-afeb-47bfcb05e46a"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 CairoMakie = "~0.6.6"
@@ -1692,5 +1718,7 @@ version = "0.9.1+5"
 # ╠═c86cc53d-4675-4cd1-af75-ec4a717fd7fa
 # ╠═2e8fb274-0658-43f8-bfa0-40f2f1daf6f3
 # ╠═f4e866fc-8e18-4917-b515-9cc00175a7a4
+# ╟─94691ccf-b1ef-4cc3-8eed-72dd543001f5
+# ╟─32755c53-eefc-4d40-bf60-a8b21a545c6d
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
