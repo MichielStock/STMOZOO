@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.16.4
+# v0.17.7
 
 using Markdown
 using InteractiveUtils
@@ -25,10 +25,10 @@ project by $student_names
 Optimal transportation leads with two probability distributions and there is a cost function for moving elements from one distribution to the other distribution. And you have to find a transportation scheme to map one distribution into the other one. The original version of this problem of optimal transport dates back to Gaspard Monge in 1781. The Monge's problem has a discrete n number iron mines and n factories and, the cost is the distance between the mine and the factory. The solution is to find which mine suplies which factory, finding the minimum average distance transported.
 
 The Hungarian algorithm solves an assignment problem which can be considered as a special type of transportation problem in which the number of sources and sinks are equal. The capacity of each source as well as the requirement of each sink is taken as 1. In this project, the Hungarian algorithm is implemented using an adjacency matrix.
-This algorithm can be used to find the map that minimizes the transport cost, given two distributions and a cost function. For two discrete probability vectors, $$\mathbf{a} ∈ Σ_n$$ and $$\mathbf{b} ∈ Σ_m$$, we have a $$n \times m$$ cost matrix $$C$$. It can be represented as a adjacency matrix, with elements in $$a$$ as rows and elements in $$b$$ as columns, and their weights as entries in the matrix. 
+This algorithm can be used to find the map that minimizes the transport cost, given two distributions and a cost function. For two discrete probability vectors, $$\mathbf{a} ∈ Σ_n$$ and $$\mathbf{b} ∈ Σ_m$$, we have a $$n \times m$$ cost matrix $$C$$. It can be represented as an adjacency matrix, with elements in $$a$$ as rows and elements in $$b$$ as columns, and their weights as entries in the matrix. 
 
 An example of an assignment problem, can be, given $$n$$ agents and the money they ask for performing each task, finding which agent performs which task in order to minimize the cost of performing all $$m$$ tasks.
-When there are the same number of agents than tasks, the the problem is called balanced assignment, otherwise is called unbalanced assignment. And if the total cost is the sum for each agent performing its task, the problem is called linear assignment, because the cost function to be optimized as well as all the constraints contain only linear terms. This implementation can be used to solve linear balanced assignment problems.
+When there are the same number of agents than tasks, the the problem is called balanced assignment, otherwise it is called unbalanced assignment. And if the total cost is the sum for each agent performing its task, the problem is called linear assignment, because the cost function to be optimized as well as all the constraints contain only linear terms. This implementation can be used to solve linear balanced assignment problems.
 """
 
 # ╔═╡ bf771d76-099c-449b-bebd-5201ed72ebb6
@@ -49,14 +49,9 @@ md"""
 4. Find the smallest entry not marked by any marked row and by any column. Subtract this entry from each row which is not marked, and then add it to each column which is marked. Then, go back to step 2.
 """
 
-# ╔═╡ 6be9cccf-160a-4d05-88bd-9f5e33ad3d05
-md"""
-**`Hungarian_algorithm`** is the funtion that uses as an input the cost matrix and gives as an output the cost value and the matrix solution. This function performs steps 1 to 4, by calling the previous functions. Once the marked rows and columns sum the number of tasks to perform, it calculates the cost value by adding each cost value of the different agent-task selected. The matrix solution has all zeros, except for each agent-task pair selected, where it has its original value.
-"""
-
 # ╔═╡ 23020cd7-333d-4d97-aabb-c13614d57c65
 md"""
-**`find_min_row`** is a function that gets the row with the fewest zeros. For that purpose, it needs as an input a boolean matrix, having `true` if the original value after subtracting the smallest entry in each row from all the other entries in the row was `0`, and a `false` if it was different from `0`. It also needs a vector `zero_list` that will store the coordinates of the `0` in the row with fewest zeros. After the first finding, it reajusts the boolean matrix so the whole row and column from the last coordinate stored is set to `false`. This function is used in the next function `mark_matrix`.
+**`find_min_row`** is a function that gets the row with the fewest zeros. For that purpose, it needs as an input a boolean matrix, having `true` if the original value after subtracting the smallest entry in each row from all the other entries in the row was `0`, and a `false` if it was different from `0`. It also needs a vector `zero_list` that will store the coordinates of the `0` in the row with fewest zeros. After the first finding, it readjusts the boolean matrix so the whole row and column from the last coordinate stored is set to `false`. This function is used in the next function `mark_matrix`.
 """
 
 # ╔═╡ d7c22bc5-088d-4a74-a00d-5833430bf219
@@ -75,12 +70,11 @@ function find_min_row(matrix_zero, zero_list)
 	min_row = [Inf, -1]
 	
 	for row in 1:size(matrix_zero)[1]
-		#if true in matrix_zero[row, :] # Needs a 0 in the row
-			# If the number of zeros < than the last min stored
-			if sum(matrix_zero[row,:]) > 0 && min_row[1] > sum(matrix_zero[row,:])
-				#stores the number of zeros and the row index
-				min_row = [sum(matrix_zero[row,:]), row]
-			end
+		# If the number of zeros < than the last min stored
+		if sum(matrix_zero[row,:]) > 0 && min_row[1] > sum(matrix_zero[row,:])
+			#stores the number of zeros and the row index
+			min_row = [sum(matrix_zero[row,:]), row]
+		end
 	end
 	# Get the column index 
 	zero_index = findall(x->x==true, matrix_zero[min_row[2],:])[1]  
@@ -104,7 +98,7 @@ md"""
 Perform steps 2 and 3: It marks the rows and columns that have the 0 entries such that the fewest lines possible are drawn. If there are "m" marked rows and columns, an optimal assignment solution can be found.  
 
 Input:
-	- `mat` : cost matrix already modified by step 1 or an adjusted matrix by `adjust_matrix`
+	- `mat` : the cost matrix already modified by step 1 or an adjusted matrix by `adjust_matrix`
 	
 Outputs:
 	- `zero_list` : coordinates of the zeros found by `find_min_row`
@@ -216,7 +210,12 @@ function adjust_matrix(mat, marked_rows, marked_cols)
     return adjusted
 end
 
-# ╔═╡ d4435d9e-1c3a-4d0d-80b3-8c0061336975
+# ╔═╡ 4ea8addb-278d-4662-b1b6-fb24711276bb
+md"""
+**`Hungarian_algorithm`** is the funtion that uses as an input the cost matrix and gives as an output the cost value and the matrix solution. This function performs steps 1 to 4, by calling the previous functions. Once the marked rows and columns sum the number of tasks to perform, it calculates the cost value by adding each cost value of the different agent-task selected. The matrix solution has all zeros, except for each agent-task pair selected, where it has its original value.
+"""
+
+# ╔═╡ 2999e1c6-f673-45c6-96ae-217efa0b90fd
 """
 	Hungarian_algorithm(mat)
 
@@ -554,18 +553,18 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 
 # ╔═╡ Cell order:
 # ╟─e7e7c0e4-47e1-4856-9e71-11dfd12dfcd3
-# ╠═f3aa9d9c-75e1-4948-b7dd-7f0596486e83
+# ╟─f3aa9d9c-75e1-4948-b7dd-7f0596486e83
 # ╟─8c0c6652-aa5d-4cb8-a4cf-018c80b380cf
 # ╟─bf771d76-099c-449b-bebd-5201ed72ebb6
 # ╟─ed527906-da70-4186-a6db-da9906d72efa
-# ╟─6be9cccf-160a-4d05-88bd-9f5e33ad3d05
-# ╠═d4435d9e-1c3a-4d0d-80b3-8c0061336975
-# ╠═23020cd7-333d-4d97-aabb-c13614d57c65
+# ╟─23020cd7-333d-4d97-aabb-c13614d57c65
 # ╠═d7c22bc5-088d-4a74-a00d-5833430bf219
-# ╠═4f82e659-944a-4ff2-aa77-db81187da001
+# ╟─4f82e659-944a-4ff2-aa77-db81187da001
 # ╠═8d04677a-5f97-4e76-937c-e79f69c14788
 # ╟─05e77871-d6d1-4d7b-b368-89aeeed878a4
 # ╠═f94e0b59-80d0-4d26-bac3-d75c30e4d3ee
+# ╟─4ea8addb-278d-4662-b1b6-fb24711276bb
+# ╠═2999e1c6-f673-45c6-96ae-217efa0b90fd
 # ╟─d8dd3d3f-2ed6-434c-8878-c3af69abc45b
 # ╠═4cbb69df-9573-4b9f-a03a-4d1e3c53b8ff
 # ╟─8f59c095-4cab-4d2f-bfe5-85ab121070bd
