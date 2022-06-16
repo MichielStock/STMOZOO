@@ -1,14 +1,27 @@
-# STMO-ZOO
+# STMO-ZOO: Link between fractals and the Newton method
+### by Kim Hayoung and Merckx Anna
+![Optional Text](https://github.com/HayoungKim27/STMOZOO/blob/b5a472f096674cef7b7e06b5627d4f09e4259980/figure/readmefractal.png)
+Welcome to the 'Link between fractals and the Newton method' repository in STMO zoo! This is the final assignment for the course Selected Topics in Mathematical Optimization. The goal is to implement an optimization method in Julia and contribute this to this repository.
 
-Welcome to the STMO zoo! This is your final assignment for the course Selected Topics in Mathematical Optimization. Your goal is to implement an optimization method in Julia and contribute this to this repository. To pass, you have to:
+## Guideline
+All the necessary project contents are in the Pluto notebook (notebook/NewtonFractals.jl).
 
-- fork this repo and create a pull request;
-- add a module to `src` with **at least one function**
-- add at least one unit test to the folder `test`;
-- document all your functions and add a page to the documentation page;
-- make a notebook in [Pluto](https://github.com/fonsp/Pluto.jl) and add it to `notebooks`;
-- perform a small code review of two other students.
+**Table of contents**
+- Introduction
+- Fractals
+- Roots of Polynomials
+- Newton's method
+- Newton's fractal
+- The boundary property
+- Reference
 
-Depending on the project you choose some of these individual assignments might be really minimalistic, with other parts larger. For example, if you want to develop an application, say solving the graph coloring problem with Tabu Search, you might have only a single function in the source code (e.g., generating an instance) but have a fairly large notebook with a tutorial. On the other hand, if you work on a method, e.g., implementing Bee Colony Optimization, you might have many functions in the source code, while your notebook is only a demonstration on the test functions. 
+In this notebook we discuss the link between fractals and the Newton method. First, we explain what fractals are and where these factals can be found. We then explain what roots of polynomials are and how the Newton's method can approximate these roots. Finally, the link between fractals and the Newton method is made. Here, the important concept called the boundary property will be introduced.
+
+![Optional Text](https://github.com/HayoungKim27/STMOZOO/blob/b5a472f096674cef7b7e06b5627d4f09e4259980/figure/widget_checkbox.png)
+
+![Optional Text](https://github.com/HayoungKim27/STMOZOO/blob/b5a472f096674cef7b7e06b5627d4f09e4259980/figure/widget_slider.png)
+
+As you can see above, there are many **widgets** such as checkboxes or sliders when you read each line, so please participate and learn from it.
+
 
 [![Build Status](https://travis-ci.org/MichielStock/STMOZOO.svg?branch=master)](https://travis-ci.org/MichielStock/STMOZOO)[![Coverage Status](https://coveralls.io/repos/github/MichielStock/STMOZOO/badge.svg?branch=master)](https://coveralls.io/github/MichielStock/STMOZOO?branch=master)
