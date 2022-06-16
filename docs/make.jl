@@ -1,17 +1,37 @@
 using Documenter
+using GradientStarvation.Data
+using GradientStarvation.Figures
+using GradientStarvation.Experiments
+using GradientStarvation.NeuralNetwork
+using GradientStarvation.PlotLib
+using GradientStarvation.PlotUtils
+using GradientStarvation.Regularization
 
-using STMOZOO
-using STMOZOO.Example
-
-makedocs(sitename="STMO ZOO",
+makedocs(
+    sitename = "Gradient Starvation",
     format = Documenter.HTML(),
-    modules=[Example], # add your module
-    pages=Any[
-        "Example"=> "man/example.md",  # add the page to your documentation
-    ])
+    modules = [
+        GradientStarvation.Data, 
+        GradientStarvation.Figures, 
+        GradientStarvation.Experiments, 
+        GradientStarvation.NeuralNetwork, 
+        GradientStarvation.PlotLib, 
+        GradientStarvation.PlotUtils,
+        GradientStarvation.Regularization
+    ],
+    pages = Any[
+        "Data" => "man/data.md",
+        "Figures" => "man/figures.md",
+        "Experiments" => "man/experiments.md",
+        "Neural Network" => "man/neuralnetwork.md",
+        "Plots" => "man/plotlib.md",
+        "Plot Utils" => "man/plotutils.md",
+        "Regularization" => "man/regularization.md"
+    ]
+)
 
 #=
 deploydocs(
-            repo = "github.com/michielstock/STMOZOO.jl.git",
+            repo = "github.com/justinsane1337/GradientStarvation.git",
         )
 =#
