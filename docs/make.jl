@@ -1,17 +1,17 @@
 using Documenter
 
-using STMOZOO
-using STMOZOO.Example
+using Fridge
 
-makedocs(sitename="STMO ZOO",
+makedocs(sitename="Fridge.jl",
     format = Documenter.HTML(),
-    modules=[Example], # add your module
-    pages=Any[
-        "Example"=> "man/example.md",  # add the page to your documentation
+    modules=[Fridge], # add your module
+    pages=[
+        "index.md",
+        "main function" => "mainFunction.md",
+        "search algorithms" => "searchAlgorithms.md",
+        "recipe webscraper"=> "recipeWebscraper.md",
     ])
 
-#=
 deploydocs(
-            repo = "github.com/michielstock/STMOZOO.jl.git",
+            repo = "github.com/wardvanbelle/Fridge.jl",
         )
-=#

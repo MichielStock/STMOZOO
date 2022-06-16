@@ -1,14 +1,30 @@
-# STMO-ZOO
 
-Welcome to the STMO zoo! This is your final assignment for the course Selected Topics in Mathematical Optimization. Your goal is to implement an optimization method in Julia and contribute this to this repository. To pass, you have to:
+# Fridge.jl
+[![](https://img.shields.io/badge/docs-dev-blue)](https://wardvanbelle.github.io/Fridge.jl/dev) [![codecov](https://codecov.io/gh/wardvanbelle/Fridge.jl/branch/master/graph/badge.svg?token=GJ8JXBG5M1)](https://codecov.io/gh/wardvanbelle/Fridge.jl)\
+\
+<img align="right" width="150" height="150" src="FridgeLogo.png">
+by <i>Ward Van Belle</i>
 
-- fork this repo and create a pull request;
-- add a module to `src` with **at least one function**
-- add at least one unit test to the folder `test`;
-- document all your functions and add a page to the documentation page;
-- make a notebook in [Pluto](https://github.com/fonsp/Pluto.jl) and add it to `notebooks`;
-- perform a small code review of two other students.
+A package that optimizes your fridge use while reducing your waste pile!!
 
-Depending on the project you choose some of these individual assignments might be really minimalistic, with other parts larger. For example, if you want to develop an application, say solving the graph coloring problem with Tabu Search, you might have only a single function in the source code (e.g., generating an instance) but have a fairly large notebook with a tutorial. On the other hand, if you work on a method, e.g., implementing Bee Colony Optimization, you might have many functions in the source code, while your notebook is only a demonstration on the test functions. 
+This package tries to find the best recipes for you based on a recipe database. In our eyes (and the eyes of the objective function), the best recipes are the ones that use as much ingredients from your fridge as possible and that don't need extra ingredients from the grocery store.
 
-[![Build Status](https://travis-ci.org/MichielStock/STMOZOO.svg?branch=master)](https://travis-ci.org/MichielStock/STMOZOO)[![Coverage Status](https://coveralls.io/repos/github/MichielStock/STMOZOO/badge.svg?branch=master)](https://coveralls.io/github/MichielStock/STMOZOO?branch=master)
+## How to use this package?
+There are several ways for you to use this package. 
+
+1. First and foremost you should have a **recipe database**. This database should be a .csv file or a .jld2 file containing the recipe names in one column and a list containing the ingredient names in the next column. For instance:
+
+    | recipeName | Ingredients |
+    |:----------:|:-----------:|
+    | french fries| potatoes, salt|
+    | boiled eggs | eggs, salt|
+
+2. If you just want to find an approximation of the best recipe combo. Then you can use the `greedyFindCombo` function. This performs a greedy search to find a quick solution. However, if you want a chance for a better solution, then you can use the `findBestRecipe` function. This function checks if your ingredients are in the database, and if not it offers possible alternatives. Next it uses **simulated annealing** to find a better recipe combination.
+
+## Help I don't have a database (recipeWebscraper.jl)
+
+Don't worry, we got you covered with `recipeWebscraper.jl`. This module includes a function that downloads recipes from [the cosylab recipe database](https://cosylab.iiitd.edu.in/recipedb/) based on their recipe number and exports them to a **.csv** file. 
+
+You can use the `scrapeRecipe` function for this. Using this method it is possible to download around 16 000 recipes before you get kicked from the site. Therefore it is recommended to look at the cuisine you would like to download and start from the earliest recipe number in this cuisine. Recipe numbers can be found by looking at the end of the url of a recipe page eg. [Belgian Chocolate Mousse](https://cosylab.iiitd.edu.in/recipedb/search_recipeInfo/106541) is the first Belgian recipe and has the recipe number **106541**.
+
+
